@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'cosplaysehat@gmail.com' && request.auth.token.email_verified == true;
+    }
+
+    function isValidMember(data) {
+      return data.keys().hasAll(['cosplayName', 'city', 'primaryRole', 'fandom', 'source', 'status', 'createdAt'])
+        && data.cosplayName is string && data.cosplayName.size() > 0 && data.cosplayName.size() <= 80
+        && (!('fullName' in data) || (data.fullName is string && data.fullName.size() <= 100))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 120))
+        && data.city is string && data.city.size() > 0 && data.city.size() <= 80
+        && data.primaryRole is string && data.primaryRole.size() <= 80
+        && data.fandom is string && data.fandom.size() <= 80
+        && (!('memberNumber' in data) || (data.memberNumber is string && data.memberNumber.size() <= 30))
+        && data.source is string && data.source.size() <= 40
+        && data.status is string && data.status.size() <= 20
+        && data.createdAt is string
+        && (!('userId16' in data) || (data.userId16 is string && data.userId16.size() <= 24))
+        && (!('country' in data) || (data.country is string && data.country.size() <= 80))
+        && (!('province' in data) || (data.province is string && data.province.size() <= 80))
+        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 30))
+        && (!('discordUsername' in data) || (data.discordUsername is string && data.discordUsername.size() <= 60))
+        && (!('age' in data) || (data.age is string && data.age.size() <= 50))
+        && (!('ageCategory' in data) || (data.ageCategory is string && data.ageCategory.size() <= 50))
+        && (!('birthday' in data) || (data.birthday is string && data.birthday.size() <= 30))
+        && (!('experience' in data) || (data.experience is string && data.experience.size() <= 50))
+        && (!('socialMedia' in data) || (data.socialMedia is string && data.socialMedia.size() <= 120))
+        && (!('portfolioUrl' in data) || (data.portfolioUrl is string && data.portfolioUrl.size() <= 300))
+        && (!('reason' in data) || (data.reason is string && data.reason.size() <= 500));
+    }
+
+    function isValidPhoto(data) {
+      return data.keys().hasAll(['authorName', 'photoUrl', 'character', 'series', 'event', 'createdAt'])
+        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 60
+        && data.photoUrl is string
+        && data.character is string && data.character.size() <= 80
+        && data.series is string && data.series.size() <= 80
+        && data.event is string && data.event.size() <= 100
+        && data.createdAt is string;
+    }
+
+    match /members/{memberId} {
+      allow get, list: if true;
+      allow create: if isValidId(memberId) && isValidMember(incoming());
+      allow update: if isValidId(memberId) && (isAdmin() || isSignedIn() || isValidMember(incoming()));
+      allow delete: if isValidId(memberId);
+    }
+
+    match /photos/{photoId} {
+      allow get, list: if true;
+      allow create: if isValidId(photoId) && isValidPhoto(incoming());
+      allow update: if isValidId(photoId);
+      allow delete: if isValidId(photoId) && (isAdmin() || isSignedIn());
+    }
+
+    match /sync_logs/{logId} {
+      allow get, list: if true;
+      allow create: if isValidId(logId);
+      allow update, delete: if isAdmin();
+    }
+
+    match /siteSettings/{documentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

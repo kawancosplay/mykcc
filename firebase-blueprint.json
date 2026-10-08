@@ -1,0 +1,244 @@
+{
+  "entities": {
+    "Member": {
+      "title": "Member",
+      "description": "KawanCosplay community registered member record with 16-digit user ID",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for member document"
+        },
+        "userId16": {
+          "type": "string",
+          "description": "16-digit unique member account ID",
+          "maxLength": 20
+        },
+        "authUid": {
+          "type": "string",
+          "description": "Firebase Auth UID if linked",
+          "maxLength": 128
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full legal name of the member",
+          "maxLength": 100
+        },
+        "cosplayName": {
+          "type": "string",
+          "description": "Cosplay stage name or alias",
+          "maxLength": 60
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of member",
+          "maxLength": 120
+        },
+        "phone": {
+          "type": "string",
+          "description": "WhatsApp or contact phone number",
+          "maxLength": 30
+        },
+        "discordUsername": {
+          "type": "string",
+          "description": "Discord username or handle",
+          "maxLength": 60
+        },
+        "country": {
+          "type": "string",
+          "description": "Country of residence",
+          "maxLength": 80
+        },
+        "province": {
+          "type": "string",
+          "description": "Province, state or administrative division",
+          "maxLength": 80
+        },
+        "city": {
+          "type": "string",
+          "description": "City, county or regency",
+          "maxLength": 80
+        },
+        "age": {
+          "type": "string",
+          "description": "Age range or date of birth",
+          "maxLength": 20
+        },
+        "primaryRole": {
+          "type": "string",
+          "description": "Primary role in cosplay community",
+          "maxLength": 50
+        },
+        "fandom": {
+          "type": "string",
+          "description": "Primary fandom or game/anime interest",
+          "maxLength": 80
+        },
+        "experience": {
+          "type": "string",
+          "description": "Experience level in cosplay",
+          "maxLength": 40
+        },
+        "socialMedia": {
+          "type": "string",
+          "description": "Social media handle or profile URL",
+          "maxLength": 120
+        },
+        "portfolioUrl": {
+          "type": "string",
+          "description": "Google Drive or social portfolio link",
+          "maxLength": 300
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Avatar or cosplay photo URL or data URI",
+          "maxLength": 250000
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for joining KawanCosplay",
+          "maxLength": 500
+        },
+        "memberNumber": {
+          "type": "string",
+          "description": "Generated member number like KC-2026-0001",
+          "maxLength": 30
+        },
+        "source": {
+          "type": "string",
+          "description": "Source of registration: web_form, google_form_sync, or spreadsheet_import",
+          "maxLength": 40
+        },
+        "status": {
+          "type": "string",
+          "description": "Membership status: active, pending, verified",
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO date string or timestamp of registration"
+        }
+      },
+      "required": ["fullName", "cosplayName", "email", "city", "primaryRole", "fandom", "memberNumber", "source", "status", "createdAt"]
+    },
+    "Photo": {
+      "title": "Photo",
+      "description": "Cosplay gallery photo uploaded by registered member",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique photo identifier"
+        },
+        "memberId": {
+          "type": "string",
+          "description": "Member document ID"
+        },
+        "userId16": {
+          "type": "string",
+          "description": "16-digit member ID",
+          "maxLength": 20
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Cosplay stage name of uploader",
+          "maxLength": 60
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "Photo image URL or data URI",
+          "maxLength": 500000
+        },
+        "title": {
+          "type": "string",
+          "description": "Photo post title",
+          "maxLength": 120
+        },
+        "character": {
+          "type": "string",
+          "description": "Cosplayed character name",
+          "maxLength": 80
+        },
+        "series": {
+          "type": "string",
+          "description": "Anime, manga, or game series",
+          "maxLength": 80
+        },
+        "event": {
+          "type": "string",
+          "description": "Event or photoshoot location",
+          "maxLength": 100
+        },
+        "photographer": {
+          "type": "string",
+          "description": "Photographer credit",
+          "maxLength": 80
+        },
+        "caption": {
+          "type": "string",
+          "description": "Photo caption or description",
+          "maxLength": 500
+        },
+        "likesCount": {
+          "type": "number",
+          "description": "Number of likes"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of photo post"
+        }
+      },
+      "required": ["authorName", "photoUrl", "character", "series", "event", "createdAt"]
+    },
+    "SyncLog": {
+      "title": "SyncLog",
+      "description": "Log of Google Sheets and Google Form sync events",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique log id"
+        },
+        "spreadsheetId": {
+          "type": "string",
+          "description": "Google Spreadsheet ID",
+          "maxLength": 120
+        },
+        "importedCount": {
+          "type": "number",
+          "description": "Number of rows synced"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source of trigger (manual_sync, webhook, auto_poll)",
+          "maxLength": 50
+        },
+        "syncedAt": {
+          "type": "string",
+          "description": "Timestamp of sync"
+        }
+      },
+      "required": ["id", "importedCount", "source", "syncedAt"]
+    }
+  },
+  "firestore": {
+    "/members/{memberId}": {
+      "schema": {
+        "$ref": "#/entities/Member"
+      },
+      "description": "Registered MyKCC community members with 16-digit User ID"
+    },
+    "/photos/{photoId}": {
+      "schema": {
+        "$ref": "#/entities/Photo"
+      },
+      "description": "MyKCC community cosplay gallery photos"
+    },
+    "/sync_logs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/SyncLog"
+      },
+      "description": "Real-time sync activity logs from Google Form and spreadsheet"
+    }
+  }
+}

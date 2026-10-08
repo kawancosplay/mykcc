@@ -1,0 +1,6 @@
+{
+  "name": "KawanCosplay Member Portal",
+  "description": "KawanCosplay Community registration form, real-time member sync, Google Sheets import, and community membership management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

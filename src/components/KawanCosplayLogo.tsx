@@ -36,9 +36,9 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
   }, [desktopLogoUrl, mobileLogoUrl]);
 
   const iconDimensions = {
-    sm: 'w-[80px] h-[80px] md:w-[96px] md:h-[96px]',
-    md: 'w-24 h-24 sm:w-28 sm:h-28',
-    lg: 'w-40 h-40',
+    sm: 'w-[80px] h-full',
+    md: 'w-[180px] h-auto', // Reduced from 220px
+    lg: 'w-[240px] h-auto', // Reduced from 300px
   }[size];
 
   const logoTitle = theme?.logo?.title || 'MyKCC';
@@ -54,7 +54,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
           <img
             src={logoSrc}
             alt="Logo"
-            className={`${noContainer ? iconDimensions : 'w-full h-full'} object-contain ${noContainer ? '' : 'rounded-2xl border border-rose-500/40 shadow-md'}`}
+            className={`${noContainer ? iconDimensions : 'w-full h-full max-h-full'} object-contain`}
           />
         ) : customLogoUrl ? (
           <img

@@ -38,6 +38,28 @@ export default function App() {
   const [members, setMembers] = useState<Member[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // If at or above the top, always show navbar
+      if (currentScrollY <= 0) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
 
   const { theme, setIsEditorOpen } = useSiteTheme();
 
@@ -352,7 +374,7 @@ export default function App() {
       </div>
 
       {/* Sticky Header Container */}
-      <div className="sticky top-0 z-50">
+      <div className={`sticky top-0 z-50 transition-transform duration-500 ease-in-out ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         {/* Official Government-Style Verification Header */}
         <OfficialGovBanner currentLang={currentLang} />
 
@@ -367,6 +389,7 @@ export default function App() {
           memberCount={members.length}
           currentLang={currentLang}
           onSelectLang={(lang) => setCurrentLang(lang)}
+          isVisible={isVisible}
         />
       </div>
 

@@ -30,6 +30,7 @@ interface NavbarProps {
   memberCount: number;
   currentLang: LanguageCode;
   onSelectLang: (lang: LanguageCode) => void;
+  isVisible: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -41,133 +42,67 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   currentLang,
   onSelectLang,
+  isVisible,
 }) => {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isWidthSmall, setIsWidthSmall] = useState(false);
   const navbarRef = useRef<HTMLElement>(null);
   const { setIsEditorOpen } = useSiteTheme();
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const currentLangMeta = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        setIsWidthSmall(entry.contentRect.width < 768);
-      }
-    });
-
-    if (navbarRef.current) {
-      resizeObserver.observe(navbarRef.current);
-    }
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  const shouldShrink = (isScrolled && !isExpanded) || isWidthSmall;
+  const shouldShrink = false;
 
   return (
     <header
       ref={navbarRef}
-      className={`sticky top-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-rose-500/20 text-slate-100 shadow-xl transition-all duration-300 ${shouldShrink ? 'py-1' : 'py-2'}`}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-      onTouchStart={() => setIsExpanded(true)}
-      onTouchEnd={() => setIsExpanded(false)}
+      className={`fixed top-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-rose-500/20 text-slate-100 shadow-xl py-1 transition-transform duration-500 ease-in-out ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}
     >
       <div className="max-w-[100rem] mx-auto px-1 md:px-2">
-        <div className={`flex items-center w-full justify-between gap-1 transition-all duration-300 ${shouldShrink ? 'h-12 md:h-14' : 'h-16 md:h-20'}`}>
+        <div className="flex items-center w-full justify-between gap-1 h-12 md:h-14">
           <div
-            className="cursor-pointer group flex items-center shrink-0"
+            className="cursor-pointer group flex items-center shrink-0 mt-1"
             onClick={() => setActiveTab('form')}
           >
             <KawanCosplayLogo
-              size={shouldShrink ? 'sm' : 'md'}
+              size="md"
               showText={false}
-              desktopLogoUrl="https://drive.google.com/drive-viewer/AKGpihYVfb6Fe6Wd3fjp-Rw4vXHGDZI463a97MLDFqVMSQlJnIzEidb5DtYwte6ixM0oKhRDvZQFl44KvF-GF3qpfffpPqlVOvM43vo=w2864-h1536-rw-v1?auditContext=forDisplay"
-              mobileLogoUrl="https://drive.google.com/drive-viewer/AKGpihaHQE1zU4KxDHywFAmpAVKPjm3iI-9h6JchiuKGfZzO2m77KbfJxjKurVxw1QYfRNsLHJaHy4tMISdnztT47m7HmRArNCLHiSc=w2864-h1536-rw-v1?auditContext=forDisplay"
+              desktopLogoUrl="https://i.postimg.cc/kg52x8yb/Logo-Kawan-Cosplay-Community-Redesigned.png"
+              mobileLogoUrl="https://i.postimg.cc/sXbd1FgB/Logo-Kawan-Cosplay-Community-Redesigned-Alt.png"
             />
           </div>
 
           <div className="hidden md:flex flex-grow items-center justify-center min-w-0 px-1">
-            <nav className="flex items-center gap-1 lg:gap-4 bg-slate-900/70 backdrop-blur-md p-1.5 rounded-2xl border border-purple-400/20 text-xs font-semibold shadow-inner">
+            <nav className="flex items-center gap-8 text-sm font-medium text-slate-300">
               <button
                 onClick={() => setActiveTab('form')}
-                className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
-                  activeTab === 'form'
-                    ? 'bg-gradient-to-r from-purple-600 to-rose-600 text-white shadow-md font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                className={`transition-colors hover:text-white ${activeTab === 'form' ? 'text-white' : ''}`}
               >
-                <Sparkles className="w-4 h-4 text-rose-300 shrink-0" />
-                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'form' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navForm}</span>
+                {t.navForm}
               </button>
 
               <button
                 onClick={() => setActiveTab('card')}
-                className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
-                  activeTab === 'card'
-                    ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                className={`transition-colors hover:text-white ${activeTab === 'card' ? 'text-white' : ''}`}
               >
-                <IdCard className="w-4 h-4 text-indigo-300 shrink-0" />
-                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'card' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navCard}</span>
+                {t.navCard}
               </button>
 
               <button
                 onClick={() => setActiveTab('gallery')}
-                className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
-                  activeTab === 'gallery'
-                    ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-md font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                }`}
+                className={`transition-colors hover:text-white ${activeTab === 'gallery' ? 'text-white' : ''}`}
               >
-                <Camera className="w-4 h-4 text-pink-400 shrink-0" />
-                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'gallery' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navGallery}</span>
+                {t.navGallery}
               </button>
 
               {currentMember && (
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
-                    activeTab === 'profile'
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-bold'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
+                  className={`transition-colors hover:text-white ${activeTab === 'profile' ? 'text-white' : ''}`}
                 >
-                  <UserIcon className="w-4 h-4 text-purple-300 shrink-0" />
-                  <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'profile' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navProfile}</span>
+                  {t.navProfile}
                 </button>
               )}
-
-              <div className="h-4 w-px bg-slate-700/80 mx-1" />
-
-              <button
-                onClick={() => {
-                  setActiveTab('admin');
-                  window.location.hash = 'admin';
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 lg:px-3 py-2 rounded-xl text-xs transition-all duration-200 group ${
-                  activeTab === 'admin'
-                    ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-md font-bold'
-                    : 'text-amber-300 hover:text-amber-100 hover:bg-amber-950/40'
-                }`}
-                title="Admin Dashboard (Password Protected)"
-              >
-                <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'admin' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navAdmin}</span>
-              </button>
             </nav>
           </div>
 
@@ -182,29 +117,23 @@ export const Navbar: React.FC<NavbarProps> = ({
               href="https://wa.me/6285711032782"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 bg-slate-900/80 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 hover:text-emerald-200 rounded-xl transition-all shadow-sm"
+              className="p-2 text-slate-300 hover:text-white transition-colors"
               title="Official WhatsApp Hotline: +62 857-1103-2782"
             >
-              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <MessageCircle className="w-5 h-5" />
             </a>
 
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-slate-900/80 hover:bg-slate-800 border border-purple-400/25 hover:border-purple-400/50 rounded-xl text-xs text-slate-200 hover:text-white transition-all shadow-sm"
+                className="text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase"
                 title={`Pilih Bahasa (${currentLangMeta.nativeName})`}
               >
-                <Globe className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                <span className="font-mono font-bold text-xs uppercase">{currentLang}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+                {currentLang}
               </button>
-
               {isLangMenuOpen && (
-                <div className="absolute right-0 mt-2 w-60 max-h-80 overflow-y-auto bg-slate-900/95 backdrop-blur-xl border border-purple-500/30 rounded-2xl shadow-2xl p-1.5 z-50 animate-fade-in text-xs">
-                  <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Pilih Bahasa (20 Languages)
-                  </div>
+                <div className="absolute right-0 mt-4 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-1 z-50 animate-fade-in text-sm text-slate-900">
                   {LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}
@@ -212,14 +141,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                         onSelectLang(lang.code);
                         setIsLangMenuOpen(false);
                       }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
+                      className={`w-full text-left px-4 py-2 rounded-xl transition-colors ${
                         currentLang === lang.code
-                          ? 'bg-rose-600 text-white font-bold'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          ? 'bg-slate-100 font-bold'
+                          : 'hover:bg-slate-50'
                       }`}
                     >
-                      <span>{lang.nativeName}</span>
-                      <span className="text-[10px] text-slate-400 uppercase font-mono">{lang.code}</span>
+                      {lang.nativeName}
                     </button>
                   ))}
                 </div>
@@ -229,10 +157,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => setIsEditorOpen(true)}
-              className="p-2 bg-slate-900/80 hover:bg-slate-800 border border-purple-400/30 text-purple-200 hover:text-white rounded-xl transition-all shadow-sm"
-              title={currentLang === 'id' ? 'Editor Tampilan Situs (Layout, Warna, Font, Logo)' : 'Site Editor (Layout, Colors, Font, Logo)'}
+              className="p-2 text-slate-300 hover:text-white transition-colors"
+              title={currentLang === 'id' ? 'Editor Tampilan Situs' : 'Site Editor'}
             >
-              <Palette className="w-4 h-4 text-pink-300 shrink-0" />
+              <Palette className="w-5 h-5" />
             </button>
             
             <div className="hidden md:block">
@@ -240,45 +168,39 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {user || currentMember ? (
-              <div className="flex items-center gap-1.5 bg-slate-900/80 border border-purple-400/25 rounded-xl p-1">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className="flex items-center gap-1.5 px-1 hover:opacity-85 transition-opacity"
-                  title="Lihat Profil Anda / View Profile"
+                  className="flex items-center gap-2 hover:opacity-85 transition-opacity"
                 >
                   {currentMember?.avatarUrl || user?.photoURL ? (
                     <img
                       src={currentMember?.avatarUrl || user?.photoURL || ''}
                       alt={currentMember?.cosplayName || user?.displayName || 'User'}
-                      className="w-6 h-6 rounded-full border border-rose-500/50 object-cover"
+                      className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-rose-500/30 flex items-center justify-center text-[11px] font-bold text-rose-300">
+                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white">
                       {(currentMember?.cosplayName || user?.displayName || 'U')[0].toUpperCase()}
                     </div>
                   )}
-
-                  <span className="hidden xl:inline text-xs font-bold text-white max-w-[80px] truncate">
-                    {currentMember?.cosplayName || user?.displayName || 'Member'}
-                  </span>
                 </button>
 
                 <button
                   onClick={onLogout}
                   title={t.navLogout}
-                  className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                  className="p-2 text-slate-400 hover:text-white transition-colors"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={onOpenAuth}
-                className="bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all shadow-sm inline-flex items-center gap-1.5"
+                className="bg-white hover:bg-slate-100 text-slate-900 font-medium text-sm px-4 py-2 rounded-full transition-all"
               >
-                <UserIcon className="w-3.5 h-3.5 shrink-0" />
-                <span>{t.navLogin}</span>
+                {t.navLogin}
               </button>
             )}
           </div>

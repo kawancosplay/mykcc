@@ -17,8 +17,6 @@ import {
   signUpWithEmail,
   loginWithEmail,
   loginWithGoogleOAuth,
-  loginWithAppleOAuth,
-  loginWithMicrosoftOAuth,
   resetPassword,
 } from '../lib/authService';
 import { format16DigitUserId } from '../lib/idGenerator';
@@ -111,42 +109,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleAppleLogin = async () => {
-    setErrorMsg(null);
-    setIsLoading(true);
-    try {
-      const { user, member } = await loginWithAppleOAuth();
-      onAuthSuccess(user, member);
-      onClose();
-    } catch (err: unknown) {
-      console.warn('Apple auth note:', err);
-      setErrorMsg('Login dengan Apple ID memerlukan konfigurasi domain live.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMicrosoftLogin = async () => {
-    setErrorMsg(null);
-    setIsLoading(true);
-    try {
-      const { user, member } = await loginWithMicrosoftOAuth();
-      onAuthSuccess(user, member);
-      onClose();
-    } catch (err: unknown) {
-      console.warn('Microsoft auth note:', err);
-      setErrorMsg('Login dengan akun Microsoft memerlukan konfigurasi Azure OAuth.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInstagramLogin = () => {
-    alert(
-      'Instagram Login: Mengarahkan ke autentikasi Instagram Graph API. Silakan lanjutkan dengan Google atau Email untuk akses instan langsung ke database KawanCosplay.'
-    );
   };
 
   return (

@@ -6,6 +6,7 @@ import {
   OAuthProvider,
   updateProfile,
   User,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -20,6 +21,10 @@ import {
 import { addMemberToFirestore } from './firestoreService';
 
 const googleProvider = new GoogleAuthProvider();
+
+export async function resetPassword(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email);
+}
 
 export async function signUpWithEmail(email: string, password: string, fullName: string, cosplayName: string): Promise<{ user: User; member: Member }> {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);

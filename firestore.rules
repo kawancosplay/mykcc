@@ -22,7 +22,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'cosplaysehat@gmail.com' && request.auth.token.email_verified == true;
+      return isSignedIn() && (request.auth.token.email == 'cosplaysehat@gmail.com' || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
     }
 
     function isValidMember(data) {
@@ -79,6 +79,10 @@ service cloud.firestore {
       allow get, list: if true;
       allow create: if isValidId(logId);
       allow update, delete: if isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read, write: if isAdmin();
     }
 
     match /siteSettings/{documentId} {

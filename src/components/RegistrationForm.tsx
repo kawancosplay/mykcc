@@ -43,6 +43,7 @@ interface RegistrationFormProps {
   onRegistered: (newMember: Member) => void;
   onOpenCardModal: (member: Member) => void;
   currentLang: LanguageCode;
+  isAdmin?: boolean;
 }
 
 const PRESET_AVATARS = [
@@ -124,6 +125,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   onRegistered,
   onOpenCardModal,
   currentLang,
+  isAdmin = false,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const ft = getFormTranslation(currentLang);
@@ -226,12 +228,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setErrorMsg(null);
     setIsDuplicateShared(false);
 
-    // PRIVACY ENFORCEMENT: Name and WhatsApp Mobile Number are required (community is WhatsApp-based)
+    // PRIVACY ENFORCEMENT: Name, Email, and WhatsApp Mobile Number are required (community is WhatsApp-based)
     if (!dataToSubmit.cosplayName.trim()) {
       setErrorMsg(
         isId
           ? 'Mohon isi Nama Panggung / Cosname / Nama Samaran Anda.'
           : 'Please provide your Cosplay Name / Alias / Stage Name.'
+      );
+      return;
+    }
+
+    if (!dataToSubmit.email.trim()) {
+      setErrorMsg(
+        isId
+          ? 'Mohon isi alamat email aktif Anda.'
+          : 'Email address is required.'
       );
       return;
     }
@@ -597,12 +608,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
       )}
 
-      {/* DEMO FORM TESTING SANDBOX */}
-      <DemoFormTester
-        onFillDemo={handleFillDemo}
-        existingMembers={existingMembers || []}
-        isId={isId}
-      />
+      {/* DEMO FORM TESTING SANDBOX (RESTRICTED TO ADMINS) */}
+      {isAdmin && (
+        <DemoFormTester
+          onFillDemo={handleFillDemo}
+          existingMembers={existingMembers || []}
+          isId={isId}
+        />
+      )}
 
       {/* Sandbox Active Banner when filling demo */}
       {isDemoMode && (

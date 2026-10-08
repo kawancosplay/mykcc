@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSiteTheme } from '../lib/themeContext';
 import { Crown, Shield, Heart, Sparkles } from 'lucide-react';
 
@@ -7,6 +7,8 @@ interface KawanCosplayLogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
   noContainer?: boolean;
+  desktopLogoUrl?: string;
+  mobileLogoUrl?: string;
 }
 
 export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
@@ -14,10 +16,27 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
   size = 'md',
   showText = true,
   noContainer = false,
+  desktopLogoUrl,
+  mobileLogoUrl,
 }) => {
   const { theme } = useSiteTheme();
+  const [logoSrc, setLogoSrc] = useState(desktopLogoUrl);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setLogoSrc(mobileLogoUrl || desktopLogoUrl);
+      } else {
+        setLogoSrc(desktopLogoUrl);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, [desktopLogoUrl, mobileLogoUrl]);
+
   const iconDimensions = {
-    sm: 'w-16 h-16',
+    sm: 'w-[80px] h-[80px] md:w-[96px] md:h-[96px]',
     md: 'w-24 h-24 sm:w-28 sm:h-28',
     lg: 'w-40 h-40',
   }[size];
@@ -31,7 +50,13 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
     <div className={`flex items-center space-x-3 select-none ${className}`}>
       {/* Official KawanCosplay Vector Emblem or Custom Logo */}
       <div className={`relative ${noContainer ? '' : iconDimensions} shrink-0`}>
-        {customLogoUrl ? (
+        {(logoSrc) ? (
+          <img
+            src={logoSrc}
+            alt="Logo"
+            className={`${noContainer ? iconDimensions : 'w-full h-full'} object-contain ${noContainer ? '' : 'rounded-2xl border border-rose-500/40 shadow-md'}`}
+          />
+        ) : customLogoUrl ? (
           <img
             src={customLogoUrl}
             alt="Logo"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
 import {
   Sparkles,
@@ -11,11 +11,14 @@ import {
   ShieldCheck,
   MessageCircle,
   Palette,
+  Menu,
+  X,
 } from 'lucide-react';
 import { Member } from '../types';
 import { LanguageCode, LANGUAGES, TRANSLATIONS } from '../lib/i18n';
 import { KawanCosplayLogo } from './KawanCosplayLogo';
 import { useSiteTheme } from '../lib/themeContext';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavbarProps {
   activeTab: 'form' | 'card' | 'gallery' | 'profile' | 'admin';
@@ -40,84 +43,122 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectLang,
 }) => {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isWidthSmall, setIsWidthSmall] = useState(false);
+  const navbarRef = useRef<HTMLElement>(null);
   const { setIsEditorOpen } = useSiteTheme();
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const currentLangMeta = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setIsWidthSmall(entry.contentRect.width < 768);
+      }
+    });
+
+    if (navbarRef.current) {
+      resizeObserver.observe(navbarRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  const shouldShrink = (isScrolled && !isExpanded) || isWidthSmall;
+
   return (
-    <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-rose-500/20 text-slate-100 shadow-xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo & Brand: Official KawanCosplay Logo */}
+    <header
+      ref={navbarRef}
+      className={`sticky top-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-rose-500/20 text-slate-100 shadow-xl transition-all duration-300 ${shouldShrink ? 'py-1' : 'py-2'}`}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+      onTouchStart={() => setIsExpanded(true)}
+      onTouchEnd={() => setIsExpanded(false)}
+    >
+      <div className="max-w-[100rem] mx-auto px-1 md:px-2">
+        <div className={`flex items-center w-full justify-between gap-1 transition-all duration-300 ${shouldShrink ? 'h-12 md:h-14' : 'h-16 md:h-20'}`}>
           <div
-            className="cursor-pointer group flex items-center"
+            className="cursor-pointer group flex items-center shrink-0"
             onClick={() => setActiveTab('form')}
           >
-            <KawanCosplayLogo size="lg" showText={false} noContainer={true} />
+            <KawanCosplayLogo
+              size={shouldShrink ? 'sm' : 'md'}
+              showText={false}
+              desktopLogoUrl="https://drive.google.com/drive-viewer/AKGpihYVfb6Fe6Wd3fjp-Rw4vXHGDZI463a97MLDFqVMSQlJnIzEidb5DtYwte6ixM0oKhRDvZQFl44KvF-GF3qpfffpPqlVOvM43vo=w2864-h1536-rw-v1?auditContext=forDisplay"
+              mobileLogoUrl="https://drive.google.com/drive-viewer/AKGpihaHQE1zU4KxDHywFAmpAVKPjm3iI-9h6JchiuKGfZzO2m77KbfJxjKurVxw1QYfRNsLHJaHy4tMISdnztT47m7HmRArNCLHiSc=w2864-h1536-rw-v1?auditContext=forDisplay"
+            />
           </div>
 
-          {/* Navigation Tabs (Unified Sleek Glass Pill) */}
-          <div className="hidden lg:flex items-center">
-            <nav className="flex items-center gap-4 bg-slate-900/70 backdrop-blur-md p-1.5 rounded-2xl border border-purple-400/20 text-xs font-semibold shadow-inner">
+          <div className="hidden md:flex flex-grow items-center justify-center min-w-0 px-1">
+            <nav className="flex items-center gap-1 lg:gap-4 bg-slate-900/70 backdrop-blur-md p-1.5 rounded-2xl border border-purple-400/20 text-xs font-semibold shadow-inner">
               <button
                 onClick={() => setActiveTab('form')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
                   activeTab === 'form'
                     ? 'bg-gradient-to-r from-purple-600 to-rose-600 text-white shadow-md font-bold'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
                 <Sparkles className="w-4 h-4 text-rose-300 shrink-0" />
-                <span>{t.navForm}</span>
+                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'form' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navForm}</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('card')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
                   activeTab === 'card'
                     ? 'bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-md font-bold'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
                 <IdCard className="w-4 h-4 text-indigo-300 shrink-0" />
-                <span>{t.navCard}</span>
+                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'card' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navCard}</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('gallery')}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
                   activeTab === 'gallery'
                     ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-md font-bold'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
                 <Camera className="w-4 h-4 text-pink-400 shrink-0" />
-                <span>{t.navGallery}</span>
+                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'gallery' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navGallery}</span>
               </button>
 
               {currentMember && (
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 group ${
                     activeTab === 'profile'
                       ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-bold'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
                   <UserIcon className="w-4 h-4 text-purple-300 shrink-0" />
-                  <span>{t.navProfile}</span>
+                  <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'profile' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navProfile}</span>
                 </button>
               )}
 
               <div className="h-4 w-px bg-slate-700/80 mx-1" />
 
-              {/* Integrated Admin Button */}
               <button
                 onClick={() => {
                   setActiveTab('admin');
                   window.location.hash = 'admin';
                 }}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs transition-all duration-200 ${
+                className={`inline-flex items-center gap-1 px-2.5 lg:px-3 py-2 rounded-xl text-xs transition-all duration-200 group ${
                   activeTab === 'admin'
                     ? 'bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-md font-bold'
                     : 'text-amber-300 hover:text-amber-100 hover:bg-amber-950/40'
@@ -125,14 +166,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Admin Dashboard (Password Protected)"
               >
                 <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Admin</span>
+                <span className={`transition-all duration-200 overflow-hidden whitespace-nowrap ${activeTab === 'admin' ? 'max-w-none opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100'}`}>{t.navAdmin}</span>
               </button>
             </nav>
           </div>
 
-          {/* Right Actions: Compact & Spacious Utility Cluster */}
-          <div className="flex items-center gap-2">
-            {/* WhatsApp Hotline quick icon button */}
+          <div className={`flex items-center justify-end gap-2 shrink-0 transition-transform duration-300 ${shouldShrink ? 'scale-90' : 'scale-100'}`}>
+            <button
+              className="md:hidden p-2 bg-slate-900/80 hover:bg-slate-800 border border-purple-400/30 text-purple-200 rounded-xl transition-all shadow-sm"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
             <a
               href="https://wa.me/6285711032782"
               target="_blank"
@@ -143,7 +188,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
             </a>
 
-            {/* Multi-language Dropdown (Compact 2-letter Code Badge) */}
             <div className="relative">
               <button
                 type="button"
@@ -182,7 +226,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Site Editor button */}
             <button
               type="button"
               onClick={() => setIsEditorOpen(true)}
@@ -191,8 +234,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Palette className="w-4 h-4 text-pink-300 shrink-0" />
             </button>
+            
+            <div className="hidden md:block">
+              <PWAInstallButton />
+            </div>
 
-            {/* Auth Button or Member Profile */}
             {user || currentMember ? (
               <div className="flex items-center gap-1.5 bg-slate-900/80 border border-purple-400/25 rounded-xl p-1">
                 <button
@@ -237,85 +283,29 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
         </div>
-
-        {/* Mobile Navigation Bar & Separate Admin Menu */}
-        <div className="flex lg:hidden items-center justify-between py-1.5 border-t border-purple-500/20 text-[11px] gap-1 overflow-x-auto">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setActiveTab('form')}
-              className={`inline-flex items-center gap-1 py-1 px-2.5 rounded-lg transition-colors ${
-                activeTab === 'form'
-                  ? 'bg-purple-600/30 text-rose-300 font-bold border border-rose-500/30'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t.navForm}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('card')}
-              className={`inline-flex items-center gap-1 py-1 px-2.5 rounded-lg transition-colors ${
-                activeTab === 'card'
-                  ? 'bg-rose-600/30 text-rose-300 font-bold border border-rose-500/30'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <IdCard className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t.navCard}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('gallery')}
-              className={`inline-flex items-center gap-1 py-1 px-2.5 rounded-lg transition-colors ${
-                activeTab === 'gallery'
-                  ? 'bg-pink-600/30 text-pink-300 font-bold border border-pink-500/30'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Camera className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t.navGallery}</span>
-            </button>
-            {currentMember && (
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`inline-flex items-center gap-1 py-1 px-2.5 rounded-lg transition-colors ${
-                  activeTab === 'profile'
-                    ? 'bg-purple-600/30 text-purple-300 font-bold border border-purple-500/30'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                <UserIcon className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t.navProfile}</span>
-              </button>
-            )}
+        
+        {isMobileMenuOpen && (
+          <div className="md:hidden mt-2 p-2 bg-slate-900/95 backdrop-blur-xl border border-purple-500/30 rounded-2xl shadow-2xl animate-fade-in text-xs flex flex-col gap-1">
+             <button onClick={() => { setActiveTab('form'); setIsMobileMenuOpen(false); }} className={`flex items-center gap-2 p-2 rounded-lg ${activeTab === 'form' ? 'bg-purple-600/30 text-rose-300' : 'text-slate-300'}`}>
+               <Sparkles className="w-4 h-4" /> {t.navForm}
+             </button>
+             <button onClick={() => { setActiveTab('card'); setIsMobileMenuOpen(false); }} className={`flex items-center gap-2 p-2 rounded-lg ${activeTab === 'card' ? 'bg-rose-600/30 text-rose-300' : 'text-slate-300'}`}>
+               <IdCard className="w-4 h-4" /> {t.navCard}
+             </button>
+             <button onClick={() => { setActiveTab('gallery'); setIsMobileMenuOpen(false); }} className={`flex items-center gap-2 p-2 rounded-lg ${activeTab === 'gallery' ? 'bg-pink-600/30 text-pink-300' : 'text-slate-300'}`}>
+               <Camera className="w-4 h-4" /> {t.navGallery}
+             </button>
+             {currentMember && (
+               <button onClick={() => { setActiveTab('profile'); setIsMobileMenuOpen(false); }} className={`flex items-center gap-2 p-2 rounded-lg ${activeTab === 'profile' ? 'bg-purple-600/30 text-purple-300' : 'text-slate-300'}`}>
+                 <UserIcon className="w-4 h-4" /> {t.navProfile}
+               </button>
+             )}
+             <div className="p-2">
+               <PWAInstallButton />
+             </div>
           </div>
+        )}
 
-          {/* Separate Admin Menu Button on Mobile */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setIsEditorOpen(true)}
-              className="inline-flex items-center gap-1 py-1 px-2 rounded-lg border border-purple-500/30 bg-purple-950/50 text-purple-200 text-[10px] font-semibold"
-              title="Editor Tampilan Situs"
-            >
-              <Palette className="w-3 h-3 text-pink-400" />
-              <span>Tema</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('admin');
-                window.location.hash = 'admin';
-              }}
-              className={`inline-flex items-center gap-1 py-1 px-2.5 rounded-lg border transition-colors shrink-0 ${
-                activeTab === 'admin'
-                  ? 'bg-amber-500/30 text-amber-200 border-amber-400 font-bold'
-                  : 'bg-amber-950/50 text-amber-300 border-amber-500/30 hover:bg-amber-900/50'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>Admin</span>
-            </button>
-          </div>
-        </div>
       </div>
     </header>
   );

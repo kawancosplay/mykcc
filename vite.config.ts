@@ -2,10 +2,30 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), VitePWA({
+      registerType: 'autoUpdate',
+      manifest: {
+        id: '/',
+        name: 'MyKCC - KawanCosplay Community Member Portal',
+        short_name: 'MyKCC',
+        description: 'MyKCC - KawanCosplay Community official registration',
+        theme_color: '#020617', // slate-950
+        background_color: '#020617',
+        display: 'standalone',
+        start_url: '/',
+        scope: '/',
+      },
+      devOptions: {
+        enabled: true,
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
+      },
+    })],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

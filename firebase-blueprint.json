@@ -234,6 +234,22 @@
       },
       "description": "MyKCC community cosplay gallery photos"
     },
+    "/admins/{uid}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": ["email"]
+      },
+      "description": "Dynamic admin roles"
+    },
     "/sync_logs/{logId}": {
       "schema": {
         "$ref": "#/entities/SyncLog"

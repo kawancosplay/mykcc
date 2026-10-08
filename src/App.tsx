@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { User } from 'firebase/auth';
-import { Navbar } from './components/Navbar';
-import { RegistrationForm } from './components/RegistrationForm';
-import { MemberCardModal } from './components/MemberCardModal';
-import { PhotoGallery } from './components/PhotoGallery';
-import { UploadPhotoModal } from './components/UploadPhotoModal';
-import { AuthModal } from './components/AuthModal';
-import { UserProfile } from './components/UserProfile';
-import { OfficialGovBanner } from './components/OfficialGovBanner';
-import { AdminDashboard } from './components/AdminDashboard';
+const Navbar = lazy(() => import('./components/Navbar').then(m => ({ default: m.Navbar })));
+const RegistrationForm = lazy(() => import('./components/RegistrationForm').then(m => ({ default: m.RegistrationForm })));
+const MemberCardModal = lazy(() => import('./components/MemberCardModal').then(m => ({ default: m.MemberCardModal })));
+const PhotoGallery = lazy(() => import('./components/PhotoGallery').then(m => ({ default: m.PhotoGallery })));
+const UploadPhotoModal = lazy(() => import('./components/UploadPhotoModal').then(m => ({ default: m.UploadPhotoModal })));
+const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
+const UserProfile = lazy(() => import('./components/UserProfile').then(m => ({ default: m.UserProfile })));
+const OfficialGovBanner = lazy(() => import('./components/OfficialGovBanner').then(m => ({ default: m.OfficialGovBanner })));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const SiteEditorModal = lazy(() => import('./components/SiteEditorModal').then(m => ({ default: m.SiteEditorModal })));
+
 import { Member, Photo, SyncLog } from './types';
 import { initAuth, logout } from './lib/googleAuth';
 import {
@@ -24,7 +26,6 @@ import {
 import { findMemberByEmail } from './lib/authService';
 import { format16DigitUserId } from './lib/idGenerator';
 import { LanguageCode, TRANSLATIONS, LANGUAGES } from './lib/i18n';
-import { SiteEditorModal } from './components/SiteEditorModal';
 import { useSiteTheme } from './lib/themeContext';
 import { Sparkles, IdCard, Search, MessageCircle, ShieldCheck, CheckCircle2, Lock, Palette } from 'lucide-react';
 
@@ -243,10 +244,11 @@ export default function App() {
   // DEDICATED SEPARATE PAGE: ADMIN DASHBOARD (RESTRICTED & PASSWORD PROTECTED)
   if (activeTab === 'admin') {
     return (
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">Loading Admin...</div>}>
       <div
         dir={isRtl ? 'rtl' : 'ltr'}
         style={getBgStyle()}
-        className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative overflow-x-hidden"
+        className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
       >
         {/* Liquid Glass Background Caustics */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -330,15 +332,17 @@ export default function App() {
         />
         <SiteEditorModal />
       </div>
+      </Suspense>
     );
   }
 
   // PUBLIC SITE LAYOUT (ZERO ACCESS TO MEMBER LIST FOR ALL MEMBERS)
   return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">Loading App...</div>}>
     <div
       dir={isRtl ? 'rtl' : 'ltr'}
       style={getBgStyle()}
-      className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative overflow-x-hidden"
+      className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
     >
       {/* Liquid Glass Background Caustics & Bright Purple-ish Fluent Ambient Light */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -347,21 +351,24 @@ export default function App() {
         <div className="absolute -bottom-32 left-1/4 w-[700px] h-[700px] rounded-full bg-gradient-to-tr from-fuchsia-500/20 via-purple-600/20 to-transparent blur-[160px] animate-fluid-3"></div>
       </div>
 
-      {/* Official Government-Style Verification Header */}
-      <OfficialGovBanner currentLang={currentLang} />
+      {/* Sticky Header Container */}
+      <div className="sticky top-0 z-50">
+        {/* Official Government-Style Verification Header */}
+        <OfficialGovBanner currentLang={currentLang} />
 
-      {/* Main Navbar with Multi-Language selector (No public admin directory!) */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        user={user}
-        currentMember={currentMember}
-        onOpenAuth={() => setIsAuthModalOpen(true)}
-        onLogout={handleLogout}
-        memberCount={members.length}
-        currentLang={currentLang}
-        onSelectLang={(lang) => setCurrentLang(lang)}
-      />
+        {/* Main Navbar with Multi-Language selector (No public admin directory!) */}
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          user={user}
+          currentMember={currentMember}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onLogout={handleLogout}
+          memberCount={members.length}
+          currentLang={currentLang}
+          onSelectLang={(lang) => setCurrentLang(lang)}
+        />
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16 relative z-10">
@@ -376,6 +383,7 @@ export default function App() {
             }}
             onOpenCardModal={handleOpenCard}
             currentLang={currentLang}
+            isAdmin={user?.email === 'cosplaysehat@gmail.com'}
           />
         )}
 
@@ -604,5 +612,6 @@ export default function App() {
         </div>
       </footer>
     </div>
+    </Suspense>
   );
 }

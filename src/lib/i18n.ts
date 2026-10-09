@@ -92,7 +92,7 @@ export interface TranslationDictionary {
   submitButton: string;
   clearForm: string;
   responseRecorded: string;
-  viewMyKta: string;
+  viewMyKccId: string;
   submitAnother: string;
   userId16Label: string;
   galleryTitle: string;
@@ -131,14 +131,14 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
     appName: 'MyKCC',
     tagline: 'Komunitas Pop Culture, Cosplay & Wota Global (100% SFW)',
     navForm: 'Form Pendaftaran',
-    navCard: 'KTA Digital Saya',
+    navCard: 'KCC ID Saya',
     navGallery: 'Galeri Cosplay',
     navProfile: 'Profil Saya',
     navAdmin: 'Dashboard Admin',
     navLogin: 'Masuk / Daftar',
     navLogout: 'Keluar',
     formTitle: 'Formulir Pendaftaran Anggota Baru KawanCosplay',
-    formDesc: 'Selamat datang di KawanCosplay! Komunitas terbuka untuk semua kalangan: cosplayer, wota / idol fan, otaku anime & game, hingga masyarakat umum & sahabat komunitas. Pendaftaran aman, privat, langsung dapat 16-Digit KCC ID dan KTA resmi!',
+    formDesc: 'Selamat datang di KawanCosplay Community (KCC), komunitas cosplay internasional yang 100% SFW. Bagian dari KawanCosplay Group, yang terdiri dari KawanCosplay Media dan KawanCosplay Community. KCC adalah grup WhatsApp dan server Discord yang dibuat oleh KawanCosplay. Awalnya dibuat sebagai forum pertemuan sosial bagi cosplayer yang berkolaborasi dengan KawanCosplay di Instagram, sekarang terbuka untuk siapa saja yang tertarik dengan dunia cosplay, baik cosplayer maupun bukan. Didirikan pada 30 Juni 2025. Jangan ragu untuk menjadi bagian dari kami dan berinteraksi dengan anggota kami di grup WhatsApp dan/atau server Discord. Anggota internasional diterima, terlepas dari agama, ras, dan bahasa Anda. Untuk memastikan keamanan dan mencegah penyalahgunaan, silakan isi formulir untuk bergabung dengan komunitas kami. Tautan grup WhatsApp tersedia setelah Anda mengirim formulir. Oleh karena itu, jangan tutup tab ini setelah Anda selesai mengisi formulir. Namun, server Discord hanya tersedia setelah Anda bergabung dengan grup WhatsApp. Jika Anda memerlukan bantuan lebih lanjut, silakan DM @kawancosplayers di Instagram atau hubungi hotline kami +62 857-1103-2782 melalui WhatsApp.',
     requiredIndicator: '* Menunjukkan pertanyaan yang wajib diisi',
     namePrivacyNotice: 'Demi menjaga privasi Anda, Anda TIDAK perlu menyertakan nama asli. Nama samaran / cosname / alias sudah sangat cukup.',
     stageOrFakeName: 'Nama Cosplay / Nama Panggung / Nama Samaran (Cosname / Alias)',
@@ -169,9 +169,9 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
     submitButton: 'Kirim Pendaftaran',
     clearForm: 'Kosongkan formulir',
     responseRecorded: 'Tanggapan Anda telah dicatat! Selamat datang di KawanCosplay.',
-    viewMyKta: 'Lihat & Unduh KTA Digital Saya',
+    viewMyKccId: 'Lihat & Unduh KCC ID Saya',
     submitAnother: 'Kirim tanggapan lain',
-    userId16Label: '16-Digit User ID Resmi',
+    userId16Label: 'KCC ID Resmi',
     galleryTitle: 'Galeri Cosplay & Pop Culture',
     galleryDesc: 'Koleksi karya foto resmi anggota KawanCosplay dari berbagai event dan photoshoot',
     uploadPhoto: 'Unggah Foto',
@@ -211,7 +211,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
     navLogin: 'Sign In / Register',
     navLogout: 'Sign Out',
     formTitle: 'KawanCosplay New Member Registration',
-    formDesc: 'Welcome to KawanCosplay! A global community open to everyone: cosplayers, idol fans (wotas), anime & gaming otakus, and general pop-culture friends & supporters. Registration is private, instant, and comes with a 16-Digit KCC ID and official digital pass!',
+    formDesc: 'Welcome to KawanCosplay Community (KCC), the 100% SFW international cosplay community. A part of KawanCosplay Group, which is consists of KawanCosplay Media and KawanCosplay Community. KCC is a WhatsApp group and Discord server made by KawanCosplay. Initially created as a social gathering forum for cosplayers collaborating with KawanCosplay on Instagram, it is now open to anyone interested in the cosplay world, whether you’re a cosplayer or not. Established on 30 June 2025. Please feel free to be part of us and interact with our members on WhatsApp group and/or Discord server. International member are welcome, regardless of your religion, race and language. To ensure security and prevent misuse, please fill out the form to join our community. WhatsApp group link available after you submit the form. Therefore, please do not close this tab once you have finished filling out the form. However, the Discord server is only available after you join the WhatsApp group. Should you require any further assistance, please DM @kawancosplayers on Instagram or contact our hotline +62 857-1103-2782 via WhatsApp.',
     requiredIndicator: '* Indicates required question',
     namePrivacyNotice: 'To protect your privacy, you do NOT need to provide your real name. A fake name, cosplay alias, or stage nickname is completely enough.',
     stageOrFakeName: 'Cosplay Name / Stage Name / Fake Name / Nickname / Alias',
@@ -242,9 +242,9 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
     submitButton: 'Submit Registration',
     clearForm: 'Clear form',
     responseRecorded: 'Your response has been recorded! Welcome to KawanCosplay.',
-    viewMyKta: 'View & Download My Digital Pass',
+    viewMyKccId: 'View & Download My Digital Pass',
     submitAnother: 'Submit another response',
-    userId16Label: 'Official 16-Digit User ID',
+    userId16Label: 'Official KCC ID',
     galleryTitle: 'Community Cosplay & Pop Culture Gallery',
     galleryDesc: 'Official photo showcase by KawanCosplay members across conventions, meetups, and shoots',
     uploadPhoto: 'Upload Photo',

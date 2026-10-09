@@ -200,7 +200,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
             <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari berdasarkan nama, cosname, ID KTA, fandom, atau kota..."
+              placeholder="Search by name, cosname, KCC ID, fandom, or city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 transition-colors"
@@ -389,7 +389,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
                     className="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm"
                   >
                     <IdCard className="w-3.5 h-3.5" />
-                    <span>KTA</span>
+                    <span>KCC ID</span>
                   </button>
 
                   {isAdmin && (
@@ -462,7 +462,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
                         onClick={() => onSelectMember(member)}
                         className="px-2.5 py-1 rounded bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-[11px] font-semibold transition-colors"
                       >
-                        Lihat KTA
+                        View KCC ID
                       </button>
                     </td>
                   </tr>

@@ -84,7 +84,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       avatarUrl: member.avatarUrl || '',
       reason: member.reason || '',
     });
-  }, [member.id]);
+  }, [member]);
 
   // Complete list of all 250 countries and dynamic state/cities
   const allCountries = useMemo(() => getAllCountriesList(), []);
@@ -222,7 +222,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs shadow-md shadow-rose-600/30 inline-flex items-center justify-center gap-1.5 transition-transform active:scale-95"
             >
               <IdCard className="w-3.5 h-3.5" />
-              <span>Lihat Member's ID Card (KTA)</span>
+              <span>View Member's ID Card</span>
             </button>
           </div>
         </div>

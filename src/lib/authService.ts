@@ -141,6 +141,22 @@ export async function loginWithMicrosoftOAuth(): Promise<{ user: User; member: M
   return { user, member };
 }
 
+export async function findMemberByUserId16(userId16: string): Promise<Member | null> {
+  if (!userId16) return null;
+  try {
+    const q = query(collection(db, 'members'), where('userId16', '==', userId16.trim()));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const docSnap = snap.docs[0];
+      const data = docSnap.data() as Omit<Member, 'id'>;
+      return { id: docSnap.id, ...data, userId16 };
+    }
+  } catch (e) {
+    console.warn('findMemberByUserId16 note:', e);
+  }
+  return null;
+}
+
 export async function findMemberByEmail(email: string): Promise<Member | null> {
   if (!email) return null;
   try {

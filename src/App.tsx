@@ -27,11 +27,13 @@ import { findMemberByEmail } from './lib/authService';
 import { format16DigitUserId } from './lib/idGenerator';
 import { LanguageCode, TRANSLATIONS, LANGUAGES } from './lib/i18n';
 import { useSiteTheme } from './lib/themeContext';
-import { Sparkles, IdCard, Search, MessageCircle, ShieldCheck, CheckCircle2, Lock, Palette } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { triggerHaptic } from './lib/haptic';
+import { Palette, Lock, IdCard, Search, ShieldCheck } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'form' | 'card' | 'gallery' | 'profile' | 'admin'>('form');
-  const [currentLang, setCurrentLang] = useState<LanguageCode>('id');
+  const [currentLang, setCurrentLang] = useState<LanguageCode>('en');
   const [user, setUser] = useState<User | null>(null);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -61,6 +63,11 @@ export default function App() {
   }, [lastScrollY]);
 
 
+  const handleTabChange = (tab: 'form' | 'card' | 'gallery' | 'profile' | 'admin') => {
+    triggerHaptic(15);
+    setActiveTab(tab);
+  };
+  
   const { theme, setIsEditorOpen } = useSiteTheme();
 
   const getBgStyle = () => {
@@ -115,12 +122,16 @@ export default function App() {
         if (token) setAccessToken(token);
 
         if (currentUser?.email) {
+          console.log('App: Finding member for email:', currentUser.email);
           const matched = await findMemberByEmail(currentUser.email);
+          console.log('App: Member lookup result:', matched);
           if (matched) {
             if (currentUser.email.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
               matched.userId16 = '0000000000000000';
             }
             setCurrentMember(matched);
+          } else {
+             console.log('App: No member found for email:', currentUser.email);
           }
         }
       },
@@ -378,7 +389,7 @@ export default function App() {
         {/* Official Government-Style Verification Header */}
         <OfficialGovBanner currentLang={currentLang} />
 
-        {/* Main Navbar with Multi-Language selector (No public admin directory!) */}
+        {/* Main Navbar */}
         <Navbar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -394,7 +405,14 @@ export default function App() {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 pb-16 relative z-10">
+      <motion.main 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3 }}
+        key={activeTab}
+        className="flex-1 pb-16 relative z-10"
+      >
         {/* TAB 1: FORMULIR PENDAFTARAN (LEGACY GOOGLE FORM STYLE) */}
         {activeTab === 'form' && (
           <RegistrationForm
@@ -418,7 +436,7 @@ export default function App() {
                 MyKCC Member's ID Card
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
-                Member's ID Card (KTA) & KCC ID
+                Member's ID Card & KCC ID
               </h2>
               <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto mb-6 leading-relaxed">
                 {currentLang === 'id'
@@ -520,27 +538,44 @@ export default function App() {
           <PhotoGallery
             photos={photos}
             currentMember={currentMember}
+            user={user}
             onOpenUpload={() => setIsUploadPhotoModalOpen(true)}
             onRequireLogin={() => setIsAuthModalOpen(true)}
             currentLang={currentLang}
           />
         )}
 
-        {/* TAB 4: MY PROFILE (LOGGED IN USER) */}
-        {activeTab === 'profile' && currentMember && (
-          <UserProfile
-            member={currentMember}
-            onUpdateMember={(updated) => {
-              if (updated.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-                updated.userId16 = '0000000000000000';
-              }
-              setCurrentMember(updated);
-            }}
-            onOpenCardModal={handleOpenCard}
-            currentLang={currentLang}
-          />
+        {activeTab === 'profile' && (
+          currentMember ? (
+            <UserProfile
+              member={currentMember}
+              onUpdateMember={(updated) => {
+                if (updated.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
+                  updated.userId16 = '0000000000000000';
+                }
+                setCurrentMember(updated);
+              }}
+              onOpenCardModal={handleOpenCard}
+              currentLang={currentLang}
+            />
+          ) : user ? (
+            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
+               <p className="text-lg font-bold text-white mb-2">Profil Member Belum Dibuat</p>
+               <p className="text-sm mb-6">Anda telah berhasil login, namun kami belum menemukan profil anggota KCC Anda. Silakan isi formulir pendaftaran di bawah untuk membuat profil komunitas dan kartu identitas digital (KCC ID) Anda.</p>
+               <button onClick={() => setActiveTab('form')} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold text-sm shadow-md transition-all active:scale-95">
+                 Lengkapi Pendaftaran Member
+               </button>
+            </div>
+          ) : (
+            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400">
+               <p className="text-lg font-bold text-white mb-2">Harap login</p>
+               <button onClick={() => setIsAuthModalOpen(true)} className="text-rose-400 font-bold hover:underline">
+                 Klik di sini untuk login
+               </button>
+            </div>
+          )
         )}
-      </main>
+      </motion.main>
 
       {/* Member Card Modal */}
       <MemberCardModal
@@ -615,7 +650,6 @@ export default function App() {
               rel="noopener noreferrer"
               className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center space-x-1"
             >
-              <MessageCircle className="w-3.5 h-3.5" />
               <span>WhatsApp: +62 857-1103-2782</span>
             </a>
             <a

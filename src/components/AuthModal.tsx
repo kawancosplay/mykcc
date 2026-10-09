@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Smartphone,
+  IdCard,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { Member } from '../types';
@@ -41,6 +42,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [kccId, setKccId] = useState('');
   const [fullName, setFullName] = useState('');
   const [cosplayName, setCosplayName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -71,7 +73,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onAuthSuccess(user, member);
         onClose();
       } else if (mode === 'login') {
-        const { user, member } = await loginWithEmail(email, password);
+        let loginEmail = email;
+        if (kccId) {
+          const member = await findMemberByUserId16(kccId);
+          if (!member || !member.email) {
+             throw new Error('KCC ID tidak ditemukan atau tidak memiliki email terkait.');
+          }
+          loginEmail = member.email;
+        }
+        
+        if (!loginEmail) throw new Error('Email atau KCC ID diperlukan.');
+        
+        const { user, member } = await loginWithEmail(loginEmail, password);
         onAuthSuccess(user, member);
         onClose();
       } else if (mode === 'phone') {
@@ -145,7 +158,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 mode === 'login' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Masuk (Login)
+              Login
             </button>
             <button
               type="button"
@@ -157,7 +170,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 mode === 'signup' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Daftar Akun Baru
+              Sign Up
             </button>
             <button
               type="button"
@@ -169,7 +182,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 mode === 'phone' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              No. HP
+              Phone
             </button>
           </div>
         )}
@@ -206,6 +219,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           {mode !== 'phone' ? (
             <>
+              {mode === 'login' && (
+                <div className="mb-4">
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                    Atau KCC ID (Jika ada)
+                  </label>
+                  <div className="relative">
+                    <IdCard className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Contoh: 2026 1008 0715 3001"
+                      value={kccId}
+                      onChange={(e) => setKccId(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
                   Alamat Email

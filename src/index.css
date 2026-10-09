@@ -19,7 +19,8 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: radial-gradient(circle at 15% 15%, #2e1065 0%, #1e1b4b 45%, #0f0728 100%);
+  background-color: #05020a;
+  background-image: linear-gradient(135deg, #05020a 0%, #1a0f33 50%, #05020a 100%);
   background-attachment: fixed;
   color: #f8fafc;
   min-height: 100vh;
@@ -40,26 +41,26 @@ button, a[role="button"] {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.08);
 }
 
 .liquid-glass-elevated {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.12);
 }
 
 .liquid-glass-card {
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .liquid-glass-input {
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   transition: all 0.2s ease;
 }
 
@@ -69,9 +70,10 @@ button, a[role="button"] {
 }
 
 .liquid-glass-button {
-  background: linear-gradient(135deg, #f43f5e 0%, #9333ea 100%);
+  background: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
   border: none;
-  color: white;
+  color: #1a0f33; /* Darker text for contrast on mint green */
+  font-weight: 600;
   transition: all 0.2s ease;
 }
 
@@ -82,31 +84,39 @@ button, a[role="button"] {
 /* Subtle continuous ambient fluid pulse animation */
 @keyframes fluid-drift {
   0%, 100% {
-    transform: translate(0px, 0px) scale(1);
+    transform: translate(0px, 0px) scale(1) rotate(0deg);
+    filter: hue-rotate(0deg);
   }
   33% {
-    transform: translate(30px, -20px) scale(1.08);
+    transform: translate(50px, -30px) scale(1.15) rotate(5deg);
+    filter: hue-rotate(45deg);
   }
   66% {
-    transform: translate(-20px, 20px) scale(0.95);
+    transform: translate(-30px, 30px) scale(1.05) rotate(-5deg);
+    filter: hue-rotate(-45deg);
   }
 }
 
 .animate-fluid-1 {
-  animation: fluid-drift 18s ease-in-out infinite;
+  animation: fluid-drift 20s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .animate-fluid-2 {
-  animation: fluid-drift 24s ease-in-out infinite reverse;
+  animation: fluid-drift 25s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
 }
 
 .animate-fluid-3 {
-  animation: fluid-drift 20s ease-in-out infinite 6s;
+  animation: fluid-drift 30s cubic-bezier(0.4, 0, 0.2, 1) infinite 10s;
 }
 
-/* Hanacaraka and Aksara Sunda script support */
-[lang="jv-Jawa"] {
-  font-family: 'Noto Sans Javanese', var(--font-din);
+/* Responsive tweaks */
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
+  .liquid-glass-card {
+    padding: 1rem;
+  }
 }
 
 [lang="su-Sund"] {

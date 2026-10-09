@@ -429,9 +429,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // If AUTHORIZED, show the full Admin Dashboard
   return (
-    <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8 animate-fade-in text-slate-100">
+    <div className="w-full mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8 animate-fade-in text-slate-100">
       {/* Top Admin Banner */}
-      <div className="bg-slate-900 border border-rose-500/30 rounded-3xl p-6 sm:p-8 mb-8 shadow-2xl relative overflow-hidden">
+      <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 mb-8 shadow-2xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2 mb-2">
@@ -471,14 +471,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
+        {/* Quick Stats Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/10">
+           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+              <p className="text-xs text-slate-400">Total Anggota</p>
+              <p className="text-2xl font-black text-white">{members.length}</p>
+           </div>
+           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+              <p className="text-xs text-slate-400">Status Verified</p>
+              <p className="text-2xl font-black text-emerald-400">{members.filter(m => m.status === 'verified').length}</p>
+           </div>
+           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+              <p className="text-xs text-slate-400">Status Active</p>
+              <p className="text-2xl font-black text-indigo-400">{members.filter(m => m.status === 'active').length}</p>
+           </div>
+           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+              <p className="text-xs text-slate-400">Status Pending</p>
+              <p className="text-2xl font-black text-amber-400">{members.filter(m => m.status === 'pending').length}</p>
+           </div>
+        </div>
+
         {/* Sub-nav tabs */}
-        <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-slate-800">
+        <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-white/10">
           <button
             onClick={() => setAdminTab('members')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
               adminTab === 'members'
                 ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -490,7 +510,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
               adminTab === 'sync'
                 ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -502,7 +522,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
               adminTab === 'analytics'
                 ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800'
+                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -515,17 +535,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {adminTab === 'members' && (
         <div className="space-y-6">
           {/* Filters and Controls */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl">
+          <div className="liquid-glass-card rounded-3xl p-6 shadow-xl">
             <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
               {/* Search Bar */}
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-4 top-4.5 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Cari cosname, nama, ID 16-digit, email, kota, fandom..."
+                  placeholder="Cari..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs sm:text-sm placeholder-slate-500 focus:outline-none focus:border-rose-500"
+                  className="w-full pl-12 pr-6 py-4 liquid-glass-input rounded-2xl text-white text-sm sm:text-base"
                 />
               </div>
 
@@ -534,7 +554,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-rose-500"
+                  className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
                 >
                   <option value="ALL">Semua Peran ({members.length})</option>
                   {availableRoles.map((r) => (
@@ -543,11 +563,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </option>
                   ))}
                 </select>
-
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-rose-500"
+                  className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
                 >
                   <option value="ALL">Semua Domisili</option>
                   {availableCities.map((c) => (
@@ -556,69 +575,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </option>
                   ))}
                 </select>
-
                 <select
                   value={selectedAgeCategory}
                   onChange={(e) => setSelectedAgeCategory(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-rose-500"
+                  className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
                 >
                   <option value="ALL">Semua Usia</option>
                   <option value="Legal Age / Dewasa (18+)">Legal Age (18+)</option>
                   <option value="Minor / Di Bawah Umur (<18)">Minor (&lt;18)</option>
                   <option value="Memilih untuk tidak menyebutkan">Tidak menyebutkan</option>
                 </select>
-
-                {/* Sort Order Selector (Timestamp, Alphabet, Age, Location, Status, UID) */}
-                <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 shadow-sm">
+                
+                {/* Sort Order Selector (Simplified) */}
+                <div className="flex items-center gap-1.5 liquid-glass-input rounded-xl px-2.5 py-2">
                   <ArrowUpDown className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                  <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">Urutkan:</span>
                   <select
                     value={sortMode}
                     onChange={(e) => setSortMode(e.target.value as any)}
-                    className="bg-transparent text-xs text-slate-200 focus:outline-none border-none font-medium pr-1 cursor-pointer"
+                    className="bg-transparent text-xs text-slate-200 focus:outline-none pr-1 cursor-pointer"
                   >
-                    <optgroup label="Waktu / Timestamp">
-                      <option value="timestamp_desc">🕒 Waktu: Terbaru</option>
-                      <option value="timestamp_asc">🕒 Waktu: Terlama</option>
-                    </optgroup>
-                    <optgroup label="Alfabet Nama">
-                      <option value="name_asc">🔤 Nama: A → Z</option>
-                      <option value="name_desc">🔤 Nama: Z → A</option>
-                    </optgroup>
-                    <optgroup label="Usia">
-                      <option value="age_asc">🎂 Usia: Termuda → Tertua</option>
-                      <option value="age_desc">🎂 Usia: Tertua → Termuda</option>
-                    </optgroup>
-                    <optgroup label="Lokasi / Domisili">
-                      <option value="location_asc">📍 Lokasi: A → Z</option>
-                      <option value="location_desc">📍 Lokasi: Z → A</option>
-                    </optgroup>
-                    <optgroup label="Status">
-                      <option value="status_asc">🛡️ Status: Verified → Pending</option>
-                      <option value="status_desc">🛡️ Status: Pending → Verified</option>
-                    </optgroup>
-                    <optgroup label="KCC ID">
-                      <option value="uid_asc">💳 KCC ID: 0000 → Admin → Member</option>
-                    </optgroup>
+                    <option value="timestamp_desc">🕒 Waktu: Terbaru</option>
+                    <option value="name_asc">🔤 Nama: A → Z</option>
                   </select>
                 </div>
-
+                
                 <button
                   onClick={exportToCsv}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+                  className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-slate-900 inline-flex items-center gap-1.5 shadow-md"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>{t.exportCsv}</span>
                 </button>
-
-                {/* Purge All Members Tool */}
                 <button
                   onClick={handlePurgeAll}
                   disabled={isPurging}
                   title="Purge / Hapus seluruh data anggota di Firestore"
-                  className="px-3.5 py-2 bg-rose-950/70 hover:bg-rose-900 border border-rose-500/40 text-rose-300 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-md shadow-rose-950/40"
+                  className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-md"
                 >
-                  <Trash2 className={`w-3.5 h-3.5 text-rose-400 ${isPurging ? 'animate-spin' : ''}`} />
+                  <Trash2 className={`w-3.5 h-3.5 ${isPurging ? 'animate-spin' : ''}`} />
                   <span>{isPurging ? 'Memproses Purge...' : 'Purge Data Member'}</span>
                 </button>
               </div>
@@ -646,7 +640,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Members Table */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="liquid-glass-card rounded-3xl overflow-hidden shadow-2xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-mono border-b border-slate-800">
@@ -702,7 +696,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         )}
                       </div>
                     </th>
-                    <th className="py-4 px-4 text-right">Aksi</th>
+                    <th className="py-4 px-4 text-right">Aksi / Hapus</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -792,6 +786,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {m.city}, {m.country}
                         </td>
 
+                        <td className="py-4 px-4 text-slate-400 text-xs">
+                          {m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '-'}
+                        </td>
+
                         <td className="py-4 px-4">
                           <select
                             value={m.status || 'verified'}
@@ -822,7 +820,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => onSelectMember(m)}
-                              title="Lihat KTA"
+                              title="View KCC ID"
                               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -841,7 +839,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={9} className="py-16 text-center">
+                      <td colSpan={10} className="py-16 text-center">
                         <div className="max-w-md mx-auto space-y-4 px-4">
                           <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
                             <ShieldCheck className="w-8 h-8" />

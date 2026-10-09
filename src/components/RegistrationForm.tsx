@@ -22,11 +22,10 @@ import {
 import { Member } from '../types';
 import { addMemberToFirestore } from '../lib/firestoreService';
 import {
-  generateChronologicalUserId16,
-  generate16DigitUserId,
   resolveMemberUserId16,
   format16DigitUserId,
   findDuplicateMember,
+  getNextMemberSequenceNumber,
 } from '../lib/idGenerator';
 import {
   getAllCountriesList,
@@ -309,13 +308,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         userId16 = matched.userId16;
         setIsDuplicateShared(true);
       } else {
-        // User ID arranged based on timestamp. UID 0000 0000 0000 0000 is assigned for KCC main account, UID 0000 0000 0000 0001 to 0000 0000 0000 0100 is assigned to KCC admin
-        const now = new Date();
+        // User ID arranged based on sequence. UID 0000 0000 0000 0000 is assigned for KCC main account, UID 0000 0000 0000 0001 to 0000 0000 0000 0100 is assigned to KCC admin
+        const nextSeq = getNextMemberSequenceNumber(existingMembers);
         userId16 = resolveMemberUserId16({
           email: dataToSubmit.email,
           role: resolvedRole,
-          dateInput: now,
-          sequenceNumber: memberCount + 1,
+          sequenceNumber: nextSeq,
           existingMembers,
         });
       }
@@ -659,7 +657,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             placeholder={ft.namePlaceholder}
             value={formData.cosplayName}
             onChange={(e) => setFormData({ ...formData, cosplayName: e.target.value })}
-            className="w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors text-sm font-medium"
+            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-medium"
           />
         </div>
 
@@ -680,7 +678,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             placeholder={ft.whatsappPlaceholder}
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors text-sm font-mono"
+            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
           />
         </div>
 
@@ -699,7 +697,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             placeholder={ft.discordPlaceholder}
             value={formData.discordUsername}
             onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
-            className="w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
+            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
           />
         </div>
 
@@ -718,7 +716,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             placeholder={ft.emailPlaceholder}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors text-sm"
+            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
           />
         </div>
 
@@ -783,7 +781,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             placeholder={ft.agePlaceholder}
             value={formData.age}
             onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            className="w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors text-sm"
+            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
           />
         </div>
 
@@ -873,7 +871,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               placeholder={isId ? 'Ketik nama provinsi / wilayah / negara bagian Anda...' : 'Enter your state / province / region...'}
               value={formData.customProvince}
               onChange={(e) => setFormData({ ...formData, customProvince: e.target.value })}
-              className="mt-3 w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-xs"
+              className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
             />
           )}
 
@@ -883,7 +881,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               placeholder={ft.customCityPlaceholder}
               value={formData.customCity}
               onChange={(e) => setFormData({ ...formData, customCity: e.target.value })}
-              className="mt-3 w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-xs"
+              className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
             />
           )}
         </div>
@@ -921,7 +919,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       placeholder={ft.roleOthersPlaceholder}
                       value={formData.customRole}
                       onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
-                      className="w-full pb-1.5 pt-1 bg-transparent border-b border-purple-500 text-white placeholder-slate-500 focus:outline-none text-xs"
+                      className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
                     />
                   </div>
                 )}
@@ -994,7 +992,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             placeholder={ft.socialMediaPlaceholder}
             value={formData.socialMedia}
             onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
-            className="w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors text-sm"
+            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
           />
         </div>
 
@@ -1012,7 +1010,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             placeholder={ft.portfolioPlaceholder}
             value={formData.portfolioUrl}
             onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-            className="w-full pb-2 pt-1 bg-transparent border-b border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors text-sm"
+            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
           />
         </div>
 
@@ -1099,11 +1097,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* ACTION BUTTONS (GOOGLE FORM STYLE) */}
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex flex-col gap-3 pt-2">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-lg transition-all inline-flex items-center gap-2 disabled:opacity-50"
+            className="px-6 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-lg transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
@@ -1121,32 +1119,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <button
             type="button"
             onClick={handleClearForm}
-            className="px-3 py-1.5 rounded-lg text-xs text-rose-300 hover:text-white hover:bg-rose-500/15 transition-colors inline-flex items-center gap-1.5 font-semibold"
+            className="px-3 py-1.5 rounded-lg text-xs text-rose-300 hover:text-white hover:bg-rose-500/15 transition-colors inline-flex items-center justify-center gap-1.5 font-semibold"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t.clearForm}</span>
           </button>
         </div>
 
-        {/* Google Form Footer style branding & hotline */}
-        <div className="text-center pt-6 text-[11px] text-slate-500 space-y-1">
-          <p>
-            {isId
-              ? 'Formulir resmi Komunitas KawanCosplay (MyKCC). 100% SFW & Ramah Semua Kalangan.'
-              : 'Official KawanCosplay Community Form (MyKCC). 100% SFW & Welcoming to All.'}
-          </p>
-          <p>
-            {isId ? 'Hotline WhatsApp Resmi: ' : 'Official WhatsApp Hotline: '}
-            <a
-              href="https://wa.me/6285711032782"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-400 hover:underline font-bold"
-            >
-              +62 857-1103-2782
-            </a>
-          </p>
-        </div>
       </form>
     </div>
   );

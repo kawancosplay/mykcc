@@ -12,15 +12,19 @@ import {
   X,
   Share2,
   Tag,
+  Download,
 } from 'lucide-react';
 import { Photo, Member } from '../types';
 import { toggleLikePhoto } from '../lib/galleryService';
 import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
 import { format16DigitUserId } from '../lib/idGenerator';
 
+import { User } from 'firebase/auth';
+
 interface PhotoGalleryProps {
   photos: Photo[];
   currentMember: Member | null;
+  user: User | null;
   onOpenUpload: () => void;
   onRequireLogin: () => void;
   currentLang: LanguageCode;
@@ -29,6 +33,7 @@ interface PhotoGalleryProps {
 export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   photos,
   currentMember,
+  user,
   onOpenUpload,
   onRequireLogin,
   currentLang,
@@ -81,6 +86,23 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     toggleLikePhoto(photo.id, photo.likesCount || 0);
   };
 
+  const handleDownload = async (photo: Photo) => {
+    try {
+      const response = await fetch(photo.photoUrl);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `KawanCosplay_${photo.title || 'photo'}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8 text-slate-100">
       {/* Header bar */}
@@ -106,7 +128,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         {/* Upload Action */}
         <button
           onClick={() => {
-            if (currentMember) {
+            if (user || currentMember) {
               onOpenUpload();
             } else {
               onRequireLogin();
@@ -197,7 +219,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
           </p>
           <button
             onClick={() => {
-              if (currentMember) onOpenUpload();
+              if (user || currentMember) onOpenUpload();
               else onRequireLogin();
             }}
             className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold"
@@ -360,13 +382,22 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
               {/* Action row */}
               <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                <button
-                  onClick={(e) => handleLike(e, activePhotoModal)}
-                  className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-rose-500/30"
-                >
-                  <Heart className="w-4 h-4 fill-current text-rose-400" />
-                  <span>Sukai ({activePhotoModal.likesCount || 0})</span>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => handleLike(e, activePhotoModal)}
+                    className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-rose-500/30"
+                  >
+                    <Heart className="w-4 h-4 fill-current text-rose-400" />
+                    <span>Sukai ({activePhotoModal.likesCount || 0})</span>
+                  </button>
+                  <button
+                    onClick={() => handleDownload(activePhotoModal)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-slate-700"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Unduh</span>
+                  </button>
+                </div>
 
                 <span className="text-[11px] text-slate-500 font-mono">
                   {new Date(activePhotoModal.createdAt).toLocaleDateString('id-ID', {

@@ -464,8 +464,8 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
           <div className="flex items-center justify-between text-[11px] text-purple-300/70 pt-1 border-t border-purple-500/20">
             <span>
               {isId
-                ? 'Tip: Tekan "Kirim Tes" untuk langsung mensimulasikan penyimpanan data & memeriksa kartu KTA serta unlock grup WA.'
-                : 'Tip: Click "Kirim Tes" to instantly simulate submission and view the generated KTA card and WhatsApp unlock.'}
+                ? 'Tip: Tekan "Kirim Tes" untuk langsung mensimulasikan penyimpanan data & memeriksa kartu KCC ID serta unlock grup WA.'
+                : 'Tip: Click "Kirim Tes" to instantly simulate submission and view the generated KCC ID card and WhatsApp unlock.'}
             </span>
             {lastFilledPreset && (
               <span className="text-emerald-300 font-semibold flex items-center gap-1">

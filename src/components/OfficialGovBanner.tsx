@@ -21,10 +21,10 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
   return (
-    <div className="bg-slate-900 border-b border-slate-800 text-slate-300 text-xs transition-colors">
+    <div className="liquid-glass border-b border-slate-800 text-slate-300 text-xs transition-colors">
       {/* Top Banner Row - Gov style */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
+        <div className="flex flex-wrap items-center justify-between gap-1">
           {/* Left: Global Community Badge + Official Site Tag */}
           <div className="flex items-center space-x-2.5">
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm text-white">
@@ -59,7 +59,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
 
       {/* Expandable Verification Guide Drawer */}
       {isOpen && (
-        <div className="bg-slate-950 border-t border-slate-800/80 px-4 sm:px-6 lg:px-8 py-5 animate-fade-in shadow-inner">
+        <div className="liquid-glass border-t border-slate-800/80 px-4 sm:px-6 lg:px-8 py-5 animate-fade-in shadow-inner">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Pillar 1: Official International Community Identity */}
             <div className="flex items-start space-x-3.5">

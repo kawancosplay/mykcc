@@ -38,10 +38,10 @@ export interface SiteTheme {
 
 export const DEFAULT_THEME: SiteTheme = {
   background: 'bright-purple-fluent',
-  customBgGradient: 'linear-gradient(135deg, #2e1065 0%, #1e1145 40%, #3b0764 75%, #4c1d95 100%)',
+  customBgGradient: 'linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%)',
   font: 'din-next',
   colorScheme: 'purple',
-  customPrimaryColor: '#a855f7',
+  customPrimaryColor: '#8c52ff',
   layoutWidth: '7xl',
   cardRadius: 'rounded-3xl',
   navbarStyle: 'glass-bar',
@@ -98,16 +98,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Apply primary color variable
     const colorMap: Record<ColorTheme, string> = {
-      purple: '#a855f7',
+      purple: '#8c52ff',
       rose: '#f43f5e',
       indigo: '#6366f1',
       emerald: '#10b981',
       amber: '#f59e0b',
       cyan: '#06b6d4',
-      custom: theme.customPrimaryColor || '#a855f7',
+      custom: theme.customPrimaryColor || '#8c52ff',
     };
 
-    document.documentElement.style.setProperty('--theme-primary', colorMap[theme.colorScheme] || '#a855f7');
+    document.documentElement.style.setProperty('--theme-primary', colorMap[theme.colorScheme] || '#8c52ff');
   }, [theme]);
 
   const updateTheme = async (partial: Partial<SiteTheme>) => {

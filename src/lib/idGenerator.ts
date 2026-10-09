@@ -96,10 +96,35 @@ export function generateChronologicalUserId16(
 }
 
 /**
+ * Arranges a 16-digit User ID strictly based on sequence for regular members:
+ * Structure: sequenceNumber.toString().padStart(16, '0')
+ */
+export function generateSequentialUserId16(sequenceNumber: number): string {
+  return Math.max(101, sequenceNumber).toString().padStart(16, '0');
+}
+
+/**
+ * Finds the next available sequence number for a regular member (starting after admin slots).
+ */
+export function getNextMemberSequenceNumber(existingMembers: Member[]): number {
+  let maxSeq = 100;
+  for (const m of existingMembers) {
+    if (m.userId16 && !isAdminUserId(m.userId16) && !isMainAccountUserId(m.userId16)) {
+      const clean = m.userId16.replace(/\D/g, '');
+      const num = parseInt(clean, 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
+      }
+    }
+  }
+  return maxSeq + 1;
+}
+
+/**
  * Resolves or generates the 16-digit KCC User ID:
  * - UID 0000 0000 0000 0000 is assigned for KCC main account
  * - UID 0000 0000 0000 0001 to 0000 0000 0000 0100 is assigned to KCC admin
- * - Regular member User IDs are arranged strictly based on timestamp
+ * - Regular member User IDs are arranged strictly sequentially
  */
 export function resolveMemberUserId16(
   emailOrOptions?:
@@ -109,12 +134,10 @@ export function resolveMemberUserId16(
         role?: string;
         isAdmin?: boolean;
         adminSlot?: number;
-        dateInput?: Date | string | null;
         sequenceNumber?: number;
         existingMembers?: Member[];
       },
-  dateInput?: Date | string | null,
-  sequenceNumber: number = 1,
+  sequenceNumber: number = 101,
   role?: string,
   existingMembers?: Member[]
 ): string {
@@ -122,7 +145,6 @@ export function resolveMemberUserId16(
   let targetRole: string | undefined = role;
   let isAdmin = false;
   let adminSlot: number | undefined;
-  let targetDate = dateInput;
   let targetSeq = sequenceNumber;
   let membersList: Member[] | undefined = existingMembers;
 
@@ -131,7 +153,6 @@ export function resolveMemberUserId16(
     targetRole = emailOrOptions.role;
     isAdmin = !!emailOrOptions.isAdmin;
     adminSlot = emailOrOptions.adminSlot;
-    targetDate = emailOrOptions.dateInput ?? targetDate;
     targetSeq = emailOrOptions.sequenceNumber ?? targetSeq;
     membersList = emailOrOptions.existingMembers ?? membersList;
   } else {
@@ -163,9 +184,10 @@ export function resolveMemberUserId16(
     return getNextAvailableAdminSlot(membersList);
   }
 
-  // 3. Regular Members: Arranged strictly based on timestamp
-  return generateChronologicalUserId16(targetDate, targetSeq);
+  // 3. Regular Members: Arranged strictly sequentially
+  return generateSequentialUserId16(targetSeq);
 }
+
 
 /**
  * Fallback alias: Generates a 16-digit chronological User ID for right now

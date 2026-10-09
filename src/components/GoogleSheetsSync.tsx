@@ -760,7 +760,7 @@ function onFormSubmit(e) {
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              Ketika fitur ini aktif, aplikasi akan memeriksa spreadsheet setiap {pollIntervalSeconds} detik. Setiap ada respon Google Form baru yang masuk, anggota otomatis ditambahkan ke Firebase dan KTA langsung diterbitkan.
+              Ketika fitur ini aktif, aplikasi akan memeriksa spreadsheet setiap {pollIntervalSeconds} detik. Setiap ada respon Google Form baru yang masuk, anggota otomatis ditambahkan ke Firebase dan KCC ID langsung diterbitkan.
             </p>
 
             <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 mb-5">

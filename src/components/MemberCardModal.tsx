@@ -67,7 +67,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         <div className="text-center mb-6">
           <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 mb-2">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Member's ID Card / Kartu Anggota (KTA)</span>
+            <span>Member's ID Card</span>
           </span>
           <h3 className="text-xl sm:text-2xl font-black text-white">
             Official KawanCosplay ID Card

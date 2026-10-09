@@ -87,8 +87,9 @@ export function autoDetectColumnMapping(headers: string[]): ColumnMapping {
 
   return {
     timestamp: findIndex(['timestamp', 'waktu', 'time', 'tanggal daftar']),
-    fullName: findIndex(['nama lengkap', 'full name', 'nama asli', 'nama']),
-    cosplayName: findIndex(['cosplay name', 'cosname', 'nama panggung', 'stage name', 'nickname', 'nama karakter', 'nama panggilan']),
+    name: findIndex(['cosplay name', 'cosname', 'nama panggung', 'stage name', 'nickname', 'nama karakter', 'nama panggilan', 'nama']),
+    cosplayName: findIndex(['cosplay name', 'cosname', 'nama panggung', 'stage name', 'nickname', 'nama karakter', 'nama panggilan', 'nama']),
+    fullName: findIndex(['nama lengkap', 'full name', 'nama asli']),
     email: findIndex(['email', 'surel', 'alamat email']),
     phone: findIndex(['whatsapp', 'wa', 'telepon', 'hp', 'phone', 'kontak', 'nomor wa', 'no wa', 'no. wa']),
     discordUsername: findIndex([
@@ -139,7 +140,8 @@ export function parseRowsToMembers(
       rawEmail.toLowerCase().endsWith('@kawancosplay.id') || /^member\d*@/i.test(rawEmail)
         ? ''
         : rawEmail; // Empty email as legacy form never asked for email
-    const cosplayName = (mapping.cosplayName >= 0 ? row[mapping.cosplayName] : '')?.trim() || fullName || 'Cosplayer';
+    const nameIdx = mapping.name >= 0 ? mapping.name : (mapping.cosplayName !== undefined && mapping.cosplayName >= 0 ? mapping.cosplayName : -1);
+    const resolvedName = (nameIdx >= 0 ? row[nameIdx] : '')?.trim() || fullName || 'Cosplayer';
     const country = (mapping.country >= 0 ? row[mapping.country] : '')?.trim() || 'Indonesia';
     const province = (mapping.province >= 0 ? row[mapping.province] : '')?.trim();
     const city = (mapping.city >= 0 ? row[mapping.city] : '')?.trim() || 'Worldwide';
@@ -157,7 +159,7 @@ export function parseRowsToMembers(
     const timestampRaw = (mapping.timestamp >= 0 ? row[mapping.timestamp] : '')?.trim();
 
     // Skip empty lines
-    if (!fullName && !cosplayName && !phone && !discordUsername) return;
+    if (!fullName && !resolvedName && !phone && !discordUsername) return;
 
     const createdAtDate = timestampRaw && !isNaN(Date.parse(timestampRaw)) ? new Date(timestampRaw) : new Date();
     // User ID arranged chronologically by when they filled the form; cosplaysehat@gmail.com is 0000000000000000
@@ -171,8 +173,9 @@ export function parseRowsToMembers(
 
     parsedMembers.push({
       userId16,
-      fullName: fullName ? fullName.substring(0, 100) : cosplayName.substring(0, 100),
-      cosplayName: cosplayName.substring(0, 60),
+      name: resolvedName.substring(0, 60),
+      cosplayName: resolvedName.substring(0, 60),
+      fullName: fullName ? fullName.substring(0, 100) : resolvedName.substring(0, 100),
       email: email ? email.substring(0, 120) : '',
       phone: phone ? phone.substring(0, 30) : undefined,
       discordUsername: discordUsername ? discordUsername.substring(0, 60) : undefined,

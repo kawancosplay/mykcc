@@ -59,7 +59,8 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
       const matchQuery =
         !q ||
         (m.fullName && m.fullName.toLowerCase().includes(q)) ||
-        m.cosplayName.toLowerCase().includes(q) ||
+        (m.name && m.name.toLowerCase().includes(q)) ||
+        (m.cosplayName && m.cosplayName.toLowerCase().includes(q)) ||
         (m.userId16 && m.userId16.includes(q)) ||
         (m.email && m.email.toLowerCase().includes(q)) ||
         (m.phone && m.phone.includes(q)) ||
@@ -96,8 +97,8 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
 
     const rows = filteredMembers.map((m) => [
       `"${m.userId16 || ''}"`,
-      `"${(m.fullName || m.cosplayName || '').replace(/"/g, '""')}"`,
-      `"${m.cosplayName.replace(/"/g, '""')}"`,
+      `"${(m.fullName || m.name || m.cosplayName || '').replace(/"/g, '""')}"`,
+      `"${(m.name || m.cosplayName || '').replace(/"/g, '""')}"`,
       `"${m.email || ''}"`,
       `"${m.phone || ''}"`,
       `"${m.city || ''}"`,
@@ -301,19 +302,19 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
                       {member.avatarUrl ? (
                         <img
                           src={member.avatarUrl}
-                          alt={member.cosplayName}
+                          alt={member.name || member.cosplayName || 'Member'}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-rose-900 to-slate-900 text-rose-300 font-bold text-base">
-                          {member.cosplayName[0]?.toUpperCase() || 'KC'}
+                          {(member.name || member.cosplayName || 'KC')[0]?.toUpperCase() || 'KC'}
                         </div>
                       )}
                     </div>
 
                     <div className="min-w-0">
                       <h3 className="font-bold text-white text-base truncate group-hover:text-rose-300 transition-colors">
-                        {member.cosplayName}
+                        {member.name || member.cosplayName}
                       </h3>
                       <p className="text-xs text-slate-400 truncate">{member.fullName}</p>
                     </div>
@@ -394,7 +395,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
 
                   {isAdmin && (
                     <button
-                      onClick={() => handleDelete(member.id, member.cosplayName)}
+                      onClick={() => handleDelete(member.id, member.name || member.cosplayName || 'Member')}
                       className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors"
                       title="Hapus member"
                     >

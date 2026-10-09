@@ -40,9 +40,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.id;
 
+  const initialName = member.name || member.cosplayName || '';
+
   const [formData, setFormData] = useState({
     fullName: member.fullName || '',
-    cosplayName: member.cosplayName || '',
+    cosplayName: initialName,
     phone: member.phone || '',
     discordUsername: member.discordUsername || '',
     ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
@@ -66,9 +68,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   // Sync state if member changes externally
   useEffect(() => {
+    const currentName = member.name || member.cosplayName || '';
     setFormData({
       fullName: member.fullName || '',
-      cosplayName: member.cosplayName || '',
+      cosplayName: currentName,
       phone: member.phone || '',
       discordUsername: member.discordUsername || '',
       ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
@@ -126,10 +129,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     setErrorMsg(null);
 
     try {
-      await updateMemberProfileData(member.id, formData);
+      const dataToSave = {
+        ...formData,
+        name: formData.cosplayName,
+        cosplayName: formData.cosplayName,
+      };
+      await updateMemberProfileData(member.id, dataToSave);
       const updated: Member = {
         ...member,
-        ...formData,
+        ...dataToSave,
       };
       onUpdateMember(updated);
       setSaveSuccess(true);

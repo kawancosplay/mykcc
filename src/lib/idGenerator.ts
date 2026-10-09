@@ -135,9 +135,10 @@ export function resolveMemberUserId16(
         isAdmin?: boolean;
         adminSlot?: number;
         sequenceNumber?: number;
+        dateInput?: Date | string | null;
         existingMembers?: Member[];
       },
-  sequenceNumber: number = 101,
+  sequenceNumberOrDate: number | string | Date = 101,
   role?: string,
   existingMembers?: Member[]
 ): string {
@@ -145,8 +146,13 @@ export function resolveMemberUserId16(
   let targetRole: string | undefined = role;
   let isAdmin = false;
   let adminSlot: number | undefined;
-  let targetSeq = sequenceNumber;
+  let targetSeq = typeof sequenceNumberOrDate === 'number' ? sequenceNumberOrDate : 101;
   let membersList: Member[] | undefined = existingMembers;
+  let dateInput: Date | string | null | undefined;
+
+  if (typeof sequenceNumberOrDate === 'string' || sequenceNumberOrDate instanceof Date) {
+    dateInput = sequenceNumberOrDate;
+  }
 
   if (typeof emailOrOptions === 'object' && emailOrOptions !== null) {
     email = emailOrOptions.email;
@@ -155,6 +161,9 @@ export function resolveMemberUserId16(
     adminSlot = emailOrOptions.adminSlot;
     targetSeq = emailOrOptions.sequenceNumber ?? targetSeq;
     membersList = emailOrOptions.existingMembers ?? membersList;
+    if (emailOrOptions.dateInput) {
+      dateInput = emailOrOptions.dateInput;
+    }
   } else {
     email = emailOrOptions;
   }
@@ -182,6 +191,11 @@ export function resolveMemberUserId16(
 
   if (isRoleAdmin) {
     return getNextAvailableAdminSlot(membersList);
+  }
+
+  // If dateInput is provided and sequenceNumber was not explicitly specified as an ID >= 101, generate chronological
+  if (dateInput && targetSeq === 101) {
+    return generateChronologicalUserId16(dateInput);
   }
 
   // 3. Regular Members: Arranged strictly sequentially
@@ -276,6 +290,7 @@ export function findDuplicateMember(
     email?: string;
     phone?: string;
     discordUsername?: string;
+    name?: string;
     cosplayName?: string;
     socialMedia?: string;
     fullName?: string;
@@ -286,7 +301,7 @@ export function findDuplicateMember(
   const candEmail = candidate.email?.trim().toLowerCase() || '';
   const candPhone = normalizePhone(candidate.phone);
   const candDiscord = candidate.discordUsername?.trim().toLowerCase().replace(/^@/, '') || '';
-  const candCosname = candidate.cosplayName?.trim().toLowerCase() || '';
+  const candCosname = (candidate.name || candidate.cosplayName || '').trim().toLowerCase();
   const candSocial = normalizeSocial(candidate.socialMedia);
 
   for (const m of members) {
@@ -322,9 +337,9 @@ export function findDuplicateMember(
       }
     }
 
-    // 5. Exact Cosplay Name match (case-insensitive, trimmed, min 3 chars)
+    // 5. Exact Name / Cosplay Name match (case-insensitive, trimmed, min 3 chars)
     if (candCosname && candCosname.length >= 3) {
-      const existingCosname = m.cosplayName?.trim().toLowerCase() || '';
+      const existingCosname = (m.name || m.cosplayName || '').trim().toLowerCase();
       if (existingCosname && existingCosname === candCosname) {
         return m;
       }

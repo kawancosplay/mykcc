@@ -67,7 +67,8 @@ export interface TranslationDictionary {
   stageOrFakeName: string;
   realNameOptional: string;
   fullName: string;
-  name: string;
+  name?: string;
+  cosplayName?: string;
   email: string;
   password: string;
   phone: string;
@@ -92,7 +93,8 @@ export interface TranslationDictionary {
   submitButton: string;
   clearForm: string;
   responseRecorded: string;
-  viewMyKccId: string;
+  viewMyKccId?: string;
+  viewMyKta?: string;
   submitAnother: string;
   userId16Label: string;
   galleryTitle: string;
@@ -1601,6 +1603,7 @@ export interface FormSpecificTranslations {
   discordPlaceholder: string;
   emailLabel: string;
   emailOptionalNotice: string;
+  emailRequiredNotice?: string;
   emailPlaceholder: string;
   ageDesc: string;
   agePlaceholder: string;
@@ -1912,7 +1915,7 @@ export function getFormTranslation(lang: LanguageCode): FormSpecificTranslations
   const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
   return {
     ...en,
-    nameLabel: dict.cosplayName || en.nameLabel,
+    nameLabel: dict.cosplayName || dict.name || en.nameLabel,
     namePrivacyNotice: dict.namePrivacyNotice || en.namePrivacyNotice,
     whatsappLabel: dict.phone ? `${dict.phone} (WhatsApp)` : en.whatsappLabel,
     whatsappNotice: en.whatsappNotice,

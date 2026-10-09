@@ -56,6 +56,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   const [headers, setHeaders] = useState<string[]>([]);
   const [previewRows, setPreviewRows] = useState<string[][]>([]);
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({
+    name: -1,
     fullName: -1,
     cosplayName: -1,
     email: -1,
@@ -659,8 +660,9 @@ function onFormSubmit(e) {
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-slate-200">
                       {previewRows.slice(0, 4).map((r, idx) => {
+                        const cosIdx = columnMapping.name >= 0 ? columnMapping.name : (columnMapping.cosplayName ?? -1);
                         const nameVal =
-                          (columnMapping.cosplayName >= 0 ? r[columnMapping.cosplayName] : '') ||
+                          (cosIdx >= 0 ? r[cosIdx] : '') ||
                           (columnMapping.fullName >= 0 ? r[columnMapping.fullName] : '') ||
                           '-';
                         const waVal = columnMapping.phone >= 0 ? r[columnMapping.phone] || '-' : '-';

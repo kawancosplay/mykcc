@@ -23,7 +23,7 @@ import {
   subscribeToPhotos,
   checkAndSeedPhotosIfEmpty,
 } from './lib/galleryService';
-import { findMemberByEmail } from './lib/authService';
+import { findMemberByEmail, findMemberByUidOrEmail } from './lib/authService';
 import { format16DigitUserId } from './lib/idGenerator';
 import { LanguageCode, TRANSLATIONS, LANGUAGES } from './lib/i18n';
 import { useSiteTheme } from './lib/themeContext';
@@ -121,17 +121,13 @@ export default function App() {
         setUser(currentUser);
         if (token) setAccessToken(token);
 
-        if (currentUser?.email) {
-          console.log('App: Finding member for email:', currentUser.email);
-          const matched = await findMemberByEmail(currentUser.email);
-          console.log('App: Member lookup result:', matched);
+        if (currentUser) {
+          const matched = await findMemberByUidOrEmail(currentUser.uid, currentUser.email || '');
           if (matched) {
-            if (currentUser.email.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
+            if (currentUser.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
               matched.userId16 = '0000000000000000';
             }
             setCurrentMember(matched);
-          } else {
-             console.log('App: No member found for email:', currentUser.email);
           }
         }
       },
@@ -145,40 +141,46 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Whenever user or members list loads, make sure currentMember is matched immediately
+  useEffect(() => {
+    if (user && !currentMember && members.length > 0) {
+      const cleanEmail = user.email ? user.email.toLowerCase().trim() : '';
+      const matched = members.find(
+        (m) =>
+          (m.authUid && m.authUid === user.uid) ||
+          (cleanEmail && m.email && m.email.toLowerCase().trim() === cleanEmail)
+      );
+      if (matched) {
+        if (cleanEmail === 'cosplaysehat@gmail.com') {
+          matched.userId16 = '0000000000000000';
+        }
+        setCurrentMember(matched);
+      }
+    }
+  }, [user, members, currentMember]);
+
   // Subscribe to real-time Firestore members, photos & sync logs
   useEffect(() => {
-    checkAndSeedCommunityIfEmpty().catch(console.warn);
     checkAndSeedPhotosIfEmpty().catch(console.warn);
-    repairFounderIdInFirestore().catch(console.warn);
 
     const unsubMembers = subscribeToMembers(
       (updatedMembers) => {
         setMembers(updatedMembers);
         setCurrentMember((prev) => {
-          if (!prev) return prev;
-          const fresh = updatedMembers.find(
-            (m) =>
-              m.id === prev.id ||
-              (prev.email && m.email && m.email.toLowerCase() === prev.email.toLowerCase())
-          );
-          if (!fresh) return prev;
-          if (prev.email && prev.email.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-            fresh.userId16 = '0000000000000000';
+          if (prev) {
+            const fresh = updatedMembers.find(
+              (m) =>
+                m.id === prev.id ||
+                (prev.authUid && m.authUid === prev.authUid) ||
+                (prev.email && m.email && m.email.toLowerCase() === prev.email.toLowerCase())
+            );
+            if (!fresh) return prev;
+            if (prev.email && prev.email.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
+              fresh.userId16 = '0000000000000000';
+            }
+            return fresh;
           }
-          if (
-            fresh.fullName === prev.fullName &&
-            fresh.cosplayName === prev.cosplayName &&
-            fresh.avatarUrl === prev.avatarUrl &&
-            fresh.city === prev.city &&
-            fresh.primaryRole === prev.primaryRole &&
-            fresh.fandom === prev.fandom &&
-            fresh.userId16 === prev.userId16 &&
-            fresh.phone === prev.phone &&
-            fresh.discordUsername === prev.discordUsername
-          ) {
-            return prev;
-          }
-          return fresh;
+          return null;
         });
       },
       (err) => console.warn('Members subscribe note:', err)
@@ -560,11 +562,13 @@ export default function App() {
             />
           ) : user ? (
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
-               <p className="text-lg font-bold text-white mb-2">Profil Member Belum Dibuat</p>
-               <p className="text-sm mb-6">Anda telah berhasil login, namun kami belum menemukan profil anggota KCC Anda. Silakan isi formulir pendaftaran di bawah untuk membuat profil komunitas dan kartu identitas digital (KCC ID) Anda.</p>
-               <button onClick={() => setActiveTab('form')} className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold text-sm shadow-md transition-all active:scale-95">
-                 Lengkapi Pendaftaran Member
-               </button>
+              <div className="w-12 h-12 border-4 border-rose-500/30 border-t-rose-500 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-base font-bold text-white mb-2">
+                {currentLang === 'id' ? 'Menyiapkan Profil Member...' : 'Preparing Member Profile...'}
+              </p>
+              <p className="text-xs text-slate-400">
+                {currentLang === 'id' ? 'Menghubungkan akun ke identitas digital KCC Anda.' : 'Connecting account to your digital KCC identity.'}
+              </p>
             </div>
           ) : (
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400">
@@ -592,11 +596,41 @@ export default function App() {
       />
 
       {/* Upload Photo Modal */}
-      {currentMember && (
+      {(currentMember || (user ? {
+        id: user.uid,
+        userId16: user.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com' ? '0000000000000000' : '0000000000000001',
+        name: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
+        cosplayName: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
+        fullName: user.displayName || 'Member',
+        email: user.email || '',
+        avatarUrl: user.photoURL || undefined,
+        city: 'Worldwide',
+        country: 'Indonesia',
+        primaryRole: 'Cosplayer',
+        fandom: 'Anime & Games',
+        source: 'web_form',
+        status: 'verified',
+        createdAt: new Date().toISOString(),
+      } as Member : null)) && (
         <UploadPhotoModal
           isOpen={isUploadPhotoModalOpen}
           onClose={() => setIsUploadPhotoModalOpen(false)}
-          currentMember={currentMember}
+          currentMember={currentMember || {
+            id: user!.uid,
+            userId16: user!.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com' ? '0000000000000000' : '0000000000000001',
+            name: user!.displayName || user!.email?.split('@')[0] || 'Cosplayer',
+            cosplayName: user!.displayName || user!.email?.split('@')[0] || 'Cosplayer',
+            fullName: user!.displayName || 'Member',
+            email: user!.email || '',
+            avatarUrl: user!.photoURL || undefined,
+            city: 'Worldwide',
+            country: 'Indonesia',
+            primaryRole: 'Cosplayer',
+            fandom: 'Anime & Games',
+            source: 'web_form',
+            status: 'verified',
+            createdAt: new Date().toISOString(),
+          }}
           onPhotoAdded={(newPhoto) => {
             setPhotos((prev) => [newPhoto, ...prev]);
             setActiveTab('gallery');

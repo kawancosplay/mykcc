@@ -67,8 +67,9 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
       const newPhotoPayload: Omit<Photo, 'id'> = {
         memberId: currentMember.id,
         userId16: currentMember.userId16,
-        authorName: currentMember.cosplayName || currentMember.fullName || 'Member',
-        authorCosname: currentMember.cosplayName,
+        authorName: currentMember.name || currentMember.cosplayName || currentMember.fullName || 'Member',
+        authorCosname: currentMember.name || currentMember.cosplayName,
+        authorNameAlias: currentMember.name || currentMember.cosplayName,
         authorAvatar: currentMember.avatarUrl,
         photoUrl,
         title: title.trim(),

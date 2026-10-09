@@ -710,13 +710,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <img src={m.avatarUrl} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold">
-                                  {m.cosplayName.slice(0, 2).toUpperCase()}
+                                  {(m.name || m.cosplayName || 'KC').slice(0, 2).toUpperCase()}
                                 </div>
                               )}
                             </div>
                             <div>
-                              <p className="font-bold text-white text-sm">{m.cosplayName}</p>
-                              {m.fullName && m.fullName !== m.cosplayName && (
+                              <p className="font-bold text-white text-sm">{m.name || m.cosplayName}</p>
+                              {m.fullName && m.fullName !== (m.name || m.cosplayName) && (
                                 <p className="text-[11px] text-slate-400">Legal: {m.fullName}</p>
                               )}
                             </div>

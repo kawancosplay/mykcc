@@ -19,6 +19,7 @@ import {
   loginWithEmail,
   loginWithGoogleOAuth,
   resetPassword,
+  findMemberByUserId16,
 } from '../lib/authService';
 import { format16DigitUserId } from '../lib/idGenerator';
 import { LanguageCode, LANGUAGES, TRANSLATIONS } from '../lib/i18n';
@@ -270,7 +271,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                     <input
                       type="password"
-                      required={mode !== 'forgot'}
+                      required
                       placeholder="Minimal 6 karakter"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}

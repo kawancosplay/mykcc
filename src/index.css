@@ -81,6 +81,29 @@ button, a[role="button"] {
   filter: brightness(1.1);
 }
 
+/* Explicit Safari / WebKit and Cloudflare Pages vendor prefix support for Tailwind backdrop-blur */
+.backdrop-blur-none { -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
+.backdrop-blur-sm   { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.backdrop-blur      { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.backdrop-blur-md   { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.backdrop-blur-lg   { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.backdrop-blur-xl   { -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
+.backdrop-blur-2xl  { -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px); }
+.backdrop-blur-3xl  { -webkit-backdrop-filter: blur(64px); backdrop-filter: blur(64px); }
+
+/* Graceful translucent solid fallback when backdrop-filter is disabled or unaccelerated */
+@supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
+  .liquid-glass {
+    background: rgba(15, 23, 42, 0.88);
+  }
+  .liquid-glass-elevated {
+    background: rgba(15, 23, 42, 0.94);
+  }
+  .liquid-glass-card {
+    background: rgba(15, 23, 42, 0.90);
+  }
+}
+
 /* Subtle continuous ambient fluid pulse animation */
 @keyframes fluid-drift {
   0%, 100% {

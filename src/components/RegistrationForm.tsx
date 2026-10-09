@@ -228,7 +228,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     setIsDuplicateShared(false);
 
     // PRIVACY ENFORCEMENT: Name, Email, and WhatsApp Mobile Number are required (community is WhatsApp-based)
-    if (!dataToSubmit.cosplayName.trim()) {
+    if (!dataToSubmit.name.trim()) {
       setErrorMsg(
         isId
           ? 'Mohon isi Nama Panggung / Cosname / Nama Samaran Anda.'
@@ -324,6 +324,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       const newMemberPayload: Omit<Member, 'id'> = {
         userId16,
         name: dataToSubmit.name.trim(),
+        cosplayName: dataToSubmit.name.trim(),
         fullName: resolvedFullName,
         email: dataToSubmit.email.trim().toLowerCase(), // Empty string if omitted, as legacy form never asked for email
         phone: dataToSubmit.phone.trim(),
@@ -448,7 +449,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               ) : (
                 <p className="text-[11px] text-slate-300 mt-1.5">
                   {isId ? 'Anggota Terverifikasi: ' : 'Verified Member: '}
-                  <strong className="text-white">{submittedMember.cosplayName}</strong>
+                  <strong className="text-white">{submittedMember.name || submittedMember.cosplayName}</strong>
                   {submittedMember.discordUsername && (
                     <span className="ml-2 text-indigo-300">• Discord: {submittedMember.discordUsername}</span>
                   )}
@@ -472,7 +473,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
                 <a
                   href={`https://wa.me/6285711032782?text=${encodeURIComponent(
-                    `Halo Admin KawanCosplay! Saya sudah mengisi form pendaftaran anggota.\nNama: ${submittedMember.cosplayName}\nKCC ID: ${format16DigitUserId(
+                    `Halo Admin KawanCosplay! Saya sudah mengisi form pendaftaran anggota.\nNama: ${submittedMember.name || submittedMember.cosplayName}\nKCC ID: ${format16DigitUserId(
                       submittedMember.userId16,
                       submittedMember.email
                     )}\nNo. WA: ${submittedMember.phone || '-'}${
@@ -496,7 +497,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 className="px-5 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all inline-flex items-center justify-center gap-2"
               >
                 <Eye className="w-4 h-4" />
-                <span>{t.viewMyKta}</span>
+                <span>{t.viewMyKccId || t.viewMyKta}</span>
               </button>
 
               <button
@@ -655,8 +656,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             type="text"
             required
             placeholder={ft.namePlaceholder}
-            value={formData.cosplayName}
-            onChange={(e) => setFormData({ ...formData, cosplayName: e.target.value })}
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-medium"
           />
         </div>

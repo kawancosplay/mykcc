@@ -47,6 +47,7 @@ export function subscribeToMembers(
         // Clean up any legacy generated placeholder emails like memberxxx@kawancosplay.id
         const hasPlaceholderEmail = isFakePlaceholderEmail(raw.email);
         const cleanedEmail = hasPlaceholderEmail ? '' : (raw.email || '');
+        const memberName = raw.name || raw.cosplayName || raw.fullName || 'Member';
 
         // Auto-heal / fix database document immediately in Firestore if needed
         const updates: Record<string, unknown> = {};
@@ -56,6 +57,10 @@ export function subscribeToMembers(
         if (hasPlaceholderEmail) {
           updates.email = '';
         }
+        // Auto-heal missing name field on firebase from legacy cosplayName
+        if (!raw.name && raw.cosplayName) {
+          updates.name = raw.cosplayName;
+        }
         if (Object.keys(updates).length > 0) {
           updateDoc(doc(db, MEMBERS_COLLECTION, docSnap.id), updates).catch(console.warn);
         }
@@ -63,6 +68,8 @@ export function subscribeToMembers(
         return {
           id: docSnap.id,
           ...raw,
+          name: memberName,
+          cosplayName: memberName,
           email: cleanedEmail,
           userId16,
         };
@@ -144,10 +151,13 @@ export async function addMemberToFirestore(member: Omit<Member, 'id'>, customId?
       dateInput: member.createdAt,
     });
 
+  const memberName = member.name || member.cosplayName || 'Member';
+
   // Clean data object without undefined values; empty email supported as requested
   const payload: Record<string, unknown> = {
     userId16: resolvedUserId16,
-    name: member.name,
+    name: memberName,
+    cosplayName: memberName,
     email: member.email || '',
     city: member.city || 'Worldwide',
     country: member.country || 'Worldwide',
@@ -205,12 +215,14 @@ export async function bulkImportMembers(
 
   for (let i = 0; i < newMembers.length; i++) {
     const m = newMembers[i];
+    const mName = m.name || m.cosplayName || 'Member';
 
     // Check if double filled form with same/similar data exists
     const matched = findDuplicateMember(existingList, {
       phone: m.phone,
       discordUsername: m.discordUsername,
-      cosplayName: m.cosplayName,
+      name: mName,
+      cosplayName: mName,
       email: m.email,
       socialMedia: m.socialMedia,
     });
@@ -227,7 +239,7 @@ export async function bulkImportMembers(
         );
         updated++;
       } catch (err) {
-        console.error(`Failed updating duplicate member ${m.cosplayName}:`, err);
+        console.error(`Failed updating duplicate member ${mName}:`, err);
         skipped++;
       }
     } else {
@@ -236,7 +248,7 @@ export async function bulkImportMembers(
         existingList.push({ id, ...m });
         added++;
       } catch (err) {
-        console.error(`Failed importing member ${m.cosplayName}:`, err);
+        console.error(`Failed importing member ${mName}:`, err);
         skipped++;
       }
     }

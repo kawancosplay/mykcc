@@ -6,7 +6,7 @@ import {
   Filter,
   Sparkles,
   Calendar,
-  User,
+  User as UserIcon,
   Plus,
   Eye,
   X,
@@ -18,13 +18,12 @@ import { Photo, Member } from '../types';
 import { toggleLikePhoto } from '../lib/galleryService';
 import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
 import { format16DigitUserId } from '../lib/idGenerator';
-
-import { User } from 'firebase/auth';
+import { User as FirebaseUser } from 'firebase/auth';
 
 interface PhotoGalleryProps {
   photos: Photo[];
   currentMember: Member | null;
-  user: User | null;
+  user: FirebaseUser | null;
   onOpenUpload: () => void;
   onRequireLogin: () => void;
   currentLang: LanguageCode;
@@ -88,18 +87,44 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
   const handleDownload = async (photo: Photo) => {
     try {
-      const response = await fetch(photo.photoUrl);
+      const cleanTitle = (photo.title || photo.character || 'cosplay_photo')
+        .replace(/[^a-zA-Z0-9_-]/g, '_')
+        .substring(0, 30);
+      const filename = `KawanCosplay_${cleanTitle}.jpg`;
+
+      // If data URL, download directly without fetching
+      if (photo.photoUrl.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = photo.photoUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // Fetch blob
+      const response = await fetch(photo.photoUrl, { mode: 'cors' });
+      if (!response.ok) throw new Error('Fetch failed');
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `KawanCosplay_${photo.title || 'photo'}.jpg`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.warn('Direct fetch download failed, fallback to direct anchor:', error);
+      const link = document.createElement('a');
+      link.href = photo.photoUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.download = `KawanCosplay_${photo.character || 'photo'}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -241,7 +266,11 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                   <img
                     src={photo.photoUrl}
                     alt={photo.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700 blur-sm brightness-50"
+                    onLoad={(e) => {
+                      e.currentTarget.classList.remove('blur-sm', 'brightness-50');
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
 
@@ -255,15 +284,28 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     </span>
                   </div>
 
-                  {/* Like button top right */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleLike(e, photo)}
-                    className="absolute top-3 right-3 p-2 rounded-full bg-slate-900/80 hover:bg-rose-600 text-slate-200 hover:text-white backdrop-blur-md transition-all flex items-center space-x-1 shadow-md"
-                  >
-                    <Heart className="w-3.5 h-3.5 fill-current text-rose-400 group-hover:scale-110" />
-                    <span className="text-[11px] font-bold">{photo.likesCount || 0}</span>
-                  </button>
+                  {/* Top right quick actions */}
+                  <div className="absolute top-3 right-3 flex items-center space-x-1.5 z-10">
+                    <button
+                      type="button"
+                      title={currentLang === 'id' ? 'Unduh Foto' : 'Download Photo'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(photo);
+                      }}
+                      className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-700 text-slate-200 hover:text-white backdrop-blur-md transition-all shadow-md active:scale-95"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleLike(e, photo)}
+                      className="p-2 rounded-full bg-slate-900/80 hover:bg-rose-600 text-slate-200 hover:text-white backdrop-blur-md transition-all flex items-center space-x-1 shadow-md"
+                    >
+                      <Heart className="w-3.5 h-3.5 fill-current text-rose-400 group-hover:scale-110" />
+                      <span className="text-[11px] font-bold">{photo.likesCount || 0}</span>
+                    </button>
+                  </div>
 
                   {/* Title & Author at bottom of photo */}
                   <div className="absolute bottom-3 left-3 right-3">

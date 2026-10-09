@@ -29,7 +29,8 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
   const handleShareCard = async () => {
     const kccIdFormatted = format16DigitUserId(member.userId16);
-    const text = `Halo! Saya ${member.cosplayName}, anggota resmi KawanCosplay Community. KCC ID saya: ${kccIdFormatted}. Bergabunglah di komunitas pop-culture, cosplay & wota 100% SFW! Hotline WA: +62 857-1103-2782`;
+    const memberDisplayName = member.name || member.cosplayName || 'Member';
+    const text = `Halo! Saya ${memberDisplayName}, anggota resmi KawanCosplay Community. KCC ID saya: ${kccIdFormatted}. Bergabunglah di komunitas pop-culture, cosplay & wota 100% SFW! Hotline WA: +62 857-1103-2782`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -110,12 +111,12 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               {member.avatarUrl ? (
                 <img
                   src={member.avatarUrl}
-                  alt={member.cosplayName}
+                  alt={member.name || member.cosplayName || 'Member'}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-tr from-rose-900 to-slate-900 text-rose-300 font-black text-2xl">
-                  {member.cosplayName[0]?.toUpperCase() || 'KC'}
+                  {(member.name || member.cosplayName || 'KC')[0]?.toUpperCase() || 'KC'}
                 </div>
               )}
               <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-950"></div>
@@ -127,7 +128,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                 {member.primaryRole}
               </div>
               <h4 className="text-xl sm:text-2xl font-black text-white truncate tracking-tight">
-                {member.cosplayName}
+                {member.name || member.cosplayName}
               </h4>
               <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-1 truncate">
                 <span>📍 {member.city}{member.country ? `, ${member.country}` : ''}</span>

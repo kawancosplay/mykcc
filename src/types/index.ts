@@ -4,6 +4,7 @@ export interface Member {
   authUid?: string; // Linked Firebase Auth UID
   fullName?: string; // Legacy compatibility only; form & database only ask for Name (name)
   name: string; // Nama (Name / Cosname / Stage Name / Alias)
+  cosplayName?: string; // Compatibility alias with existing Firestore database documents
   email?: string; // Optional email (empty on database for legacy form entries)
   phone?: string; // Nomor WhatsApp Aktif (Wajib karena komunitas berbasis WhatsApp)
   discordUsername?: string; // Username Discord (Contoh: username atau user#0000)
@@ -31,6 +32,7 @@ export interface Photo {
   memberId?: string;
   userId16?: string;
   authorName: string;
+  authorCosname?: string;
   authorNameAlias?: string;
   authorAvatar?: string;
   photoUrl: string;
@@ -62,6 +64,7 @@ export interface SheetFile {
 export interface ColumnMapping {
   timestamp: number;
   name: number; // Nama (Name / Cosname / Alias)
+  cosplayName?: number; // Compatibility with legacy column mapping
   fullName: number; // Fallback if sheet has an extra name column
   email: number;
   phone: number;

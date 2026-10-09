@@ -24,7 +24,8 @@ export interface DemoFormPreset {
   expectedUidType: string;
   icon: React.ReactNode;
   data: {
-    cosplayName: string;
+    name?: string;
+    cosplayName?: string;
     fullName: string;
     email: string;
     phone: string;
@@ -240,11 +241,12 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
   // If there are existing members, add a single KCC ID duplicate test
   const existingWithPhone = existingMembers.find((m) => m.phone);
   if (existingWithPhone) {
+    const matchName = existingWithPhone.name || existingWithPhone.cosplayName || 'Member';
     presets.push({
       id: 'duplicate_test',
       name: isId
-        ? `Uji Akun Tunggal (Duplikat: ${existingWithPhone.cosplayName})`
-        : `Single KCC ID Test (Match: ${existingWithPhone.cosplayName})`,
+        ? `Uji Akun Tunggal (Duplikat: ${matchName})`
+        : `Single KCC ID Test (Match: ${matchName})`,
       badge: 'Single KCC ID Check',
       badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
       expectedUidType: isId
@@ -252,8 +254,9 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         : `Verifies matching WhatsApp maintains KCC ID: ${existingWithPhone.userId16}`,
       icon: <CopyCheck className="w-4 h-4 text-cyan-400" />,
       data: {
-        cosplayName: existingWithPhone.cosplayName,
-        fullName: existingWithPhone.fullName || existingWithPhone.cosplayName,
+        name: matchName,
+        cosplayName: matchName,
+        fullName: existingWithPhone.fullName || matchName,
         email: existingWithPhone.email || 'updated.email@gmail.com',
         phone: existingWithPhone.phone || '081234567890',
         discordUsername: existingWithPhone.discordUsername || 'updated_discord',

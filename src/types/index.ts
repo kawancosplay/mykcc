@@ -2,8 +2,8 @@ export interface Member {
   id: string;
   userId16: string; // 16-digit KCC ID arranged by form submission timestamp (0000000000000000 for cosplaysehat@gmail.com)
   authUid?: string; // Linked Firebase Auth UID
-  fullName?: string; // Legacy compatibility only; form & database only ask for Name (cosplayName)
-  cosplayName: string; // Nama (Name / Cosname / Stage Name / Alias)
+  fullName?: string; // Legacy compatibility only; form & database only ask for Name (name)
+  name: string; // Nama (Name / Cosname / Stage Name / Alias)
   email?: string; // Optional email (empty on database for legacy form entries)
   phone?: string; // Nomor WhatsApp Aktif (Wajib karena komunitas berbasis WhatsApp)
   discordUsername?: string; // Username Discord (Contoh: username atau user#0000)
@@ -31,7 +31,7 @@ export interface Photo {
   memberId?: string;
   userId16?: string;
   authorName: string;
-  authorCosname?: string;
+  authorNameAlias?: string;
   authorAvatar?: string;
   photoUrl: string;
   title: string;
@@ -61,7 +61,7 @@ export interface SheetFile {
 
 export interface ColumnMapping {
   timestamp: number;
-  cosplayName: number; // Nama (Name / Cosname / Alias)
+  name: number; // Nama (Name / Cosname / Alias)
   fullName: number; // Fallback if sheet has an extra name column
   email: number;
   phone: number;

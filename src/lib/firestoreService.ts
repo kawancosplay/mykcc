@@ -147,7 +147,7 @@ export async function addMemberToFirestore(member: Omit<Member, 'id'>, customId?
   // Clean data object without undefined values; empty email supported as requested
   const payload: Record<string, unknown> = {
     userId16: resolvedUserId16,
-    cosplayName: member.cosplayName,
+    name: member.name,
     email: member.email || '',
     city: member.city || 'Worldwide',
     country: member.country || 'Worldwide',
@@ -319,7 +319,7 @@ export const SEED_MEMBERS: Omit<Member, 'id'>[] = [
   {
     userId16: '0000000000000000', // KCC Main Account
     fullName: 'Rian Pratama',
-    cosplayName: 'Rian_Cos / Ken',
+    name: 'Rian_Cos / Ken',
     email: 'cosplaysehat@gmail.com', // KCC Main Account email
     phone: '081298765432',
     discordUsername: 'rian_cos#0001',
@@ -341,7 +341,7 @@ export const SEED_MEMBERS: Omit<Member, 'id'>[] = [
   {
     userId16: '0000000000000001', // KCC Admin Slot 0001 (UID 0000 0000 0000 0001 to 0000 0000 0000 0100)
     fullName: 'Alya Putri Salsabila',
-    cosplayName: 'AlyaChan',
+    name: 'AlyaChan',
     email: '',
     phone: '085712345678',
     discordUsername: 'alyachan_cos',
@@ -363,7 +363,7 @@ export const SEED_MEMBERS: Omit<Member, 'id'>[] = [
   {
     userId16: '2026012009150003', // Arranged based on timestamp: 2026-01-20 09:15:00
     fullName: 'Dimas Ardiansyah',
-    cosplayName: 'DimCraft Props',
+    name: 'DimCraft Props',
     email: '',
     phone: '081399887766',
     discordUsername: 'dimcraft_3d',
@@ -385,7 +385,7 @@ export const SEED_MEMBERS: Omit<Member, 'id'>[] = [
   {
     userId16: '2026020116000004', // Arranged based on timestamp: 2026-02-01 16:00:00
     fullName: 'Cindy Claudia',
-    cosplayName: 'CinnyLens',
+    name: 'CinnyLens',
     email: '',
     phone: '082155443322',
     discordUsername: 'cinnylens',
@@ -407,7 +407,7 @@ export const SEED_MEMBERS: Omit<Member, 'id'>[] = [
   {
     userId16: '2026021411200005', // Arranged based on timestamp: 2026-02-14 11:20:00
     fullName: 'Farhan Naufal',
-    cosplayName: 'Kitsune_Naufal',
+    name: 'Kitsune_Naufal',
     email: '',
     phone: '087811223344',
     discordUsername: 'kitsune_naufal',

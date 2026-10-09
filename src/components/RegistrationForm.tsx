@@ -131,7 +131,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const isId = currentLang === 'id';
 
   const [formData, setFormData] = useState({
-    cosplayName: '', // Primary required identity
+    name: '', // Primary required identity
     fullName: '', // Strictly optional for privacy
     email: '', // Strictly optional
     phone: '', // Mandatory WhatsApp mobile number
@@ -194,7 +194,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     const confirmText = isId ? 'Kosongkan semua isian formulir?' : 'Clear all form inputs?';
     if (window.confirm(confirmText)) {
       setFormData({
-        cosplayName: '',
+        name: '',
         fullName: '',
         email: '',
         phone: '',
@@ -296,7 +296,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         phone: dataToSubmit.phone,
         discordUsername: dataToSubmit.discordUsername,
         email: dataToSubmit.email,
-        cosplayName: dataToSubmit.cosplayName,
+        name: dataToSubmit.name,
         socialMedia: dataToSubmit.socialMedia,
       });
 
@@ -318,12 +318,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         });
       }
 
-      // If legal name is left blank to respect privacy, use cosplayName
-      const resolvedFullName = dataToSubmit.fullName.trim() || dataToSubmit.cosplayName.trim();
+      // If legal name is left blank to respect privacy, use name
+      const resolvedFullName = dataToSubmit.fullName.trim() || dataToSubmit.name.trim();
 
       const newMemberPayload: Omit<Member, 'id'> = {
         userId16,
-        cosplayName: dataToSubmit.cosplayName.trim(),
+        name: dataToSubmit.name.trim(),
         fullName: resolvedFullName,
         email: dataToSubmit.email.trim().toLowerCase(), // Empty string if omitted, as legacy form never asked for email
         phone: dataToSubmit.phone.trim(),

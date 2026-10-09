@@ -67,7 +67,7 @@ export interface TranslationDictionary {
   stageOrFakeName: string;
   realNameOptional: string;
   fullName: string;
-  cosplayName: string;
+  name: string;
   email: string;
   password: string;
   phone: string;
@@ -217,7 +217,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
     stageOrFakeName: 'Cosplay Name / Stage Name / Fake Name / Nickname / Alias',
     realNameOptional: 'Legal Real Name (Optional - leave blank if you prefer privacy)',
     fullName: 'Legal Name (Optional)',
-    cosplayName: 'Cosplay Alias / Fake Name (Alias)',
+    name: 'Cosplay Alias / Fake Name (Alias)',
     email: 'Active Email Address',
     password: 'Password',
     phone: 'WhatsApp / Mobile Number (Optional)',
@@ -363,7 +363,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
     stageOrFakeName: 'Cosplay 艺名 / 昵称 / 假名 / 称呼 (必填)',
     realNameOptional: '法定真实全名 (选填 - 注重隐私者可留空)',
     fullName: '真实姓名 (选填)',
-    cosplayName: '艺名 / 昵称 (必填)',
+    name: '艺名 / 昵称 (必填)',
     email: '电子邮箱地址',
     password: '账户密码',
     phone: 'WhatsApp / 手机号码 (选填)',
@@ -436,7 +436,7 @@ export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
     stageOrFakeName: 'Cosplay 藝名 / 稱號 / 假名 / 暱稱 (必填)',
     realNameOptional: '法定真實姓名 (選填 - 重視隱私可保留空白)',
     fullName: '真實姓名 (選填)',
-    cosplayName: '藝名 / 暱稱 (必填)',
+    name: '藝名 / 暱稱 (必填)',
     email: '電子郵件地址',
     password: '密碼',
     phone: 'WhatsApp / 電話號碼 (選填)',

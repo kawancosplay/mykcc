@@ -159,9 +159,11 @@ export async function findMemberByUserId16(userId16: string): Promise<Member | n
 
 export async function findMemberByEmail(email: string): Promise<Member | null> {
   if (!email) return null;
+  const start = Date.now();
   try {
     const q = query(collection(db, 'members'), where('email', '==', email.toLowerCase().trim()));
     const snap = await getDocs(q);
+    console.log(`findMemberByEmail took ${Date.now() - start}ms`);
     if (!snap.empty) {
       const docSnap = snap.docs[0];
       const data = docSnap.data() as Omit<Member, 'id'>;

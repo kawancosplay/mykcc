@@ -115,18 +115,56 @@ export function subscribeToPhotos(
   );
 }
 
+function sanitizeFirestorePayload(obj: Record<string, any>): Record<string, any> {
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+        cleaned[key] = sanitizeFirestorePayload(value);
+      } else {
+        cleaned[key] = value;
+      }
+    }
+  }
+  return cleaned;
+}
+
 export async function addPhotoToFirestore(photo: Omit<Photo, 'id'>): Promise<string> {
   const id = `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const photoDocRef = doc(db, PHOTOS_COLLECTION, id);
 
-  const payload = {
-    ...photo,
+  const authorName = (photo.authorName || 'Member').trim().substring(0, 100);
+
+  const rawPayload: Record<string, any> = {
+    authorName,
+    photoUrl: photo.photoUrl,
+    title: (photo.title || 'Cosplay Photo').trim().substring(0, 120),
+    character: (photo.character || 'Original').trim().substring(0, 100),
+    series: (photo.series || 'Cosplay').trim().substring(0, 100),
+    event: (photo.event || 'Gathering').trim().substring(0, 120),
+    likesCount: typeof photo.likesCount === 'number' ? photo.likesCount : 0,
     createdAt: photo.createdAt || new Date().toISOString(),
-    likesCount: photo.likesCount || 0,
   };
 
+  if (photo.memberId) rawPayload.memberId = photo.memberId;
+  if (photo.userId16) rawPayload.userId16 = photo.userId16;
+  if (photo.authorCosname) rawPayload.authorCosname = photo.authorCosname;
+  if (photo.authorNameAlias) rawPayload.authorNameAlias = photo.authorNameAlias;
+  if (photo.authorAvatar) rawPayload.authorAvatar = photo.authorAvatar;
+  if (photo.photographer && photo.photographer.trim()) {
+    rawPayload.photographer = photo.photographer.trim().substring(0, 100);
+  }
+  if (photo.caption && photo.caption.trim()) {
+    rawPayload.caption = photo.caption.trim().substring(0, 1000);
+  }
+
+  const cleanPayload = sanitizeFirestorePayload(rawPayload);
+
   try {
-    await setDoc(photoDocRef, payload);
+    await Promise.race([
+      setDoc(photoDocRef, cleanPayload),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Write photo timeout')), 8000)),
+    ]);
     return id;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${PHOTOS_COLLECTION}/${id}`);

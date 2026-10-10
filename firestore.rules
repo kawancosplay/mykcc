@@ -53,11 +53,11 @@ service cloud.firestore {
 
     function isValidPhoto(data) {
       return data.keys().hasAll(['authorName', 'photoUrl', 'character', 'series', 'event', 'createdAt'])
-        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 60
+        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 100
         && data.photoUrl is string
-        && data.character is string && data.character.size() <= 80
-        && data.series is string && data.series.size() <= 80
-        && data.event is string && data.event.size() <= 100
+        && data.character is string && data.character.size() <= 100
+        && data.series is string && data.series.size() <= 100
+        && data.event is string && data.event.size() <= 120
         && data.createdAt is string;
     }
 

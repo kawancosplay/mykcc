@@ -67,23 +67,28 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
     try {
       const finalEvent = event === 'Lainnya (Tulis Sendiri)' && customEvent ? customEvent.trim() : event;
 
+      const authorName = (currentMember.name || currentMember.cosplayName || currentMember.fullName || 'Member').trim();
+
       const newPhotoPayload: Omit<Photo, 'id'> = {
-        memberId: currentMember.id,
-        userId16: currentMember.userId16,
-        authorName: currentMember.name || currentMember.cosplayName || currentMember.fullName || 'Member',
-        authorCosname: currentMember.name || currentMember.cosplayName,
-        authorNameAlias: currentMember.name || currentMember.cosplayName,
-        authorAvatar: currentMember.avatarUrl,
+        authorName,
         photoUrl,
         title: title.trim(),
         character: character.trim(),
         series: series.trim(),
         event: finalEvent,
-        photographer: photographer.trim() || undefined,
-        caption: caption.trim() || undefined,
         likesCount: 0,
         createdAt: new Date().toISOString(),
       };
+
+      if (currentMember.id) newPhotoPayload.memberId = currentMember.id;
+      if (currentMember.userId16) newPhotoPayload.userId16 = currentMember.userId16;
+      if (currentMember.name || currentMember.cosplayName) {
+        newPhotoPayload.authorCosname = currentMember.name || currentMember.cosplayName;
+        newPhotoPayload.authorNameAlias = currentMember.name || currentMember.cosplayName;
+      }
+      if (currentMember.avatarUrl) newPhotoPayload.authorAvatar = currentMember.avatarUrl;
+      if (photographer.trim()) newPhotoPayload.photographer = photographer.trim();
+      if (caption.trim()) newPhotoPayload.caption = caption.trim();
 
       const docId = await addPhotoToFirestore(newPhotoPayload);
       const created: Photo = {
@@ -95,7 +100,16 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
       onClose();
     } catch (err: unknown) {
       console.error('Upload photo error:', err);
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal mengunggah foto ke galeri.');
+      let message = 'Gagal mengunggah foto ke galeri.';
+      if (err instanceof Error) {
+        try {
+          const parsed = JSON.parse(err.message);
+          message = parsed.error || err.message;
+        } catch {
+          message = err.message;
+        }
+      }
+      setErrorMsg(message);
     } finally {
       setIsSubmitting(false);
     }

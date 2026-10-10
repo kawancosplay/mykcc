@@ -292,8 +292,12 @@ export async function findMemberByEmail(email: string): Promise<Member | null> {
 
 export async function updateMemberProfileData(memberId: string, fields: Partial<Member>): Promise<void> {
   const memberDocRef = doc(db, 'members', memberId);
-  const cleanFields = { ...fields };
-  delete (cleanFields as Record<string, unknown>).id;
-  await updateDoc(memberDocRef, cleanFields as Record<string, unknown>);
+  const cleanFields: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (key !== 'id' && value !== undefined) {
+      cleanFields[key] = value;
+    }
+  }
+  await updateDoc(memberDocRef, cleanFields);
   invalidateMemberCache(fields.email);
 }

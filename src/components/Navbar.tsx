@@ -75,9 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header
       ref={navbarRef}
-      className={`left-0 right-0 z-50 border-b border-white/10 text-slate-100 shadow-xl relative transition-colors duration-200 ${
-        isMobileMenuOpen ? 'bg-[#0b071a]' : 'liquid-glass'
-      }`}
+      className="left-0 right-0 z-50 border-b border-white/10 text-slate-100 shadow-xl relative liquid-glass transition-colors duration-200"
     >
       <div className="max-w-[100rem] mx-auto px-3 sm:px-4 h-14 md:h-16">
         <div className="flex items-center justify-between h-full w-full">
@@ -137,16 +135,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className={`flex items-center justify-end gap-1 md:gap-2 shrink-0 h-full transition-transform duration-300 flex-1 ${shouldShrink ? 'scale-90' : 'scale-100'}`}>
             <button
               type="button"
-              className={`lg:hidden p-2.5 rounded-xl border transition-all shadow-sm active:scale-95 ${
+              className={`lg:hidden p-2.5 sm:p-3 min-w-[42px] min-h-[42px] rounded-2xl border transition-all shadow-md active:scale-95 flex items-center justify-center ${
                 isMobileMenuOpen
-                  ? 'bg-rose-600/20 text-rose-300 border-rose-500/40'
-                  : 'liquid-glass-card hover:bg-slate-800 border-purple-400/30 text-purple-200'
+                  ? 'bg-rose-500/25 text-rose-300 border-rose-500/50 shadow-rose-900/40'
+                  : 'liquid-glass-menu-item text-white border-white/20 hover:bg-white/10'
               }`}
               onClick={handleToggleMobileMenu}
               aria-label={isMobileMenuOpen ? 'Tutup Menu' : 'Buka Menu'}
               aria-expanded={isMobileMenuOpen}
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5 text-rose-300" /> : <Menu className="w-5 h-5" />}
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-rose-300" /> : <Menu className="w-5 h-5 text-white" />}
             </button>
             <div className="hidden lg:flex items-center gap-1">
               <a
@@ -248,26 +246,27 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Floating Mobile Dropdown Menu Overlay - 100% OPAQUE & ZERO BLEED-THROUGH */}
+      {/* Floating Mobile Dropdown Menu Overlay - LIQUID GLASS */}
       {isMobileMenuOpen && (
         <>
-          {/* Solid Dim Backdrop to fully separate menu from page below */}
+          {/* Frosted Dim Backdrop Overlay */}
           <div
-            className="fixed inset-0 top-[56px] md:top-[64px] bg-slate-950/85 backdrop-blur-md z-40 lg:hidden animate-fade-in"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
             onClick={handleCloseMobileMenu}
+            onTouchMove={(e) => e.preventDefault()}
             aria-hidden="true"
           />
 
-          {/* Opaque Floating Menu Drawer */}
-          <div className="lg:hidden absolute top-full left-0 right-0 w-full bg-[#0b071a] border-b-2 border-purple-500/30 shadow-[0_20px_50px_rgba(0,0,0,0.9)] p-4 flex flex-col gap-2 max-h-[calc(100dvh-70px)] overflow-y-auto overscroll-contain z-50 rounded-b-3xl">
+          {/* Liquid Glass Floating Menu Drawer */}
+          <div className="lg:hidden absolute top-full left-0 right-0 w-full liquid-glass-menu p-4 sm:p-5 flex flex-col gap-2.5 max-h-[calc(100dvh-75px)] overflow-y-auto overscroll-contain z-50 rounded-b-3xl border-b border-x border-white/20 shadow-2xl animate-fade-in">
              {/* User Profile Info Card */}
              {currentMember && (
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-900/90 border border-purple-500/20 mb-1">
+                <div className="flex items-center gap-3 p-3 rounded-2xl liquid-glass-card border border-purple-400/30 mb-1">
                     {currentMember?.avatarUrl || user?.photoURL ? (
                     <img
                         src={currentMember?.avatarUrl || user?.photoURL || ''}
                         alt={currentMember?.name || currentMember?.cosplayName || user?.displayName || 'User'}
-                        className="w-10 h-10 rounded-full object-cover shrink-0 border border-purple-400/30"
+                        className="w-10 h-10 rounded-full object-cover shrink-0 border border-purple-400/40"
                     />
                     ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-700 to-rose-700 flex items-center justify-center font-bold text-white shrink-0">
@@ -281,77 +280,77 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
              )}
 
-             {/* Navigation Tabs with Solid Tile Backgrounds */}
+             {/* Navigation Tabs with Liquid Glass Styling */}
              <button
                type="button"
                onClick={() => { setActiveTab('form'); handleCloseMobileMenu(); }}
-               className={`w-full flex items-center gap-3.5 p-3 rounded-2xl transition-all border ${
+               className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl transition-all border ${
                  activeTab === 'form'
-                   ? 'bg-gradient-to-r from-rose-600/30 to-purple-600/20 text-white border-rose-500/50 shadow-md font-bold'
-                   : 'bg-slate-900/80 text-slate-200 border-white/5 hover:bg-slate-800'
+                   ? 'bg-rose-500/25 text-white border-rose-500/50 shadow-lg font-bold'
+                   : 'liquid-glass-menu-item text-slate-100 hover:text-white'
                }`}
              >
-               <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+               <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-300 shrink-0">
                  <Sparkles className="w-4 h-4" />
                </div>
-               <span className="text-sm font-medium">{t.navForm}</span>
+               <span className="text-sm font-semibold">{t.navForm}</span>
              </button>
 
              <button
                type="button"
                onClick={() => { setActiveTab('card'); handleCloseMobileMenu(); }}
-               className={`w-full flex items-center gap-3.5 p-3 rounded-2xl transition-all border ${
+               className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl transition-all border ${
                  activeTab === 'card'
-                   ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/20 text-white border-indigo-500/50 shadow-md font-bold'
-                   : 'bg-slate-900/80 text-slate-200 border-white/5 hover:bg-slate-800'
+                   ? 'bg-indigo-500/25 text-white border-indigo-500/50 shadow-lg font-bold'
+                   : 'liquid-glass-menu-item text-slate-100 hover:text-white'
                }`}
              >
-               <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+               <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
                  <IdCard className="w-4 h-4" />
                </div>
-               <span className="text-sm font-medium">KCC ID</span>
+               <span className="text-sm font-semibold">KCC ID</span>
              </button>
 
              <button
                type="button"
                onClick={() => { setActiveTab('gallery'); handleCloseMobileMenu(); }}
-               className={`w-full flex items-center gap-3.5 p-3 rounded-2xl transition-all border ${
+               className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl transition-all border ${
                  activeTab === 'gallery'
-                   ? 'bg-gradient-to-r from-pink-600/30 to-purple-600/20 text-white border-pink-500/50 shadow-md font-bold'
-                   : 'bg-slate-900/80 text-slate-200 border-white/5 hover:bg-slate-800'
+                   ? 'bg-pink-500/25 text-white border-pink-500/50 shadow-lg font-bold'
+                   : 'liquid-glass-menu-item text-slate-100 hover:text-white'
                }`}
              >
-               <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shrink-0">
+               <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-300 shrink-0">
                  <Camera className="w-4 h-4" />
                </div>
-               <span className="text-sm font-medium">{t.navGallery}</span>
+               <span className="text-sm font-semibold">{t.navGallery}</span>
              </button>
 
              {(user || currentMember) && (
                <button
                  type="button"
                  onClick={() => { setActiveTab('profile'); handleCloseMobileMenu(); }}
-                 className={`w-full flex items-center gap-3.5 p-3 rounded-2xl transition-all border ${
+                 className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl transition-all border ${
                    activeTab === 'profile'
-                     ? 'bg-gradient-to-r from-cyan-600/30 to-purple-600/20 text-white border-cyan-500/50 shadow-md font-bold'
-                     : 'bg-slate-900/80 text-slate-200 border-white/5 hover:bg-slate-800'
+                     ? 'bg-cyan-500/25 text-white border-cyan-500/50 shadow-lg font-bold'
+                     : 'liquid-glass-menu-item text-slate-100 hover:text-white'
                  }`}
                >
-                 <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
+                 <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
                    <UserIcon className="w-4 h-4" />
                  </div>
-                 <span className="text-sm font-medium">{t.navProfile}</span>
+                 <span className="text-sm font-semibold">{t.navProfile}</span>
                </button>
              )}
              
              {/* Secondary Utilities Container */}
-             <div className="border-t border-slate-800 my-1 pt-2 flex flex-col gap-2">
+             <div className="border-t border-white/10 my-1 pt-2.5 flex flex-col gap-2">
                 {/* Language Selection */}
                 <div className="flex flex-col gap-1.5">
                     <button
                         type="button"
                         onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                        className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-900/70 border border-white/5 text-slate-200 hover:bg-slate-800 transition-colors"
+                        className="w-full flex items-center justify-between p-3.5 rounded-2xl liquid-glass-menu-item text-slate-100 hover:text-white"
                     >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
@@ -362,7 +361,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {isLangMenuOpen && (
-                        <div className="w-full grid grid-cols-2 gap-1.5 p-2 rounded-2xl bg-slate-950 border border-purple-500/20 text-xs text-slate-100 max-h-48 overflow-y-auto">
+                        <div className="w-full grid grid-cols-2 gap-1.5 p-2 rounded-2xl liquid-glass-card border border-purple-500/30 text-xs text-slate-100 max-h-48 overflow-y-auto">
                         {LANGUAGES.map((lang) => (
                             <button
                             type="button"
@@ -388,7 +387,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   href="https://wa.me/6285711032782"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-900/70 border border-white/5 text-slate-200 hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-3.5 p-3.5 rounded-2xl liquid-glass-menu-item text-slate-100 hover:text-white"
                 >
                   <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                     <MessageCircle className="w-4 h-4" />
@@ -399,7 +398,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => { setIsEditorOpen(true); handleCloseMobileMenu(); }}
-                  className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-900/70 border border-white/5 text-slate-200 hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-3.5 p-3.5 rounded-2xl liquid-glass-menu-item text-slate-100 hover:text-white"
                 >
                   <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
                     <Palette className="w-4 h-4" />
@@ -415,7 +414,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     type="button"
                     onClick={() => { onLogout(); handleCloseMobileMenu(); }}
-                    className="flex items-center justify-center gap-2 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 font-bold transition-colors mt-1"
+                    className="flex items-center justify-center gap-2 p-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 hover:bg-rose-500/30 font-bold transition-colors mt-1"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Logout</span>
@@ -424,7 +423,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     type="button"
                     onClick={() => { onOpenAuth(); handleCloseMobileMenu(); }}
-                    className="flex items-center justify-center gap-2 p-3 rounded-2xl bg-gradient-to-r from-rose-600 to-purple-600 text-white font-bold transition-all shadow-lg mt-1"
+                    className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-bold transition-all shadow-lg border border-white/20 mt-1"
                   >
                     <UserIcon className="w-4 h-4" />
                     <span>Login / Sign In</span>

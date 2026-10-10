@@ -21,6 +21,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
 }) => {
   const { theme } = useSiteTheme();
   const [logoSrc, setLogoSrc] = useState(desktopLogoUrl);
+  const [hasImageError, setHasImageError] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -35,10 +36,12 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [desktopLogoUrl, mobileLogoUrl]);
 
+  const isImageActive = Boolean(logoSrc && !hasImageError);
+
   const iconDimensions = {
-    sm: 'w-[80px] h-full',
-    md: 'w-[180px] h-auto', // Reduced from 220px
-    lg: 'w-[240px] h-auto', // Reduced from 300px
+    sm: isImageActive ? 'h-9 sm:h-11 w-auto max-w-[180px]' : 'w-9 h-9 sm:w-11 sm:h-11',
+    md: isImageActive ? 'h-12 w-auto max-w-[200px]' : 'w-12 h-12',
+    lg: isImageActive ? 'h-16 w-auto max-w-[260px]' : 'w-16 h-16',
   }[size];
 
   const logoTitle = theme?.logo?.title || 'MyKCC';
@@ -47,14 +50,16 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
   const customLogoUrl = theme?.logo?.customLogoUrl;
 
   return (
-    <div className={`flex items-center space-x-3 select-none ${className}`}>
+    <div className={`flex items-center ${showText ? 'space-x-2.5' : ''} select-none h-full ${className}`}>
       {/* Official KawanCosplay Vector Emblem or Custom Logo */}
-      <div className={`relative ${noContainer ? '' : iconDimensions} shrink-0`}>
-        {(logoSrc) ? (
+      <div className={`relative ${noContainer ? '' : iconDimensions} shrink-0 flex items-center justify-center`}>
+        {logoSrc && !hasImageError ? (
           <img
             src={logoSrc}
-            alt="Logo"
-            className={`${noContainer ? iconDimensions : 'w-full h-full max-h-full'} object-contain`}
+            alt="KawanCosplay Logo"
+            className="h-9 sm:h-11 w-auto max-w-[180px] object-contain block"
+            loading="eager"
+            onError={() => setHasImageError(true)}
           />
         ) : customLogoUrl ? (
           <img
@@ -199,15 +204,15 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
       {/* Brand Text */}
       {showText && (
         <div className="flex flex-col text-left">
-          <div className="flex items-center space-x-2">
-            <span className="font-black text-xl sm:text-2xl tracking-tight bg-gradient-to-r from-white via-rose-100 to-pink-300 bg-clip-text text-transparent leading-none">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
+            <span className="font-black text-lg sm:text-2xl tracking-tight bg-gradient-to-r from-white via-rose-100 to-pink-300 bg-clip-text text-transparent leading-none">
               {logoTitle}
             </span>
-            <span className="px-1.5 py-0.5 text-[9px] font-extrabold tracking-wider uppercase rounded-md bg-gradient-to-r from-rose-500/20 to-purple-500/20 text-rose-300 border border-rose-500/30 leading-none">
+            <span className="px-1.5 py-0.5 text-[8px] sm:text-[9px] font-extrabold tracking-wider uppercase rounded-md bg-gradient-to-r from-rose-500/20 to-purple-500/20 text-rose-300 border border-rose-500/30 leading-none">
               Official
             </span>
           </div>
-          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 tracking-wider uppercase mt-1 leading-none">
+          <span className="text-[9px] sm:text-[11px] font-bold text-slate-400 tracking-wider uppercase mt-0.5 sm:mt-1 leading-none">
             {logoSubtitle}
           </span>
         </div>

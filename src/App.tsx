@@ -49,6 +49,7 @@ export default function App() {
     let ticking = false;
 
     const handleScroll = () => {
+      if (isMobileMenuOpen) return;
       if (ticking) return;
       ticking = true;
 
@@ -74,18 +75,6 @@ export default function App() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMobileMenuOpen]);
-
-  // Lock body scroll cleanly while mobile menu is open to prevent page jumps
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
   }, [isMobileMenuOpen]);
 
 
@@ -413,7 +402,7 @@ export default function App() {
       </div>
 
       {/* Sticky Header Container */}
-      <div className={`sticky top-0 z-50 transition-transform duration-500 ease-in-out ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+      <div className={`sticky top-0 z-50 transition-transform duration-500 ease-in-out ${!isMobileMenuOpen && !isVisible ? '-translate-y-full' : ''}`}>
         {/* Official Government-Style Verification Header */}
         <OfficialGovBanner currentLang={currentLang} />
 

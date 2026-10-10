@@ -199,13 +199,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'signup' && (
             <div>
               <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                Nama (Name / Cosname / Alias) <span className="text-rose-400">*</span>
+                Nama (Name / Cosname / Alias) <span className="text-slate-400 font-normal">(Opsional)</span>
               </label>
               <div className="relative">
                 <Sparkles className="absolute left-3 top-3 w-4 h-4 text-rose-400" />
                 <input
                   type="text"
-                  required
                   placeholder="Contoh: Rian_Cos / Alya / Ken"
                   value={cosplayName}
                   onChange={(e) => setCosplayName(e.target.value)}
@@ -213,7 +212,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
               </div>
               <p className="text-[10px] text-slate-400 mt-1">
-                Boleh menggunakan nama samaran / cosname / nama panggilan demi privasi.
+                Opsional saat buat akun. Nama lengkap & cosname dapat diisi saat mengisi formulir komunitas.
               </p>
             </div>
           )}

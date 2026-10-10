@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, Camera, Sparkles, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Member, Photo } from '../types';
 import { addPhotoToFirestore } from '../lib/galleryService';
+import { compressImage } from '../lib/imageUtils';
 
 interface UploadPhotoModalProps {
   isOpen: boolean;
@@ -29,20 +30,22 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran foto maksimal 5MB.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Ukuran foto maksimal 15MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPhotoUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file, 1200, 1200, 0.85);
+      setPhotoUrl(compressed);
+    } catch (err) {
+      console.error('Failed to compress image:', err);
+      alert('Gagal memproses gambar. Silakan coba file lain.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

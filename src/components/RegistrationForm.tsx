@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Member } from '../types';
 import { addMemberToFirestore } from '../lib/firestoreService';
+import { compressImage } from '../lib/imageUtils';
 import {
   resolveMemberUserId16,
   format16DigitUserId,
@@ -174,20 +175,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     [formData.country, formData.province]
   );
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert(isId ? 'Ukuran foto maksimal 2MB untuk avatar profil.' : 'Max file size is 2MB for avatar.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert(isId ? 'Ukuran foto maksimal 15MB untuk avatar profil.' : 'Max file size is 15MB for avatar.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFormData((prev) => ({ ...prev, avatarUrl: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file, 800, 800, 0.82);
+      setFormData((prev) => ({ ...prev, avatarUrl: compressed }));
+    } catch (err) {
+      console.error('Failed to compress avatar:', err);
+      alert(isId ? 'Gagal memproses foto.' : 'Failed to process photo.');
+    }
   };
 
   const handleClearForm = () => {

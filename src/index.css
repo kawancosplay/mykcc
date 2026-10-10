@@ -3,6 +3,15 @@
 @theme {
   --font-sans: 'DIN Next', sans-serif;
   --font-mono: 'DIN Next', monospace;
+
+  /* Used across the app as `animate-fade-in` (not a Tailwind built-in).
+     Opacity-only so it never creates a containing block for `fixed` children. */
+  --animate-fade-in: fade-in 0.2s ease-out both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
 
 :root {
@@ -35,61 +44,90 @@ button, a[role="button"] {
 /* =========================================================================
    LIQUID GLASS DESIGN LANGUAGE UTILITIES
    Translucent, refractive, specular highlight surfaces with depth & caustics
+
+   Notes:
+   - Always write `-webkit-backdrop-filter` BEFORE `backdrop-filter`. The
+     production minifier (Lightning CSS) treats them as the same property and
+     keeps only the last one; if the -webkit one is last it then strips it as
+     an unneeded prefix, which removed the blur entirely on Vercel builds.
+   - Surfaces live in `@layer components` so Tailwind utilities on the same
+     element (border colors, padding, etc.) can still override them.
+   - No `transform`/`will-change` hacks: they create a containing block that
+     traps `position: fixed` children and fight Tailwind transform utilities.
    ========================================================================= */
 
-.liquid-glass {
-  background: rgba(14, 10, 30, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  transform: translateZ(0);
-  will-change: backdrop-filter;
-}
+@layer components {
+  /* Glass painted on a pseudo-element so the element itself is not a
+     containing block / backdrop root. This keeps `fixed` overlays inside the
+     navbar full-screen and lets nested glass (mobile menu) blur correctly. */
+  .liquid-glass {
+    position: relative;
+    isolation: isolate;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
 
-.liquid-glass-menu {
-  background: rgba(12, 8, 26, 0.85);
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85),
-              0 0 35px rgba(168, 85, 247, 0.18),
-              inset 0 1px 1px rgba(255, 255, 255, 0.25);
-  transform: translateZ(0);
-  will-change: backdrop-filter;
-}
+  .liquid-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background: rgba(14, 10, 30, 0.72);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
 
-.liquid-glass-menu-item {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateZ(0);
-  will-change: backdrop-filter;
-}
+  .liquid-glass-menu {
+    background: rgba(12, 8, 26, 0.85);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85),
+                0 0 35px rgba(168, 85, 247, 0.18),
+                inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  }
 
-.liquid-glass-menu-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px) translateZ(0);
-}
+  .liquid-glass-menu-item {
+    background: rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-.liquid-glass-elevated {
-  background: rgba(16, 11, 35, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  transform: translateZ(0);
-  will-change: backdrop-filter;
-}
+  .liquid-glass-menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
 
-.liquid-glass-card {
-  background: rgba(18, 12, 38, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  transform: translateZ(0);
-  will-change: backdrop-filter;
+  .liquid-glass-elevated {
+    background: rgba(16, 11, 35, 0.85);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+  }
+
+  .liquid-glass-card {
+    background: rgba(18, 12, 38, 0.75);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  /* Graceful translucent solid fallback when backdrop-filter is unsupported */
+  @supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
+    .liquid-glass::before {
+      background: rgba(15, 23, 42, 0.88);
+    }
+    .liquid-glass-elevated {
+      background: rgba(15, 23, 42, 0.94);
+    }
+    .liquid-glass-card {
+      background: rgba(15, 23, 42, 0.90);
+    }
+  }
 }
 
 .liquid-glass-input {
@@ -115,28 +153,9 @@ button, a[role="button"] {
   filter: brightness(1.1);
 }
 
-/* Explicit Safari / WebKit and Vercel production vendor prefix support for Tailwind backdrop-blur */
-.backdrop-blur-none { -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); transform: translateZ(0); will-change: backdrop-filter; }
-.backdrop-blur-sm   { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); transform: translateZ(0); will-change: backdrop-filter; }
-.backdrop-blur      { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transform: translateZ(0); will-change: backdrop-filter; }
-.backdrop-blur-md   { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transform: translateZ(0); will-change: backdrop-filter; }
-.backdrop-blur-lg   { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); transform: translateZ(0); will-change: backdrop-filter; }
-.backdrop-blur-xl   { -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); transform: translateZ(0); will-change: backdrop-filter; }
-.backdrop-blur-2xl  { -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px); transform: translateZ(0); will-change: backdrop-filter; }
-.backdrop-blur-3xl  { -webkit-backdrop-filter: blur(64px); backdrop-filter: blur(64px); transform: translateZ(0); will-change: backdrop-filter; }
-
-/* Graceful translucent solid fallback when backdrop-filter is disabled or unaccelerated */
-@supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
-  .liquid-glass {
-    background: rgba(15, 23, 42, 0.88);
-  }
-  .liquid-glass-elevated {
-    background: rgba(15, 23, 42, 0.94);
-  }
-  .liquid-glass-card {
-    background: rgba(15, 23, 42, 0.90);
-  }
-}
+/* Tailwind v4 already emits -webkit-backdrop-filter for backdrop-blur-*
+   utilities, so no manual overrides are needed (the old ones also clobbered
+   backdrop-saturate/brightness and transform utilities). */
 
 /* Subtle continuous ambient fluid pulse animation - GPU accelerated transform only */
 @keyframes fluid-drift {

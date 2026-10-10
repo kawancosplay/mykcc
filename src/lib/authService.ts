@@ -220,7 +220,10 @@ export async function findMemberByUidOrEmail(uid?: string, email?: string): Prom
   if (uid) {
     try {
       const qUid = query(collection(db, 'members'), where('authUid', '==', uid), limit(1));
-      const snapUid = await getDocs(qUid);
+      const snapUid = await Promise.race([
+        getDocs(qUid),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 3000))
+      ]);
       if (!snapUid.empty) {
         const docSnap = snapUid.docs[0];
         const data = docSnap.data() as Omit<Member, 'id'>;
@@ -246,7 +249,10 @@ export async function findMemberByUidOrEmail(uid?: string, email?: string): Prom
   if (cleanEmail) {
     try {
       const qEmail = query(collection(db, 'members'), where('email', '==', cleanEmail), limit(1));
-      const snap = await getDocs(qEmail);
+      const snap = await Promise.race([
+        getDocs(qEmail),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 3000))
+      ]);
       if (!snap.empty) {
         const docSnap = snap.docs[0];
         const data = docSnap.data() as Omit<Member, 'id'>;

@@ -87,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
           >
             <KawanCosplayLogo
-              size="sm"
+              size="md"
               showText={false}
               desktopLogoUrl="https://i.postimg.cc/sXbd1FgB/Logo-Kawan-Cosplay-Community-Redesigned-Alt.png"
               mobileLogoUrl="https://i.postimg.cc/sXbd1FgB/Logo-Kawan-Cosplay-Community-Redesigned-Alt.png"
@@ -251,7 +251,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <>
           {/* Frosted Dim Backdrop Overlay */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+            className="fixed top-14 md:top-16 inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
             onClick={handleCloseMobileMenu}
             onTouchMove={(e) => e.preventDefault()}
             aria-hidden="true"

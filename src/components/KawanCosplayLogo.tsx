@@ -39,9 +39,9 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
   const isImageActive = Boolean(logoSrc && !hasImageError);
 
   const iconDimensions = {
-    sm: isImageActive ? 'h-9 sm:h-11 w-auto max-w-[180px]' : 'w-9 h-9 sm:w-11 sm:h-11',
-    md: isImageActive ? 'h-12 w-auto max-w-[200px]' : 'w-12 h-12',
-    lg: isImageActive ? 'h-16 w-auto max-w-[260px]' : 'w-16 h-16',
+    sm: isImageActive ? 'h-11 sm:h-14 w-auto max-w-[210px]' : 'w-11 h-11 sm:w-14 sm:h-14',
+    md: isImageActive ? 'h-14 sm:h-18 w-auto max-w-[260px]' : 'w-14 h-14 sm:w-18 sm:h-18',
+    lg: isImageActive ? 'h-20 sm:h-24 w-auto max-w-[320px]' : 'w-20 h-20 sm:w-24 sm:h-24',
   }[size];
 
   const logoTitle = theme?.logo?.title || 'MyKCC';
@@ -57,7 +57,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
           <img
             src={logoSrc}
             alt="KawanCosplay Logo"
-            className="h-9 sm:h-11 w-auto max-w-[180px] object-contain block"
+            className="h-11 sm:h-14 w-auto max-w-[210px] object-contain block"
             loading="eager"
             onError={() => setHasImageError(true)}
           />

@@ -42,6 +42,8 @@ button, a[role="button"] {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.12);
+  transform: translateZ(0);
+  will-change: backdrop-filter;
 }
 
 .liquid-glass-menu {
@@ -52,6 +54,8 @@ button, a[role="button"] {
   box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85),
               0 0 35px rgba(168, 85, 247, 0.18),
               inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  transform: translateZ(0);
+  will-change: backdrop-filter;
 }
 
 .liquid-glass-menu-item {
@@ -60,12 +64,14 @@ button, a[role="button"] {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateZ(0);
+  will-change: backdrop-filter;
 }
 
 .liquid-glass-menu-item:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
+  transform: translateY(-1px) translateZ(0);
 }
 
 .liquid-glass-elevated {
@@ -73,6 +79,8 @@ button, a[role="button"] {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.16);
+  transform: translateZ(0);
+  will-change: backdrop-filter;
 }
 
 .liquid-glass-card {
@@ -80,6 +88,8 @@ button, a[role="button"] {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.12);
+  transform: translateZ(0);
+  will-change: backdrop-filter;
 }
 
 .liquid-glass-input {
@@ -105,15 +115,15 @@ button, a[role="button"] {
   filter: brightness(1.1);
 }
 
-/* Explicit Safari / WebKit and Cloudflare Pages vendor prefix support for Tailwind backdrop-blur */
-.backdrop-blur-none { -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); }
-.backdrop-blur-sm   { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-.backdrop-blur      { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-.backdrop-blur-md   { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-.backdrop-blur-lg   { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
-.backdrop-blur-xl   { -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); }
-.backdrop-blur-2xl  { -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px); }
-.backdrop-blur-3xl  { -webkit-backdrop-filter: blur(64px); backdrop-filter: blur(64px); }
+/* Explicit Safari / WebKit and Vercel production vendor prefix support for Tailwind backdrop-blur */
+.backdrop-blur-none { -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); transform: translateZ(0); will-change: backdrop-filter; }
+.backdrop-blur-sm   { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); transform: translateZ(0); will-change: backdrop-filter; }
+.backdrop-blur      { -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); transform: translateZ(0); will-change: backdrop-filter; }
+.backdrop-blur-md   { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transform: translateZ(0); will-change: backdrop-filter; }
+.backdrop-blur-lg   { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); transform: translateZ(0); will-change: backdrop-filter; }
+.backdrop-blur-xl   { -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); transform: translateZ(0); will-change: backdrop-filter; }
+.backdrop-blur-2xl  { -webkit-backdrop-filter: blur(40px); backdrop-filter: blur(40px); transform: translateZ(0); will-change: backdrop-filter; }
+.backdrop-blur-3xl  { -webkit-backdrop-filter: blur(64px); backdrop-filter: blur(64px); transform: translateZ(0); will-change: backdrop-filter; }
 
 /* Graceful translucent solid fallback when backdrop-filter is disabled or unaccelerated */
 @supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {

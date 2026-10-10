@@ -267,6 +267,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     src={photo.photoUrl}
                     alt={photo.title}
                     loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700 blur-sm brightness-50"
                     onLoad={(e) => {
                       e.currentTarget.classList.remove('blur-sm', 'brightness-50');
@@ -365,6 +366,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               <img
                 src={activePhotoModal.photoUrl}
                 alt={activePhotoModal.title}
+                decoding="async"
                 className="max-h-[70vh] w-full object-contain rounded-2xl"
               />
             </div>

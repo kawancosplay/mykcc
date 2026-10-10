@@ -41,26 +41,52 @@ export default function App() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const prevScrollYRef = React.useRef(0);
 
+  // Optimized passive scroll listener with rAF throttling
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // If at or above the top, always show navbar
-      if (currentScrollY <= 0) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-      setLastScrollY(currentScrollY);
+      if (ticking) return;
+      ticking = true;
+
+      window.requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        const prev = prevScrollYRef.current;
+
+        // If mobile menu is open, or user is near top: ALWAYS keep navbar visible
+        if (isMobileMenuOpen || currentScrollY <= 20) {
+          setIsVisible(true);
+        } else if (currentScrollY > prev + 15 && currentScrollY > 100) {
+          // Significant scroll down
+          setIsVisible(false);
+        } else if (currentScrollY < prev - 10) {
+          // Scroll up
+          setIsVisible(true);
+        }
+
+        prevScrollYRef.current = currentScrollY;
+        ticking = false;
+      });
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, [isMobileMenuOpen]);
+
+  // Lock body scroll cleanly while mobile menu is open to prevent page jumps
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
 
   const handleTabChange = (tab: 'form' | 'card' | 'gallery' | 'profile' | 'admin') => {
@@ -403,6 +429,8 @@ export default function App() {
           currentLang={currentLang}
           onSelectLang={(lang) => setCurrentLang(lang)}
           isVisible={isVisible}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onMobileMenuToggle={(open) => setIsMobileMenuOpen(open)}
         />
       </div>
 

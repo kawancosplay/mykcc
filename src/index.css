@@ -104,32 +104,32 @@ button, a[role="button"] {
   }
 }
 
-/* Subtle continuous ambient fluid pulse animation */
+/* Subtle continuous ambient fluid pulse animation - GPU accelerated transform only */
 @keyframes fluid-drift {
   0%, 100% {
-    transform: translate(0px, 0px) scale(1) rotate(0deg);
-    filter: hue-rotate(0deg);
+    transform: translate3d(0px, 0px, 0) scale(1) rotate(0deg);
   }
   33% {
-    transform: translate(50px, -30px) scale(1.15) rotate(5deg);
-    filter: hue-rotate(45deg);
+    transform: translate3d(40px, -25px, 0) scale(1.12) rotate(4deg);
   }
   66% {
-    transform: translate(-30px, 30px) scale(1.05) rotate(-5deg);
-    filter: hue-rotate(-45deg);
+    transform: translate3d(-25px, 25px, 0) scale(1.05) rotate(-4deg);
   }
 }
 
 .animate-fluid-1 {
-  animation: fluid-drift 20s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: fluid-drift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
 }
 
 .animate-fluid-2 {
-  animation: fluid-drift 25s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+  animation: fluid-drift 28s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+  will-change: transform;
 }
 
 .animate-fluid-3 {
-  animation: fluid-drift 30s cubic-bezier(0.4, 0, 0.2, 1) infinite 10s;
+  animation: fluid-drift 32s cubic-bezier(0.4, 0, 0.2, 1) infinite 8s;
+  will-change: transform;
 }
 
 /* Responsive tweaks */

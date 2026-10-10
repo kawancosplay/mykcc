@@ -38,6 +38,7 @@ import {
   deleteMember,
   purgeAllMembersFromFirestore,
   seedCommunityMembersManually,
+  repairDuplicateMemberIds,
 } from '../lib/firestoreService';
 import { GoogleSheetsSync } from './GoogleSheetsSync';
 import { StatsOverview } from './StatsOverview';
@@ -117,6 +118,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Loading states for actions
   const [isPurging, setIsPurging] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isRepairingIds, setIsRepairingIds] = useState(false);
+  const [repairNotice, setRepairNotice] = useState<string | null>(null);
+
+  // Detect any duplicated KCC IDs (excluding founder 0000000000000000)
+  const duplicateIdStats = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of members) {
+      if (m.userId16 && m.userId16 !== MAIN_ACCOUNT_UID) {
+        const clean = m.userId16.replace(/\D/g, '');
+        counts.set(clean, (counts.get(clean) || 0) + 1);
+      }
+    }
+    let dupes = 0;
+    for (const count of counts.values()) {
+      if (count > 1) dupes += count;
+    }
+    return { dupes };
+  }, [members]);
+
+  const handleRepairDuplicateIds = async () => {
+    setIsRepairingIds(true);
+    setRepairNotice(null);
+    try {
+      const res = await repairDuplicateMemberIds();
+      if (res.fixed > 0) {
+        setRepairNotice(`✅ Berhasil memperbaiki ${res.fixed} KCC ID duplikat menjadi nomor unik berurutan.`);
+      } else {
+        setRepairNotice('✅ Semua KCC ID anggota sudah unik 100%! Tidak ada duplikasi.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error tidak diketahui';
+      setRepairNotice('❌ Gagal memperbaiki KCC ID: ' + msg);
+    } finally {
+      setIsRepairingIds(false);
+    }
+  };
 
   // Authorization check: User is either signed in with official email OR has unlocked with passkey
   const isAuthorized =
@@ -602,6 +639,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
                 
                 <button
+                  onClick={handleRepairDuplicateIds}
+                  disabled={isRepairingIds}
+                  title="Pindai dan perbaiki KCC ID duplikat secara otomatis"
+                  className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-amber-900 inline-flex items-center gap-1.5 shadow-md"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRepairingIds ? 'animate-spin' : ''}`} />
+                  <span>{isRepairingIds ? 'Memperbaiki...' : 'Perbaiki ID Duplikat'}</span>
+                </button>
+                <button
                   onClick={exportToCsv}
                   className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-slate-900 inline-flex items-center gap-1.5 shadow-md"
                 >
@@ -619,6 +665,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Repair Notice Alert */}
+            {repairNotice && (
+              <div className="mt-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-center justify-between">
+                <span>{repairNotice}</span>
+                <button onClick={() => setRepairNotice(null)} className="text-amber-400 hover:text-white ml-2 text-xs font-bold">✕</button>
+              </div>
+            )}
 
             {/* Filter Summary */}
             <div className="mt-4 flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/60">

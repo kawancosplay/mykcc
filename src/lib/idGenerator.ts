@@ -98,9 +98,14 @@ export function generateChronologicalUserId16(
 /**
  * Arranges a 16-digit User ID strictly based on sequence for regular members:
  * Structure: sequenceNumber.toString().padStart(16, '0')
+ * Note: Regular members start strictly after admin slots (0000 0000 0000 0101+).
+ * If a 1-based offset (1..100) is passed, it correctly maps to (100 + offset)
+ * so member #1 becomes 101, member #2 becomes 102, avoiding identical IDs.
  */
 export function generateSequentialUserId16(sequenceNumber: number): string {
-  return Math.max(101, sequenceNumber).toString().padStart(16, '0');
+  const num = Math.floor(sequenceNumber);
+  const resolved = num <= 0 ? 101 : num <= 100 ? 100 + num : num;
+  return resolved.toString().padStart(16, '0');
 }
 
 /**
@@ -337,11 +342,26 @@ export function findDuplicateMember(
       }
     }
 
-    // 5. Exact Name / Cosplay Name match (case-insensitive, trimmed, min 3 chars)
+    // 5. Exact Name / Cosplay Name match only if not a generic placeholder and no conflicting contact info
     if (candCosname && candCosname.length >= 3) {
-      const existingCosname = (m.name || m.cosplayName || '').trim().toLowerCase();
-      if (existingCosname && existingCosname === candCosname) {
-        return m;
+      const genericNames = ['member', 'cosplayer', 'cosplay', 'guest', 'kawan', 'anonymous', 'anon', 'admin'];
+      if (!genericNames.includes(candCosname)) {
+        const existingCosname = (m.name || m.cosplayName || '').trim().toLowerCase();
+        if (existingCosname && existingCosname === candCosname) {
+          // If both have phone numbers and they differ, they are distinct people!
+          if (candPhone && m.phone && normalizePhone(m.phone) !== candPhone) {
+            continue;
+          }
+          // If both have Discord usernames and they differ, they are distinct people!
+          if (candDiscord && m.discordUsername && m.discordUsername.trim().toLowerCase() !== candDiscord) {
+            continue;
+          }
+          // If both have emails and they differ, they are distinct people!
+          if (candEmail && m.email && m.email.trim().toLowerCase() !== candEmail) {
+            continue;
+          }
+          return m;
+        }
       }
     }
   }

@@ -15,6 +15,7 @@ import { db, handleFirestoreError, OperationType } from './firebase';
 import { Member, SyncLog } from '../types';
 import {
   generateChronologicalUserId16,
+  generateSequentialUserId16,
   resolveMemberUserId16,
   findDuplicateMember,
   MAIN_ACCOUNT_UID,
@@ -109,6 +110,80 @@ export async function repairFounderIdInFirestore(): Promise<void> {
     });
   } catch (err) {
     console.warn('repairFounderIdInFirestore note:', err);
+  }
+}
+
+export async function repairDuplicateMemberIds(): Promise<{ fixed: number; repairedIds: string[] }> {
+  try {
+    const snap = await getDocs(collection(db, MEMBERS_COLLECTION));
+    const docs: Array<{ id: string; name: string; userId16: string; createdAt?: string }> = [];
+    const usedNums = new Set<number>();
+    let maxSeq = 100;
+
+    snap.forEach((d) => {
+      const data = d.data();
+      const uid = (data.userId16 || '').replace(/\D/g, '');
+      const num = parseInt(uid, 10);
+      docs.push({
+        id: d.id,
+        name: data.name || data.cosplayName || 'Member',
+        userId16: uid,
+        createdAt: data.createdAt,
+      });
+      if (!isNaN(num)) {
+        usedNums.add(num);
+        if (num > maxSeq && num < 20000000) {
+          maxSeq = num;
+        }
+      }
+    });
+
+    const byUid = new Map<string, Array<{ id: string; name: string; createdAt?: string }>>();
+    for (const item of docs) {
+      const padded = item.userId16.padStart(16, '0');
+      if (!byUid.has(padded)) byUid.set(padded, []);
+      byUid.get(padded)!.push(item);
+    }
+
+    let batch = writeBatch(db);
+    let batchOps = 0;
+    let fixed = 0;
+    const repairedIds: string[] = [];
+
+    for (const [uid, group] of byUid.entries()) {
+      if (group.length > 1 && uid !== MAIN_ACCOUNT_UID) {
+        group.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+        // Oldest member in group retains their original assigned ID; subsequent members receive a new unique ID
+        for (let i = 1; i < group.length; i++) {
+          maxSeq++;
+          while (usedNums.has(maxSeq)) {
+            maxSeq++;
+          }
+          usedNums.add(maxSeq);
+          const newUid = generateSequentialUserId16(maxSeq);
+          const target = group[i];
+          batch.update(doc(db, MEMBERS_COLLECTION, target.id), { userId16: newUid });
+          batchOps++;
+          fixed++;
+          repairedIds.push(`${target.name}: ${newUid}`);
+
+          if (batchOps >= 400) {
+            await batch.commit();
+            batch = writeBatch(db);
+            batchOps = 0;
+          }
+        }
+      }
+    }
+
+    if (batchOps > 0) {
+      await batch.commit();
+    }
+
+    return { fixed, repairedIds };
+  } catch (error) {
+    console.error('repairDuplicateMemberIds error:', error);
+    return { fixed: 0, repairedIds: [] };
   }
 }
 

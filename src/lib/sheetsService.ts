@@ -172,13 +172,14 @@ export function parseRowsToMembers(
     if (!fullName && !resolvedName && !phone && !discordUsername) return;
 
     const createdAtDate = timestampRaw && !isNaN(Date.parse(timestampRaw)) ? new Date(timestampRaw) : new Date();
-    // User ID arranged chronologically by when they filled the form; cosplaysehat@gmail.com is 0000000000000000
-    // UID 0000 0000 0000 0001 to 0000 0000 0000 0100 is assigned to KCC admin
+    // User ID arranged sequentially starting after reserved admin slots (101+)
+    // Base sequence ensures every row gets a unique, strictly distinct KCC ID
+    const baseSeq = Math.max(100, existingCount);
     const userId16 = resolveMemberUserId16({
       email,
       role: primaryRole,
       dateInput: createdAtDate,
-      sequenceNumber: existingCount + index + 1,
+      sequenceNumber: baseSeq + index + 1,
     });
 
     parsedMembers.push({

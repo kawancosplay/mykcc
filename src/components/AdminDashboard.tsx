@@ -14,7 +14,6 @@ import {
   Phone,
   Mail,
   AlertTriangle,
-  Key,
   Database,
   BarChart3,
   Layers,
@@ -24,55 +23,77 @@ import {
   Crown,
   Shield,
   Clock,
+  LogOut,
+  Wrench,
 } from 'lucide-react';
-import { Member, SyncLog } from '../types';
+import type { Member, SyncLog, MemberRepairReport, SubscriptionErrorKind } from '../types';
 import {
   format16DigitUserId,
-  getUserIdBadgeInfo,
   isMainAccountUserId,
   isAdminUserId,
-  MAIN_ACCOUNT_UID,
 } from '../lib/idGenerator';
 import {
   updateMemberStatus,
   deleteMember,
   purgeAllMembersFromFirestore,
-  seedCommunityMembersManually,
+  listReservedIdHolders,
+  reassignMemberUserId16,
+  repairMemberIdsAndCards,
 } from '../lib/firestoreService';
+import { isMainAdminUser, describeFirestoreError } from '../lib/firebase';
 import { GoogleSheetsSync } from './GoogleSheetsSync';
 import { StatsOverview } from './StatsOverview';
 import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
-import { User } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 
 interface AdminDashboardProps {
   user: User | null;
-  accessToken: string | null;
+  isAdmin: boolean; // App-resolved (checkIsAdminUser for the CURRENT uid)
+  isAdminChecking: boolean; // true while App resolves admin status
+  accessToken: string | null; // Sheets token from googleSignIn only
   members: Member[];
+  membersLoaded: boolean; // true after first successful members snapshot
+  membersError: SubscriptionErrorKind | null;
   syncLogs: SyncLog[];
+  syncLogsError: SubscriptionErrorKind | null;
   currentLang: LanguageCode;
   onSelectMember: (member: Member) => void;
-  onOpenAuth: () => void;
+  onOpenAuth: () => void; // opens AuthModal (Google sign-in)
+  onConnectSheets: () => void; // scoped googleSignIn (Drive + Sheets)
+  sheetsConnectError: string | null;
+  onLogout: () => void;
 }
 
-const ADMIN_PASSKEY = 'kccadmin2026';
+// Display only. Admin access is decided by Firebase Auth + Firestore rules (isAdmin prop).
 const OFFICIAL_ADMIN_EMAIL = 'cosplaysehat@gmail.com';
+const NAMED_DATABASE_ID = 'ai-studio-kawancosplaymemb-f672c087-2a65-4410-827e-a10092d7e040';
+
+// Labels for MemberIdReassignment.reason in the repair report
+const REPAIR_REASON_LABELS: Record<string, string> = {
+  duplicate: 'ID ganda / duplicate',
+  missing: 'ID belum tersimpan / missing',
+  main_account: 'ID Main Account dipakai anggota lain / main account ID',
+};
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   user,
+  isAdmin,
+  isAdminChecking,
   accessToken,
   members,
+  membersLoaded,
+  membersError,
   syncLogs,
+  syncLogsError,
   currentLang,
   onSelectMember,
   onOpenAuth,
+  onConnectSheets,
+  sheetsConnectError,
+  onLogout,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
-
-  const [enteredPasskey, setEnteredPasskey] = useState('');
-  const [isPasskeyUnlocked, setIsPasskeyUnlocked] = useState(() => {
-    return sessionStorage.getItem('kcc_admin_authed_session') === 'true';
-  });
-  const [passkeyError, setPasskeyError] = useState(false);
+  const isId = currentLang === 'id';
 
   // Sub-tabs in Admin Dashboard
   const [adminTab, setAdminTab] = useState<'members' | 'sync' | 'analytics'>('members');
@@ -114,47 +135,105 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Loading states for actions
   const [isPurging, setIsPurging] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
 
-  // Authorization check: User is either signed in with official email OR has unlocked with passkey
-  const isAuthorized =
-    isPasskeyUnlocked ||
-    (user?.email && user.email.toLowerCase() === OFFICIAL_ADMIN_EMAIL);
+  // KCC ID & public card repair states
+  const [isRepairing, setIsRepairing] = useState(false);
+  const [repairProgress, setRepairProgress] = useState<{ done: number; total: number } | null>(null);
+  const [repairReport, setRepairReport] = useState<MemberRepairReport | null>(null);
+  const [repairError, setRepairError] = useState<string | null>(null);
+  const [reassigningId, setReassigningId] = useState<string | null>(null);
+  const [reassignResult, setReassignResult] = useState<{ isError: boolean; message: string } | null>(null);
 
-  const handleUnlockWithPasskey = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (enteredPasskey.trim().toLowerCase() === ADMIN_PASSKEY) {
-      sessionStorage.setItem('kcc_admin_authed_session', 'true');
-      setIsPasskeyUnlocked(true);
-      setPasskeyError(false);
-    } else {
-      setPasskeyError(true);
-    }
-  };
+  // Members holding reserved IDs (0000 0000 0000 0000 – 0000 0000 0000 0100), always computed live.
+  // The signed-in main account's own doc is excluded.
+  const mainAdminUid = user && isMainAdminUser(user) ? user.uid : null;
+  const reservedHolders = useMemo(
+    () => listReservedIdHolders(members, mainAdminUid),
+    [members, mainAdminUid]
+  );
 
-  const handleLockAdmin = () => {
-    sessionStorage.removeItem('kcc_admin_authed_session');
-    setIsPasskeyUnlocked(false);
-  };
+  // Authorization: real Firebase identity resolved by App (verified cosplaysehat@gmail.com or admins/{uid}).
+  const isAuthorized = isAdmin;
 
-  const handleStatusChange = async (memberId: string, newStatus: 'pending' | 'verified' | 'active') => {
+  const handleStatusChange = async (
+    memberId: string,
+    newStatus: 'pending' | 'verified' | 'active',
+    userId16?: string
+  ) => {
     try {
-      await updateMemberStatus(memberId, newStatus);
+      await updateMemberStatus(memberId, newStatus, userId16);
     } catch (e) {
-      alert('Gagal memperbarui status member: ' + (e instanceof Error ? e.message : 'Error'));
+      alert('Gagal memperbarui status member: ' + describeFirestoreError(e, isId));
     }
   };
 
   const handleDeleteMember = async (member: Member) => {
     const confirmDelete = window.confirm(
-      `Hapus data member "${member.cosplayName}" (KCC ID: ${format16DigitUserId(member.userId16)}) dari database Firestore?`
+      `Hapus data member "${member.name || member.cosplayName}" (KCC ID: ${format16DigitUserId(member.userId16)}) dari database Firestore?`
     );
     if (!confirmDelete) return;
 
     try {
-      await deleteMember(member.id);
+      await deleteMember(member.id, member.userId16);
     } catch (e) {
-      alert('Gagal menghapus member: ' + (e instanceof Error ? e.message : 'Error'));
+      alert('Gagal menghapus member: ' + describeFirestoreError(e, isId));
+    }
+  };
+
+  const handleRunRepair = async () => {
+    if (isRepairing) return;
+    const confirmRepair = window.confirm(
+      'Jalankan perbaikan KCC ID & kartu publik untuk seluruh anggota?\n\n' +
+        '- Anggota dengan KCC ID ganda akan mendapat ID baru (yang terdaftar paling awal tetap memakai ID lama).\n' +
+        '- KCC ID yang belum tersimpan akan disimpan.\n' +
+        '- Koleksi publik memberCards dibangun ulang.\n\nAman dijalankan berulang kali. Lanjutkan?'
+    );
+    if (!confirmRepair) return;
+
+    setIsRepairing(true);
+    setRepairError(null);
+    setRepairReport(null);
+    setRepairProgress({ done: 0, total: 0 });
+    try {
+      const report = await repairMemberIdsAndCards((done, total) => setRepairProgress({ done, total }));
+      setRepairReport(report);
+    } catch (e) {
+      console.error('Repair error:', e);
+      setRepairError(describeFirestoreError(e, isId));
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
+  const handleReassignReservedId = async (member: Member) => {
+    if (reassigningId) return;
+    const displayName = member.name || member.cosplayName || member.id;
+    const confirmReassign = window.confirm(
+      `Tetapkan KCC ID baru untuk "${displayName}" (saat ini ${format16DigitUserId(member.userId16)})?` +
+        (isMainAccountUserId(member.userId16)
+          ? '\n\nPERHATIAN: ini adalah ID Main Account. Jangan lanjutkan jika anggota ini adalah akun resmi ' +
+            OFFICIAL_ADMIN_EMAIL +
+            '.'
+          : '')
+    );
+    if (!confirmReassign) return;
+
+    setReassigningId(member.id);
+    setReassignResult(null);
+    try {
+      const newId = await reassignMemberUserId16(member, members);
+      setReassignResult({
+        isError: false,
+        message: `${displayName}: ${format16DigitUserId(member.userId16)} → ${format16DigitUserId(newId)}`,
+      });
+    } catch (e) {
+      console.error('Reassign KCC ID error:', e);
+      setReassignResult({
+        isError: true,
+        message: `${displayName}: ${describeFirestoreError(e, isId)}`,
+      });
+    } finally {
+      setReassigningId(null);
     }
   };
 
@@ -174,21 +253,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const deletedCount = await purgeAllMembersFromFirestore();
       alert(`Pembersihan Berhasil: ${deletedCount} data anggota telah dihapus dari database.`);
     } catch (e) {
-      alert('Gagal menghapus data anggota: ' + (e instanceof Error ? e.message : 'Error'));
+      alert('Gagal menghapus data anggota: ' + describeFirestoreError(e, isId));
     } finally {
       setIsPurging(false);
-    }
-  };
-
-  const handleSeedDemo = async () => {
-    setIsSeeding(true);
-    try {
-      const count = await seedCommunityMembersManually();
-      alert(`Berhasil memuat ${count} data demo resmi KawanCosplay.`);
-    } catch (e) {
-      alert('Gagal memuat data demo: ' + (e instanceof Error ? e.message : 'Error'));
-    } finally {
-      setIsSeeding(false);
     }
   };
 
@@ -357,8 +424,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     });
   }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, sortMode]);
 
-  // If NOT authorized, show privacy lock screen
+  // If NOT authorized, show privacy lock screen (Google sign-in only, no passkey)
   if (!isAuthorized) {
+    const signedInLabel = user ? user.email || user.uid : '';
+    const isUnverifiedAdminEmail =
+      !!user &&
+      !!user.email &&
+      user.email.toLowerCase().trim() === OFFICIAL_ADMIN_EMAIL &&
+      !user.emailVerified;
+
     return (
       <div className="max-w-md mx-auto py-16 px-4 animate-fade-in text-slate-100">
         <div className="bg-slate-900/90 border border-amber-500/30 rounded-3xl p-8 shadow-2xl text-center">
@@ -367,51 +441,57 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <h2 className="text-2xl font-black text-white mb-2">{t.adminTitle}</h2>
-          <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
-            {t.privacyRestrictedNotice}
-          </p>
 
-          <form onSubmit={handleUnlockWithPasskey} className="space-y-4 mb-6">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Kunci Akses Admin (Passkey)
-              </label>
-              <div className="relative">
-                <Key className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
-                <input
-                  type="password"
-                  placeholder="Masukkan passkey admin..."
-                  value={enteredPasskey}
-                  onChange={(e) => setEnteredPasskey(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              {passkeyError && (
-                <p className="text-xs text-rose-400 mt-1.5 flex items-center justify-center space-x-1">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span>Passkey tidak sesuai. Coba lagi atau gunakan email admin.</span>
-                </p>
-              )}
+          {isAdminChecking ? (
+            <div className="flex flex-col items-center gap-3 py-6">
+              <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs sm:text-sm text-slate-300">Memeriksa akses admin... / Checking admin access...</p>
             </div>
+          ) : (
+            <>
+              <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+                {t.privacyRestrictedNotice}
+              </p>
 
-            <button
-              type="submit"
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold text-sm shadow-lg hover:brightness-110 transition-all flex items-center justify-center space-x-2"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Buka Akses Dashboard Admin</span>
-            </button>
-          </form>
+              {user && (
+                <div className="mb-5 p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs text-left space-y-1.5">
+                  <p className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <span>
+                      Anda masuk sebagai <strong className="text-white break-all">{signedInLabel}</strong> — akun ini
+                      bukan admin KCC. / Signed in as <strong className="text-white break-all">{signedInLabel}</strong> —
+                      this account is not a KCC admin.
+                    </span>
+                  </p>
+                  {isUnverifiedAdminEmail && (
+                    <p className="pl-6 text-amber-300 font-semibold">
+                      Email belum terverifikasi — gunakan Login Google. / Email not verified — use Google sign-in.
+                    </p>
+                  )}
+                </div>
+              )}
 
-          <div className="pt-4 border-t border-slate-800 space-y-3">
-            <button
-              onClick={onOpenAuth}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center justify-center space-x-2"
-            >
-              <Mail className="w-4 h-4 text-rose-400" />
-              <span>Login dengan Email Admin ({OFFICIAL_ADMIN_EMAIL})</span>
-            </button>
+              <button
+                onClick={onOpenAuth}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold text-sm shadow-lg hover:brightness-110 transition-all flex items-center justify-center space-x-2"
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>Masuk dengan Akun Google Admin ({OFFICIAL_ADMIN_EMAIL})</span>
+              </button>
 
+              {user && (
+                <button
+                  onClick={onLogout}
+                  className="w-full mt-3 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center justify-center space-x-2"
+                >
+                  <LogOut className="w-4 h-4 text-rose-400" />
+                  <span>Keluar dari akun ini / Sign out</span>
+                </button>
+              )}
+            </>
+          )}
+
+          <div className="mt-6 pt-4 border-t border-slate-800 space-y-3">
             <a
               href="https://wa.me/6285711032782"
               target="_blank"
@@ -462,32 +542,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </a>
 
             <button
-              onClick={handleLockAdmin}
+              onClick={onLogout}
               className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
             >
-              <Lock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Kunci Dashboard</span>
+              <LogOut className="w-3.5 h-3.5 text-amber-400" />
+              <span>Keluar Akun Admin</span>
             </button>
           </div>
         </div>
 
-        {/* Quick Stats Summary */}
+        {/* Quick Stats Summary ('—' until the first successful members snapshot) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/10">
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
               <p className="text-xs text-slate-400">Total Anggota</p>
-              <p className="text-2xl font-black text-white">{members.length}</p>
+              <p className="text-2xl font-black text-white">{membersLoaded ? members.length : '—'}</p>
            </div>
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
               <p className="text-xs text-slate-400">Status Verified</p>
-              <p className="text-2xl font-black text-emerald-400">{members.filter(m => m.status === 'verified').length}</p>
+              <p className="text-2xl font-black text-emerald-400">
+                {membersLoaded ? members.filter((m) => m.status === 'verified').length : '—'}
+              </p>
            </div>
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
               <p className="text-xs text-slate-400">Status Active</p>
-              <p className="text-2xl font-black text-indigo-400">{members.filter(m => m.status === 'active').length}</p>
+              <p className="text-2xl font-black text-indigo-400">
+                {membersLoaded ? members.filter((m) => m.status === 'active').length : '—'}
+              </p>
            </div>
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
               <p className="text-xs text-slate-400">Status Pending</p>
-              <p className="text-2xl font-black text-amber-400">{members.filter(m => m.status === 'pending').length}</p>
+              <p className="text-2xl font-black text-amber-400">
+                {membersLoaded ? members.filter((m) => m.status === 'pending').length : '—'}
+              </p>
            </div>
         </div>
 
@@ -502,7 +588,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Daftar Anggota & Roster ({members.length})</span>
+            <span>Daftar Anggota & Roster ({membersLoaded ? members.length : '—'})</span>
           </button>
 
           <button
@@ -532,8 +618,222 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </div>
 
       {/* TAB CONTENT 1: MEMBER LIST & ROSTER */}
-      {adminTab === 'members' && (
+      {/* (a) Members subscription rejected by Firestore rules */}
+      {adminTab === 'members' && membersError === 'permission-denied' && (
+        <div className="liquid-glass-card rounded-3xl p-8 shadow-xl text-center max-w-2xl mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2">Akses Ditolak (Permission Denied)</h3>
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+            Database menolak akses daftar anggota untuk akun ini. Masuk dengan akun Google admin ({OFFICIAL_ADMIN_EMAIL})
+            atau akun yang terdaftar di koleksi admins, lalu muat ulang halaman. Pastikan juga Firestore Rules terbaru
+            sudah dipublikasikan ke database{' '}
+            <span className="font-mono text-amber-300 break-all">{NAMED_DATABASE_ID}</span>.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={onOpenAuth}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center gap-1.5"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Masuk dengan Akun Google Admin</span>
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Muat Ulang Halaman</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* (b) Any other subscription error (offline, unavailable, ...) */}
+      {adminTab === 'members' && membersError && membersError !== 'permission-denied' && (
+        <div className="liquid-glass-card rounded-3xl p-8 shadow-xl text-center max-w-2xl mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-white mb-2">Gagal Memuat Daftar Anggota</h3>
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+            Gagal memuat daftar anggota. Periksa koneksi lalu muat ulang halaman. / Could not load the member list.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Muat Ulang Halaman</span>
+          </button>
+        </div>
+      )}
+
+      {/* (c) Waiting for the first members snapshot */}
+      {adminTab === 'members' && !membersError && !membersLoaded && (
+        <div className="liquid-glass-card rounded-3xl p-10 shadow-xl flex flex-col items-center justify-center gap-3 text-center">
+          <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs sm:text-sm text-slate-300">Memuat data anggota...</p>
+        </div>
+      )}
+
+      {/* (d) Members loaded */}
+      {adminTab === 'members' && !membersError && membersLoaded && (
         <div className="space-y-6">
+          {/* KCC ID & PUBLIC CARD REPAIR (admin only, idempotent) */}
+          <div className="liquid-glass-card rounded-3xl p-6 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Wrench className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Perbaikan KCC ID & Kartu Publik (Repair)</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
+                    Memberi KCC ID unik untuk anggota yang ID-nya ganda (yang terdaftar paling awal tetap memakai ID
+                    lama), menyimpan KCC ID yang belum tersimpan, dan membangun ulang koleksi publik memberCards untuk
+                    pencarian kartu. Aman dijalankan berulang kali.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleRunRepair}
+                disabled={isRepairing}
+                className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
+                <span>
+                  {isRepairing
+                    ? `Memproses Perbaikan${
+                        repairProgress && repairProgress.total > 0
+                          ? ` (${repairProgress.done}/${repairProgress.total})`
+                          : ''
+                      }...`
+                    : 'Jalankan Perbaikan'}
+                </span>
+              </button>
+            </div>
+
+            {repairError && (
+              <div className="mt-4 p-3.5 rounded-2xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span>Perbaikan gagal: {repairError}</span>
+              </div>
+            )}
+
+            {repairReport && (
+              <div className="mt-4 p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/30 text-xs text-slate-200 space-y-3">
+                <p className="font-bold text-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Perbaikan selesai.</span>
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { label: 'Anggota dipindai', value: repairReport.scanned },
+                    { label: 'Grup ID ganda', value: repairReport.duplicateGroups },
+                    { label: 'Kartu ditulis', value: repairReport.cardsWritten },
+                    { label: 'Kartu dihapus', value: repairReport.cardsDeleted },
+                  ].map((s) => (
+                    <div key={s.label} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
+                      <p className="text-lg font-black text-white">{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {repairReport.reassigned.length > 0 ? (
+                  <div>
+                    <p className="font-semibold text-white mb-1.5">
+                      KCC ID yang diubah / disimpan ({repairReport.reassigned.length}):
+                    </p>
+                    <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                      {repairReport.reassigned.map((r) => (
+                        <li key={`${r.memberId}_${r.toUserId16}`} className="font-mono text-[11px] text-slate-300">
+                          <span className="font-sans font-semibold text-white">{r.name}</span>:{' '}
+                          {format16DigitUserId(r.fromUserId16 || undefined)} → {format16DigitUserId(r.toUserId16)}{' '}
+                          <span className="font-sans text-slate-400">({REPAIR_REASON_LABELS[r.reason] || r.reason})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="text-slate-400">Tidak ada KCC ID yang perlu diubah.</p>
+                )}
+
+                {repairReport.errors.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-rose-300 mb-1">Kendala ({repairReport.errors.length}):</p>
+                    <ul className="list-disc pl-5 space-y-0.5 text-rose-200 max-h-32 overflow-y-auto">
+                      {repairReport.errors.map((errText, i) => (
+                        <li key={i}>{errText}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Members holding reserved admin / main-account IDs */}
+            <div className="mt-6 pt-5 border-t border-white/10">
+              <h4 className="text-sm font-bold text-white flex items-start gap-2">
+                <Shield className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span>KCC ID Khusus Admin / Main Account (0000 0000 0000 0000 – 0000 0000 0000 0100)</span>
+              </h4>
+              <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
+                ID di rentang ini hanya untuk akun utama & admin KCC. Anggota di bawah ini mendapatkannya dari isian
+                peran/email pada formulir publik (sistem lama). Tekan "Tetapkan ID Baru" untuk memberi KCC ID kronologis
+                yang unik.
+              </p>
+
+              {reservedHolders.length === 0 ? (
+                <p className="mt-3 text-xs text-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Tidak ada anggota yang memegang KCC ID khusus admin.</span>
+                </p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {reservedHolders.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-slate-950/70 border border-slate-800"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-white text-sm truncate">{m.name || m.cosplayName}</p>
+                        <p className="text-[11px] font-mono font-bold text-amber-300">
+                          {format16DigitUserId(m.userId16)}
+                        </p>
+                        <p className="text-[11px] text-slate-400 truncate">
+                          Sumber: {m.source} • Peran: {m.primaryRole}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleReassignReservedId(m)}
+                        disabled={reassigningId !== null}
+                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${reassigningId === m.id ? 'animate-spin' : ''}`} />
+                        <span>{reassigningId === m.id ? 'Memproses...' : 'Tetapkan ID Baru'}</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {reassignResult && (
+                <p
+                  className={`mt-3 text-xs font-mono ${
+                    reassignResult.isError ? 'text-rose-300' : 'text-emerald-300'
+                  }`}
+                >
+                  {reassignResult.isError ? 'Gagal: ' : 'Berhasil: '}
+                  {reassignResult.message}
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Filters and Controls */}
           <div className="liquid-glass-card rounded-3xl p-6 shadow-xl">
             <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
@@ -726,9 +1026,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <td className="py-4 px-4">
                           <div className="flex flex-col gap-1 items-start">
                             <span className="text-white tracking-wider text-xs font-mono font-bold">
-                              {format16DigitUserId(m.userId16, m.email)}
+                              {format16DigitUserId(m.userId16)}
                             </span>
-                            {isMainAccountUserId(m.userId16) || (m.email && m.email.toLowerCase().trim() === OFFICIAL_ADMIN_EMAIL) ? (
+                            {isMainAccountUserId(m.userId16) ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans">
                                 <Crown className="w-3 h-3 text-amber-400" />
                                 <span>KCC Main Account</span>
@@ -794,7 +1094,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <select
                             value={m.status || 'verified'}
                             onChange={(e) =>
-                              handleStatusChange(m.id, e.target.value as 'pending' | 'verified' | 'active')
+                              handleStatusChange(m.id, e.target.value as 'pending' | 'verified' | 'active', m.userId16)
                             }
                             className={`px-2 py-1 rounded-lg text-xs font-bold border ${
                               m.status === 'active'
@@ -845,10 +1145,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <ShieldCheck className="w-8 h-8" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold text-white mb-1">Database Anggota Kosong / Bersih</h3>
+                            <h3 className="text-lg font-bold text-white mb-1">
+                              {members.length === 0 ? 'Database Anggota Kosong' : 'Tidak Ada Hasil'}
+                            </h3>
                             <p className="text-xs text-slate-400 leading-relaxed">
                               {members.length === 0
-                                ? 'Seluruh data anggota telah di-purge. Database bersih dan siap untuk pendaftaran baru atau impor dari spreadsheet Google Form.'
+                                ? 'Belum ada data anggota di database. Impor dari spreadsheet Google Form atau tunggu pendaftaran baru.'
                                 : 'Tidak ada data anggota yang cocok dengan kata kunci pencarian atau filter yang dipilih.'}
                             </p>
                           </div>
@@ -860,14 +1162,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               >
                                 <FileSpreadsheet className="w-4 h-4" />
                                 <span>Buka Google Sheets & Form Sync</span>
-                              </button>
-                              <button
-                                onClick={handleSeedDemo}
-                                disabled={isSeeding}
-                                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-                              >
-                                <RefreshCw className={`w-3.5 h-3.5 ${isSeeding ? 'animate-spin' : ''}`} />
-                                <span>{isSeeding ? 'Memuat Demo...' : 'Muat Data Demo Resmi (5 Anggota)'}</span>
                               </button>
                             </div>
                           )}
@@ -887,8 +1181,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <GoogleSheetsSync
           user={user}
           accessToken={accessToken}
-          onLogin={onOpenAuth}
+          onLogin={onConnectSheets}
+          connectError={sheetsConnectError}
           syncLogs={syncLogs}
+          syncLogsError={syncLogsError}
           totalMembersInFirestore={members.length}
         />
       )}

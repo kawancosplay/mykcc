@@ -18,6 +18,8 @@ import {
 import { Member } from '../types';
 import { format16DigitUserId } from '../lib/idGenerator';
 import { updateMemberProfileData } from '../lib/authService';
+import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
+import { describeFirestoreError } from '../lib/firebase';
 import { compressImage } from '../lib/imageUtils';
 import {
   getAllCountriesList,
@@ -137,17 +139,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         name: formData.cosplayName,
         cosplayName: formData.cosplayName,
       };
-      await updateMemberProfileData(member.id, dataToSave);
-      const updated: Member = {
-        ...member,
-        ...dataToSave,
-      };
+      const updated = await updateMemberProfileData(member, dataToSave);
       onUpdateMember(updated);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: unknown) {
       console.error('Update profile error:', err);
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal memperbarui data profil.');
+      setErrorMsg(describeFirestoreError(err, currentLang === 'id'));
     } finally {
       setIsSaving(false);
     }
@@ -267,6 +265,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <input
                 type="text"
                 required
+                maxLength={MEMBER_FIELD_LIMITS.cosplayName}
                 value={formData.cosplayName}
                 onChange={(e) => setFormData({ ...formData, cosplayName: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-semibold focus:outline-none focus:border-rose-500"
@@ -297,6 +296,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <input
                 type="text"
                 placeholder="Contoh: 21 tahun atau 15 Mei"
+                maxLength={MEMBER_FIELD_LIMITS.age}
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
@@ -312,6 +312,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 type="tel"
                 required
                 placeholder="+62 812..."
+                maxLength={MEMBER_FIELD_LIMITS.phone}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
@@ -326,6 +327,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <input
                 type="text"
                 placeholder="Contoh: alyachan_cos atau user#0001"
+                maxLength={MEMBER_FIELD_LIMITS.discordUsername}
                 value={formData.discordUsername}
                 onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
@@ -357,6 +359,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 <input
                   type="text"
                   placeholder="Ketik peran / spesialisasi Anda lainnya..."
+                  maxLength={MEMBER_FIELD_LIMITS.customRole}
                   value={formData.primaryRole === 'Lainnya / Others' ? '' : formData.primaryRole.replace(/^Lainnya \/ Others \((.*)\)$/, '$1')}
                   onChange={(e) =>
                     setFormData({
@@ -450,6 +453,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   <input
                     type="text"
                     placeholder="Ketik nama kota atau wilayah Anda"
+                    maxLength={MEMBER_FIELD_LIMITS.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs"
                   />
@@ -464,6 +468,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               </label>
               <input
                 type="text"
+                maxLength={MEMBER_FIELD_LIMITS.fandom}
                 value={formData.fandom}
                 onChange={(e) => setFormData({ ...formData, fandom: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
@@ -478,6 +483,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <input
                 type="text"
                 placeholder="@username (Instagram / X / TikTok)"
+                maxLength={MEMBER_FIELD_LIMITS.socialMedia}
                 value={formData.socialMedia}
                 onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
@@ -492,6 +498,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <input
                 type="url"
                 placeholder="https://drive.google.com/..."
+                maxLength={MEMBER_FIELD_LIMITS.portfolioUrl}
                 value={formData.portfolioUrl}
                 onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
@@ -506,6 +513,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             </label>
             <textarea
               rows={3}
+              maxLength={MEMBER_FIELD_LIMITS.reason}
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
               className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500 resize-none"

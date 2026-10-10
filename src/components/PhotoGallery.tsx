@@ -82,7 +82,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
   const handleLike = (e: React.MouseEvent, photo: Photo) => {
     e.stopPropagation();
-    toggleLikePhoto(photo.id, photo.likesCount || 0);
+    toggleLikePhoto(photo.id).catch((err) => console.warn('Like failed:', err));
   };
 
   const handleDownload = async (photo: Photo) => {
@@ -150,10 +150,10 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
           </p>
         </div>
 
-        {/* Upload Action */}
+        {/* Upload Action (photo uploads require a signed-in account) */}
         <button
           onClick={() => {
-            if (user || currentMember) {
+            if (user) {
               onOpenUpload();
             } else {
               onRequireLogin();
@@ -244,7 +244,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
           </p>
           <button
             onClick={() => {
-              if (user || currentMember) onOpenUpload();
+              if (user) onOpenUpload();
               else onRequireLogin();
             }}
             className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold"

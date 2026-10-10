@@ -29,6 +29,22 @@ export function isAdminUserId(id?: string): boolean {
 }
 
 /**
+ * Checks if a value is a stored KCC ID: exactly 16 digits (no spaces)
+ */
+export function isValidUserId16(id?: string | null): boolean {
+  return typeof id === 'string' && /^\d{16}$/.test(id);
+}
+
+/**
+ * Checks if an ID is reserved: main account (0000 0000 0000 0000) or the KCC Admin range (0001-0100).
+ * Reserved IDs are never assigned from public form input (firestore.rules allow them for admins only).
+ */
+export function isReservedUserId16(id?: string | null): boolean {
+  if (!id || typeof id !== 'string') return false;
+  return isMainAccountUserId(id) || isAdminUserId(id);
+}
+
+/**
  * Formats an admin slot number (1-100) into a 16-digit zero-padded string
  * e.g. slot 1 -> "0000000000000001" (formatted "0000 0000 0000 0001")
  */
@@ -79,8 +95,11 @@ export function generateChronologicalUserId16(
     if (isNaN(date.getTime())) {
       date = new Date();
     }
-  } else {
+  } else if (dateInput instanceof Date && !isNaN(dateInput.getTime())) {
     date = dateInput;
+  } else {
+    // Invalid Date or a non-Date value from a legacy document (e.g. a Firestore Timestamp)
+    date = new Date();
   }
 
   const yyyy = date.getFullYear().toString().padStart(4, '0');
@@ -211,13 +230,49 @@ export function generate16DigitUserId(dateInput?: Date | string): string {
 }
 
 /**
- * Formats a 16-digit string into 4 blocks of 4 digits: "XXXX XXXX XXXX XXXX"
- * Guaranteed to return "0000 0000 0000 0000" for cosplaysehat@gmail.com
+ * Generates a chronological 16-digit ID (from dateInput, sequence 01-99) that is not in usedIds and
+ * not reserved. Falls back to a random sequence for the current time, then to later seconds.
+ * Does NOT add the returned ID to usedIds (the caller does that).
  */
-export function format16DigitUserId(id?: string, email?: string): string {
-  if (email && email.toLowerCase().trim() === MAIN_ACCOUNT_EMAIL) {
-    return '0000 0000 0000 0000';
+export function generateUniqueChronologicalUserId16(
+  dateInput: Date | string | null | undefined,
+  usedIds: Set<string>
+): string {
+  const isFree = (candidate: string) =>
+    isValidUserId16(candidate) && !usedIds.has(candidate) && !isReservedUserId16(candidate);
+
+  // An invalid Date object would produce "NaN..." digits, so treat it like a missing date
+  const safeDate = dateInput instanceof Date && isNaN(dateInput.getTime()) ? null : dateInput;
+
+  for (let seq = 1; seq <= 99; seq++) {
+    const candidate = generateChronologicalUserId16(safeDate, seq);
+    if (isFree(candidate)) return candidate;
   }
+
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const candidate = generate16DigitUserId(new Date());
+    if (isFree(candidate)) return candidate;
+  }
+
+  // Every sequence of this second is taken: walk forward second by second
+  const baseMs = Date.now();
+  for (let offset = 1; offset <= 86400; offset++) {
+    const shifted = new Date(baseMs + offset * 1000);
+    for (let seq = 1; seq <= 99; seq++) {
+      const candidate = generateChronologicalUserId16(shifted, seq);
+      if (isFree(candidate)) return candidate;
+    }
+  }
+
+  return generate16DigitUserId(new Date());
+}
+
+/**
+ * Formats a 16-digit string into 4 blocks of 4 digits: "XXXX XXXX XXXX XXXX"
+ * The stored ID is always shown as-is: an email (e.g. typed into the public form) never turns a card
+ * into the main account. `_email` is kept only for call-site compatibility.
+ */
+export function format16DigitUserId(id?: string, _email?: string): string {
   if (!id) return '----------------';
   const clean = id.replace(/\D/g, '').padEnd(16, '0').slice(0, 16);
   return `${clean.slice(0, 4)} ${clean.slice(4, 8)} ${clean.slice(8, 12)} ${clean.slice(12, 16)}`;
@@ -228,14 +283,15 @@ export function format16DigitUserId(id?: string, email?: string): string {
  */
 export function getUserIdBadgeInfo(
   userId16?: string,
-  email?: string
+  _email?: string
 ): {
   type: 'main' | 'admin' | 'member';
   label: string;
   badgeClass: string;
 } {
+  // Based on the stored ID only (an unverified email never grants the main account badge)
   const clean = (userId16 || '').replace(/\D/g, '');
-  if (clean === MAIN_ACCOUNT_UID || (email && email.toLowerCase().trim() === MAIN_ACCOUNT_EMAIL)) {
+  if (clean === MAIN_ACCOUNT_UID) {
     return {
       type: 'main',
       label: 'KCC Main Account (0000)',

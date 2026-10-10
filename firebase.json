@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-kawancosplaymemb-f672c087-2a65-4410-827e-a10092d7e040",
+      "rules": "firestore.rules"
+    }
+  ]
+}

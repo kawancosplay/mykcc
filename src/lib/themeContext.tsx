@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { db } from './firebase';
+import { db, describeFirestoreError } from './firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export type BackgroundTheme =
@@ -59,6 +59,8 @@ interface ThemeContextType {
   resetTheme: () => void;
   isEditorOpen: boolean;
   setIsEditorOpen: (open: boolean) => void;
+  saveError: string | null; // Last failed site-settings save (e.g. permission denied), shown in the editor
+  clearSaveError: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -67,21 +69,29 @@ const ThemeContext = createContext<ThemeContextType>({
   resetTheme: () => {},
   isEditorOpen: false,
   setIsEditorOpen: () => {},
+  saveError: null,
+  clearSaveError: () => {},
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<SiteTheme>(DEFAULT_THEME);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'siteSettings', 'theme'), (doc) => {
-      if (doc.exists()) {
-        setTheme({ ...DEFAULT_THEME, ...doc.data() } as SiteTheme);
-      } else {
-        // Initialize if not exists - only if we have permissions
-        setDoc(doc.ref, DEFAULT_THEME).catch(e => console.warn('Could not initialize theme, might need admin permissions', e));
-      }
-    });
+    const unsub = onSnapshot(
+      doc(db, 'siteSettings', 'theme'),
+      (doc) => {
+        if (doc.exists()) {
+          setTheme({ ...DEFAULT_THEME, ...doc.data() } as SiteTheme);
+        } else {
+          // No saved theme yet: use the defaults locally. Visitors never write on page load; the
+          // admin's first save in the Site Editor creates siteSettings/theme (admin-only per rules).
+          setTheme(DEFAULT_THEME);
+        }
+      },
+      (err) => console.warn('Theme subscription note:', err)
+    );
     return () => unsub();
   }, []);
 
@@ -120,11 +130,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       },
     };
     
-    // Save to Firestore
+    // Save to Firestore (admin only per rules; failures are surfaced in the Site Editor)
     try {
       await setDoc(doc(db, 'siteSettings', 'theme'), newTheme, { merge: true });
+      setSaveError(null);
     } catch (error) {
       console.error('Error saving theme to Firestore:', error);
+      setSaveError(describeFirestoreError(error, true));
     }
   };
 
@@ -140,6 +152,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         resetTheme,
         isEditorOpen,
         setIsEditorOpen,
+        saveError,
+        clearSaveError: () => setSaveError(null),
       }}
     >
       {children}

@@ -44,6 +44,47 @@ export interface Photo {
   caption?: string;
   likesCount?: number;
   createdAt: string;
+  authorUid?: string; // Uploader's Firebase Auth UID (set by addPhotoToFirestore)
+}
+
+// Public, non-private projection of a member stored at memberCards/{userId16} (KCC ID card lookup)
+export interface MemberCard {
+  userId16: string; // == memberCards doc id, 16 digits
+  cosplayName: string; // 1..80
+  primaryRole: string; // <= 120
+  city: string; // <= 80
+  country: string; // <= 80, '' allowed
+  status: 'pending' | 'verified' | 'active';
+  createdAt: string; // ISO
+  avatarUrl?: string; // only if <= 400000 chars
+  ownerUid?: string; // uid allowed to refresh the card (= member.authUid)
+}
+
+export type SubscriptionErrorKind = 'permission-denied' | 'unavailable' | 'unknown';
+
+export interface BulkImportResult {
+  added: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+}
+
+export interface MemberIdReassignment {
+  memberId: string;
+  name: string;
+  fromUserId16: string | null;
+  toUserId16: string;
+  reason: 'duplicate' | 'missing' | 'main_account';
+}
+
+export interface MemberRepairReport {
+  scanned: number;
+  duplicateGroups: number;
+  reassigned: MemberIdReassignment[];
+  cardsWritten: number;
+  cardsDeleted: number;
+  reservedHolders: Member[];
+  errors: string[];
 }
 
 export interface SyncLog {

@@ -1,12 +1,53 @@
 rules_version = '2';
+
+// MyKCC (KawanCosplay Community) - Cloud Firestore Security Rules
+//
+// Target: the NAMED database "ai-studio-kawancosplaymemb-f672c087-2a65-4410-827e-a10092d7e040"
+// (see firebase.json). Publishing to "(default)" has no effect on the live app.
+// Console: Firestore Database > database dropdown > ai-studio-kawancosplaymemb-... > Rules > Publish
+// CLI:     firebase deploy --only firestore:rules
+//
+// Privacy model:
+// - /members holds personal data (phone, email, age, birthday, discord, reason). Only the admin
+//   and the member themself can read a member document. There is NO public list.
+// - /memberCards/{userId16} is the PUBLIC, non-private projection used for the KCC ID card lookup
+//   (get by exact 16-digit ID only, list denied).
+// - KCC ID 0000000000000000 (main account) and 0000000000000001..0000000000000100 (admin range)
+//   can only be written by an admin.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Default deny for every path not matched below.
     match /{document=**} {
       allow read, write: if false;
     }
 
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    // ---------------------------------------------------------------------------------------------
+    // Generic helpers
+    // ---------------------------------------------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function tokenEmail() {
+      return request.auth.token.get('email', '');
+    }
+
+    function isVerifiedEmailUser() {
+      return isSignedIn()
+        && request.auth.token.get('email_verified', false) == true
+        && tokenEmail() != '';
+    }
+
+    function isMainAccountUser() {
+      return isVerifiedEmailUser() && tokenEmail() == 'cosplaysehat@gmail.com';
+    }
+
+    // Admin = verified cosplaysehat@gmail.com OR a console-created /admins/{uid} document.
+    function isAdmin() {
+      return isSignedIn()
+        && (isMainAccountUser() || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
     }
 
     function incoming() {
@@ -17,77 +58,261 @@ service cloud.firestore {
       return resource.data;
     }
 
-    function isSignedIn() {
-      return request.auth != null;
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    function isAdmin() {
-      return isSignedIn() && (request.auth.token.email == 'cosplaysehat@gmail.com' || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    // Optional string field with a maximum length.
+    function optString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidUserId16(id) {
+      return id is string && id.matches('^[0-9]{16}$');
+    }
+
+    // 0000000000000000 (main account) and 0000000000000001..0000000000000100 (KCC admin range).
+    // Valid IDs are exactly 16 digits, so lexicographic order equals numeric order.
+    function isReservedUserId16(id) {
+      return id <= '0000000000000100';
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Members (private personal data)
+    // ---------------------------------------------------------------------------------------------
+
+    function memberKeys() {
+      return ['userId16', 'authUid', 'name', 'cosplayName', 'fullName', 'email', 'phone',
+              'discordUsername', 'country', 'province', 'city', 'age', 'ageCategory', 'birthday',
+              'primaryRole', 'fandom', 'experience', 'socialMedia', 'portfolioUrl', 'avatarUrl',
+              'reason', 'memberNumber', 'source', 'status', 'createdAt'];
+    }
+
+    // Fields a member may change on their own profile. userId16, authUid, email, source, status,
+    // createdAt and memberNumber are locked for non-admins.
+    function memberOwnerEditableKeys() {
+      return ['name', 'cosplayName', 'fullName', 'phone', 'discordUsername', 'country', 'province',
+              'city', 'age', 'ageCategory', 'birthday', 'primaryRole', 'fandom', 'experience',
+              'socialMedia', 'portfolioUrl', 'avatarUrl', 'reason'];
     }
 
     function isValidMember(data) {
       return data.keys().hasAll(['cosplayName', 'city', 'primaryRole', 'fandom', 'source', 'status', 'createdAt'])
         && data.cosplayName is string && data.cosplayName.size() > 0 && data.cosplayName.size() <= 80
-        && (!('fullName' in data) || (data.fullName is string && data.fullName.size() <= 100))
-        && (!('email' in data) || (data.email is string && data.email.size() <= 120))
         && data.city is string && data.city.size() > 0 && data.city.size() <= 80
-        && data.primaryRole is string && data.primaryRole.size() <= 80
+        && data.primaryRole is string && data.primaryRole.size() <= 120
         && data.fandom is string && data.fandom.size() <= 80
-        && (!('memberNumber' in data) || (data.memberNumber is string && data.memberNumber.size() <= 30))
-        && data.source is string && data.source.size() <= 40
-        && data.status is string && data.status.size() <= 20
-        && data.createdAt is string
-        && (!('userId16' in data) || (data.userId16 is string && data.userId16.size() <= 24))
-        && (!('country' in data) || (data.country is string && data.country.size() <= 80))
-        && (!('province' in data) || (data.province is string && data.province.size() <= 80))
-        && (!('phone' in data) || (data.phone is string && data.phone.size() <= 30))
-        && (!('discordUsername' in data) || (data.discordUsername is string && data.discordUsername.size() <= 60))
-        && (!('age' in data) || (data.age is string && data.age.size() <= 50))
-        && (!('ageCategory' in data) || (data.ageCategory is string && data.ageCategory.size() <= 50))
-        && (!('birthday' in data) || (data.birthday is string && data.birthday.size() <= 30))
-        && (!('experience' in data) || (data.experience is string && data.experience.size() <= 50))
-        && (!('socialMedia' in data) || (data.socialMedia is string && data.socialMedia.size() <= 120))
-        && (!('portfolioUrl' in data) || (data.portfolioUrl is string && data.portfolioUrl.size() <= 300))
-        && (!('reason' in data) || (data.reason is string && data.reason.size() <= 500));
+        && data.source in ['web_form', 'google_form_sync', 'spreadsheet_import']
+        && data.status in ['pending', 'verified', 'active']
+        && data.createdAt is string && data.createdAt.size() <= 40
+        && (!('userId16' in data) || isValidUserId16(data.userId16))
+        && optString(data, 'authUid', 128)
+        && optString(data, 'name', 80)
+        && optString(data, 'fullName', 100)
+        && optString(data, 'email', 120)
+        && optString(data, 'phone', 30)
+        && optString(data, 'discordUsername', 60)
+        && optString(data, 'country', 80)
+        && optString(data, 'province', 80)
+        && optString(data, 'age', 50)
+        && optString(data, 'ageCategory', 50)
+        && optString(data, 'birthday', 30)
+        && optString(data, 'experience', 50)
+        && optString(data, 'socialMedia', 120)
+        && optString(data, 'portfolioUrl', 300)
+        && optString(data, 'avatarUrl', 1000000)
+        && optString(data, 'reason', 500)
+        && optString(data, 'memberNumber', 30);
     }
 
-    function isValidPhoto(data) {
-      return data.keys().hasAll(['authorName', 'photoUrl', 'character', 'series', 'event', 'createdAt'])
-        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 60
-        && data.photoUrl is string
-        && data.character is string && data.character.size() <= 80
-        && data.series is string && data.series.size() <= 80
-        && data.event is string && data.event.size() <= 100
-        && data.createdAt is string;
+    function isMemberOwner(data) {
+      return isSignedIn() && data.get('authUid', '') == request.auth.uid;
+    }
+
+    function hasVerifiedEmailOf(data) {
+      return isVerifiedEmailUser() && data.get('email', '') == tokenEmail();
     }
 
     match /members/{memberId} {
-      allow get, list: if true;
-      allow create: if isValidId(memberId) && isValidMember(incoming());
-      allow update: if isValidId(memberId) && (isAdmin() || isSignedIn() || isValidMember(incoming()));
-      allow delete: if isValidId(memberId);
+      // members/{uid} may always be read by that uid (also when it does not exist yet, so the
+      // login flow can check-then-create inside a transaction).
+      allow get: if (isSignedIn() && memberId == request.auth.uid)
+        || (resource != null && (isMemberOwner(resource.data) || hasVerifiedEmailOf(resource.data)))
+        || isAdmin();
+
+      // Queries must be constrained so the rule is provable:
+      //   admin:  any query
+      //   member: where('authUid', '==', auth.uid)
+      //   member with VERIFIED email: where('email', '==', <auth token email, lowercase>)
+      allow list: if isAdmin();
+      allow list: if isSignedIn() && resource.data.authUid == request.auth.uid;
+      allow list: if isVerifiedEmailUser() && resource.data.email == tokenEmail();
+
+      // Public registration (anonymous allowed) and first-login profile creation.
+      // Non-admins: doc id is "kc_..." or their own uid, KCC ID outside the reserved range,
+      // authUid absent or equal to their own uid.
+      allow create: if isValidId(memberId)
+        && isValidMember(incoming())
+        && incoming().keys().hasOnly(memberKeys())
+        && isValidUserId16(incoming().get('userId16', ''))
+        && (
+          (!isReservedUserId16(incoming().userId16)
+            && (memberId.matches('^kc_[a-zA-Z0-9_\\-]+$') || (isSignedIn() && memberId == request.auth.uid))
+            && (!('authUid' in incoming()) || (isSignedIn() && incoming().authUid == request.auth.uid)))
+          || isAdmin()
+        );
+
+      // Admin: any update (status changes, KCC ID repair, auto-heal).
+      // Owner (authUid == auth.uid): profile fields only, schema-valid.
+      // Account link: a VERIFIED-email user whose email matches may set authUid to their own uid only.
+      allow update: if isAdmin()
+        || (isMemberOwner(existing())
+            && isValidMember(incoming())
+            && incoming().diff(existing()).affectedKeys().hasOnly(memberOwnerEditableKeys()))
+        || (hasVerifiedEmailOf(existing())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['authUid'])
+            && incoming().authUid == request.auth.uid);
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Member cards (PUBLIC, non-private projection; doc id == userId16)
+    // ---------------------------------------------------------------------------------------------
+
+    function memberCardKeys() {
+      return ['userId16', 'cosplayName', 'primaryRole', 'city', 'country', 'status', 'createdAt',
+              'avatarUrl', 'ownerUid'];
+    }
+
+    function isValidMemberCard(data, cardId) {
+      return isValidUserId16(cardId)
+        && data.keys().hasAll(['userId16', 'cosplayName', 'primaryRole', 'city', 'country', 'status', 'createdAt'])
+        && data.keys().hasOnly(memberCardKeys())
+        && data.userId16 == cardId
+        && data.cosplayName is string && data.cosplayName.size() > 0 && data.cosplayName.size() <= 80
+        && data.primaryRole is string && data.primaryRole.size() <= 120
+        && data.city is string && data.city.size() <= 80
+        && data.country is string && data.country.size() <= 80
+        && data.status in ['pending', 'verified', 'active']
+        && data.createdAt is string && data.createdAt.size() <= 40
+        && optString(data, 'avatarUrl', 400000)
+        && optString(data, 'ownerUid', 128);
+    }
+
+    match /memberCards/{cardId} {
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if isValidMemberCard(incoming(), cardId)
+        && (
+          (!isReservedUserId16(cardId)
+            && (!('ownerUid' in incoming()) || (isSignedIn() && incoming().ownerUid == request.auth.uid)))
+          || isAdmin()
+        );
+
+      // Owner (ownerUid == auth.uid) may refresh name/role/location/avatar; userId16 (doc id),
+      // ownerUid, status and createdAt stay unchanged.
+      allow update: if isValidMemberCard(incoming(), cardId)
+        && (
+          (isSignedIn()
+            && existing().get('ownerUid', '') == request.auth.uid
+            && incoming().get('ownerUid', '') == request.auth.uid
+            && incoming().status == existing().status
+            && incoming().createdAt == existing().createdAt)
+          || isAdmin()
+        );
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Photos (public gallery)
+    // ---------------------------------------------------------------------------------------------
+
+    function isValidPhoto(data) {
+      return data.keys().hasAll(['authorName', 'photoUrl', 'character', 'series', 'event', 'createdAt'])
+        && data.keys().hasOnly(['memberId', 'userId16', 'authorUid', 'authorName', 'authorCosname',
+                                'authorNameAlias', 'authorAvatar', 'photoUrl', 'title', 'character',
+                                'series', 'event', 'photographer', 'caption', 'likesCount', 'createdAt'])
+        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 60
+        && data.photoUrl is string && data.photoUrl.size() > 0 && data.photoUrl.size() <= 1000000
+        && data.character is string && data.character.size() <= 80
+        && data.series is string && data.series.size() <= 80
+        && data.event is string && data.event.size() <= 100
+        && data.createdAt is string && data.createdAt.size() <= 40
+        && optString(data, 'title', 120)
+        && optString(data, 'photographer', 80)
+        && optString(data, 'caption', 500)
+        && optString(data, 'authorCosname', 80)
+        && optString(data, 'authorNameAlias', 80)
+        && optString(data, 'authorAvatar', 2048)
+        && optString(data, 'memberId', 128)
+        && optString(data, 'userId16', 24)
+        && optString(data, 'authorUid', 128)
+        && (!('likesCount' in data) || (data.likesCount is int && data.likesCount >= 0));
     }
 
     match /photos/{photoId} {
-      allow get, list: if true;
-      allow create: if isValidId(photoId) && isValidPhoto(incoming());
-      allow update: if isValidId(photoId);
-      allow delete: if isValidId(photoId) && (isAdmin() || isSignedIn());
+      allow get: if true;
+      // The gallery query is orderBy('createdAt', 'desc') + limit(100).
+      allow list: if request.query.limit <= 100;
+
+      allow create: if isSignedIn()
+        && isValidId(photoId)
+        && isValidPhoto(incoming())
+        && incoming().get('authorUid', '') == request.auth.uid
+        && (incoming().get('likesCount', 0) == 0 || isAdmin());
+
+      // Non-admins may only add exactly one like (client uses increment(1)).
+      allow update: if (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount'])
+            && incoming().likesCount is int
+            && incoming().likesCount == existing().get('likesCount', 0) + 1)
+        || isAdmin();
+
+      allow delete: if (isSignedIn() && existing().get('authorUid', '') == request.auth.uid)
+        || isAdmin();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Google Sheets / Form sync logs (admin only)
+    // ---------------------------------------------------------------------------------------------
+
+    function isValidSyncLog(data) {
+      return data.keys().hasAll(['spreadsheetId', 'importedCount', 'source', 'syncedAt'])
+        && data.keys().hasOnly(['spreadsheetId', 'importedCount', 'source', 'syncedAt', 'details'])
+        && data.spreadsheetId is string && data.spreadsheetId.size() <= 300
+        && data.importedCount is int && data.importedCount >= 0
+        && data.source is string && data.source.size() <= 80
+        && data.syncedAt is string && data.syncedAt.size() <= 40
+        && optString(data, 'details', 1000);
     }
 
     match /sync_logs/{logId} {
-      allow get, list: if true;
-      allow create: if isValidId(logId);
+      allow get, list: if isAdmin();
+      allow create: if isAdmin() && isValidId(logId) && isValidSyncLog(incoming());
       allow update, delete: if isAdmin();
     }
 
-    match /admins/{uid} {
-      allow read, write: if isAdmin();
+    // ---------------------------------------------------------------------------------------------
+    // Site appearance settings (public read, admin write)
+    // ---------------------------------------------------------------------------------------------
+
+    match /siteSettings/{settingId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update, delete: if isAdmin();
     }
 
-    match /siteSettings/{documentId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // ---------------------------------------------------------------------------------------------
+    // Admin registry: documents are created by the owner in the Firebase console only.
+    // A signed-in user may read their own entry (client-side admin check).
+    // ---------------------------------------------------------------------------------------------
+
+    match /admins/{uid} {
+      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow list: if false;
+      allow create, update, delete: if false;
     }
   }
 }

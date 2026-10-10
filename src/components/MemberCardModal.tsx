@@ -47,11 +47,14 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
     }
   };
 
-  const formattedDate = new Date(member.createdAt).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  const createdDate = new Date(member.createdAt);
+  const formattedDate = isNaN(createdDate.getTime())
+    ? '-'
+    : createdDate.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fade-in overflow-y-auto">
@@ -139,9 +142,11 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
           {/* Card Footer Details & SVG QR Code */}
           <div className="flex justify-between items-end pt-3 border-t border-rose-500/20 relative z-10">
             <div className="space-y-1">
-              <p className="text-[10px] text-slate-400 font-mono">
-                FANDOM: <span className="text-slate-200 font-semibold">{member.fandom}</span>
-              </p>
+              {member.fandom && (
+                <p className="text-[10px] text-slate-400 font-mono">
+                  FANDOM: <span className="text-slate-200 font-semibold">{member.fandom}</span>
+                </p>
+              )}
               {member.discordUsername && (
                 <p className="text-[10px] text-indigo-300 font-mono">
                   DISCORD: <span className="text-white font-semibold">{member.discordUsername}</span>

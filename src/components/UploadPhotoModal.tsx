@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { X, Upload, Camera, Sparkles, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Member, Photo } from '../types';
-import { addPhotoToFirestore } from '../lib/galleryService';
+import { addPhotoToFirestore, PHOTO_FIELD_LIMITS } from '../lib/galleryService';
+import { describeFirestoreError } from '../lib/firebase';
 import { compressImage } from '../lib/imageUtils';
 
 interface UploadPhotoModalProps {
@@ -65,22 +66,29 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const finalEvent = event === 'Lainnya (Tulis Sendiri)' && customEvent ? customEvent.trim() : event;
+      // All text is clamped to the Firestore rule limits (PHOTO_FIELD_LIMITS) before writing
+      const finalEvent = (
+        event === 'Lainnya (Tulis Sendiri)' && customEvent.trim() ? customEvent.trim() : event
+      ).slice(0, PHOTO_FIELD_LIMITS.event);
+      const authorAlias = currentMember.name || currentMember.cosplayName || '';
 
       const newPhotoPayload: Omit<Photo, 'id'> = {
         memberId: currentMember.id,
-        userId16: currentMember.userId16,
-        authorName: currentMember.name || currentMember.cosplayName || currentMember.fullName || 'Member',
-        authorCosname: currentMember.name || currentMember.cosplayName,
-        authorNameAlias: currentMember.name || currentMember.cosplayName,
+        userId16: currentMember.userId16 || undefined,
+        authorName: (currentMember.name || currentMember.cosplayName || currentMember.fullName || 'Member').slice(
+          0,
+          PHOTO_FIELD_LIMITS.authorName
+        ),
+        authorCosname: authorAlias.slice(0, PHOTO_FIELD_LIMITS.authorCosname) || undefined,
+        authorNameAlias: authorAlias.slice(0, PHOTO_FIELD_LIMITS.authorNameAlias) || undefined,
         authorAvatar: currentMember.avatarUrl,
         photoUrl,
-        title: title.trim(),
-        character: character.trim(),
-        series: series.trim(),
+        title: title.trim().slice(0, PHOTO_FIELD_LIMITS.title),
+        character: character.trim().slice(0, PHOTO_FIELD_LIMITS.character),
+        series: series.trim().slice(0, PHOTO_FIELD_LIMITS.series),
         event: finalEvent,
-        photographer: photographer.trim() || undefined,
-        caption: caption.trim() || undefined,
+        photographer: photographer.trim().slice(0, PHOTO_FIELD_LIMITS.photographer) || undefined,
+        caption: caption.trim().slice(0, PHOTO_FIELD_LIMITS.caption) || undefined,
         likesCount: 0,
         createdAt: new Date().toISOString(),
       };
@@ -95,7 +103,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
       onClose();
     } catch (err: unknown) {
       console.error('Upload photo error:', err);
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal mengunggah foto ke galeri.');
+      setErrorMsg(describeFirestoreError(err, true));
     } finally {
       setIsSubmitting(false);
     }
@@ -176,6 +184,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                 type="text"
                 required
                 placeholder="Contoh: Raiden Shogun - Inazuma Castle"
+                maxLength={PHOTO_FIELD_LIMITS.title}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
@@ -191,6 +200,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                 type="text"
                 required
                 placeholder="Contoh: Frieren, Furina, Gojo Satoru"
+                maxLength={PHOTO_FIELD_LIMITS.character}
                 value={character}
                 onChange={(e) => setCharacter(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
@@ -206,6 +216,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                 type="text"
                 required
                 placeholder="Contoh: Genshin Impact, Sousou no Frieren"
+                maxLength={PHOTO_FIELD_LIMITS.series}
                 value={series}
                 onChange={(e) => setSeries(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
@@ -237,6 +248,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                 <input
                   type="text"
                   placeholder="Ketik nama event / lokasi"
+                  maxLength={PHOTO_FIELD_LIMITS.event}
                   value={customEvent}
                   onChange={(e) => setCustomEvent(e.target.value)}
                   className="mt-2 w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs"
@@ -253,6 +265,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
             <input
               type="text"
               placeholder="@fotografer_name atau Nama Studio"
+              maxLength={PHOTO_FIELD_LIMITS.photographer}
               value={photographer}
               onChange={(e) => setPhotographer(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
@@ -267,6 +280,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
             <textarea
               rows={2}
               placeholder="Ceritakan proses pembuatan kostum, props, atau keseruan saat event..."
+              maxLength={PHOTO_FIELD_LIMITS.caption}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500 resize-none"

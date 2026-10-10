@@ -1,9 +1,5 @@
 import { ColumnMapping, Member, SheetFile } from '../types';
-import {
-  generate16DigitUserId,
-  generateChronologicalUserId16,
-  resolveMemberUserId16,
-} from './idGenerator';
+import { generateChronologicalUserId16 } from './idGenerator';
 
 export async function fetchSpreadsheetsFromDrive(accessToken: string): Promise<SheetFile[]> {
   try {
@@ -162,14 +158,9 @@ export function parseRowsToMembers(
     if (!fullName && !resolvedName && !phone && !discordUsername) return;
 
     const createdAtDate = timestampRaw && !isNaN(Date.parse(timestampRaw)) ? new Date(timestampRaw) : new Date();
-    // User ID arranged chronologically by when they filled the form; cosplaysehat@gmail.com is 0000000000000000
-    // UID 0000 0000 0000 0001 to 0000 0000 0000 0100 is assigned to KCC admin
-    const userId16 = resolveMemberUserId16({
-      email,
-      role: primaryRole,
-      dateInput: createdAtDate,
-      sequenceNumber: existingCount + index + 1,
-    });
+    // User ID arranged chronologically by when they filled the form. Sheet email/role never yields the
+    // main account (0000...0000) or KCC admin-range IDs; bulkImportMembers re-checks uniqueness.
+    const userId16 = generateChronologicalUserId16(createdAtDate, (index % 99) + 1);
 
     parsedMembers.push({
       userId16,

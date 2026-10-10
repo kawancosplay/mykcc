@@ -28,7 +28,8 @@ interface NavbarProps {
   currentMember: Member | null;
   onOpenAuth: () => void;
   onLogout: () => void;
-  memberCount: number;
+  memberCount?: number | null; // null = unknown (only known for a signed-in admin); currently not rendered
+  isAdmin?: boolean; // Site/Theme Editor entry points are admin-only
   currentLang: LanguageCode;
   onSelectLang: (lang: LanguageCode) => void;
   isVisible: boolean;
@@ -43,6 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentMember,
   onOpenAuth,
   onLogout,
+  isAdmin = false,
   currentLang,
   onSelectLang,
   isVisible,
@@ -190,15 +192,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsEditorOpen(true)}
-                className="p-2 text-slate-300 hover:text-white transition-colors"
-                title={currentLang === 'id' ? 'Editor Tampilan Situs' : 'Site Editor'}
-              >
-                <Palette className="w-5 h-5" />
-              </button>
-              
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditorOpen(true)}
+                  className="p-2 text-slate-300 hover:text-white transition-colors"
+                  title={currentLang === 'id' ? 'Editor Tampilan Situs' : 'Site Editor'}
+                >
+                  <Palette className="w-5 h-5" />
+                </button>
+              )}
+
               <div className="hidden md:block">
                 <PWAInstallButton />
               </div>
@@ -395,16 +399,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="text-sm font-medium">WhatsApp Community</span>
                 </a>
 
-                <button
-                  type="button"
-                  onClick={() => { setIsEditorOpen(true); handleCloseMobileMenu(); }}
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl liquid-glass-menu-item text-slate-100 hover:text-white"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
-                    <Palette className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium">Theme Editor</span>
-                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => { setIsEditorOpen(true); handleCloseMobileMenu(); }}
+                    className="flex items-center gap-3.5 p-3.5 rounded-2xl liquid-glass-menu-item text-slate-100 hover:text-white"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+                      <Palette className="w-4 h-4" />
+                    </div>
+                    <span className="text-sm font-medium">Theme Editor</span>
+                  </button>
+                )}
 
                 <div className="pt-1">
                    <PWAInstallButton />

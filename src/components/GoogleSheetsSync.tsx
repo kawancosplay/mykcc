@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileSpreadsheet,
   RefreshCw,
@@ -18,8 +18,14 @@ import {
   Search,
   ExternalLink,
 } from 'lucide-react';
-import { User } from 'firebase/auth';
-import { ColumnMapping, SheetFile, SyncLog } from '../types';
+import type { User } from 'firebase/auth';
+import type {
+  ColumnMapping,
+  SheetFile,
+  SyncLog,
+  BulkImportResult,
+  SubscriptionErrorKind,
+} from '../types';
 import {
   fetchSpreadsheetsFromDrive,
   fetchSpreadsheetMetadata,
@@ -28,12 +34,15 @@ import {
   parseRowsToMembers,
 } from '../lib/sheetsService';
 import { bulkImportMembers, recordSyncLog } from '../lib/firestoreService';
+import { describeFirestoreError } from '../lib/firebase';
 
 interface GoogleSheetsSyncProps {
   user: User | null;
   accessToken: string | null;
-  onLogin: () => void;
+  onLogin: () => void; // scoped Google sign-in (Drive + Sheets), not the regular AuthModal login
+  connectError?: string | null;
   syncLogs: SyncLog[];
+  syncLogsError?: SubscriptionErrorKind | null;
   totalMembersInFirestore: number;
 }
 
@@ -41,7 +50,9 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   user,
   accessToken,
   onLogin,
+  connectError = null,
   syncLogs,
+  syncLogsError = null,
   totalMembersInFirestore,
 }) => {
   // Spreadsheet selection states
@@ -79,7 +90,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   // Import states
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ completed: 0, total: 0 });
-  const [importResult, setImportResult] = useState<{ added: number; skipped: number } | null>(null);
+  const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Live real-time transition poller
@@ -88,6 +99,11 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   const [pollIntervalSeconds, setPollIntervalSeconds] = useState(30);
   const [copiedCode, setCopiedCode] = useState(false);
   const [showScriptModal, setShowScriptModal] = useState(false);
+  // Prevents overlapping poller runs (a slow import must finish before the next poll starts)
+  const pollInFlightRef = useRef(false);
+  // Sheet / tab / mapping + raw values of the last fully imported poll: while the sheet is unchanged the
+  // poller skips Firestore entirely (no full members read and no writes every interval)
+  const lastPollSignatureRef = useRef<string | null>(null);
 
   // Fetch drive spreadsheets on token availability
   useEffect(() => {
@@ -108,7 +124,9 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       }
     } catch (err: unknown) {
       console.warn('Drive list info:', err);
-      setErrorMsg('Gagal memuat daftar Google Sheet dari Drive. Pastikan izin akses telah diberikan.');
+      setErrorMsg(
+        'Gagal memuat daftar Google Sheet dari Drive. Pastikan izin akses Google Drive & Sheets telah diberikan (tekan "Hubungkan Ulang Google Sheets"), atau tempel URL spreadsheet secara manual.'
+      );
     } finally {
       setIsLoadingSheets(false);
     }
@@ -194,23 +212,28 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
 
       setImportProgress({ completed: 0, total: membersToImport.length });
 
+      // Throws if the existing members cannot be read (never imports against an empty list).
       const result = await bulkImportMembers(membersToImport, (completed, total) => {
         setImportProgress({ completed, total });
       });
 
       setImportResult(result);
 
-      // Record sync log in Firestore
-      await recordSyncLog({
-        spreadsheetId: targetId,
-        importedCount: result.added,
-        source: 'Google Sheets Importer',
-        syncedAt: new Date().toISOString(),
-        details: `Berhasil import ${result.added} anggota baru, ${result.skipped} duplikat dilewati.`,
-      });
+      // Record sync log in Firestore (a failed log write must not hide a successful import)
+      try {
+        await recordSyncLog({
+          spreadsheetId: targetId,
+          importedCount: result.added,
+          source: 'Google Sheets Importer',
+          syncedAt: new Date().toISOString(),
+          details: `Impor selesai: ${result.added} anggota baru, ${result.updated} diperbarui, ${result.unchanged} tidak berubah, ${result.skipped} gagal.`,
+        });
+      } catch (logErr) {
+        console.warn('Sync log write failed:', logErr);
+      }
     } catch (err: unknown) {
       console.error('Import error:', err);
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal melakukan impor ke Firebase.');
+      setErrorMsg(describeFirestoreError(err, true));
     } finally {
       setIsImporting(false);
     }
@@ -222,6 +245,8 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
 
     if (isAutoSyncActive && accessToken && selectedSpreadsheetId) {
       interval = setInterval(async () => {
+        if (pollInFlightRef.current) return;
+        pollInFlightRef.current = true;
         try {
           const rawValues = await fetchSheetValues(
             accessToken,
@@ -229,7 +254,9 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
             `${selectedTab || 'Sheet1'}!A1:Z2000`
           );
 
-          if (rawValues.length > 1) {
+          const signature = `${selectedSpreadsheetId}|${selectedTab}|${JSON.stringify(columnMapping)}|${JSON.stringify(rawValues)}`;
+
+          if (rawValues.length > 1 && signature !== lastPollSignatureRef.current) {
             const parsed = parseRowsToMembers(
               rawValues,
               columnMapping,
@@ -237,20 +264,28 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
               'google_form_sync'
             );
 
+            // Unchanged rows are skipped by the data layer (no rewrite every poll).
             const res = await bulkImportMembers(parsed);
-            if (res.added > 0) {
+            if (res.added > 0 || res.updated > 0) {
               await recordSyncLog({
                 spreadsheetId: selectedSpreadsheetId,
                 importedCount: res.added,
                 source: 'Real-Time Transition Poller',
                 syncedAt: new Date().toISOString(),
-                details: `Otomatis menambah ${res.added} respon Google Form baru ke Firebase.`,
+                details: `Otomatis: ${res.added} baru, ${res.updated} diperbarui.`,
               });
             }
+            // Rows that failed are retried on the next poll; a clean run is not repeated until the sheet changes
+            lastPollSignatureRef.current = res.skipped === 0 ? signature : null;
           }
           setLastPollTime(new Date());
         } catch (e) {
           console.warn('Auto poll error:', e);
+          // Stop the poller so a failing sync does not keep retrying writes every interval.
+          setErrorMsg(describeFirestoreError(e, true));
+          setIsAutoSyncActive(false);
+        } finally {
+          pollInFlightRef.current = false;
         }
       }, pollIntervalSeconds * 1000);
     }
@@ -334,6 +369,15 @@ function onFormSubmit(e) {
               <p className="text-sm text-slate-300 leading-relaxed max-w-xl">
                 Untuk membaca spreadsheet Google Form Anda secara langsung, masuk menggunakan akun Google yang memiliki akses ke spreadsheet respon pendaftaran KawanCosplay.
               </p>
+              <p className="text-xs text-amber-200/90 leading-relaxed max-w-xl mt-2">
+                Pilih akun Google admin (cosplaysehat@gmail.com) dan izinkan akses Google Drive & Sheets.
+              </p>
+              {connectError && (
+                <p className="text-xs text-rose-300 font-semibold leading-relaxed max-w-xl mt-2 flex items-start gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-px" />
+                  <span>{connectError}</span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -353,15 +397,36 @@ function onFormSubmit(e) {
         <div className="lg:col-span-7 space-y-6">
           {/* STEP 1: PILIH SPREADSHEET */}
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-            <div className="flex items-center space-x-3 mb-6 pb-4 border-b border-slate-800">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
-                1
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                  1
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Pilih File Spreadsheet Google Form</h2>
+                  <p className="text-xs text-slate-400">Pilih dari Drive kamu atau tempel link URL Spreadsheet</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">Pilih File Spreadsheet Google Form</h2>
-                <p className="text-xs text-slate-400">Pilih dari Drive kamu atau tempel link URL Spreadsheet</p>
-              </div>
+
+              {accessToken && (
+                <button
+                  type="button"
+                  onClick={onLogin}
+                  title="Ganti token akses jika izin Drive / Sheets belum diberikan"
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700 inline-flex items-center gap-1.5 transition-colors shrink-0"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Hubungkan Ulang Google Sheets</span>
+                </button>
+              )}
             </div>
+
+            {accessToken && connectError && (
+              <p className="mb-4 text-xs text-rose-300 font-semibold flex items-start gap-1.5">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-px" />
+                <span>{connectError}</span>
+              </p>
+            )}
 
             <div className="space-y-4">
               {/* Drive file dropdown if available */}
@@ -711,7 +776,8 @@ function onFormSubmit(e) {
                   <div className="flex items-center space-x-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                     <span>
-                      Berhasil mengimpor <strong>{importResult.added} anggota baru</strong>! ({importResult.skipped} duplikat dilewati).
+                      Impor selesai: <strong>{importResult.added} anggota baru</strong>, {importResult.updated} diperbarui,{' '}
+                      {importResult.unchanged} tidak berubah, {importResult.skipped} gagal.
                     </span>
                   </div>
                 </div>
@@ -862,7 +928,15 @@ function onFormSubmit(e) {
               <span className="text-xs text-slate-500 font-mono">{syncLogs.length} Log</span>
             </div>
 
-            {syncLogs.length === 0 ? (
+            {syncLogsError === 'permission-denied' ? (
+              <p className="text-xs text-rose-300 font-semibold py-3 text-center">
+                Akses log sinkronisasi ditolak — masuk dengan akun Google admin.
+              </p>
+            ) : syncLogsError ? (
+              <p className="text-xs text-amber-300 py-3 text-center">
+                Gagal memuat riwayat sinkronisasi. Periksa koneksi lalu muat ulang halaman.
+              </p>
+            ) : syncLogs.length === 0 ? (
               <p className="text-xs text-slate-500 italic py-3 text-center">
                 Belum ada aktivitas sinkronisasi yang tercatat.
               </p>

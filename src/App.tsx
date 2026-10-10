@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { User } from 'firebase/auth';
 const Navbar = lazy(() => import('./components/Navbar').then(m => ({ default: m.Navbar })));
 const RegistrationForm = lazy(() => import('./components/RegistrationForm').then(m => ({ default: m.RegistrationForm })));
@@ -11,25 +11,28 @@ const OfficialGovBanner = lazy(() => import('./components/OfficialGovBanner').th
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const SiteEditorModal = lazy(() => import('./components/SiteEditorModal').then(m => ({ default: m.SiteEditorModal })));
 
-import { Member, Photo, SyncLog } from './types';
-import { initAuth, logout } from './lib/googleAuth';
+import type { Member, Photo, SyncLog, SubscriptionErrorKind } from './types';
+import { initAuth, logout, googleSignIn, isPopupCancelledError } from './lib/googleAuth';
 import {
   subscribeToMembers,
   subscribeToSyncLogs,
-  checkAndSeedCommunityIfEmpty,
-  repairFounderIdInFirestore,
+  getMemberCard,
+  memberCardToMember,
 } from './lib/firestoreService';
+import { subscribeToPhotos } from './lib/galleryService';
+import { ensureMemberForUser } from './lib/authService';
 import {
-  subscribeToPhotos,
-  checkAndSeedPhotosIfEmpty,
-} from './lib/galleryService';
-import { findMemberByEmail, findMemberByUidOrEmail } from './lib/authService';
-import { format16DigitUserId } from './lib/idGenerator';
+  checkIsAdminUser,
+  isMainAdminUser,
+  classifyFirestoreError,
+  describeFirestoreError,
+} from './lib/firebase';
+import { format16DigitUserId, MAIN_ACCOUNT_UID } from './lib/idGenerator';
 import { LanguageCode, TRANSLATIONS, LANGUAGES } from './lib/i18n';
 import { useSiteTheme } from './lib/themeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { triggerHaptic } from './lib/haptic';
-import { Palette, Lock, IdCard, Search, ShieldCheck } from 'lucide-react';
+import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'form' | 'card' | 'gallery' | 'profile' | 'admin'>('form');
@@ -40,6 +43,22 @@ export default function App() {
   const [members, setMembers] = useState<Member[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
+
+  // Admin status is resolved from the real Firebase identity (verified main email or admins/{uid}).
+  // It is stored per uid so a stale admin flag can never leak to another signed-in account.
+  const [authReady, setAuthReady] = useState(false);
+  const [verifiedAdminUid, setVerifiedAdminUid] = useState<string | null>(null);
+  const [isAdminChecking, setIsAdminChecking] = useState(true);
+  const isAdmin = !!user && verifiedAdminUid === user.uid;
+
+  // Subscription / profile / Sheets connection status
+  const [membersLoaded, setMembersLoaded] = useState(false);
+  const [membersError, setMembersError] = useState<SubscriptionErrorKind | null>(null);
+  const [syncLogsError, setSyncLogsError] = useState<SubscriptionErrorKind | null>(null);
+  const [memberLoadState, setMemberLoadState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [sheetsConnectError, setSheetsConnectError] = useState<string | null>(null);
+  const authUidRef = React.useRef<string | null>(null);
+
   const [isVisible, setIsVisible] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const prevScrollYRef = React.useRef(0);
@@ -109,10 +128,11 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadPhotoModalOpen, setIsUploadPhotoModalOpen] = useState(false);
 
-  // KTA Lookup by ID or Email (Privacy-safe)
+  // KTA Lookup by 16-digit KCC ID only (public memberCards projection, privacy-safe)
   const [lookupQuery, setLookupQuery] = useState('');
   const [lookupResult, setLookupResult] = useState<Member | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const isRtl = LANGUAGES.find((l) => l.code === currentLang)?.isRtl || false;
@@ -129,32 +149,81 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
+  // Load (or create, only when lookups definitively came back empty) the member profile of a signed-in user.
+  // Results are ignored if the user signed out or switched accounts in the meantime.
+  const loadMemberForUser = (u: User) => {
+    setMemberLoadState('loading');
+    ensureMemberForUser(u)
+      .then((m) => {
+        if (authUidRef.current !== u.uid) return;
+        setCurrentMember(isMainAdminUser(u) ? { ...m, userId16: MAIN_ACCOUNT_UID } : m);
+        setMemberLoadState('idle');
+      })
+      .catch((err) => {
+        if (authUidRef.current !== u.uid) return;
+        console.warn('Member profile load failed:', err);
+        setMemberLoadState('error');
+      });
+  };
+
   // Initialize Firebase Auth listener
   useEffect(() => {
     const unsubscribe = initAuth(
-      async (currentUser, token) => {
-        setUser(currentUser);
-        if (token) setAccessToken(token);
-
-        if (currentUser) {
-          const matched = await findMemberByUidOrEmail(currentUser.uid, currentUser.email || '');
-          if (matched) {
-            if (currentUser.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-              matched.userId16 = '0000000000000000';
-            }
-            setCurrentMember(matched);
-          }
+      (currentUser, token) => {
+        if (authUidRef.current !== currentUser.uid) {
+          // New or different account: never keep the previous account's profile or Sheets token
+          authUidRef.current = currentUser.uid;
+          setCurrentMember(null);
+          setAccessToken(null);
         }
+        setUser(currentUser);
+        setAuthReady(true);
+        // Only googleSignIn (Drive + Sheets scopes) fills this cached token
+        if (token) setAccessToken(token);
+        loadMemberForUser(currentUser);
       },
       () => {
+        authUidRef.current = null;
         setUser(null);
         setCurrentMember(null);
         setAccessToken(null);
+        setVerifiedAdminUid(null);
+        setMemberLoadState('idle');
+        setAuthReady(true);
       }
     );
 
     return () => unsubscribe();
   }, []);
+
+  // Resolve admin status for the CURRENT Firebase identity (re-checked whenever the account changes)
+  useEffect(() => {
+    if (!user) {
+      setVerifiedAdminUid(null);
+      // Keep "checking" until Firebase has restored (or ruled out) a previous session
+      setIsAdminChecking(!authReady);
+      return;
+    }
+
+    let cancelled = false;
+    const checkingUser = user;
+    setIsAdminChecking(true);
+    checkIsAdminUser(checkingUser)
+      .then((ok) => {
+        if (!cancelled) setVerifiedAdminUid(ok ? checkingUser.uid : null);
+      })
+      .catch((err) => {
+        console.warn('Admin check failed:', err);
+        if (!cancelled) setVerifiedAdminUid(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsAdminChecking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, user?.email, user?.emailVerified, authReady]);
 
   // Whenever user or members list loads, make sure currentMember is matched immediately
   useEffect(() => {
@@ -166,41 +235,76 @@ export default function App() {
           (cleanEmail && m.email && m.email.toLowerCase().trim() === cleanEmail)
       );
       if (matched) {
-        if (cleanEmail === 'cosplaysehat@gmail.com') {
-          matched.userId16 = '0000000000000000';
-        }
-        setCurrentMember(matched);
+        // Copy instead of mutating the shared members list (the admin repair panel reads it)
+        setCurrentMember(isMainAdminUser(user) ? { ...matched, userId16: MAIN_ACCOUNT_UID } : matched);
       }
     }
   }, [user, members, currentMember]);
 
-  // Subscribe to real-time Firestore members, photos & sync logs
+  // Members & sync logs hold private data: subscribe ONLY for a Firebase-authenticated admin,
+  // and re-subscribe whenever the signed-in identity or its admin status changes.
   useEffect(() => {
-    checkAndSeedPhotosIfEmpty().catch(console.warn);
+    if (!user || !isAdmin) {
+      setMembers([]);
+      setSyncLogs([]);
+      setMembersLoaded(false);
+      setMembersError(null);
+      setSyncLogsError(null);
+      return;
+    }
+
+    const subscribedUser = user;
 
     const unsubMembers = subscribeToMembers(
       (updatedMembers) => {
         setMembers(updatedMembers);
+        setMembersLoaded(true);
+        setMembersError(null);
         setCurrentMember((prev) => {
           if (prev) {
-            const fresh = updatedMembers.find(
-              (m) =>
-                m.id === prev.id ||
-                (prev.authUid && m.authUid === prev.authUid) ||
-                (prev.email && m.email && m.email.toLowerCase() === prev.email.toLowerCase())
-            );
+            // Same document first, so a second doc linked to the same account never replaces the profile
+            const fresh =
+              updatedMembers.find((m) => m.id === prev.id) ||
+              updatedMembers.find(
+                (m) =>
+                  (prev.authUid && m.authUid === prev.authUid) ||
+                  (prev.email && m.email && m.email.toLowerCase() === prev.email.toLowerCase())
+              );
             if (!fresh) return prev;
-            if (prev.email && prev.email.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-              fresh.userId16 = '0000000000000000';
+            if (isMainAdminUser(subscribedUser) && (fresh.authUid === subscribedUser.uid || prev.userId16 === MAIN_ACCOUNT_UID)) {
+              return { ...fresh, userId16: MAIN_ACCOUNT_UID };
             }
             return fresh;
           }
           return null;
         });
       },
-      (err) => console.warn('Members subscribe note:', err)
+      (err) => {
+        console.warn('Members subscribe note:', err);
+        setMembersError(classifyFirestoreError(err));
+        setMembersLoaded(false);
+      }
     );
 
+    const unsubLogs = subscribeToSyncLogs(
+      (updatedLogs) => {
+        setSyncLogs(updatedLogs);
+        setSyncLogsError(null);
+      },
+      (err) => {
+        console.warn('Logs subscribe note:', err);
+        setSyncLogsError(classifyFirestoreError(err));
+      }
+    );
+
+    return () => {
+      unsubMembers();
+      unsubLogs();
+    };
+  }, [user?.uid, user?.email, isAdmin]);
+
+  // Public photo gallery (no demo seeding from visitor page loads)
+  useEffect(() => {
     const unsubPhotos = subscribeToPhotos(
       (updatedPhotos) => {
         setPhotos(updatedPhotos);
@@ -208,90 +312,132 @@ export default function App() {
       (err) => console.warn('Photos subscribe note:', err)
     );
 
-    const unsubLogs = subscribeToSyncLogs(
-      (updatedLogs) => {
-        setSyncLogs(updatedLogs);
-      },
-      (err) => console.warn('Logs subscribe note:', err)
-    );
-
     return () => {
-      unsubMembers();
       unsubPhotos();
-      unsubLogs();
     };
-  }, []);
+  }, [user?.uid]);
+
+  // Fallback author profile for photo uploads while the member profile is not loaded yet.
+  // Never fakes a reserved/admin KCC ID: only the verified main account gets 0000000000000000.
+  const uploadFallbackMember = useMemo<Member | null>(() => {
+    if (!user) return null;
+    return {
+      id: user.uid,
+      userId16: isMainAdminUser(user) ? MAIN_ACCOUNT_UID : '',
+      name: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
+      cosplayName: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
+      fullName: user.displayName || 'Member',
+      email: user.email || '',
+      avatarUrl: user.photoURL || undefined,
+      city: 'Worldwide',
+      country: 'Indonesia',
+      primaryRole: 'Cosplayer',
+      fandom: 'Anime & Games',
+      source: 'web_form',
+      status: 'verified',
+      createdAt: new Date().toISOString(),
+    };
+  }, [user]);
+  const uploadMember = currentMember || uploadFallbackMember;
 
   const handleLogout = async () => {
     await logout();
+    authUidRef.current = null;
     setUser(null);
     setCurrentMember(null);
     setAccessToken(null);
+    setVerifiedAdminUid(null);
+    setSheetsConnectError(null);
+    setMemberLoadState('idle');
     if (activeTab === 'profile') {
       setActiveTab('form');
     }
   };
 
-  const handleAuthSuccess = (authUser: User, memberProfile: Member | null, token?: string) => {
+  // The Google token from AuthModal has basic scopes only, so it is NOT used for Sheets.
+  const handleAuthSuccess = (authUser: User, memberProfile: Member | null, _token?: string) => {
     setUser(authUser);
     if (memberProfile) {
-      if (authUser.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-        memberProfile.userId16 = '0000000000000000';
-      }
-      setCurrentMember(memberProfile);
+      setCurrentMember(isMainAdminUser(authUser) ? { ...memberProfile, userId16: MAIN_ACCOUNT_UID } : memberProfile);
     }
-    if (token) {
-      setAccessToken(token);
+  };
+
+  // Admin "Connect Google Sheets": scoped Google sign-in (Drive + Sheets) for a usable access token
+  const handleConnectSheets = async () => {
+    setSheetsConnectError(null);
+    try {
+      const r = await googleSignIn();
+      if (r) {
+        setUser(r.user);
+        setAccessToken(r.accessToken);
+      }
+    } catch (err) {
+      if (isPopupCancelledError(err)) return;
+      console.warn('Sheets connect failed:', err);
+      setSheetsConnectError(
+        currentLang === 'id'
+          ? 'Gagal menghubungkan Google Sheets. Pastikan memilih akun admin (cosplaysehat@gmail.com) dan memberi izin akses Drive & Sheets.'
+          : 'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and grant Drive & Sheets access.'
+      );
     }
   };
 
   const handleOpenCard = (member: Member) => {
-    if (member.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-      member.userId16 = '0000000000000000';
+    // Display-only override on a copy (list items are never mutated; the admin repair panel reads them),
+    // and only for the VERIFIED main account's own profile. An email typed into the public form never
+    // turns a card into the main account.
+    if (user && isMainAdminUser(user) && member.authUid === user.uid) {
+      setSelectedMemberForCard({ ...member, userId16: MAIN_ACCOUNT_UID });
+      return;
     }
     setSelectedMemberForCard(member);
   };
 
-  const handleLookupCard = (e: React.FormEvent) => {
+  const handleLookupCard = async (e: React.FormEvent) => {
     e.preventDefault();
     setLookupError(null);
     setLookupResult(null);
 
-    const q = lookupQuery.trim().toLowerCase().replace(/\s|-/g, '');
-    if (!q) {
+    const digits = lookupQuery.replace(/\D/g, '');
+    if (digits.length !== 16) {
       setLookupError(
         currentLang === 'id'
-          ? 'Mohon masukkan KCC ID (16 Digit), Nama Cosplay, atau No. Telepon Anda.'
-          : 'Please enter your 16-Digit KCC ID, Cosplay Name, or Phone Number.'
+          ? 'Mohon masukkan 16 digit KCC ID Anda (angka saja, spasi boleh).'
+          : 'Please enter your 16-digit KCC ID (digits only, spaces allowed).'
       );
       return;
     }
 
-    const found = members.find((m) => {
-      const idMatch = m.userId16 && m.userId16.replace(/\s|-/g, '').includes(q);
-      const emailMatch = m.email && m.email.toLowerCase().trim() === lookupQuery.trim().toLowerCase();
-      const nameMatch = m.cosplayName && m.cosplayName.toLowerCase().trim().includes(lookupQuery.trim().toLowerCase());
-      const discordMatch = m.discordUsername && m.discordUsername.toLowerCase().trim().includes(lookupQuery.trim().toLowerCase());
-      const phoneDigits = m.phone ? m.phone.replace(/\D/g, '') : '';
-      const phoneMatch = phoneDigits && phoneDigits.includes(q);
-      return idMatch || emailMatch || nameMatch || discordMatch || phoneMatch;
-    });
-
-    if (found) {
-      if (found.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-        found.userId16 = '0000000000000000';
+    setIsLookingUp(true);
+    try {
+      const card = await getMemberCard(digits);
+      if (card) {
+        setLookupResult(memberCardToMember(card));
+      } else {
+        setLookupError(
+          currentLang === 'id'
+            ? 'Kartu anggota dengan KCC ID tersebut tidak ditemukan. Periksa kembali 16 digit KCC ID Anda.'
+            : 'No Member ID Card found for that KCC ID. Please double-check the 16 digits.'
+        );
       }
-      setLookupResult(found);
-    } else {
-      setLookupError(
-        currentLang === 'id'
-          ? 'Data kartu anggota tidak ditemukan. Pastikan 16-digit KCC ID, nama cosplay, atau nomor kontak sudah sesuai.'
-          : 'Member ID Card not found. Please verify your 16-Digit KCC ID, cosplay name, or contact number.'
-      );
+    } catch (err) {
+      console.warn('KCC ID card lookup failed:', err);
+      if (classifyFirestoreError(err) === 'permission-denied') {
+        // describeFirestoreError's permission text is about saving; a lookup needs its own wording
+        setLookupError(
+          currentLang === 'id'
+            ? 'Pencarian kartu sedang tidak tersedia (akses database ditolak). Silakan coba lagi nanti atau hubungi Admin KCC.'
+            : 'Card lookup is currently unavailable (database access denied). Please try again later or contact a KCC admin.'
+        );
+      } else {
+        setLookupError(describeFirestoreError(err, currentLang === 'id'));
+      }
+    } finally {
+      setIsLookingUp(false);
     }
   };
 
-  // DEDICATED SEPARATE PAGE: ADMIN DASHBOARD (RESTRICTED & PASSWORD PROTECTED)
+  // DEDICATED SEPARATE PAGE: ADMIN DASHBOARD (RESTRICTED: GOOGLE SIGN-IN AS A FIREBASE ADMIN)
   if (activeTab === 'admin') {
     return (
       <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">Loading Admin...</div>}>
@@ -326,26 +472,27 @@ export default function App() {
                 KawanCosplay Admin Portal
               </span>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                Password Secured
+                Google Sign-In
               </span>
             </div>
           </div>
 
           <div className="flex items-center space-x-2.5">
-            <button
-              onClick={() => setIsEditorOpen(true)}
-              className="px-3 py-1.5 rounded-lg bg-purple-950/70 hover:bg-purple-900/70 border border-purple-500/30 text-purple-200 hover:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-              title="Editor Tampilan Situs"
-            >
-              <Palette className="w-3.5 h-3.5 text-pink-300" />
-              <span className="hidden sm:inline">Editor Situs</span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsEditorOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-purple-950/70 hover:bg-purple-900/70 border border-purple-500/30 text-purple-200 hover:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                title="Editor Tampilan Situs"
+              >
+                <Palette className="w-3.5 h-3.5 text-pink-300" />
+                <span className="hidden sm:inline">Editor Situs</span>
+              </button>
+            )}
             <span className="hidden md:inline-block text-xs text-slate-300 font-mono">
               {user?.email || 'Admin Restricted'}
             </span>
             <button
               onClick={() => {
-                sessionStorage.removeItem('kcc_admin_authed_session');
                 setActiveTab('form');
                 if (window.location.hash === '#admin') window.location.hash = '';
               }}
@@ -361,12 +508,20 @@ export default function App() {
         <main className="flex-1 pb-16 relative z-10">
           <AdminDashboard
             user={user}
+            isAdmin={isAdmin}
+            isAdminChecking={isAdminChecking}
             accessToken={accessToken}
             members={members}
+            membersLoaded={membersLoaded}
+            membersError={membersError}
             syncLogs={syncLogs}
+            syncLogsError={syncLogsError}
             currentLang={currentLang}
             onSelectMember={handleOpenCard}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+            onConnectSheets={handleConnectSheets}
+            sheetsConnectError={sheetsConnectError}
+            onLogout={handleLogout}
           />
         </main>
 
@@ -414,7 +569,8 @@ export default function App() {
           currentMember={currentMember}
           onOpenAuth={() => setIsAuthModalOpen(true)}
           onLogout={handleLogout}
-          memberCount={members.length}
+          memberCount={isAdmin && membersLoaded ? members.length : null}
+          isAdmin={isAdmin}
           currentLang={currentLang}
           onSelectLang={(lang) => setCurrentLang(lang)}
           isVisible={isVisible}
@@ -435,15 +591,15 @@ export default function App() {
         {/* TAB 1: FORMULIR PENDAFTARAN (LEGACY GOOGLE FORM STYLE) */}
         {activeTab === 'form' && (
           <RegistrationForm
-            memberCount={members.length}
-            existingMembers={members}
+            memberCount={isAdmin && membersLoaded ? members.length : null}
+            existingMembers={isAdmin ? members : []}
             onRegistered={(newMember) => {
               setCurrentMember(newMember);
               setSelectedMemberForCard(newMember);
             }}
             onOpenCardModal={handleOpenCard}
             currentLang={currentLang}
-            isAdmin={user?.email === 'cosplaysehat@gmail.com'}
+            isAdmin={isAdmin}
           />
         )}
 
@@ -459,8 +615,8 @@ export default function App() {
               </h2>
               <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto mb-6 leading-relaxed">
                 {currentLang === 'id'
-                  ? 'Demi menjaga privasi seluruh anggota, daftar lengkap anggota dilindungi dan hanya dapat diakses oleh Admin di portal terpisah. Masukkan 16-Digit KCC ID, Nama Cosplay, atau No. Kontak Anda untuk menampilkan kartu identitas digital resmi Anda.'
-                  : 'To protect the privacy of all members, the complete member list is restricted to the admin portal. Enter your 16-Digit KCC ID, Cosplay Name, or contact number to display your official digital pass.'}
+                  ? 'Demi menjaga privasi seluruh anggota, daftar lengkap anggota hanya dapat diakses oleh Admin di portal terpisah. Masukkan 16-Digit KCC ID Anda (contoh: 2026 1008 0715 3001) untuk menampilkan kartu identitas digital resmi Anda.'
+                  : 'To protect the privacy of all members, the complete member list is restricted to the admin portal. Enter your 16-Digit KCC ID (e.g. 2026 1008 0715 3001) to display your official digital pass.'}
               </p>
 
               {/* If user has a current active profile */}
@@ -491,10 +647,12 @@ export default function App() {
                   <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
+                    inputMode="numeric"
+                    maxLength={24}
                     placeholder={
                       currentLang === 'id'
-                        ? 'KCC ID (16 Digit), Nama Cosplay, atau No. HP...'
-                        : '16-Digit KCC ID, Cosplay Name, or Phone...'
+                        ? 'KCC ID 16 digit, contoh: 2026 1008 0715 3001'
+                        : '16-Digit KCC ID, e.g. 2026 1008 0715 3001'
                     }
                     value={lookupQuery}
                     onChange={(e) => setLookupQuery(e.target.value)}
@@ -508,11 +666,18 @@ export default function App() {
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 px-5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                  disabled={isLookingUp}
+                  className="w-full py-2.5 px-5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Search className="w-4 h-4" />
                   <span>
-                    {currentLang === 'id' ? "Cari & Tampilkan Member's ID Card" : "Search & View Member's ID Card"}
+                    {isLookingUp
+                      ? currentLang === 'id'
+                        ? 'Mencari...'
+                        : 'Searching...'
+                      : currentLang === 'id'
+                      ? "Cari & Tampilkan Member's ID Card"
+                      : "Search & View Member's ID Card"}
                   </span>
                 </button>
               </form>
@@ -569,14 +734,33 @@ export default function App() {
             <UserProfile
               member={currentMember}
               onUpdateMember={(updated) => {
-                if (updated.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') {
-                  updated.userId16 = '0000000000000000';
-                }
-                setCurrentMember(updated);
+                const isOwnMainProfile =
+                  isMainAdminUser(user) &&
+                  (updated.authUid === user?.uid || currentMember?.userId16 === MAIN_ACCOUNT_UID);
+                setCurrentMember(isOwnMainProfile ? { ...updated, userId16: MAIN_ACCOUNT_UID } : updated);
               }}
               onOpenCardModal={handleOpenCard}
               currentLang={currentLang}
             />
+          ) : user && memberLoadState === 'error' ? (
+            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
+              <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-4" />
+              <p className="text-base font-bold text-white mb-2">
+                {currentLang === 'id' ? 'Gagal memuat profil member.' : 'Could not load your member profile.'}
+              </p>
+              <p className="text-xs text-slate-400 mb-4">
+                {currentLang === 'id'
+                  ? 'Periksa koneksi internet Anda, lalu coba lagi.'
+                  : 'Check your internet connection, then try again.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => loadMemberForUser(user)}
+                className="px-4 py-2 rounded-xl liquid-glass-button text-white font-bold text-xs shadow-md transition-all"
+              >
+                {currentLang === 'id' ? 'Coba Lagi' : 'Try Again'}
+              </button>
+            </div>
           ) : user ? (
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
               <div className="w-12 h-12 border-4 border-rose-500/30 border-t-rose-500 rounded-full animate-spin mx-auto mb-4"></div>
@@ -612,42 +796,12 @@ export default function App() {
         currentLang={currentLang}
       />
 
-      {/* Upload Photo Modal */}
-      {(currentMember || (user ? {
-        id: user.uid,
-        userId16: user.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com' ? '0000000000000000' : '0000000000000001',
-        name: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
-        cosplayName: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
-        fullName: user.displayName || 'Member',
-        email: user.email || '',
-        avatarUrl: user.photoURL || undefined,
-        city: 'Worldwide',
-        country: 'Indonesia',
-        primaryRole: 'Cosplayer',
-        fandom: 'Anime & Games',
-        source: 'web_form',
-        status: 'verified',
-        createdAt: new Date().toISOString(),
-      } as Member : null)) && (
+      {/* Upload Photo Modal (photo create requires a signed-in Firebase user) */}
+      {user && uploadMember && (
         <UploadPhotoModal
           isOpen={isUploadPhotoModalOpen}
           onClose={() => setIsUploadPhotoModalOpen(false)}
-          currentMember={currentMember || {
-            id: user!.uid,
-            userId16: user!.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com' ? '0000000000000000' : '0000000000000001',
-            name: user!.displayName || user!.email?.split('@')[0] || 'Cosplayer',
-            cosplayName: user!.displayName || user!.email?.split('@')[0] || 'Cosplayer',
-            fullName: user!.displayName || 'Member',
-            email: user!.email || '',
-            avatarUrl: user!.photoURL || undefined,
-            city: 'Worldwide',
-            country: 'Indonesia',
-            primaryRole: 'Cosplayer',
-            fandom: 'Anime & Games',
-            source: 'web_form',
-            status: 'verified',
-            createdAt: new Date().toISOString(),
-          }}
+          currentMember={uploadMember}
           onPhotoAdded={(newPhoto) => {
             setPhotos((prev) => [newPhoto, ...prev]);
             setActiveTab('gallery');
@@ -690,7 +844,7 @@ export default function App() {
                 window.location.hash = 'admin';
               }}
               className="text-slate-500 hover:text-amber-400 transition-colors flex items-center space-x-1"
-              title="Portal Khusus Admin KCC (Dilindungi Password)"
+              title="Portal Khusus Admin KCC (Login Google Admin)"
             >
               <Lock className="w-3 h-3 text-amber-500/80" />
               <span>{currentLang === 'id' ? 'Portal Admin' : 'Admin Portal'}</span>

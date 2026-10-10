@@ -3,14 +3,9 @@ import {
   X,
   Mail,
   Lock,
-  User as UserIcon,
-  Phone,
   Sparkles,
   ArrowRight,
   AlertCircle,
-  CheckCircle2,
-  Smartphone,
-  IdCard,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { Member } from '../types';
@@ -19,10 +14,8 @@ import {
   loginWithEmail,
   loginWithGoogleOAuth,
   resetPassword,
-  findMemberByUserId16,
 } from '../lib/authService';
-import { format16DigitUserId } from '../lib/idGenerator';
-import { LanguageCode, LANGUAGES, TRANSLATIONS } from '../lib/i18n';
+import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -38,17 +31,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentLang,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.id;
-  const [mode, setMode] = useState<'login' | 'signup' | 'phone' | 'forgot'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
 
   // Form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [kccId, setKccId] = useState('');
   const [fullName, setFullName] = useState('');
   const [cosplayName, setCosplayName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -74,33 +63,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onAuthSuccess(user, member);
         onClose();
       } else if (mode === 'login') {
-        let loginEmail = email;
-        if (kccId) {
-          const member = await findMemberByUserId16(kccId);
-          if (!member || !member.email) {
-             throw new Error('KCC ID tidak ditemukan atau tidak memiliki email terkait.');
-          }
-          loginEmail = member.email;
-        }
-        
-        if (!loginEmail) throw new Error('Email atau KCC ID diperlukan.');
-        
-        const { user, member } = await loginWithEmail(loginEmail, password);
+        if (!email.trim()) throw new Error('Email diperlukan.');
+
+        const { user, member } = await loginWithEmail(email, password);
         onAuthSuccess(user, member);
         onClose();
-      } else if (mode === 'phone') {
-        if (!otpSent) {
-          if (!phoneNumber || phoneNumber.length < 9) {
-            throw new Error('Masukkan nomor ponsel yang valid.');
-          }
-          setOtpSent(true);
-        } else {
-          if (!otpCode || otpCode.length < 4) {
-            throw new Error('Masukkan 6 digit kode OTP verifikasi.');
-          }
-          alert('Nomor ponsel berhasil diverifikasi!');
-          onClose();
-        }
       }
     } catch (err: unknown) {
       console.error('Auth error:', err);
@@ -114,8 +81,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg(null);
     setIsLoading(true);
     try {
-      const { user, member, accessToken } = await loginWithGoogleOAuth();
-      onAuthSuccess(user, member, accessToken);
+      const { user, member } = await loginWithGoogleOAuth();
+      onAuthSuccess(user, member);
       onClose();
     } catch (err: unknown) {
       console.warn('Google sign in note:', err);
@@ -140,7 +107,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             KC
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-white">
-            {mode === 'signup' ? t.signUpTitle : mode === 'phone' ? 'Login Nomor Ponsel' : mode === 'forgot' ? 'Lupa Kata Sandi' : t.loginTitle}
+            {mode === 'signup' ? t.signUpTitle : mode === 'forgot' ? 'Lupa Kata Sandi' : t.loginTitle}
           </h3>
           <p className="text-xs text-slate-400 mt-1">
             Portal Komunitas Resmi MyKCC (16-Digit User ID)
@@ -173,18 +140,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             >
               Sign Up
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('phone');
-                setErrorMsg(null);
-              }}
-              className={`flex-1 py-2 rounded-xl transition-all ${
-                mode === 'phone' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Phone
-            </button>
           </div>
         )}
 
@@ -206,6 +161,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <input
                   type="text"
                   placeholder="Contoh: Rian_Cos / Alya / Ken"
+                  maxLength={80}
                   value={cosplayName}
                   onChange={(e) => setCosplayName(e.target.value)}
                   className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500 font-semibold"
@@ -217,101 +173,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {mode !== 'phone' ? (
-            <>
-              {mode === 'login' && (
-                <div className="mb-4">
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Atau KCC ID (Jika ada)
-                  </label>
-                  <div className="relative">
-                    <IdCard className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-                    <input
-                      type="text"
-                      placeholder="Contoh: 2026 1008 0715 3001"
-                      value={kccId}
-                      onChange={(e) => setKccId(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
-                    />
-                  </div>
-                </div>
-              )}
+          <>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                Alamat Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                <input
+                  type="email"
+                  required
+                  placeholder="nama@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
+                />
+              </div>
+            </div>
 
+            {mode !== 'forgot' && (
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                  Alamat Email
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase">
+                    Kata Sandi (Password)
+                  </label>
+                  {mode === 'login' && (
+                    <button type="button" onClick={() => setMode('forgot')} className="text-[10px] text-rose-400 hover:underline">
+                      Lupa kata sandi?
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                   <input
-                    type="email"
+                    type="password"
                     required
-                    placeholder="nama@gmail.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Minimal 6 karakter"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
                   />
                 </div>
               </div>
-
-              {mode !== 'forgot' && (
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-[11px] font-bold text-slate-300 uppercase">
-                      Kata Sandi (Password)
-                    </label>
-                    {mode === 'login' && (
-                      <button type="button" onClick={() => setMode('forgot')} className="text-[10px] text-rose-400 hover:underline">
-                        Lupa kata sandi?
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-                    <input
-                      type="password"
-                      required
-                      placeholder="Minimal 6 karakter"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
-                    />
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                Nomor WhatsApp / Ponsel
-              </label>
-              <div className="relative mb-3">
-                <Phone className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-                <input
-                  type="tel"
-                  placeholder="+62 812 3456 7890"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
-                />
-              </div>
-
-              {otpSent && (
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kode Verifikasi (OTP)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: 123456"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-center font-mono tracking-widest text-sm focus:outline-none focus:border-rose-500"
-                  />
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </>
 
           <button
             type="submit"
@@ -325,10 +230,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <span>
                   {mode === 'signup'
                     ? 'Buat Akun & Dapatkan 16-Digit ID'
-                    : mode === 'phone'
-                    ? otpSent
-                      ? 'Verifikasi & Masuk'
-                      : 'Kirim Kode OTP'
                     : mode === 'forgot'
                     ? 'Kirim Email Reset'
                     : 'Masuk ke Akun MyKCC'}

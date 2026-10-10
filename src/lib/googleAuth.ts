@@ -14,6 +14,18 @@ export const SCOPES = [
 
 const provider = new GoogleAuthProvider();
 SCOPES.forEach((scope) => provider.addScope(scope));
+provider.setCustomParameters({ prompt: 'select_account' });
+
+const POPUP_CANCEL_CODES = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'];
+
+/**
+ * True when the user closed/cancelled the Google sign-in popup (not a real failure).
+ */
+export function isPopupCancelledError(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' && POPUP_CANCEL_CODES.includes(code);
+}
 
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;

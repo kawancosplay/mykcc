@@ -20,14 +20,10 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Member } from '../types';
-import { addMemberToFirestore } from '../lib/firestoreService';
+import { registerMember, MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
 import { compressImage } from '../lib/imageUtils';
-import {
-  resolveMemberUserId16,
-  format16DigitUserId,
-  findDuplicateMember,
-  getNextMemberSequenceNumber,
-} from '../lib/idGenerator';
+import { format16DigitUserId, generate16DigitUserId } from '../lib/idGenerator';
+import { describeFirestoreError } from '../lib/firebase';
 import {
   getAllCountriesList,
   getStatesOfCountryByName,
@@ -38,8 +34,8 @@ import { LanguageCode, TRANSLATIONS, getFormTranslation, FormSpecificTranslation
 import { DemoFormTester } from './DemoFormTester';
 
 interface RegistrationFormProps {
-  memberCount: number;
-  existingMembers?: Member[];
+  memberCount?: number | null; // null = unknown (public visitors); never rendered as 0
+  existingMembers?: Member[]; // Only used by the admin DemoFormTester
   onRegistered: (newMember: Member) => void;
   onOpenCardModal: (member: Member) => void;
   currentLang: LanguageCode;
@@ -158,7 +154,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedMember, setSubmittedMember] = useState<Member | null>(null);
-  const [isDuplicateShared, setIsDuplicateShared] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showAgeExplainer, setShowAgeExplainer] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -228,7 +223,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   const submitData = async (dataToSubmit: typeof formData, isSandbox: boolean = isDemoMode) => {
     setErrorMsg(null);
-    setIsDuplicateShared(false);
 
     // PRIVACY ENFORCEMENT: Name, Email, and WhatsApp Mobile Number are required (community is WhatsApp-based)
     if (!dataToSubmit.name.trim()) {
@@ -286,46 +280,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           ? dataToSubmit.customCity.trim()
           : dataToSubmit.city;
 
-      // Resolve role: If 'Lainnya / Others' was selected, append custom role if typed:
+      // Resolve role: If 'Lainnya / Others' was selected, append custom role if typed (capped so the
+      // stored role stays within the database primaryRole limit):
       const resolvedRole =
         dataToSubmit.primaryRole === 'Lainnya / Others'
           ? dataToSubmit.customRole?.trim()
-            ? `Lainnya / Others (${dataToSubmit.customRole.trim()})`
+            ? `Lainnya / Others (${dataToSubmit.customRole.trim().slice(0, MEMBER_FIELD_LIMITS.customRole)})`
             : 'Lainnya / Others'
           : dataToSubmit.primaryRole;
-
-      // Check if duplicate / double filled form with same or similar data (Each member has a single KCC ID account):
-      const matched = findDuplicateMember(existingMembers, {
-        phone: dataToSubmit.phone,
-        discordUsername: dataToSubmit.discordUsername,
-        email: dataToSubmit.email,
-        name: dataToSubmit.name,
-        socialMedia: dataToSubmit.socialMedia,
-      });
-
-      let userId16: string;
-      if (dataToSubmit.email.trim().toLowerCase() === 'cosplaysehat@gmail.com') {
-        userId16 = '0000000000000000';
-      } else if (matched) {
-        // "Each member has a single KCC ID account"
-        userId16 = matched.userId16;
-        setIsDuplicateShared(true);
-      } else {
-        // User ID arranged based on sequence. UID 0000 0000 0000 0000 is assigned for KCC main account, UID 0000 0000 0000 0001 to 0000 0000 0000 0100 is assigned to KCC admin
-        const nextSeq = getNextMemberSequenceNumber(existingMembers);
-        userId16 = resolveMemberUserId16({
-          email: dataToSubmit.email,
-          role: resolvedRole,
-          sequenceNumber: nextSeq,
-          existingMembers,
-        });
-      }
 
       // If legal name is left blank to respect privacy, use name
       const resolvedFullName = dataToSubmit.fullName.trim() || dataToSubmit.name.trim();
 
-      const newMemberPayload: Omit<Member, 'id'> = {
-        userId16,
+      // KCC ID is NOT derived from form input or the client-side member list: registerMember assigns a
+      // chronological ID (main account ID only for the authenticated KCC main account).
+      const newMemberPayload: Omit<Member, 'id' | 'userId16'> = {
         name: dataToSubmit.name.trim(),
         cosplayName: dataToSubmit.name.trim(),
         fullName: resolvedFullName,
@@ -353,6 +322,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       if (isSandbox) {
         const createdMember: Member = {
           id: `demo_sandbox_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          userId16: generate16DigitUserId(new Date()),
           ...newMemberPayload,
         };
 
@@ -362,25 +332,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         return;
       }
 
-      // Live registration path: Write to Firestore
-      const docId = await addMemberToFirestore(newMemberPayload, matched ? matched.id : undefined);
-      const createdMember: Member = {
-        id: docId,
-        ...newMemberPayload,
-      };
+      // Live registration path: writes the private member doc + its public memberCards entry.
+      // Errors (e.g. permission denied) are rethrown so a failed save never shows a success card.
+      const createdMember = await registerMember(newMemberPayload);
 
       setIsDemoSubmission(false);
       setSubmittedMember(createdMember);
       onRegistered(createdMember);
     } catch (err: unknown) {
       console.error('Submit error:', err);
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : isId
-          ? 'Terjadi kendala saat menyimpan pendaftaran.'
-          : 'An error occurred while saving your registration.'
-      );
+      setErrorMsg(describeFirestoreError(err, isId));
     } finally {
       setIsSubmitting(false);
     }
@@ -441,23 +402,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 {ft.singleAccountIdTitle}
               </span>
               <span className="font-mono font-black text-xl sm:text-2xl text-rose-400 tracking-wider">
-                {format16DigitUserId(submittedMember.userId16, submittedMember.email)}
+                {format16DigitUserId(submittedMember.userId16)}
               </span>
-              {isDuplicateShared ? (
-                <p className="text-xs text-emerald-400 mt-2 font-medium">
-                  {isId
-                    ? '✓ Nomor WhatsApp / akun Anda sudah terdaftar sebelumnya. Setiap anggota hanya memiliki 1 akun KCC ID tunggal dan data profil Anda telah diperbarui!'
-                    : '✓ Your WhatsApp number / profile matches an existing registration. Each member holds a single KCC ID account, and your profile has been synced!'}
-                </p>
-              ) : (
-                <p className="text-[11px] text-slate-300 mt-1.5">
-                  {isId ? 'Anggota Terverifikasi: ' : 'Verified Member: '}
-                  <strong className="text-white">{submittedMember.name || submittedMember.cosplayName}</strong>
-                  {submittedMember.discordUsername && (
-                    <span className="ml-2 text-indigo-300">• Discord: {submittedMember.discordUsername}</span>
-                  )}
-                </p>
-              )}
+              <p className="text-[11px] text-slate-300 mt-1.5">
+                {isId ? 'Anggota Terverifikasi: ' : 'Verified Member: '}
+                <strong className="text-white">{submittedMember.name || submittedMember.cosplayName}</strong>
+                {submittedMember.discordUsername && (
+                  <span className="ml-2 text-indigo-300">• Discord: {submittedMember.discordUsername}</span>
+                )}
+              </p>
             </div>
 
             {/* UNLOCKED WHATSAPP COMMUNITY GROUP INVITE LINK */}
@@ -477,8 +430,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 <a
                   href={`https://wa.me/6285711032782?text=${encodeURIComponent(
                     `Halo Admin KawanCosplay! Saya sudah mengisi form pendaftaran anggota.\nNama: ${submittedMember.name || submittedMember.cosplayName}\nKCC ID: ${format16DigitUserId(
-                      submittedMember.userId16,
-                      submittedMember.email
+                      submittedMember.userId16
                     )}\nNo. WA: ${submittedMember.phone || '-'}${
                       submittedMember.discordUsername ? `\nDiscord: ${submittedMember.discordUsername}` : ''
                     }\nMohon tautan undangan masuk ke Grup WhatsApp Komunitas KawanCosplay. Terima kasih!`
@@ -659,6 +611,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             type="text"
             required
             placeholder={ft.namePlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.name}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-medium"
@@ -680,6 +633,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             type="tel"
             required
             placeholder={ft.whatsappPlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.phone}
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
@@ -699,6 +653,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="text"
             placeholder={ft.discordPlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.discordUsername}
             value={formData.discordUsername}
             onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
@@ -718,6 +673,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             type="email"
             required
             placeholder={ft.emailPlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.email}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
@@ -783,6 +739,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="text"
             placeholder={ft.agePlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.age}
             value={formData.age}
             onChange={(e) => setFormData({ ...formData, age: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
@@ -873,6 +830,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="text"
               placeholder={isId ? 'Ketik nama provinsi / wilayah / negara bagian Anda...' : 'Enter your state / province / region...'}
+              maxLength={MEMBER_FIELD_LIMITS.province}
               value={formData.customProvince}
               onChange={(e) => setFormData({ ...formData, customProvince: e.target.value })}
               className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
@@ -883,6 +841,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="text"
               placeholder={ft.customCityPlaceholder}
+              maxLength={MEMBER_FIELD_LIMITS.city}
               value={formData.customCity}
               onChange={(e) => setFormData({ ...formData, customCity: e.target.value })}
               className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
@@ -921,6 +880,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     <input
                       type="text"
                       placeholder={ft.roleOthersPlaceholder}
+                      maxLength={MEMBER_FIELD_LIMITS.customRole}
                       value={formData.customRole}
                       onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
                       className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
@@ -994,6 +954,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="text"
             placeholder={ft.socialMediaPlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.socialMedia}
             value={formData.socialMedia}
             onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
@@ -1012,6 +973,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="url"
             placeholder={ft.portfolioPlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.portfolioUrl}
             value={formData.portfolioUrl}
             onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
             className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
@@ -1074,6 +1036,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <textarea
             rows={3}
             placeholder={ft.reasonPlaceholder}
+            maxLength={MEMBER_FIELD_LIMITS.reason}
             value={formData.reason}
             onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
             className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-xs sm:text-sm resize-none"
@@ -1102,6 +1065,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
         {/* ACTION BUTTONS (GOOGLE FORM STYLE) */}
         <div className="flex flex-col gap-3 pt-2">
+          {errorMsg && (
+            <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={isSubmitting}

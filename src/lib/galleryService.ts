@@ -7,86 +7,28 @@ import {
   onSnapshot,
   query,
   orderBy,
-  getDocs,
   limit,
+  increment,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from './firebase';
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { Photo } from '../types';
 
 const PHOTOS_COLLECTION = 'photos';
 
-export const SEED_PHOTOS: Omit<Photo, 'id'>[] = [
-  {
-    authorName: 'Rian_Cos / Ken',
-    userId16: '8344104185329901',
-    authorAvatar: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=150&auto=format&fit=crop&q=80',
-    photoUrl: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80',
-    title: 'Raiden Shogun - Musou no Hitotachi',
-    character: 'Raiden Shogun (Ei)',
-    series: 'Genshin Impact',
-    event: 'Comic Frontier 18 (Comifuro ICE BSD)',
-    photographer: 'CinnyLens Art',
-    caption: 'Photoshoot panggung utama Comifuro 18 bersama rekan-rekan KawanCosplay. Lighting natural sore hari.',
-    likesCount: 142,
-    createdAt: new Date('2026-02-15T13:00:00Z').toISOString(),
-  },
-  {
-    authorName: 'AlyaChan',
-    userId16: '1026849251903847',
-    authorAvatar: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=150&auto=format&fit=crop&q=80',
-    photoUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80',
-    title: 'Frieren - Beyond Journey\'s End Peaceful Field',
-    character: 'Frieren',
-    series: 'Sousou no Frieren',
-    event: 'Anime Festival Asia (AFA ID)',
-    photographer: 'Dimas Lens Studio',
-    caption: 'Cosplay perdana Frieren di AFA! Tongkat sihir buatan kak DimCraft dari KawanCosplay.',
-    likesCount: 218,
-    createdAt: new Date('2026-02-20T10:30:00Z').toISOString(),
-  },
-  {
-    authorName: 'DimCraft Props',
-    userId16: '4920158439021847',
-    authorAvatar: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=150&auto=format&fit=crop&q=80',
-    photoUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=800&auto=format&fit=crop&q=80',
-    title: 'Kamen Rider Geats Magnum Boost Armor Full EVA',
-    character: 'Kamen Rider Geats',
-    series: 'Kamen Rider Series',
-    event: 'Indonesia Comic Con (ICC JCC Senayan)',
-    photographer: 'Rian Studio',
-    caption: 'Armor armor crafting 100% EVA foam 3D dengan finishing automotive paint candy red.',
-    likesCount: 305,
-    createdAt: new Date('2026-02-25T15:45:00Z').toISOString(),
-  },
-  {
-    authorName: 'Kitsune_Naufal',
-    userId16: '7201948301928475',
-    authorAvatar: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=150&auto=format&fit=crop&q=80',
-    photoUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
-    title: 'Furina - All Eyes On Me Fontaine Court',
-    character: 'Furina de Fontaine',
-    series: 'Genshin Impact',
-    event: 'KawanCosplay Bandung Gathering 2026',
-    photographer: 'Alya Photography',
-    caption: 'Gathering bulanan KawanCosplay di Kiara Artha Park Bandung. Suasananya sejuk dan seru banget!',
-    likesCount: 189,
-    createdAt: new Date('2026-03-01T11:20:00Z').toISOString(),
-  },
-  {
-    authorName: 'CinnyLens',
-    userId16: '3819204958291048',
-    authorAvatar: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=150&auto=format&fit=crop&q=80',
-    photoUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80',
-    title: 'Gojo Satoru - Domain Expansion Infinite Void',
-    character: 'Gojo Satoru',
-    series: 'Jujutsu Kaisen',
-    event: 'Jakarta Cosplay Parade Monas',
-    photographer: 'CinnyLens Art',
-    caption: 'Photoshoot malam dengan smoke effect & blue gel flash di Jakarta Cosplay Parade.',
-    likesCount: 264,
-    createdAt: new Date('2026-03-05T19:15:00Z').toISOString(),
-  },
-];
+// Field limits identical to firestore.rules isValidPhoto()
+export const PHOTO_FIELD_LIMITS = {
+  authorName: 60,
+  authorCosname: 80,
+  authorNameAlias: 80,
+  authorAvatar: 2048,
+  title: 120,
+  character: 80,
+  series: 80,
+  event: 100,
+  photographer: 80,
+  caption: 500,
+  photoUrl: 1000000,
+} as const;
 
 export function subscribeToPhotos(
   onUpdate: (photos: Photo[]) => void,
@@ -115,15 +57,60 @@ export function subscribeToPhotos(
   );
 }
 
+function clip(value: unknown, maxLength: number): string {
+  if (typeof value !== 'string') return '';
+  return value.trim().slice(0, maxLength);
+}
+
 export async function addPhotoToFirestore(photo: Omit<Photo, 'id'>): Promise<string> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    const authError = new Error('Silakan login terlebih dahulu untuk mengunggah foto.') as Error & { code?: string };
+    authError.code = 'unauthenticated';
+    throw authError;
+  }
+
+  const photoUrl = typeof photo.photoUrl === 'string' ? photo.photoUrl : '';
+  if (photoUrl.length > PHOTO_FIELD_LIMITS.photoUrl) {
+    throw new Error('Ukuran foto terlalu besar. Silakan pilih foto lain. / Photo is too large.');
+  }
+
   const id = `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const photoDocRef = doc(db, PHOTOS_COLLECTION, id);
 
-  const payload = {
-    ...photo,
-    createdAt: photo.createdAt || new Date().toISOString(),
-    likesCount: photo.likesCount || 0,
+  // Only the keys allowed by firestore.rules, clamped to the rule limits
+  const payload: Record<string, unknown> = {
+    authorUid: currentUser.uid,
+    authorName: clip(photo.authorName, PHOTO_FIELD_LIMITS.authorName) || 'Member',
+    photoUrl,
+    title: clip(photo.title, PHOTO_FIELD_LIMITS.title),
+    character: clip(photo.character, PHOTO_FIELD_LIMITS.character),
+    series: clip(photo.series, PHOTO_FIELD_LIMITS.series),
+    event: clip(photo.event, PHOTO_FIELD_LIMITS.event),
+    likesCount: 0,
+    createdAt:
+      typeof photo.createdAt === 'string' && photo.createdAt ? photo.createdAt.slice(0, 40) : new Date().toISOString(),
   };
+
+  const memberId = clip(photo.memberId, 128);
+  if (memberId) payload.memberId = memberId;
+  const userId16 = clip(photo.userId16, 24);
+  if (userId16) payload.userId16 = userId16;
+  const authorCosname = clip(photo.authorCosname, PHOTO_FIELD_LIMITS.authorCosname);
+  if (authorCosname) payload.authorCosname = authorCosname;
+  const authorNameAlias = clip(photo.authorNameAlias, PHOTO_FIELD_LIMITS.authorNameAlias);
+  if (authorNameAlias) payload.authorNameAlias = authorNameAlias;
+  if (
+    typeof photo.authorAvatar === 'string' &&
+    photo.authorAvatar &&
+    photo.authorAvatar.length <= PHOTO_FIELD_LIMITS.authorAvatar
+  ) {
+    payload.authorAvatar = photo.authorAvatar;
+  }
+  const photographer = clip(photo.photographer, PHOTO_FIELD_LIMITS.photographer);
+  if (photographer) payload.photographer = photographer;
+  const caption = clip(photo.caption, PHOTO_FIELD_LIMITS.caption);
+  if (caption) payload.caption = caption;
 
   try {
     await setDoc(photoDocRef, payload);
@@ -133,11 +120,12 @@ export async function addPhotoToFirestore(photo: Omit<Photo, 'id'>): Promise<str
   }
 }
 
-export async function toggleLikePhoto(photoId: string, currentLikes: number = 0) {
+// Adds exactly one like (rules only allow likesCount + 1 for non-admins). Rejects on error.
+export async function toggleLikePhoto(photoId: string, _currentLikes?: number): Promise<void> {
   const photoDocRef = doc(db, PHOTOS_COLLECTION, photoId);
   try {
     await updateDoc(photoDocRef, {
-      likesCount: currentLikes + 1,
+      likesCount: increment(1),
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `${PHOTOS_COLLECTION}/${photoId}`);
@@ -151,20 +139,4 @@ export async function deletePhotoFromFirestore(photoId: string) {
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `${PHOTOS_COLLECTION}/${photoId}`);
   }
-}
-
-export async function checkAndSeedPhotosIfEmpty(): Promise<boolean> {
-  try {
-    const snap = await getDocs(query(collection(db, PHOTOS_COLLECTION), limit(1)));
-    if (snap.empty) {
-      console.log('Seeding initial community cosplay photos...');
-      for (const p of SEED_PHOTOS) {
-        await addPhotoToFirestore(p);
-      }
-      return true;
-    }
-  } catch (err) {
-    console.warn('Photo seed check note:', err);
-  }
-  return false;
 }

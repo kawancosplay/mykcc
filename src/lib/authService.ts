@@ -5,32 +5,45 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   updateProfile,
-  User,
   sendPasswordResetEmail,
+  type User,
 } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, setDoc, updateDoc, limit } from 'firebase/firestore';
-import { auth, db } from './firebase';
-import { Member } from '../types';
+import { collection, query, where, limit, getDocsFromServer, doc, updateDoc } from 'firebase/firestore';
+import { auth, db, handleFirestoreError, OperationType, isMainAdminUser } from './firebase';
+import type { Member } from '../types';
+import { MAIN_ACCOUNT_UID, isValidUserId16 } from './idGenerator';
 import {
-  generate16DigitUserId,
-  generateChronologicalUserId16,
-  resolveMemberUserId16,
-  FOUNDER_ADMIN_EMAIL,
-  FOUNDER_USER_ID,
-} from './idGenerator';
-import { addMemberToFirestore } from './firestoreService';
+  MEMBERS_COLLECTION,
+  MEMBER_FIELD_LIMITS,
+  normalizeMember,
+  createMemberIfAbsent,
+  assignNewUserId16,
+  sanitizeMemberProfileUpdate,
+  buildMemberCard,
+  upsertMemberCard,
+} from './firestoreService';
 
+// Plain provider (openid/email/profile). Its access token is NOT used for Google Sheets:
+// the admin Sheets connection goes through googleAuth.googleSignIn (Drive + Sheets scopes).
 const googleProvider = new GoogleAuthProvider();
+// Always show the account chooser, so a user signed in with another Google account can switch
+// (e.g. to the admin account from the Admin Portal lock screen)
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Fast in-memory cache to prevent repeated cold Firestore queries and speed up login
-const memberEmailCache = new Map<string, { member: Member | null; timestamp: number }>();
+// In-memory cache of found member profiles keyed by Firebase uid. Only positive results are
+// cached, so a "not found" never sticks.
+const memberCache = new Map<string, { member: Member; timestamp: number }>();
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds
 
-export function invalidateMemberCache(email?: string) {
-  if (email) {
-    memberEmailCache.delete(email.toLowerCase().trim());
+function cacheMember(uid: string, member: Member) {
+  memberCache.set(uid, { member, timestamp: Date.now() });
+}
+
+export function invalidateMemberCache(uid?: string): void {
+  if (uid) {
+    memberCache.delete(uid);
   } else {
-    memberEmailCache.clear();
+    memberCache.clear();
   }
 }
 
@@ -38,7 +51,135 @@ export async function resetPassword(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email);
 }
 
-export async function signUpWithEmail(email: string, password: string, fullName: string, cosplayName: string): Promise<{ user: User; member: Member }> {
+/**
+ * Finds the member profile of a signed-in user: by authUid first, then (only for a VERIFIED email)
+ * by email. Both queries match firestore.rules list constraints. Returns null only when both
+ * queries definitively came back empty; any error (offline, permission) is thrown.
+ */
+export async function findMemberForUser(user: User): Promise<Member | null> {
+  const cached = memberCache.get(user.uid);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.member;
+  }
+
+  const byUid = await getDocsFromServer(
+    query(collection(db, MEMBERS_COLLECTION), where('authUid', '==', user.uid), limit(10))
+  );
+  if (!byUid.empty) {
+    // A signed-in user may own the auto-created members/{uid} profile AND a registration they submitted
+    // through the public form while signed in. Prefer the earliest real registration (it holds the form
+    // data and the KCC ID shown on the success screen), so the profile does not flip between them.
+    // The verified main account keeps the doc that stores 0000 0000 0000 0000 (its admin test
+    // registrations never replace it).
+    const mainAccountDoc = isMainAdminUser(user)
+      ? byUid.docs.find((d) => d.data().userId16 === MAIN_ACCOUNT_UID)
+      : undefined;
+    const registrations = byUid.docs
+      .filter((d) => d.id !== user.uid)
+      .sort((a, b) => {
+        const aAt = String(a.data().createdAt || '');
+        const bAt = String(b.data().createdAt || '');
+        return aAt < bAt ? -1 : aAt > bAt ? 1 : 0;
+      });
+    const docSnap = mainAccountDoc || registrations[0] || byUid.docs[0];
+    const member = normalizeMember(docSnap.id, docSnap.data() as Partial<Omit<Member, 'id'>>);
+    cacheMember(user.uid, member);
+    return member;
+  }
+
+  // The rules compare the query value with the token email exactly; stored emails are lowercase,
+  // so the email lookup only runs for a verified, already-lowercase token email.
+  const rawEmail = (user.email || '').trim();
+  const email = rawEmail.toLowerCase();
+  if (user.emailVerified && email && rawEmail === email) {
+    const byEmail = await getDocsFromServer(
+      query(collection(db, MEMBERS_COLLECTION), where('email', '==', email), limit(1))
+    );
+    if (!byEmail.empty) {
+      const docSnap = byEmail.docs[0];
+      const member = normalizeMember(docSnap.id, docSnap.data() as Partial<Omit<Member, 'id'>>);
+      cacheMember(user.uid, member);
+      return member;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Returns the member profile of a signed-in user, linking (authUid only) or creating it if needed.
+ * New profiles are created at members/{uid} inside a transaction, so retries never duplicate them,
+ * and an existing doc's userId16/createdAt are never rewritten. Throws on failure.
+ */
+export async function ensureMemberForUser(
+  user: User,
+  overrides?: { name?: string; fullName?: string }
+): Promise<Member> {
+  let member = await findMemberForUser(user);
+
+  if (member) {
+    if (member.authUid !== user.uid) {
+      try {
+        await updateDoc(doc(db, MEMBERS_COLLECTION, member.id), { authUid: user.uid });
+        member = { ...member, authUid: user.uid };
+        cacheMember(user.uid, member);
+      } catch (error) {
+        console.warn('Could not link the member profile to this account (authUid):', error);
+      }
+    }
+    return member;
+  }
+
+  const isMain = isMainAdminUser(user);
+  const userId16 = isMain ? MAIN_ACCOUNT_UID : await assignNewUserId16();
+  const name =
+    (overrides?.name || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Cosplayer')
+      .trim()
+      .slice(0, MEMBER_FIELD_LIMITS.name) || 'Cosplayer';
+  const fullName =
+    (overrides?.fullName || user.displayName || name).trim().slice(0, MEMBER_FIELD_LIMITS.fullName) || name;
+
+  const payload: Omit<Member, 'id'> = {
+    userId16,
+    authUid: user.uid,
+    name,
+    cosplayName: name,
+    fullName,
+    email: (user.email || '').toLowerCase().trim(),
+    avatarUrl: user.photoURL || undefined,
+    city: 'Worldwide',
+    country: 'Indonesia',
+    primaryRole: isMain ? 'KCC Founder & Core Organizer' : 'Cosplayer',
+    fandom: 'Anime & Games',
+    source: 'web_form',
+    status: 'verified',
+    createdAt: new Date().toISOString(),
+  };
+
+  const result = await createMemberIfAbsent(user.uid, payload);
+  cacheMember(user.uid, result.member);
+  return result.member;
+}
+
+async function ensureMemberSafely(
+  user: User,
+  context: string,
+  overrides?: { name?: string; fullName?: string }
+): Promise<Member | null> {
+  try {
+    return await ensureMemberForUser(user, overrides);
+  } catch (error) {
+    console.warn(`Member profile lookup after ${context} failed:`, error);
+    return null;
+  }
+}
+
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  fullName: string,
+  cosplayName: string
+): Promise<{ user: User; member: Member | null }> {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
@@ -48,82 +189,15 @@ export async function signUpWithEmail(email: string, password: string, fullName:
     });
   }
 
-  // Check if member already exists with this email (e.g. from Google Form import)
-  let existingMember = await findMemberByEmail(email);
-
-  if (existingMember) {
-    // Update authUid and ensure 16-digit User ID exists
-    const userId16 = resolveMemberUserId16(email, existingMember.createdAt);
-    const memberDocRef = doc(db, 'members', existingMember.id);
-    await updateDoc(memberDocRef, {
-      authUid: user.uid,
-      userId16,
-    });
-    existingMember = { ...existingMember, authUid: user.uid, userId16 };
-    invalidateMemberCache(email);
-    return { user, member: existingMember };
-  } else {
-    // Create new Member profile arranged by submission timestamp
-    const now = new Date();
-    const userId16 = resolveMemberUserId16(email, now);
-    const resolvedName = cosplayName || fullName || 'Cosplayer';
-
-    const newMemberPayload: Omit<Member, 'id'> = {
-      userId16,
-      authUid: user.uid,
-      fullName: fullName || 'New Member',
-      name: resolvedName,
-      cosplayName: resolvedName,
-      email: email.toLowerCase(),
-      city: 'Worldwide',
-      country: 'Worldwide',
-      primaryRole: 'Cosplayer',
-      fandom: 'Anime & Games',
-      source: 'web_form',
-      status: 'verified',
-      createdAt: now.toISOString(),
-    };
-
-    const docId = await addMemberToFirestore(newMemberPayload);
-    const createdMember: Member = {
-      id: docId,
-      ...newMemberPayload,
-    };
-    invalidateMemberCache(email);
-    return { user, member: createdMember };
-  }
+  // The new email is not verified yet, so this never links to an existing doc by email
+  const member = await ensureMemberSafely(user, 'sign-up', { name: cosplayName || fullName, fullName });
+  return { user, member };
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<{ user: User; member: Member | null }> {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
-  let member = await findMemberByUidOrEmail(user.uid, email);
-
-  if (!member && email) {
-    const now = new Date();
-    const isFounder = email.toLowerCase().trim() === 'cosplaysehat@gmail.com';
-    const userId16 = isFounder ? '0000000000000000' : resolveMemberUserId16(email, now);
-    const resolvedName = user.displayName || email.split('@')[0] || 'Cosplayer';
-    const newMemberPayload: Omit<Member, 'id'> = {
-      userId16,
-      authUid: user.uid,
-      fullName: resolvedName,
-      name: resolvedName,
-      cosplayName: resolvedName,
-      email: email.toLowerCase().trim(),
-      city: 'Worldwide',
-      country: 'Indonesia',
-      primaryRole: isFounder ? 'KCC Founder & Core Organizer' : 'Cosplayer',
-      fandom: 'Anime & Games',
-      source: 'web_form',
-      status: 'verified',
-      createdAt: now.toISOString(),
-    };
-    const id = await addMemberToFirestore(newMemberPayload);
-    member = { id, ...newMemberPayload };
-    invalidateMemberCache(email);
-  }
-
+  const member = await ensureMemberSafely(user, 'email sign-in');
   return { user, member };
 }
 
@@ -132,44 +206,7 @@ export async function loginWithGoogleOAuth(): Promise<{ user: User; member: Memb
   const credential = GoogleAuthProvider.credentialFromResult(result);
   const accessToken = credential?.accessToken || '';
   const user = result.user;
-
-  let member = await findMemberByUidOrEmail(user.uid, user.email || '');
-  if (!member && user.email) {
-    // Automatically create a member profile arranged by submission timestamp
-    const now = new Date();
-    const isFounder = user.email.toLowerCase().trim() === 'cosplaysehat@gmail.com';
-    const userId16 = isFounder ? '0000000000000000' : resolveMemberUserId16(user.email, now);
-    const resolvedName = user.displayName?.split(' ')[0] || user.displayName || 'Cosplayer';
-    const newMemberPayload: Omit<Member, 'id'> = {
-      userId16,
-      authUid: user.uid,
-      fullName: user.displayName || 'Google Member',
-      name: resolvedName,
-      cosplayName: resolvedName,
-      email: user.email.toLowerCase(),
-      avatarUrl: user.photoURL || undefined,
-      city: 'Worldwide',
-      country: 'Indonesia',
-      primaryRole: isFounder ? 'KCC Founder & Core Organizer' : 'Cosplayer',
-      fandom: 'Anime & Games',
-      source: 'web_form',
-      status: 'verified',
-      createdAt: now.toISOString(),
-    };
-    const id = await addMemberToFirestore(newMemberPayload);
-    member = { id, ...newMemberPayload };
-    invalidateMemberCache(user.email);
-  } else if (member) {
-    const isFounder = (user.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com') || (member.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com');
-    const targetUserId16 = isFounder ? '0000000000000000' : (resolveMemberUserId16(member.email, member.createdAt) || member.userId16);
-    if (!member.userId16 || member.userId16 !== targetUserId16 || !member.authUid) {
-      await updateDoc(doc(db, 'members', member.id), { userId16: targetUserId16, authUid: user.uid });
-      member.userId16 = targetUserId16;
-      member.authUid = user.uid;
-      invalidateMemberCache(user.email || '');
-    }
-  }
-
+  const member = await ensureMemberSafely(user, 'Google sign-in');
   return { user, member, accessToken };
 }
 
@@ -177,7 +214,7 @@ export async function loginWithAppleOAuth(): Promise<{ user: User; member: Membe
   const appleProvider = new OAuthProvider('apple.com');
   const result = await signInWithPopup(auth, appleProvider);
   const user = result.user;
-  let member = await findMemberByUidOrEmail(user.uid, user.email || '');
+  const member = await ensureMemberSafely(user, 'Apple sign-in');
   return { user, member };
 }
 
@@ -185,115 +222,35 @@ export async function loginWithMicrosoftOAuth(): Promise<{ user: User; member: M
   const msProvider = new OAuthProvider('microsoft.com');
   const result = await signInWithPopup(auth, msProvider);
   const user = result.user;
-  let member = await findMemberByUidOrEmail(user.uid, user.email || '');
+  const member = await ensureMemberSafely(user, 'Microsoft sign-in');
   return { user, member };
 }
 
-export async function findMemberByUserId16(userId16: string): Promise<Member | null> {
-  if (!userId16) return null;
+/**
+ * Saves the owner's profile edits (whitelisted + clamped fields only) and then refreshes the public
+ * member card (best effort). Errors of the profile write are rethrown.
+ */
+export async function updateMemberProfileData(member: Member, fields: Partial<Member>): Promise<Member> {
+  const clean = sanitizeMemberProfileUpdate(fields);
+  if (Object.keys(clean).length === 0) return member;
+
   try {
-    const q = query(collection(db, 'members'), where('userId16', '==', userId16.trim()), limit(1));
-    const snap = await getDocs(q);
-    if (!snap.empty) {
-      const docSnap = snap.docs[0];
-      const data = docSnap.data() as Omit<Member, 'id'>;
-      const memberName = data.name || data.cosplayName || data.fullName || 'Member';
-      return { id: docSnap.id, ...data, name: memberName, cosplayName: memberName, userId16 };
-    }
-  } catch (e) {
-    console.warn('findMemberByUserId16 note:', e);
-  }
-  return null;
-}
-
-export async function findMemberByUidOrEmail(uid?: string, email?: string): Promise<Member | null> {
-  const cleanEmail = email ? email.toLowerCase().trim() : '';
-
-  if (cleanEmail) {
-    const cached = memberEmailCache.get(cleanEmail);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS && cached.member) {
-      return cached.member;
-    }
+    await updateDoc(doc(db, MEMBERS_COLLECTION, member.id), clean);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${MEMBERS_COLLECTION}/${member.id}`);
   }
 
-  // 1. Try by authUid first (fastest and directly matches Firebase Auth account)
-  if (uid) {
+  const updated: Member = { ...member, ...(clean as Partial<Member>) };
+  const currentUid = auth.currentUser?.uid;
+  if (currentUid) invalidateMemberCache(currentUid);
+
+  if (isValidUserId16(updated.userId16)) {
     try {
-      const qUid = query(collection(db, 'members'), where('authUid', '==', uid), limit(1));
-      const snapUid = await Promise.race([
-        getDocs(qUid),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 1500))
-      ]);
-      if (snapUid && !snapUid.empty) {
-        const docSnap = snapUid.docs[0];
-        const data = docSnap.data() as Omit<Member, 'id'>;
-        const isFounder = (cleanEmail === 'cosplaysehat@gmail.com') || (data.email?.toLowerCase().trim() === 'cosplaysehat@gmail.com');
-        const userId16 = isFounder ? '0000000000000000' : (data.userId16 || generateChronologicalUserId16(data.createdAt));
-        const memberName = data.name || data.cosplayName || data.fullName || 'Member';
-        const resolvedMember: Member = {
-          id: docSnap.id,
-          ...data,
-          name: memberName,
-          cosplayName: memberName,
-          userId16,
-        };
-        if (cleanEmail) memberEmailCache.set(cleanEmail, { member: resolvedMember, timestamp: Date.now() });
-        return resolvedMember;
-      }
-    } catch (e) {
-      console.warn('findMemberByUid query note:', e);
+      await upsertMemberCard(buildMemberCard(updated));
+    } catch (error) {
+      console.warn('Profile saved, but the public member card could not be refreshed:', error);
     }
   }
 
-  // 2. Try by email
-  if (cleanEmail) {
-    try {
-      const qEmail = query(collection(db, 'members'), where('email', '==', cleanEmail), limit(1));
-      const snap = await Promise.race([
-        getDocs(qEmail),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 1500))
-      ]);
-      if (snap && !snap.empty) {
-        const docSnap = snap.docs[0];
-        const data = docSnap.data() as Omit<Member, 'id'>;
-        const isFounder = cleanEmail === 'cosplaysehat@gmail.com';
-        const userId16 = isFounder ? '0000000000000000' : (data.userId16 || generateChronologicalUserId16(data.createdAt));
-        if (isFounder && data.userId16 !== '0000000000000000') {
-          updateDoc(doc(db, 'members', docSnap.id), { userId16: '0000000000000000' }).catch(console.warn);
-        }
-        if (uid && (!data.authUid || data.authUid !== uid)) {
-          updateDoc(doc(db, 'members', docSnap.id), { authUid: uid }).catch(console.warn);
-        }
-        const memberName = data.name || data.cosplayName || data.fullName || 'Member';
-        const resolvedMember: Member = {
-          id: docSnap.id,
-          ...data,
-          name: memberName,
-          cosplayName: memberName,
-          userId16,
-          authUid: uid || data.authUid,
-        };
-        memberEmailCache.set(cleanEmail, { member: resolvedMember, timestamp: Date.now() });
-        return resolvedMember;
-      } else {
-        memberEmailCache.set(cleanEmail, { member: null, timestamp: Date.now() });
-      }
-    } catch (e) {
-      console.warn('findMemberByEmail note:', e);
-    }
-  }
-
-  return null;
-}
-
-export async function findMemberByEmail(email: string): Promise<Member | null> {
-  return findMemberByUidOrEmail(undefined, email);
-}
-
-export async function updateMemberProfileData(memberId: string, fields: Partial<Member>): Promise<void> {
-  const memberDocRef = doc(db, 'members', memberId);
-  const cleanFields = { ...fields };
-  delete (cleanFields as Record<string, unknown>).id;
-  await updateDoc(memberDocRef, cleanFields as Record<string, unknown>);
-  invalidateMemberCache(fields.email);
+  return updated;
 }

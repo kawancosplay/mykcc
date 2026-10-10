@@ -31,7 +31,7 @@ import {
 } from '../lib/themeContext';
 
 export const SiteEditorModal: React.FC = () => {
-  const { theme, updateTheme, resetTheme, isEditorOpen, setIsEditorOpen } = useSiteTheme();
+  const { theme, updateTheme, resetTheme, isEditorOpen, setIsEditorOpen, saveError, clearSaveError } = useSiteTheme();
   const [activeTab, setActiveTab] = useState<'layout' | 'background' | 'colors' | 'font' | 'logo'>('layout');
 
   if (!isEditorOpen) return null;
@@ -214,6 +214,21 @@ export const SiteEditorModal: React.FC = () => {
             <span>Logo & Identitas</span>
           </button>
         </div>
+
+        {/* Save error (only a signed-in admin can save site settings) */}
+        {saveError && (
+          <div className="mx-6 mt-4 p-3 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-start justify-between gap-3">
+            <span>Perubahan tampilan gagal disimpan: {saveError}</span>
+            <button
+              type="button"
+              onClick={clearSaveError}
+              title="Tutup"
+              className="p-1 rounded-lg hover:bg-rose-900/60 text-rose-300 hover:text-white transition-colors shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Tab Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -570,7 +585,7 @@ export const SiteEditorModal: React.FC = () => {
         <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
           <span className="text-xs text-purple-300 font-semibold flex items-center gap-1.5">
             <Check className="w-4 h-4 text-emerald-400" />
-            <span>Perubahan otomatis tersimpan ke penyimpanan browser.</span>
+            <span>Perubahan otomatis tersimpan ke database situs (khusus admin).</span>
           </span>
 
           <button

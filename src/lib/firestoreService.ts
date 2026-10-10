@@ -247,6 +247,8 @@ export async function addMemberToFirestore(member: Omit<Member, 'id'>, customId?
   if (member.authUid) payload.authUid = member.authUid;
   if (member.province) payload.province = member.province;
   if (member.phone) payload.phone = member.phone;
+  if (member.phone2) payload.phone2 = member.phone2;
+  if (member.additionalPhones) payload.additionalPhones = member.additionalPhones;
   if (member.discordUsername) payload.discordUsername = member.discordUsername;
   if (member.age) payload.age = member.age;
   if (member.ageCategory) payload.ageCategory = member.ageCategory;
@@ -295,9 +297,11 @@ export async function bulkImportMembers(
     const m = newMembers[i];
     const mName = m.name || m.cosplayName || 'Member';
 
-    // Check if double filled form with same/similar data exists
+    // Check if double filled form with same/similar data exists (member fills form > 1x)
     const matched = findDuplicateMember(existingList, {
       phone: m.phone,
+      phone2: m.phone2,
+      additionalPhones: m.additionalPhones,
       discordUsername: m.discordUsername,
       name: mName,
       cosplayName: mName,
@@ -306,11 +310,16 @@ export async function bulkImportMembers(
     });
 
     if (matched) {
-      // "double filled form with the same/similar data shares the same user ID"
+      // Member fills form > 1x: KCC ID remains identical!
+      // If a new phone number was provided, merge it into phone2 or additionalPhones
+      const mergedPhone2 = m.phone2 || (m.phone && m.phone !== matched.phone ? m.phone : matched.phone2);
       try {
         await addMemberToFirestore(
           {
+            ...matched,
             ...m,
+            phone: matched.phone || m.phone,
+            phone2: mergedPhone2,
             userId16: matched.userId16, // Reuse identical 16-digit User ID
           },
           matched.id

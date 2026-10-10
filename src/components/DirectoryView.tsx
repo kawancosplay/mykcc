@@ -64,6 +64,7 @@ export const DirectoryView: React.FC<DirectoryViewProps> = ({
         (m.userId16 && m.userId16.includes(q)) ||
         (m.email && m.email.toLowerCase().includes(q)) ||
         (m.phone && m.phone.includes(q)) ||
+        (m.phone2 && m.phone2.includes(q)) ||
         (m.fandom && m.fandom.toLowerCase().includes(q)) ||
         (m.city && m.city.toLowerCase().includes(q));
 

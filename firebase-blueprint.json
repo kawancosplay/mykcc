@@ -39,6 +39,19 @@
           "description": "WhatsApp or contact phone number",
           "maxLength": 30
         },
+        "phone2": {
+          "type": "string",
+          "description": "Secondary WhatsApp or alternate contact phone number",
+          "maxLength": 30
+        },
+        "additionalPhones": {
+          "type": "array",
+          "description": "Array of additional phone numbers",
+          "items": {
+            "type": "string",
+            "maxLength": 30
+          }
+        },
         "discordUsername": {
           "type": "string",
           "description": "Discord username or handle",

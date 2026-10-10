@@ -241,7 +241,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'KCC ID (16 Digit)',
       'Cosname / Alias',
       'Nama Legal',
-      'WhatsApp',
+      'WhatsApp Utama',
+      'WhatsApp Cadangan',
       'Username Discord',
       'Email',
       'Kategori Usia',
@@ -261,6 +262,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       `"${(m.cosplayName || '').replace(/"/g, '""')}"`,
       `"${(m.fullName || '').replace(/"/g, '""')}"`,
       `"${m.phone || ''}"`,
+      `"${m.phone2 || ''}"`,
       `"${(m.discordUsername || '').replace(/"/g, '""')}"`,
       `"${m.email || ''}"`,
       `"${m.ageCategory || ''}"`,
@@ -312,6 +314,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         (m.email && m.email.toLowerCase().includes(q)) ||
         (m.userId16 && m.userId16.includes(q)) ||
         (m.phone && m.phone.includes(q)) ||
+        (m.phone2 && m.phone2.includes(q)) ||
         (m.discordUsername && m.discordUsername.toLowerCase().includes(q)) ||
         (m.fandom && m.fandom.toLowerCase().includes(q)) ||
         (m.city && m.city.toLowerCase().includes(q));
@@ -804,12 +807,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
 
                         <td className="py-4 px-4">
-                          {m.phone ? (
-                            <p className="text-emerald-400 font-mono font-bold text-xs">{m.phone}</p>
-                          ) : (
-                            <p className="text-slate-500 italic text-xs">—</p>
-                          )}
-                          {m.email && <p className="text-[11px] text-slate-400">{m.email}</p>}
+                          <div className="space-y-0.5">
+                            {m.phone ? (
+                              <p className="text-emerald-400 font-mono font-bold text-xs">{m.phone}</p>
+                            ) : (
+                              <p className="text-slate-500 italic text-xs">—</p>
+                            )}
+                            {m.phone2 && (
+                              <p className="text-emerald-300/80 font-mono text-[11px] flex items-center gap-1">
+                                <span className="text-[9px] px-1 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-sans font-semibold">WA 2</span>
+                                <span>{m.phone2}</span>
+                              </p>
+                            )}
+                            {m.email && <p className="text-[11px] text-slate-400">{m.email}</p>}
+                          </div>
                         </td>
 
                         <td className="py-4 px-4">

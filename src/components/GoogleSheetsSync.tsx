@@ -65,6 +65,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     cosplayName: -1,
     email: -1,
     phone: -1,
+    phone2: -1,
     discordUsername: -1,
     country: -1,
     province: -1,
@@ -606,6 +607,25 @@ function onFormSubmit(e) {
                   </select>
                 </div>
 
+                {/* WhatsApp Cadangan / No WA 2 */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                    Kolom WhatsApp Cadangan / No WA 2 <span className="text-slate-500 font-normal">(Opsional)</span>
+                  </label>
+                  <select
+                    value={columnMapping.phone2 ?? -1}
+                    onChange={(e) => setColumnMapping({ ...columnMapping, phone2: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                  >
+                    <option value={-1}>-- Tidak Ada / Kosong --</option>
+                    {headers.map((h, i) => (
+                      <option key={i} value={i}>
+                        {i + 1}. {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Username Discord */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
@@ -725,13 +745,17 @@ function onFormSubmit(e) {
                           (columnMapping.fullName >= 0 ? r[columnMapping.fullName] : '') ||
                           '-';
                         const waVal = columnMapping.phone >= 0 ? r[columnMapping.phone] || '-' : '-';
+                        const wa2Val = columnMapping.phone2 !== undefined && columnMapping.phone2 >= 0 ? r[columnMapping.phone2] : '';
                         const dcVal =
                           columnMapping.discordUsername >= 0 ? r[columnMapping.discordUsername] || '-' : '-';
                         const cityVal = columnMapping.city >= 0 ? r[columnMapping.city] || '-' : '-';
                         return (
                           <tr key={idx}>
                             <td className="py-1.5 pr-3 font-semibold text-white">{nameVal}</td>
-                            <td className="py-1.5 px-3 font-mono text-emerald-400">{waVal}</td>
+                            <td className="py-1.5 px-3 font-mono text-emerald-400">
+                              <span>{waVal}</span>
+                              {wa2Val && <span className="block text-[10px] text-emerald-300/80">No 2: {wa2Val}</span>}
+                            </td>
                             <td className="py-1.5 px-3 font-mono text-indigo-300">{dcVal}</td>
                             <td className="py-1.5 pl-3 text-slate-400">{cityVal}</td>
                           </tr>

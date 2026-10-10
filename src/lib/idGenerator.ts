@@ -286,14 +286,35 @@ function normalizeSocial(s?: string): string {
 }
 
 /**
+ * Extracts and normalizes all available phone numbers for a member or candidate record
+ */
+export function extractAllPhones(data?: {
+  phone?: string;
+  phone2?: string;
+  additionalPhones?: string[];
+}): string[] {
+  if (!data) return [];
+  const list: string[] = [];
+  if (data.phone) list.push(data.phone);
+  if (data.phone2) list.push(data.phone2);
+  if (Array.isArray(data.additionalPhones)) {
+    list.push(...data.additionalPhones);
+  }
+  return Array.from(new Set(list.map(normalizePhone).filter((p) => p.length >= 8)));
+}
+
+/**
  * Checks if a member submission matches an existing member in the database.
  * Requirement: "Each member has a single KCC ID account" & "double filled form with the same/similar data shares the same user ID"
+ * Also supports members with multiple phone numbers (primary & secondary/phone2/additionalPhones).
  */
 export function findDuplicateMember(
   members: Member[],
   candidate: {
     email?: string;
     phone?: string;
+    phone2?: string;
+    additionalPhones?: string[];
     discordUsername?: string;
     name?: string;
     cosplayName?: string;
@@ -304,16 +325,18 @@ export function findDuplicateMember(
   if (!members || members.length === 0) return null;
 
   const candEmail = candidate.email?.trim().toLowerCase() || '';
-  const candPhone = normalizePhone(candidate.phone);
+  const candPhones = extractAllPhones(candidate);
   const candDiscord = candidate.discordUsername?.trim().toLowerCase().replace(/^@/, '') || '';
   const candCosname = (candidate.name || candidate.cosplayName || '').trim().toLowerCase();
   const candSocial = normalizeSocial(candidate.socialMedia);
 
   for (const m of members) {
-    // 1. WhatsApp Phone match (primary single KCC ID identifier, at least 8 digits)
-    if (candPhone && candPhone.length >= 8) {
-      const existingPhone = normalizePhone(m.phone);
-      if (existingPhone && existingPhone === candPhone) {
+    const existingPhones = extractAllPhones(m);
+
+    // 1. WhatsApp Phone match (matches primary, secondary, or any additional phone numbers)
+    if (candPhones.length > 0 && existingPhones.length > 0) {
+      const hasSharedPhone = candPhones.some((cp) => existingPhones.includes(cp));
+      if (hasSharedPhone) {
         return m;
       }
     }
@@ -348,8 +371,8 @@ export function findDuplicateMember(
       if (!genericNames.includes(candCosname)) {
         const existingCosname = (m.name || m.cosplayName || '').trim().toLowerCase();
         if (existingCosname && existingCosname === candCosname) {
-          // If both have phone numbers and they differ, they are distinct people!
-          if (candPhone && m.phone && normalizePhone(m.phone) !== candPhone) {
+          // If both have phone numbers recorded and none match, they are distinct people!
+          if (candPhones.length > 0 && existingPhones.length > 0 && !candPhones.some((p) => existingPhones.includes(p))) {
             continue;
           }
           // If both have Discord usernames and they differ, they are distinct people!

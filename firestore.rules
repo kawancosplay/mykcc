@@ -41,6 +41,8 @@ service cloud.firestore {
         && (!('country' in data) || (data.country is string && data.country.size() <= 80))
         && (!('province' in data) || (data.province is string && data.province.size() <= 80))
         && (!('phone' in data) || (data.phone is string && data.phone.size() <= 30))
+        && (!('phone2' in data) || (data.phone2 is string && data.phone2.size() <= 30))
+        && (!('additionalPhones' in data) || (data.additionalPhones is list && data.additionalPhones.size() <= 10))
         && (!('discordUsername' in data) || (data.discordUsername is string && data.discordUsername.size() <= 60))
         && (!('age' in data) || (data.age is string && data.age.size() <= 50))
         && (!('ageCategory' in data) || (data.ageCategory is string && data.ageCategory.size() <= 50))

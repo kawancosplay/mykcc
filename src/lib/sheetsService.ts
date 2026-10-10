@@ -101,7 +101,8 @@ export function autoDetectColumnMapping(headers: string[]): ColumnMapping {
     cosplayName: findIndex(['cosplay name', 'cosname', 'nama panggung', 'stage name', 'nickname', 'nama karakter', 'nama panggilan', 'nama']),
     fullName: findIndex(['nama lengkap', 'full name', 'nama asli']),
     email: findIndex(['email', 'surel', 'alamat email']),
-    phone: findIndex(['whatsapp', 'wa', 'telepon', 'hp', 'phone', 'kontak', 'nomor wa', 'no wa', 'no. wa']),
+    phone: findIndex(['nomor wa utama', 'whatsapp utama', 'whatsapp', 'wa', 'telepon', 'hp', 'phone', 'kontak', 'nomor wa', 'no wa', 'no. wa']),
+    phone2: findIndex(['nomor wa cadangan', 'wa cadangan', 'nomor wa 2', 'wa 2', 'whatsapp 2', 'no hp 2', 'nomor kedua', 'secondary phone', 'no wa kedua', 'hp 2']),
     discordUsername: findIndex([
       'discord',
       'username discord',
@@ -159,6 +160,7 @@ export function parseRowsToMembers(
     const primaryRole = (mapping.primaryRole >= 0 ? row[mapping.primaryRole] : '')?.trim() || 'Cosplayer';
     const fandom = (mapping.fandom >= 0 ? row[mapping.fandom] : '')?.trim() || 'Anime & Games';
     const phone = (mapping.phone >= 0 ? row[mapping.phone] : '')?.trim();
+    const phone2 = (mapping.phone2 !== undefined && mapping.phone2 >= 0 ? row[mapping.phone2] : '')?.trim();
     const discordIdx = mapping.discordUsername >= 0 ? mapping.discordUsername : autoDiscordIdx;
     const discordUsername = (discordIdx >= 0 ? row[discordIdx] : '')?.trim();
     const age = (mapping.age >= 0 ? row[mapping.age] : '')?.trim();
@@ -189,6 +191,7 @@ export function parseRowsToMembers(
       fullName: fullName ? fullName.substring(0, 100) : resolvedName.substring(0, 100),
       email: email ? email.substring(0, 120) : '',
       phone: phone ? phone.substring(0, 30) : undefined,
+      phone2: phone2 ? phone2.substring(0, 30) : undefined,
       discordUsername: discordUsername ? discordUsername.substring(0, 60) : undefined,
       country: country.substring(0, 80),
       province: province ? province.substring(0, 80) : undefined,

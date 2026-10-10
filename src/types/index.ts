@@ -7,6 +7,8 @@ export interface Member {
   cosplayName?: string; // Compatibility alias with existing Firestore database documents
   email?: string; // Optional email (empty on database for legacy form entries)
   phone?: string; // Nomor WhatsApp Aktif (Wajib karena komunitas berbasis WhatsApp)
+  phone2?: string; // Nomor WhatsApp Cadangan / Tambahan (Opsional jika memiliki lebih dari 1 nomor)
+  additionalPhones?: string[]; // Nomor-nomor kontak tambahan lainnya
   discordUsername?: string; // Username Discord (Contoh: username atau user#0000)
   country?: string; // Negara / Country / Region
   province?: string; // Provinsi / State / Prefecture
@@ -68,6 +70,7 @@ export interface ColumnMapping {
   fullName: number; // Fallback if sheet has an extra name column
   email: number;
   phone: number;
+  phone2?: number;
   discordUsername: number;
   ageCategory: number;
   age: number;

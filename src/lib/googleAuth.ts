@@ -12,11 +12,18 @@ export const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
 ];
 
-const provider = new GoogleAuthProvider();
+export const provider = new GoogleAuthProvider();
 SCOPES.forEach((scope) => provider.addScope(scope));
+provider.setCustomParameters({
+  prompt: 'consent',
+  access_type: 'offline',
+});
+
+const TOKEN_STORAGE_KEY = 'kcc_google_access_token';
 
 let isSigningIn = false;
-let cachedAccessToken: string | null = null;
+let cachedAccessToken: string | null =
+  typeof window !== 'undefined' ? sessionStorage.getItem(TOKEN_STORAGE_KEY) : null;
 
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string | null) => void,
@@ -28,7 +35,7 @@ export const initAuth = (
         onAuthSuccess(user, cachedAccessToken);
       }
     } else {
-      cachedAccessToken = null;
+      setAccessToken(null);
       if (onAuthFailure) onAuthFailure();
     }
   });
@@ -43,8 +50,8 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
       throw new Error('Failed to retrieve access token from Google sign in');
     }
 
-    cachedAccessToken = credential.accessToken;
-    return { user: result.user, accessToken: cachedAccessToken };
+    setAccessToken(credential.accessToken);
+    return { user: result.user, accessToken: credential.accessToken };
   } catch (error: unknown) {
     console.error('Google Sign-in error:', error);
     throw error;
@@ -53,15 +60,26 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
   }
 };
 
-export const getAccessToken = async (): Promise<string | null> => {
-  return cachedAccessToken;
+export const getAccessToken = (): string | null => {
+  if (cachedAccessToken) return cachedAccessToken;
+  if (typeof window !== 'undefined') {
+    return sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  }
+  return null;
 };
 
 export const setAccessToken = (token: string | null) => {
   cachedAccessToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else {
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  }
 };
 
 export const logout = async () => {
   await signOut(auth);
-  cachedAccessToken = null;
+  setAccessToken(null);
 };

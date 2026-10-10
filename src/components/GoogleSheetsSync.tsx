@@ -17,6 +17,7 @@ import {
   Layers,
   Search,
   ExternalLink,
+  Key,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { ColumnMapping, SheetFile, SyncLog } from '../types';
@@ -28,6 +29,7 @@ import {
   parseRowsToMembers,
 } from '../lib/sheetsService';
 import { bulkImportMembers, recordSyncLog } from '../lib/firestoreService';
+import { googleSignIn } from '../lib/googleAuth';
 
 interface GoogleSheetsSyncProps {
   user: User | null;
@@ -35,6 +37,7 @@ interface GoogleSheetsSyncProps {
   onLogin: () => void;
   syncLogs: SyncLog[];
   totalMembersInFirestore: number;
+  onAccessTokenUpdated?: (token: string) => void;
 }
 
 export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
@@ -43,6 +46,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   onLogin,
   syncLogs,
   totalMembersInFirestore,
+  onAccessTokenUpdated,
 }) => {
   // Spreadsheet selection states
   const [spreadsheets, setSpreadsheets] = useState<SheetFile[]>([]);
@@ -96,19 +100,49 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     }
   }, [accessToken]);
 
-  const loadUserSpreadsheets = async () => {
-    if (!accessToken) return;
+  const loadUserSpreadsheets = async (tokenToUse?: string) => {
+    const token = tokenToUse || accessToken;
+    if (!token) return;
     setIsLoadingSheets(true);
     setErrorMsg(null);
     try {
-      const files = await fetchSpreadsheetsFromDrive(accessToken);
+      const files = await fetchSpreadsheetsFromDrive(token);
       setSpreadsheets(files);
       if (files.length > 0 && !selectedSpreadsheetId) {
         setSelectedSpreadsheetId(files[0].id);
       }
     } catch (err: unknown) {
       console.warn('Drive list info:', err);
-      setErrorMsg('Gagal memuat daftar Google Sheet dari Drive. Pastikan izin akses telah diberikan.');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes('403') || errMsg.includes('401') || errMsg.includes('insufficient')) {
+        setErrorMsg('Izin akses Google Drive & Sheets belum aktif untuk sesi ini atau token kedaluwarsa. Silakan klik tombol "Beri Izin / Hubungkan Google" untuk memberikan otorisasi.');
+      } else {
+        setErrorMsg(`Gagal memuat daftar Google Sheet dari Drive: ${errMsg}`);
+      }
+    } finally {
+      setIsLoadingSheets(false);
+    }
+  };
+
+  const handleAuthorizeGoogle = async () => {
+    setIsLoadingSheets(true);
+    setErrorMsg(null);
+    try {
+      const res = await googleSignIn();
+      if (res?.accessToken) {
+        if (onAccessTokenUpdated) {
+          onAccessTokenUpdated(res.accessToken);
+        }
+        await loadUserSpreadsheets(res.accessToken);
+      }
+    } catch (err: unknown) {
+      console.warn('Google Workspace auth error:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('popup-closed-by-user') || msg.includes('cancelled-popup-request')) {
+        setErrorMsg('Jendela otorisasi Google ditutup sebelum selesai.');
+      } else {
+        setErrorMsg(`Kendala menghubungkan akun Google: ${msg}`);
+      }
     } finally {
       setIsLoadingSheets(false);
     }
@@ -127,8 +161,12 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   // Fetch sheet tabs and preview rows
   const handleInspectSpreadsheet = async (sheetIdToInspect?: string) => {
     const targetId = extractSheetId(sheetIdToInspect || customSheetUrl || selectedSpreadsheetId);
-    if (!targetId || !accessToken) {
-      setErrorMsg('Silakan pilih atau masukkan ID/URL Google Sheet dan pastikan sudah login Google.');
+    if (!targetId) {
+      setErrorMsg('Silakan pilih atau masukkan ID/URL Google Sheet terlebih dahulu.');
+      return;
+    }
+    if (!accessToken) {
+      setErrorMsg('Token autentikasi Google belum tersedia. Silakan klik "Beri Izin / Hubungkan Google" di bawah.');
       return;
     }
 
@@ -156,7 +194,12 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       }
     } catch (err: unknown) {
       console.error('Inspect error:', err);
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal mengakses data spreadsheet.');
+      const msg = err instanceof Error ? err.message : 'Gagal mengakses data spreadsheet.';
+      if (msg.includes('403') || msg.includes('401') || msg.includes('insufficient')) {
+        setErrorMsg('Izin akses spreadsheet belum diberikan atau sesi token telah kedaluwarsa. Pastikan akun Google Anda memiliki akses ke dokumen ini dan klik "Beri Izin / Hubungkan Google".');
+      } else {
+        setErrorMsg(msg);
+      }
     } finally {
       setIsLoadingSheets(false);
     }
@@ -312,12 +355,27 @@ function onFormSubmit(e) {
           </span>
           <span className="text-xs text-slate-400">Transisi Google Form ke Firebase</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-          Sinkronisasi Database Spreadsheet & Google Form
-        </h1>
-        <p className="text-slate-300 text-sm sm:text-base max-w-3xl mt-1">
-          Impor database spreadsheet anggota lama yang sudah ada dan aktifkan sinkronisasi real-time sehingga setiap kali ada anggota baru mengisi Google Form selama masa transisi, data otomatis masuk ke Firebase.
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              Sinkronisasi Database Spreadsheet & Google Form
+            </h1>
+            <p className="text-slate-300 text-sm sm:text-base max-w-3xl mt-1">
+              Impor database spreadsheet anggota lama yang sudah ada dan aktifkan sinkronisasi real-time sehingga setiap kali ada anggota baru mengisi Google Form selama masa transisi, data otomatis masuk ke Firebase.
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAuthorizeGoogle}
+              disabled={isLoadingSheets}
+              className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 hover:border-emerald-500/50 text-xs font-bold flex items-center space-x-2 transition-all shadow-md active:scale-95 disabled:opacity-50"
+            >
+              <Key className="w-4 h-4 text-emerald-400" />
+              <span>{accessToken ? 'Perbarui Izin Akun Google' : 'Hubungkan Akun Google'}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Auth Alert if token is not ready */}
@@ -332,17 +390,18 @@ function onFormSubmit(e) {
                 Koneksi Google Sheets & Drive Diperlukan
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed max-w-xl">
-                Untuk membaca spreadsheet Google Form Anda secara langsung, masuk menggunakan akun Google yang memiliki akses ke spreadsheet respon pendaftaran KawanCosplay.
+                Untuk membaca spreadsheet Google Form Anda secara langsung, hubungkan akun Google yang memiliki akses ke file spreadsheet pendaftaran KawanCosplay.
               </p>
             </div>
           </div>
 
           <button
-            onClick={onLogin}
-            className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 transition-transform active:scale-95"
+            onClick={handleAuthorizeGoogle}
+            disabled={isLoadingSheets}
+            className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 transition-transform active:scale-95 disabled:opacity-50"
           >
             <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-            <span>Hubungkan Google Sheets</span>
+            <span>Hubungkan Google Drive & Sheets</span>
           </button>
         </div>
       )}
@@ -720,9 +779,25 @@ function onFormSubmit(e) {
           )}
 
           {errorMsg && (
-            <div className="p-4 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-              <span>{errorMsg}</span>
+            <div className="p-5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-rose-100">{errorMsg}</p>
+                  <p className="text-[11px] text-rose-300/80 mt-1">
+                    Tips: Anda juga bisa langsung menempelkan URL Spreadsheet Google Form di kolom input atas lalu klik &quot;Periksa&quot;.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleAuthorizeGoogle}
+                disabled={isLoadingSheets}
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shrink-0 flex items-center space-x-2 shadow-md transition-transform active:scale-95 disabled:opacity-50"
+              >
+                <Key className="w-4 h-4 text-emerald-600" />
+                <span>Beri Izin / Hubungkan Google</span>
+              </button>
             </div>
           )}
         </div>

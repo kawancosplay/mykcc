@@ -52,6 +52,7 @@ interface AdminDashboardProps {
   currentLang: LanguageCode;
   onSelectMember: (member: Member) => void;
   onOpenAuth: () => void;
+  onAccessTokenUpdated?: (token: string) => void;
 }
 
 const ADMIN_PASSKEY = 'kccadmin2026';
@@ -65,6 +66,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentLang,
   onSelectMember,
   onOpenAuth,
+  onAccessTokenUpdated,
 }) => {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
 
@@ -890,6 +892,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           onLogin={onOpenAuth}
           syncLogs={syncLogs}
           totalMembersInFirestore={members.length}
+          onAccessTokenUpdated={onAccessTokenUpdated}
         />
       )}
 

@@ -19,8 +19,7 @@ import {
   FOUNDER_USER_ID,
 } from './idGenerator';
 import { addMemberToFirestore } from './firestoreService';
-
-const googleProvider = new GoogleAuthProvider();
+import { provider as googleProvider, setAccessToken } from './googleAuth';
 
 // Fast in-memory cache to prevent repeated cold Firestore queries and speed up login
 const memberEmailCache = new Map<string, { member: Member | null; timestamp: number }>();
@@ -131,6 +130,9 @@ export async function loginWithGoogleOAuth(): Promise<{ user: User; member: Memb
   const result = await signInWithPopup(auth, googleProvider);
   const credential = GoogleAuthProvider.credentialFromResult(result);
   const accessToken = credential?.accessToken || '';
+  if (accessToken) {
+    setAccessToken(accessToken);
+  }
   const user = result.user;
 
   let member = await findMemberByUidOrEmail(user.uid, user.email || '');

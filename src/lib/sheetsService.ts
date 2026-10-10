@@ -7,18 +7,28 @@ import {
 
 export async function fetchSpreadsheetsFromDrive(accessToken: string): Promise<SheetFile[]> {
   try {
-    const res = await fetch(
-      "https://www.googleapis.com/drive/v3/files?q=mimeType='application/vnd.google-apps.spreadsheet'&fields=files(id,name,modifiedTime)&pageSize=25&orderBy=modifiedTime desc",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const params = new URLSearchParams({
+      q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+      fields: 'files(id,name,modifiedTime)',
+      pageSize: '30',
+      orderBy: 'modifiedTime desc',
+    });
+
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Drive API error (${res.status}): ${err}`);
+      let errDetails = '';
+      try {
+        const errorJson = await res.json();
+        errDetails = errorJson.error?.message || JSON.stringify(errorJson);
+      } catch {
+        errDetails = await res.text();
+      }
+      throw new Error(`Drive API error (${res.status}): ${errDetails}`);
     }
 
     const data = await res.json();

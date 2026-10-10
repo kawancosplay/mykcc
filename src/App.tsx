@@ -12,7 +12,7 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m =
 const SiteEditorModal = lazy(() => import('./components/SiteEditorModal').then(m => ({ default: m.SiteEditorModal })));
 
 import { Member, Photo, SyncLog } from './types';
-import { initAuth, logout } from './lib/googleAuth';
+import { initAuth, logout, getAccessToken, setAccessToken as setGlobalAccessToken } from './lib/googleAuth';
 import {
   subscribeToMembers,
   subscribeToSyncLogs,
@@ -131,10 +131,17 @@ export default function App() {
 
   // Initialize Firebase Auth listener
   useEffect(() => {
+    // Restore session access token if available
+    const existingToken = getAccessToken();
+    if (existingToken) {
+      setAccessToken(existingToken);
+    }
+
     const unsubscribe = initAuth(
       async (currentUser, token) => {
         setUser(currentUser);
-        if (token) setAccessToken(token);
+        const resolvedToken = token || getAccessToken();
+        if (resolvedToken) setAccessToken(resolvedToken);
 
         if (currentUser) {
           const matched = await findMemberByUidOrEmail(currentUser.uid, currentUser.email || '');
@@ -242,6 +249,7 @@ export default function App() {
     }
     if (token) {
       setAccessToken(token);
+      setGlobalAccessToken(token);
     }
   };
 
@@ -367,6 +375,10 @@ export default function App() {
             currentLang={currentLang}
             onSelectMember={handleOpenCard}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+            onAccessTokenUpdated={(token) => {
+              setAccessToken(token);
+              setGlobalAccessToken(token);
+            }}
           />
         </main>
 

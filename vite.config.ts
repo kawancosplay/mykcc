@@ -24,6 +24,8 @@ export default defineConfig(() => {
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
+        // Real pages/endpoints that must not be answered with the SPA shell by the service worker.
+        navigateFallbackDenylist: [/^\/privacy/, /^\/api\//],
       },
     })],
     resolve: {

@@ -25,8 +25,10 @@ Publishing to `(default)` has no effect on the app. Console: Firestore Database 
      `authUid` to their own uid (account linking).
    - `delete`: admin only.
    - Size bounds: `cosplayName/name <= 80`, `fullName <= 100`, `email <= 120`, `city/country/province <= 80`,
-     `primaryRole <= 120`, `fandom <= 80`, `phone <= 30`, `discordUsername <= 60`, `socialMedia <= 120`,
+     `primaryRole <= 120`, `fandom <= 80`, `phone <= 30`, `phone2 <= 30`, `additionalPhones` a list of at
+     most 3 strings of `<= 30` each, `discordUsername <= 60`, `socialMedia <= 120`,
      `portfolioUrl <= 300`, `reason <= 500`, `age/ageCategory/experience <= 50`, `createdAt` ISO string.
+     `phone2` and `additionalPhones` are owner-editable profile fields.
 2. Member cards (`/memberCards/{userId16}`) are the PUBLIC projection used by the KCC ID lookup:
    - Only `userId16, cosplayName, primaryRole, city, country, status, createdAt`, optional `avatarUrl`
      (<= 400000 chars) and optional `ownerUid`. Doc id must equal `userId16`.
@@ -35,7 +37,8 @@ Publishing to `(default)` has no effect on the app. Console: Firestore Database 
    - `update`: admin, or the card owner without changing `ownerUid`, `status`, `createdAt`.
    - `delete`: admin only.
 3. Photos (`/photos/{photoId}`): public `get`; `list` only with `limit <= 100`; `create` requires sign-in,
-   `authorUid == auth.uid`, schema-valid (`authorName <= 60`, `event <= 100`, ...), `likesCount` 0;
+   `authorUid == auth.uid`, schema-valid (`authorName` 1..100, `character/series <= 100`, `event <= 120`,
+   `photographer <= 100`, `caption <= 1000`, `title <= 120`, ...), `likesCount` 0;
    non-admin `update` may only increment `likesCount` by exactly 1; `delete` by admin or the author.
 4. Sync logs (`/sync_logs/{logId}`): admin only (read, create with schema, update, delete).
 5. Site settings (`/siteSettings/{id}`): public `get`, admin write.

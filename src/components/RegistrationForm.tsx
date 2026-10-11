@@ -20,9 +20,15 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Member } from '../types';
-import { registerMember, MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
+import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
+import { submitRegistration } from '../lib/authService';
 import { compressImage } from '../lib/imageUtils';
-import { format16DigitUserId, generate16DigitUserId } from '../lib/idGenerator';
+import {
+  format16DigitUserId,
+  generate16DigitUserId,
+  findDuplicateMember,
+  mergeMemberPhones,
+} from '../lib/idGenerator';
 import { describeFirestoreError } from '../lib/firebase';
 import {
   getAllCountriesList,
@@ -132,6 +138,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     fullName: '', // Strictly optional for privacy
     email: '', // Strictly optional
     phone: '', // Mandatory WhatsApp mobile number
+    phone2: '', // Optional secondary / additional WhatsApp number
     discordUsername: '', // Discord Username column
     ageCategory: 'Legal Age / Dewasa (18+ tahun)',
     age: '', // Optional exact age or birthdate
@@ -154,6 +161,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedMember, setSubmittedMember] = useState<Member | null>(null);
+  const [isDuplicateShared, setIsDuplicateShared] = useState(false);
+  const [showPhone2, setShowPhone2] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showAgeExplainer, setShowAgeExplainer] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -196,6 +205,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         fullName: '',
         email: '',
         phone: '',
+        phone2: '',
         discordUsername: '',
         ageCategory: 'Legal Age / Dewasa (18+ tahun)',
         age: '',
@@ -215,6 +225,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         reason: '',
         acceptedCodeOfConduct: false,
       });
+      setShowPhone2(false);
       setIsDemoMode(false);
       setIsDemoSubmission(false);
       setErrorMsg(null);
@@ -223,6 +234,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   const submitData = async (dataToSubmit: typeof formData, isSandbox: boolean = isDemoMode) => {
     setErrorMsg(null);
+    setIsDuplicateShared(false);
 
     // PRIVACY ENFORCEMENT: Name, Email, and WhatsApp Mobile Number are required (community is WhatsApp-based)
     if (!dataToSubmit.name.trim()) {
@@ -249,6 +261,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         isId
           ? 'Nomor WhatsApp wajib diisi (minimal 8 digit) karena komunitas KawanCosplay berbasis grup WhatsApp.'
           : 'A valid WhatsApp mobile number is required (minimum 8 digits) as KawanCosplay is a WhatsApp-based community.'
+      );
+      return;
+    }
+
+    const phone2Raw = (dataToSubmit.phone2 || '').trim();
+    if (phone2Raw && phone2Raw.replace(/\D/g, '').length < 8) {
+      setErrorMsg(
+        isId
+          ? 'Nomor WhatsApp cadangan minimal 8 digit (atau kosongkan).'
+          : 'The backup WhatsApp number needs at least 8 digits (or leave it empty).'
       );
       return;
     }
@@ -292,14 +314,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       // If legal name is left blank to respect privacy, use name
       const resolvedFullName = dataToSubmit.fullName.trim() || dataToSubmit.name.trim();
 
+      // Members may hold more than one WhatsApp number (primary + optional backup number).
+      const primaryPhone = dataToSubmit.phone.trim().slice(0, MEMBER_FIELD_LIMITS.phone);
+      const secondaryPhone =
+        (dataToSubmit.phone2 || '').trim().slice(0, MEMBER_FIELD_LIMITS.phone2) || undefined;
+
       // KCC ID is NOT derived from form input or the client-side member list: registerMember assigns a
-      // chronological ID (main account ID only for the authenticated KCC main account).
+      // chronological ID (main account ID only for the authenticated KCC main account). Re-submissions by
+      // the same person are de-duplicated and merged in the data layer (submitRegistration), never by
+      // scanning other members' data in the browser.
       const newMemberPayload: Omit<Member, 'id' | 'userId16'> = {
         name: dataToSubmit.name.trim(),
         cosplayName: dataToSubmit.name.trim(),
         fullName: resolvedFullName,
         email: dataToSubmit.email.trim().toLowerCase(), // Empty string if omitted, as legacy form never asked for email
-        phone: dataToSubmit.phone.trim(),
+        phone: primaryPhone,
+        phone2: secondaryPhone,
         discordUsername: dataToSubmit.discordUsername.trim() || undefined,
         country: finalCountry,
         province: finalProvince,
@@ -320,22 +350,51 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
       // SANDBOX ISOLATION: When in demo mode or sandbox flag is true, DO NOT save to database!
       if (isSandbox) {
-        const createdMember: Member = {
-          id: `demo_sandbox_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-          userId16: generate16DigitUserId(new Date()),
-          ...newMemberPayload,
-        };
+        const demoId = `demo_sandbox_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        // Admin-only sandbox: the duplicate check runs against the admin's already-loaded member list
+        // and only simulates the merge in memory.
+        const matched =
+          isAdmin && existingMembers.length > 0
+            ? findDuplicateMember(existingMembers, {
+                email: newMemberPayload.email,
+                phone: primaryPhone,
+                phone2: secondaryPhone,
+                discordUsername: newMemberPayload.discordUsername,
+                name: newMemberPayload.name,
+                socialMedia: newMemberPayload.socialMedia,
+              })
+            : null;
 
+        const createdMember: Member = matched
+          ? {
+              ...matched,
+              ...newMemberPayload,
+              ...mergeMemberPhones(matched, newMemberPayload),
+              id: demoId,
+              userId16: matched.userId16,
+              createdAt: matched.createdAt,
+            }
+          : {
+              id: demoId,
+              userId16: generate16DigitUserId(new Date()),
+              ...newMemberPayload,
+            };
+
+        setIsDuplicateShared(!!matched);
         setIsDemoSubmission(true);
         setSubmittedMember(createdMember);
         onRegistered(createdMember);
         return;
       }
 
-      // Live registration path: writes the private member doc + its public memberCards entry.
-      // Errors (e.g. permission denied) are rethrown so a failed save never shows a success card.
-      const createdMember = await registerMember(newMemberPayload);
+      // Live registration path: creates the private member doc + its public memberCards entry, or (for a
+      // signed-in owner / admin whose submission matches an existing record) updates that record and keeps
+      // its KCC ID. Errors (e.g. permission denied) are rethrown so a failed save never shows a success card.
+      const { member: createdMember, reusedExisting } = await submitRegistration(newMemberPayload, {
+        adminExistingMembers: isAdmin ? existingMembers : undefined,
+      });
 
+      setIsDuplicateShared(reusedExisting);
       setIsDemoSubmission(false);
       setSubmittedMember(createdMember);
       onRegistered(createdMember);
@@ -404,13 +463,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <span className="font-mono font-black text-xl sm:text-2xl text-rose-400 tracking-wider">
                 {format16DigitUserId(submittedMember.userId16)}
               </span>
-              <p className="text-[11px] text-slate-300 mt-1.5">
-                {isId ? 'Anggota Terverifikasi: ' : 'Verified Member: '}
-                <strong className="text-white">{submittedMember.name || submittedMember.cosplayName}</strong>
-                {submittedMember.discordUsername && (
-                  <span className="ml-2 text-indigo-300">• Discord: {submittedMember.discordUsername}</span>
-                )}
-              </p>
+              {isDuplicateShared ? (
+                <p className="text-xs text-emerald-400 mt-2 font-medium">
+                  {isId
+                    ? '✓ Data Anda cocok dengan pendaftaran sebelumnya. Setiap anggota hanya memiliki 1 KCC ID — KCC ID Anda tetap sama dan data profil Anda telah diperbarui.'
+                    : '✓ Your details match an earlier registration. Each member holds a single KCC ID — your KCC ID stays the same and your profile has been updated.'}
+                </p>
+              ) : (
+                <p className="text-[11px] text-slate-300 mt-1.5">
+                  {isId ? 'Anggota Terverifikasi: ' : 'Verified Member: '}
+                  <strong className="text-white">{submittedMember.name || submittedMember.cosplayName}</strong>
+                  {submittedMember.discordUsername && (
+                    <span className="ml-2 text-indigo-300">• Discord: {submittedMember.discordUsername}</span>
+                  )}
+                </p>
+              )}
             </div>
 
             {/* UNLOCKED WHATSAPP COMMUNITY GROUP INVITE LINK */}
@@ -432,6 +499,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     `Halo Admin KawanCosplay! Saya sudah mengisi form pendaftaran anggota.\nNama: ${submittedMember.name || submittedMember.cosplayName}\nKCC ID: ${format16DigitUserId(
                       submittedMember.userId16
                     )}\nNo. WA: ${submittedMember.phone || '-'}${
+                      submittedMember.phone2 ? `\nNo. WA 2: ${submittedMember.phone2}` : ''
+                    }${
                       submittedMember.discordUsername ? `\nDiscord: ${submittedMember.discordUsername}` : ''
                     }\nMohon tautan undangan masuk ke Grup WhatsApp Komunitas KawanCosplay. Terima kasih!`
                   )}`}
@@ -458,12 +527,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <button
                 onClick={() => {
                   setSubmittedMember(null);
+                  setShowPhone2(false);
+                  setIsDuplicateShared(false);
                   setFormData((prev) => ({
                     ...prev,
                     cosplayName: '',
                     fullName: '',
                     email: '',
                     phone: '',
+                    phone2: '',
                     discordUsername: '',
                     age: '',
                     socialMedia: '',
@@ -618,26 +690,70 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           />
         </div>
 
-        {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-500/25">
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.whatsappLabel}{' '}
-            <span className="text-rose-500">*</span>
-          </label>
-          <p className="text-xs text-emerald-300/90 mb-4 flex items-start space-x-1.5">
-            <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <span>{ft.whatsappNotice}</span>
-          </p>
+        {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED) & OPTIONAL SECONDARY NUMBER */}
+        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-500/25 space-y-4">
+          <div>
+            <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+              {ft.whatsappLabel}{' '}
+              <span className="text-rose-500">*</span>
+            </label>
+            <p className="text-xs text-emerald-300/90 mb-3 flex items-start space-x-1.5">
+              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>{ft.whatsappNotice}</span>
+            </p>
 
-          <input
-            type="tel"
-            required
-            placeholder={ft.whatsappPlaceholder}
-            maxLength={MEMBER_FIELD_LIMITS.phone}
-            value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
-          />
+            <input
+              type="tel"
+              required
+              placeholder={ft.whatsappPlaceholder}
+              maxLength={MEMBER_FIELD_LIMITS.phone}
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
+            />
+          </div>
+
+          {/* Opsi memiliki lebih dari 1 nomor WhatsApp */}
+          <div className="pt-2 border-t border-slate-800/80">
+            {!showPhone2 && !formData.phone2 ? (
+              <button
+                type="button"
+                onClick={() => setShowPhone2(true)}
+                className="text-xs text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 transition-colors py-1 cursor-pointer"
+              >
+                <span>+ Punya lebih dari 1 nomor WhatsApp? Tambah Nomor Cadangan (Opsional)</span>
+              </button>
+            ) : (
+              <div className="space-y-1.5 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs sm:text-sm font-bold text-slate-200">
+                    Nomor WhatsApp Cadangan / Tambahan <span className="text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, phone2: '' });
+                      setShowPhone2(false);
+                    }}
+                    className="text-[11px] text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                  >
+                    Batal / Hapus
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Nomor ini disimpan sebagai nomor cadangan. Jika Anda mengisi formulir lagi saat masuk (login) dengan akun yang sama, KCC ID Anda tetap sama; pendaftaran ganda tanpa login akan digabungkan oleh admin.
+                </p>
+                <input
+                  type="tel"
+                  placeholder="Contoh: 08123456789 atau +62 857..."
+                  maxLength={MEMBER_FIELD_LIMITS.phone2}
+                  value={formData.phone2}
+                  onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
+                  className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* QUESTION 3: DISCORD USERNAME COLUMN */}

@@ -67,6 +67,16 @@ service cloud.firestore {
       return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
     }
 
+    // Optional list of up to 3 extra phone numbers, each a string of at most 30 characters.
+    function optPhoneList(data, key) {
+      return !(key in data)
+        || (data[key] is list
+          && data[key].size() <= 3
+          && (data[key].size() < 1 || (data[key][0] is string && data[key][0].size() <= 30))
+          && (data[key].size() < 2 || (data[key][1] is string && data[key][1].size() <= 30))
+          && (data[key].size() < 3 || (data[key][2] is string && data[key][2].size() <= 30)));
+    }
+
     function isValidUserId16(id) {
       return id is string && id.matches('^[0-9]{16}$');
     }
@@ -83,6 +93,7 @@ service cloud.firestore {
 
     function memberKeys() {
       return ['userId16', 'authUid', 'name', 'cosplayName', 'fullName', 'email', 'phone',
+              'phone2', 'additionalPhones',
               'discordUsername', 'country', 'province', 'city', 'age', 'ageCategory', 'birthday',
               'primaryRole', 'fandom', 'experience', 'socialMedia', 'portfolioUrl', 'avatarUrl',
               'reason', 'memberNumber', 'source', 'status', 'createdAt'];
@@ -91,7 +102,8 @@ service cloud.firestore {
     // Fields a member may change on their own profile. userId16, authUid, email, source, status,
     // createdAt and memberNumber are locked for non-admins.
     function memberOwnerEditableKeys() {
-      return ['name', 'cosplayName', 'fullName', 'phone', 'discordUsername', 'country', 'province',
+      return ['name', 'cosplayName', 'fullName', 'phone', 'phone2', 'additionalPhones',
+              'discordUsername', 'country', 'province',
               'city', 'age', 'ageCategory', 'birthday', 'primaryRole', 'fandom', 'experience',
               'socialMedia', 'portfolioUrl', 'avatarUrl', 'reason'];
     }
@@ -111,6 +123,8 @@ service cloud.firestore {
         && optString(data, 'fullName', 100)
         && optString(data, 'email', 120)
         && optString(data, 'phone', 30)
+        && optString(data, 'phone2', 30)
+        && optPhoneList(data, 'additionalPhones')
         && optString(data, 'discordUsername', 60)
         && optString(data, 'country', 80)
         && optString(data, 'province', 80)
@@ -235,15 +249,15 @@ service cloud.firestore {
         && data.keys().hasOnly(['memberId', 'userId16', 'authorUid', 'authorName', 'authorCosname',
                                 'authorNameAlias', 'authorAvatar', 'photoUrl', 'title', 'character',
                                 'series', 'event', 'photographer', 'caption', 'likesCount', 'createdAt'])
-        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 60
+        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 100
         && data.photoUrl is string && data.photoUrl.size() > 0 && data.photoUrl.size() <= 1000000
-        && data.character is string && data.character.size() <= 80
-        && data.series is string && data.series.size() <= 80
-        && data.event is string && data.event.size() <= 100
+        && data.character is string && data.character.size() <= 100
+        && data.series is string && data.series.size() <= 100
+        && data.event is string && data.event.size() <= 120
         && data.createdAt is string && data.createdAt.size() <= 40
         && optString(data, 'title', 120)
-        && optString(data, 'photographer', 80)
-        && optString(data, 'caption', 500)
+        && optString(data, 'photographer', 100)
+        && optString(data, 'caption', 1000)
         && optString(data, 'authorCosname', 80)
         && optString(data, 'authorNameAlias', 80)
         && optString(data, 'authorAvatar', 2048)

@@ -178,7 +178,8 @@ export default function App() {
         }
         setUser(currentUser);
         setAuthReady(true);
-        // Only googleSignIn (Drive + Sheets scopes) fills this cached token
+        // Only googleSignIn (Drive + Sheets scopes) fills this token. initAuth returns the
+        // session-persisted, uid-scoped token, so Sheets stays connected after a page reload.
         if (token) setAccessToken(token);
         loadMemberForUser(currentUser);
       },
@@ -362,7 +363,8 @@ export default function App() {
     }
   };
 
-  // Admin "Connect Google Sheets": scoped Google sign-in (Drive + Sheets) for a usable access token
+  // Admin "Connect Google Sheets": scoped Google sign-in (Drive + Sheets) for a usable access token.
+  // This is the ONLY Sheets authorization flow; GoogleSheetsSync calls it through onLogin.
   const handleConnectSheets = async () => {
     setSheetsConnectError(null);
     try {
@@ -372,12 +374,21 @@ export default function App() {
         setAccessToken(r.accessToken);
       }
     } catch (err) {
-      if (isPopupCancelledError(err)) return;
+      if (isPopupCancelledError(err)) {
+        setSheetsConnectError(
+          currentLang === 'id'
+            ? 'Jendela otorisasi Google ditutup sebelum selesai.'
+            : 'The Google authorization window was closed before finishing.'
+        );
+        return;
+      }
       console.warn('Sheets connect failed:', err);
+      const detail = (err as { code?: string })?.code || (err instanceof Error ? err.message : '');
       setSheetsConnectError(
-        currentLang === 'id'
+        (currentLang === 'id'
           ? 'Gagal menghubungkan Google Sheets. Pastikan memilih akun admin (cosplaysehat@gmail.com) dan memberi izin akses Drive & Sheets.'
-          : 'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and grant Drive & Sheets access.'
+          : 'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and grant Drive & Sheets access.') +
+          (detail ? ` (${detail})` : '')
       );
     }
   };
@@ -594,7 +605,9 @@ export default function App() {
             memberCount={isAdmin && membersLoaded ? members.length : null}
             existingMembers={isAdmin ? members : []}
             onRegistered={(newMember) => {
-              setCurrentMember(newMember);
+              // Only the signed-in person's OWN registration becomes their profile. An admin who
+              // registers or merges someone else must not turn into that member (photo attribution).
+              if (user && newMember.authUid === user.uid) setCurrentMember(newMember);
               setSelectedMemberForCard(newMember);
             }}
             onOpenCardModal={handleOpenCard}

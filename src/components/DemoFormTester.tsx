@@ -29,6 +29,7 @@ export interface DemoFormPreset {
     fullName: string;
     email: string;
     phone: string;
+    phone2?: string;
     discordUsername: string;
     ageCategory: string;
     age: string;
@@ -271,6 +272,40 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         socialMedia: existingWithPhone.socialMedia || '@cosplay_updated',
         portfolioUrl: existingWithPhone.portfolioUrl || '',
         reason: 'Mengisi form kedua kali untuk menguji sinkronisasi Single KCC ID akun tunggal.',
+        acceptedCodeOfConduct: true,
+      },
+    });
+
+    presets.push({
+      id: 'secondary_phone_test',
+      name: isId
+        ? `Uji 2 Nomor (Cadangan: ${matchName})`
+        : `Secondary Phone Test (2 Numbers: ${matchName})`,
+      badge: '2 Nomor WA Check',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      expectedUidType: isId
+        ? `Menambah nomor WA cadangan & mempertahankan KCC ID: ${existingWithPhone.userId16}`
+        : `Adds secondary phone & preserves KCC ID: ${existingWithPhone.userId16}`,
+      icon: <CopyCheck className="w-4 h-4 text-emerald-400" />,
+      data: {
+        name: matchName,
+        cosplayName: matchName,
+        fullName: existingWithPhone.fullName || matchName,
+        email: existingWithPhone.email || 'updated.email@gmail.com',
+        phone: existingWithPhone.phone || '081234567890',
+        phone2: '089912345678',
+        discordUsername: existingWithPhone.discordUsername || 'updated_discord',
+        ageCategory: existingWithPhone.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
+        age: existingWithPhone.age || '22',
+        country: existingWithPhone.country || 'Indonesia',
+        province: existingWithPhone.province || 'DKI Jakarta',
+        city: existingWithPhone.city || 'Jakarta Selatan',
+        primaryRole: existingWithPhone.primaryRole || 'Cosplayer / Crossplayer',
+        fandom: existingWithPhone.fandom || 'Anime & Pop Culture',
+        experience: existingWithPhone.experience || '1 - 3 tahun',
+        socialMedia: existingWithPhone.socialMedia || '@cosplay_updated',
+        portfolioUrl: existingWithPhone.portfolioUrl || '',
+        reason: 'Mengisi form kembali dengan nomor cadangan tambahan, menguji KCC ID tetap sama dan nomor kedua tersimpan.',
         acceptedCodeOfConduct: true,
       },
     });

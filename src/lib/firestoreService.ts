@@ -11,6 +11,7 @@ import {
   orderBy,
   where,
   getDocsFromServer,
+  getDocFromServer,
   limit,
   runTransaction,
   type DocumentReference,
@@ -24,6 +25,7 @@ import type {
   BulkImportResult,
   MemberIdReassignment,
   MemberRepairReport,
+  DuplicateRegistrationGroup,
 } from '../types';
 import {
   generateChronologicalUserId16,
@@ -32,6 +34,8 @@ import {
   findDuplicateMember,
   isValidUserId16,
   isReservedUserId16,
+  mergeMemberPhones,
+  MAX_ADDITIONAL_PHONES,
   MAIN_ACCOUNT_UID,
 } from './idGenerator';
 
@@ -48,6 +52,7 @@ export const MEMBER_FIELD_LIMITS = {
   fullName: 100,
   email: 120,
   phone: 30,
+  phone2: 30,
   discordUsername: 60,
   country: 80,
   province: 80,
@@ -73,6 +78,8 @@ export const MEMBER_OWNER_EDITABLE_FIELDS: readonly string[] = [
   'cosplayName',
   'fullName',
   'phone',
+  'phone2',
+  'additionalPhones',
   'discordUsername',
   'country',
   'province',
@@ -100,10 +107,10 @@ const MEMBER_STATUSES: readonly string[] = ['pending', 'verified', 'active'];
 const CARD_AVATAR_MAX_LENGTH = 400000;
 const CREATED_AT_MAX_LENGTH = 40;
 
+// Phone numbers (phone, phone2, additionalPhones) are handled by mergeMemberPhones instead
 const OPTIONAL_MEMBER_STRING_FIELDS = [
   'fullName',
   'province',
-  'phone',
   'discordUsername',
   'age',
   'ageCategory',
@@ -115,13 +122,13 @@ const OPTIONAL_MEMBER_STRING_FIELDS = [
   'memberNumber',
 ] as const;
 
-// Fields the Google Sheets import may refresh on an already matched member
+// Fields the Google Sheets import may refresh on an already matched member (phone numbers are merged
+// separately through mergeMemberPhones)
 const IMPORT_COMPARE_FIELDS = [
   'name',
   'cosplayName',
   'fullName',
   'email',
-  'phone',
   'discordUsername',
   'country',
   'province',
@@ -343,6 +350,12 @@ export function buildMemberPayload(member: Omit<Member, 'id'>): Record<string, u
     if (value) payload[field] = value;
   }
 
+  // Phone numbers: trimmed, clamped to 30, de-duplicated; phone2 and up to 3 additionalPhones
+  const phones = mergeMemberPhones(null, member);
+  if (phones.phone) payload.phone = phones.phone;
+  if (phones.phone2) payload.phone2 = phones.phone2;
+  if (phones.additionalPhones?.length) payload.additionalPhones = phones.additionalPhones;
+
   // A truncated data URL is useless, so an oversized avatar is dropped instead of clamped
   if (typeof member.avatarUrl === 'string' && member.avatarUrl && member.avatarUrl.length <= L.avatarUrl) {
     payload.avatarUrl = member.avatarUrl;
@@ -368,6 +381,18 @@ export function sanitizeMemberProfileUpdate(fields: Partial<Member>): Record<str
         throw new Error('Ukuran foto profil terlalu besar. Silakan pilih foto lain. / Profile photo is too large.');
       }
       clean.avatarUrl = avatar;
+      continue;
+    }
+
+    if (key === 'additionalPhones') {
+      // A list (never clamped as a string): up to 3 non-empty strings of at most 30 characters
+      clean.additionalPhones = Array.isArray(value)
+        ? value
+            .filter((p): p is string => typeof p === 'string')
+            .map((p) => p.trim().slice(0, MEMBER_FIELD_LIMITS.phone))
+            .filter((p) => p.length > 0)
+            .slice(0, MAX_ADDITIONAL_PHONES)
+        : [];
       continue;
     }
 
@@ -496,9 +521,11 @@ export function memberCardToMember(card: MemberCard): Member {
  *   user, and only while that ID has no card yet (later registrations by the main account, e.g.
  *   admin tests, get a regular ID instead of overwriting the main card);
  * - everyone else: chronological ID (generate16DigitUserId) whose memberCards doc does not exist.
+ * `allowMainAccount: false` (a registration the main account creates for SOMEONE ELSE, not linked to
+ * it) never receives the main account ID.
  */
-export async function assignNewUserId16(): Promise<string> {
-  if (isMainAdminUser(auth.currentUser)) {
+export async function assignNewUserId16(options?: { allowMainAccount?: boolean }): Promise<string> {
+  if (options?.allowMainAccount !== false && isMainAdminUser(auth.currentUser)) {
     const mainCard = await getDoc(doc(db, MEMBER_CARDS_COLLECTION, MAIN_ACCOUNT_UID));
     if (!mainCard.exists()) return MAIN_ACCOUNT_UID;
   }
@@ -517,10 +544,17 @@ export async function assignNewUserId16(): Promise<string> {
  * Public registration: writes members/{kc_...} and its public memberCards/{userId16} in one batch.
  * The KCC ID is always assigned here (never taken from form input). Errors are rethrown, except the
  * 10 s write timeout (the write stays queued).
+ * The new doc is linked (authUid) to the signed-in user unless `options.linkToCurrentUser` is false
+ * (an admin registering someone else must not own that registration).
  */
-export async function registerMember(member: Omit<Member, 'id' | 'userId16'>): Promise<Member> {
-  const userId16 = await assignNewUserId16();
-  const currentUid = auth.currentUser?.uid;
+export async function registerMember(
+  member: Omit<Member, 'id' | 'userId16'>,
+  options?: { linkToCurrentUser?: boolean }
+): Promise<Member> {
+  const linkToCurrentUser = options?.linkToCurrentUser !== false;
+  // Only a registration linked to the main account may receive its 0000 ID
+  const userId16 = await assignNewUserId16({ allowMainAccount: linkToCurrentUser });
+  const currentUid = linkToCurrentUser ? auth.currentUser?.uid : undefined;
   const id = `kc_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
 
   const payload = buildMemberPayload({
@@ -613,9 +647,11 @@ export async function bulkImportMembers(
     const m = newMembers[i];
     const mName = m.name || m.cosplayName || 'Member';
 
-    // Check if double filled form with same/similar data exists
+    // Check if double filled form with same/similar data exists (member fills form > 1x)
     const matched = findDuplicateMember(existingList, {
       phone: m.phone,
+      phone2: m.phone2,
+      additionalPhones: m.additionalPhones,
       discordUsername: m.discordUsername,
       name: mName,
       cosplayName: mName,
@@ -633,6 +669,19 @@ export async function bulkImportMembers(
         if (field === 'email') incoming = incoming.toLowerCase();
         const current = matched[field] === undefined || matched[field] === null ? '' : String(matched[field]);
         if (incoming !== current) changes[field] = incoming;
+      }
+
+      // Phone numbers are merged, not replaced: the existing primary stays primary and a new number
+      // from the sheet is kept as phone2 / additionalPhones
+      const phones = mergeMemberPhones(matched, m);
+      if ((phones.phone || '') !== (matched.phone || '')) changes.phone = phones.phone || '';
+      if ((phones.phone2 || '') !== (matched.phone2 || '')) changes.phone2 = phones.phone2 || '';
+      const extra = phones.additionalPhones || [];
+      if (
+        JSON.stringify(extra) !==
+        JSON.stringify(Array.isArray(matched.additionalPhones) ? matched.additionalPhones : [])
+      ) {
+        changes.additionalPhones = extra;
       }
 
       if (Object.keys(changes).length === 0) {
@@ -812,25 +861,284 @@ export async function reassignMemberUserId16(member: Member, allMembers: Member[
   }
 
   if (isValidUserId16(oldId) && oldId !== newId) {
-    try {
-      const holders = await getDocsFromServer(
-        query(collection(db, MEMBERS_COLLECTION), where('userId16', '==', oldId), limit(1))
-      );
-      if (holders.empty) {
-        await deleteDoc(doc(db, MEMBER_CARDS_COLLECTION, oldId));
-      } else {
-        // The old card may still show this member's data: rebuild it for the remaining holder
-        const holder = holders.docs[0];
-        await upsertMemberCard(
-          buildMemberCard(normalizeMember(holder.id, holder.data() as Partial<Omit<Member, 'id'>>))
-        );
-      }
-    } catch (error) {
-      console.warn(`Could not clean up the old member card ${oldId}:`, error);
-    }
+    await releaseMemberCard(oldId);
   }
 
   return newId;
+}
+
+/**
+ * Best effort (admin), after a member stopped holding `oldId`: deletes memberCards/{oldId} when no member
+ * holds that KCC ID any more, otherwise rebuilds the card for the remaining holder (the old card may
+ * still show the previous member's data). Failures are only logged.
+ */
+async function releaseMemberCard(oldId: string): Promise<void> {
+  if (!isValidUserId16(oldId)) return;
+  try {
+    const holders = await getDocsFromServer(
+      query(collection(db, MEMBERS_COLLECTION), where('userId16', '==', oldId), limit(1))
+    );
+    if (holders.empty) {
+      await deleteDoc(doc(db, MEMBER_CARDS_COLLECTION, oldId));
+    } else {
+      const holder = holders.docs[0];
+      await upsertMemberCard(
+        buildMemberCard(normalizeMember(holder.id, holder.data() as Partial<Omit<Member, 'id'>>))
+      );
+    }
+  } catch (error) {
+    console.warn(`Could not clean up the old member card ${oldId}:`, error);
+  }
+}
+
+// Text fields a re-submission (or an admin merge) may refresh on an existing registration
+const MERGE_TEXT_FIELDS = [
+  'fullName',
+  'discordUsername',
+  'country',
+  'province',
+  'city',
+  'age',
+  'ageCategory',
+  'birthday',
+  'primaryRole',
+  'fandom',
+  'experience',
+  'socialMedia',
+  'portfolioUrl',
+  'reason',
+] as const;
+
+function storedText(value: unknown): string {
+  return value === undefined || value === null ? '' : String(value);
+}
+
+/**
+ * Update for an existing registration from a newer submission of the same person: only CHANGED,
+ * NON-EMPTY, clamped values, the incoming value wins. Phone numbers are merged (existing first, new
+ * numbers become phone2 / additionalPhones). The email is only added (allowEmail) when the existing
+ * record has none. Never includes userId16, authUid, createdAt, source, status, memberNumber or id, so
+ * an owner's update stays within firestore.rules memberOwnerEditableKeys().
+ * `fillOnly`: existing non-empty values are kept (only empty fields are filled, phones still merged).
+ */
+export function buildMemberMergeUpdate(
+  existing: Member,
+  incoming: Partial<Member>,
+  options?: { allowEmail?: boolean; fillOnly?: boolean }
+): Record<string, unknown> {
+  const L = MEMBER_FIELD_LIMITS;
+  const fillOnly = !!options?.fillOnly;
+  const src = (incoming || {}) as Record<string, unknown>;
+  const current = (existing || {}) as unknown as Record<string, unknown>;
+  const updates: Record<string, unknown> = {};
+
+  // name and cosplayName always mirror each other
+  const name = clampString(incoming?.name || incoming?.cosplayName, L.name);
+  if (name) {
+    const currentName = storedText(current.name);
+    const currentCosname = storedText(current.cosplayName);
+    const hasName = !!(currentName || currentCosname);
+    if ((!fillOnly || !hasName) && (name !== currentName || name !== currentCosname)) {
+      updates.name = name;
+      updates.cosplayName = name;
+    }
+  }
+
+  for (const field of MERGE_TEXT_FIELDS) {
+    const value = clampString(src[field], L[field]);
+    if (!value) continue;
+    const before = storedText(current[field]);
+    if (fillOnly && before) continue;
+    if (value !== before) updates[field] = value;
+  }
+
+  // A truncated data URL is useless, so an oversized avatar is ignored instead of clamped
+  const avatar = src.avatarUrl;
+  if (typeof avatar === 'string' && avatar.length > 0 && avatar.length <= L.avatarUrl) {
+    const before = storedText(current.avatarUrl);
+    if (avatar !== before && !(fillOnly && before)) updates.avatarUrl = avatar;
+  }
+
+  const phones = mergeMemberPhones(existing, incoming);
+  if (phones.phone && phones.phone !== storedText(current.phone)) updates.phone = phones.phone;
+  if (phones.phone2 && phones.phone2 !== storedText(current.phone2)) updates.phone2 = phones.phone2;
+  const extra = phones.additionalPhones || [];
+  const currentExtra = Array.isArray(current.additionalPhones) ? current.additionalPhones : [];
+  // [] is only written to drop extra numbers that are now duplicates of phone / phone2
+  if ((extra.length > 0 || currentExtra.length > 0) && JSON.stringify(extra) !== JSON.stringify(currentExtra)) {
+    updates.additionalPhones = extra;
+  }
+
+  if (options?.allowEmail && !storedText(current.email).trim()) {
+    const email = clampString(incoming?.email, L.email).toLowerCase();
+    if (email && !isFakePlaceholderEmail(email)) updates.email = email;
+  }
+
+  return updates;
+}
+
+/**
+ * Writes `updates` to members/{member.id} (errors rethrown, except the 10 s timeout: the write stays
+ * queued), then refreshes the public card (best effort). Returns the updated member.
+ */
+export async function updateMemberWithCard(member: Member, updates: Record<string, unknown>): Promise<Member> {
+  if (!updates || Object.keys(updates).length === 0) return member;
+
+  try {
+    await commitWithTimeout(updateDoc(doc(db, MEMBERS_COLLECTION, member.id), updates));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${MEMBERS_COLLECTION}/${member.id}`);
+  }
+
+  const updated = { ...member, ...(updates as Partial<Member>) } as Member;
+  if (isValidUserId16(updated.userId16)) {
+    try {
+      await upsertMemberCard(buildMemberCard(updated));
+    } catch (error) {
+      console.warn('Registration saved, but the public member card could not be refreshed:', error);
+    }
+  }
+  return updated;
+}
+
+// Keeper preference: the main account's doc, then real registrations, then sign-in placeholders
+// (members/{uid} auto-created at sign-in, which hold no form data)
+function duplicateKeeperRank(m: Member): number {
+  if (m.userId16 === MAIN_ACCOUNT_UID && m.authUid) return 0;
+  if (m.authUid && m.id === m.authUid) return 2;
+  return 1;
+}
+
+/**
+ * Admin UI (on demand, O(n^2)): groups registrations that belong to the same person (shared WhatsApp
+ * number, Discord, email, social media handle or non-generic name, see findDuplicateMember). The
+ * keeper of each group is the main account doc or else the earliest registration; records linked to
+ * two different sign-in accounts are never grouped. Only groups with duplicates are returned, sorted
+ * by the keeper's createdAt.
+ */
+export function findDuplicateRegistrationGroups(members: Member[]): DuplicateRegistrationGroup[] {
+  const ordered = [...(members || [])].sort(
+    (a, b) =>
+      duplicateKeeperRank(a) - duplicateKeeperRank(b) || compareByCreatedAtThenId(a.id, a.createdAt, b.id, b.createdAt)
+  );
+
+  const keepers: Member[] = [];
+  const groups = new Map<string, DuplicateRegistrationGroup>();
+
+  for (const m of ordered) {
+    const match = findDuplicateMember(keepers, {
+      email: m.email,
+      phone: m.phone,
+      phone2: m.phone2,
+      additionalPhones: m.additionalPhones,
+      discordUsername: m.discordUsername,
+      name: m.name || m.cosplayName,
+      cosplayName: m.cosplayName,
+      socialMedia: m.socialMedia,
+    });
+
+    if (match && !(match.authUid && m.authUid && match.authUid !== m.authUid)) {
+      let group = groups.get(match.id);
+      if (!group) {
+        group = { keeper: match, duplicates: [] };
+        groups.set(match.id, group);
+      }
+      group.duplicates.push(m);
+    } else {
+      keepers.push(m);
+    }
+  }
+
+  return Array.from(groups.values())
+    .filter((g) => g.duplicates.length > 0)
+    .sort((a, b) => compareByCreatedAtThenId(a.keeper.id, a.keeper.createdAt, b.keeper.id, b.keeper.createdAt));
+}
+
+/**
+ * Admin: merges a duplicate registration into the keeper. The keeper keeps its KCC ID and receives the
+ * newer data and every WhatsApp number (plus the duplicate's sign-in link when it has none); then the
+ * duplicate doc is deleted and its card released. Both docs are re-read from the server first.
+ * Returns the merged keeper.
+ */
+export async function mergeDuplicateRegistration(keeper: Member, duplicate: Member): Promise<Member> {
+  if (!(await checkIsAdminUser(auth.currentUser))) {
+    throw new Error('Hanya admin yang dapat menggabungkan data. / Admin only.');
+  }
+  if (!keeper || !duplicate || keeper.id === duplicate.id) {
+    throw new Error('Data yang sama tidak dapat digabungkan dengan dirinya sendiri. / A record cannot be merged into itself.');
+  }
+
+  const keeperRef = doc(db, MEMBERS_COLLECTION, keeper.id);
+  const duplicateRef = doc(db, MEMBERS_COLLECTION, duplicate.id);
+
+  const [keeperSnap, duplicateSnap] = await Promise.all([
+    getDocFromServer(keeperRef),
+    getDocFromServer(duplicateRef),
+  ]).catch((error: unknown) => handleFirestoreError(error, OperationType.GET, `${MEMBERS_COLLECTION}/${duplicate.id}`));
+  if (!keeperSnap.exists() || !duplicateSnap.exists()) {
+    throw new Error('Data anggota sudah tidak ada (mungkin sudah digabung atau dihapus). / Member record no longer exists.');
+  }
+
+  const keeperRaw = keeperSnap.data() as Partial<Omit<Member, 'id'>>;
+  const duplicateRaw = duplicateSnap.data() as Partial<Omit<Member, 'id'>>;
+  const keeperAuthUid = typeof keeperRaw.authUid === 'string' ? keeperRaw.authUid : '';
+  const duplicateAuthUid = typeof duplicateRaw.authUid === 'string' ? duplicateRaw.authUid : '';
+  if (keeperAuthUid && duplicateAuthUid && keeperAuthUid !== duplicateAuthUid) {
+    throw new Error(
+      'Kedua data terhubung ke akun login yang berbeda, sehingga tidak dapat digabung. / Both records are linked to different sign-in accounts and cannot be merged.'
+    );
+  }
+
+  const keeperFresh = normalizeMember(keeper.id, keeperRaw);
+  // The duplicate's stored values (normalized, but without normalizeMember's 'Member' name fallback,
+  // which must never overwrite the keeper's name)
+  const duplicateFresh: Partial<Member> = {
+    ...duplicateRaw,
+    email: normalizeMember(duplicate.id, duplicateRaw).email,
+  };
+
+  // The newer submission's data wins. A duplicate that is older than the keeper (e.g. the main
+  // account doc is kept) or a bare sign-in placeholder only fills empty fields.
+  const duplicateIsNewer =
+    compareByCreatedAtThenId(keeper.id, keeperRaw.createdAt, duplicate.id, duplicateRaw.createdAt) < 0;
+  const duplicateIsPlaceholder = !!duplicateAuthUid && duplicate.id === duplicateAuthUid;
+  const updates = buildMemberMergeUpdate(keeperFresh, duplicateFresh, {
+    allowEmail: true,
+    fillOnly: !duplicateIsNewer || duplicateIsPlaceholder,
+  });
+  if (!keeperAuthUid && duplicateAuthUid) {
+    updates.authUid = duplicateAuthUid.slice(0, 128);
+  }
+
+  const keeperStoredId =
+    typeof keeperRaw.userId16 === 'string' && isValidUserId16(keeperRaw.userId16) ? keeperRaw.userId16 : null;
+  const duplicateStoredId =
+    typeof duplicateRaw.userId16 === 'string' && isValidUserId16(duplicateRaw.userId16) ? duplicateRaw.userId16 : null;
+  const merged = normalizeMember(keeper.id, { ...keeperRaw, ...(updates as Partial<Omit<Member, 'id'>>) });
+
+  // <= 3 operations (admin batches stay far below the rules' 20 exists() calls)
+  const batch = writeBatch(db);
+  if (Object.keys(updates).length > 0) {
+    batch.update(keeperRef, updates);
+  }
+  if (keeperStoredId) {
+    batch.set(
+      doc(db, MEMBER_CARDS_COLLECTION, keeperStoredId),
+      memberCardPayload(buildMemberCard({ ...merged, userId16: keeperStoredId }))
+    );
+  }
+  batch.delete(duplicateRef);
+  try {
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `${MEMBERS_COLLECTION}/${keeper.id}`);
+  }
+
+  if (duplicateStoredId && duplicateStoredId !== keeperStoredId) {
+    await releaseMemberCard(duplicateStoredId);
+  }
+
+  return merged;
 }
 
 interface RepairRow {

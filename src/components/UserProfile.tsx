@@ -49,6 +49,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     fullName: member.fullName || '',
     cosplayName: initialName,
     phone: member.phone || '',
+    phone2: member.phone2 || '',
     discordUsername: member.discordUsername || '',
     ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
     age: member.age || '',
@@ -76,6 +77,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       fullName: member.fullName || '',
       cosplayName: currentName,
       phone: member.phone || '',
+      phone2: member.phone2 || '',
       discordUsername: member.discordUsername || '',
       ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
       age: member.age || '',
@@ -315,6 +317,21 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.phone}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Nomor WhatsApp Kedua / Cadangan (Opsional) */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                Nomor WhatsApp Kedua / Cadangan <span className="text-slate-500 font-normal">(Opsional)</span>
+              </label>
+              <input
+                type="tel"
+                placeholder="Contoh: 0812... atau +62 857..."
+                maxLength={MEMBER_FIELD_LIMITS.phone2}
+                value={formData.phone2}
+                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
               />
             </div>

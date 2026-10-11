@@ -39,6 +39,20 @@
           "description": "WhatsApp or contact phone number",
           "maxLength": 30
         },
+        "phone2": {
+          "type": "string",
+          "description": "Secondary WhatsApp or alternate contact phone number",
+          "maxLength": 30
+        },
+        "additionalPhones": {
+          "type": "array",
+          "description": "Array of additional phone numbers",
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "maxLength": 30
+          }
+        },
         "discordUsername": {
           "type": "string",
           "description": "Discord username or handle",
@@ -142,7 +156,7 @@
         "authorName": {
           "type": "string",
           "description": "Cosplay stage name of uploader",
-          "maxLength": 60
+          "maxLength": 100
         },
         "photoUrl": {
           "type": "string",
@@ -157,27 +171,27 @@
         "character": {
           "type": "string",
           "description": "Cosplayed character name",
-          "maxLength": 80
+          "maxLength": 100
         },
         "series": {
           "type": "string",
           "description": "Anime, manga, or game series",
-          "maxLength": 80
+          "maxLength": 100
         },
         "event": {
           "type": "string",
           "description": "Event or photoshoot location",
-          "maxLength": 100
+          "maxLength": 120
         },
         "photographer": {
           "type": "string",
           "description": "Photographer credit",
-          "maxLength": 80
+          "maxLength": 100
         },
         "caption": {
           "type": "string",
           "description": "Photo caption or description",
-          "maxLength": 500
+          "maxLength": 1000
         },
         "likesCount": {
           "type": "number",

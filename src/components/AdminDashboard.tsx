@@ -26,7 +26,13 @@ import {
   LogOut,
   Wrench,
 } from 'lucide-react';
-import type { Member, SyncLog, MemberRepairReport, SubscriptionErrorKind } from '../types';
+import type {
+  Member,
+  SyncLog,
+  MemberRepairReport,
+  SubscriptionErrorKind,
+  DuplicateRegistrationGroup,
+} from '../types';
 import {
   format16DigitUserId,
   isMainAccountUserId,
@@ -39,6 +45,8 @@ import {
   listReservedIdHolders,
   reassignMemberUserId16,
   repairMemberIdsAndCards,
+  findDuplicateRegistrationGroups,
+  mergeDuplicateRegistration,
 } from '../lib/firestoreService';
 import { isMainAdminUser, describeFirestoreError } from '../lib/firebase';
 import { GoogleSheetsSync } from './GoogleSheetsSync';
@@ -59,7 +67,7 @@ interface AdminDashboardProps {
   currentLang: LanguageCode;
   onSelectMember: (member: Member) => void;
   onOpenAuth: () => void; // opens AuthModal (Google sign-in)
-  onConnectSheets: () => void; // scoped googleSignIn (Drive + Sheets)
+  onConnectSheets: () => void | Promise<void>; // scoped googleSignIn (Drive + Sheets), owned by App
   sheetsConnectError: string | null;
   onLogout: () => void;
 }
@@ -144,6 +152,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [reassigningId, setReassigningId] = useState<string | null>(null);
   const [reassignResult, setReassignResult] = useState<{ isError: boolean; message: string } | null>(null);
 
+  // Duplicate registrations (same person filled the form more than once). Scanned on demand only.
+  const [duplicateGroups, setDuplicateGroups] = useState<DuplicateRegistrationGroup[] | null>(null);
+  const [mergingId, setMergingId] = useState<string | null>(null);
+  const [mergeResult, setMergeResult] = useState<{ isError: boolean; message: string } | null>(null);
+
   // Members holding reserved IDs (0000 0000 0000 0000 – 0000 0000 0000 0100), always computed live.
   // The signed-in main account's own doc is excluded.
   const mainAdminUid = user && isMainAdminUser(user) ? user.uid : null;
@@ -151,6 +164,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     () => listReservedIdHolders(members, mainAdminUid),
     [members, mainAdminUid]
   );
+
+  // Number of members whose KCC ID (digits only) is shared with at least one other member.
+  // Display only; "Jalankan Perbaikan" (repairMemberIdsAndCards) is the single repair entry point.
+  const duplicateIdCount = useMemo(() => {
+    const counts = new Map<string, number>();
+    members.forEach((m) => {
+      const clean = (m.userId16 || '').replace(/\D/g, '');
+      if (clean) counts.set(clean, (counts.get(clean) || 0) + 1);
+    });
+    let total = 0;
+    counts.forEach((count) => {
+      if (count > 1) total += count;
+    });
+    return total;
+  }, [members]);
 
   // Authorization: real Firebase identity resolved by App (verified cosplaysehat@gmail.com or admins/{uid}).
   const isAuthorized = isAdmin;
@@ -237,6 +265,58 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // O(n²) duplicate-person scan: on demand only, never on every members snapshot.
+  const handleScanDuplicateRegistrations = () => {
+    setDuplicateGroups(findDuplicateRegistrationGroups(members));
+    setMergeResult(null);
+  };
+
+  const handleMergeDuplicate = async (group: DuplicateRegistrationGroup, dup: Member) => {
+    if (mergingId) return;
+    const keeper = group.keeper;
+    const keeperName = keeper.name || keeper.cosplayName || keeper.id;
+    const dupName = dup.name || dup.cosplayName || dup.id;
+    const confirmMerge = window.confirm(
+      `Gabungkan "${dupName}" (${format16DigitUserId(dup.userId16)}) ke "${keeperName}" (${format16DigitUserId(keeper.userId16)})?\n\nData terbaru & nomor WhatsApp disalin ke pendaftaran paling awal, lalu data ganda dihapus permanen. Lanjutkan?`
+    );
+    if (!confirmMerge) return;
+
+    setMergingId(dup.id);
+    setMergeResult(null);
+    try {
+      const merged = await mergeDuplicateRegistration(keeper, dup);
+      setDuplicateGroups((prev) =>
+        prev
+          ? prev
+              .map((g) =>
+                g.keeper.id === keeper.id
+                  ? { keeper: merged, duplicates: g.duplicates.filter((d) => d.id !== dup.id) }
+                  : g
+              )
+              .filter((g) => g.duplicates.length > 0)
+          : prev
+      );
+      setMergeResult({
+        isError: false,
+        message: `"${dupName}" digabung ke "${merged.name || merged.cosplayName || keeperName}" — KCC ID ${format16DigitUserId(merged.userId16)} tetap.`,
+      });
+    } catch (e) {
+      console.error('Merge duplicate registration error:', e);
+      setMergeResult({
+        isError: true,
+        message: `${dupName}: ${describeFirestoreError(e, isId)}`,
+      });
+    } finally {
+      setMergingId(null);
+    }
+  };
+
+  // Every WhatsApp number of a member (primary, backup, additional), display only
+  const getMemberPhones = (m: Member): string[] =>
+    [m.phone, m.phone2, ...(Array.isArray(m.additionalPhones) ? m.additionalPhones : [])].filter(
+      (p): p is string => typeof p === 'string' && p.trim() !== ''
+    );
+
   const handlePurgeAll = async () => {
     const confirmCode = window.prompt(
       "PERINGATAN KERAS: Tindakan ini akan MENGHAPUS SEMUA DATA ANGGOTA dari database Firestore secara permanen.\n\nKetik 'PURGE' (huruf besar) untuk konfirmasi pembersihan database:"
@@ -269,7 +349,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'KCC ID (16 Digit)',
       'Cosname / Alias',
       'Nama Legal',
-      'WhatsApp',
+      'WhatsApp Utama',
+      'WhatsApp Cadangan',
       'Username Discord',
       'Email',
       'Kategori Usia',
@@ -288,7 +369,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       `"${m.userId16 || ''}"`,
       `"${(m.cosplayName || '').replace(/"/g, '""')}"`,
       `"${(m.fullName || '').replace(/"/g, '""')}"`,
-      `"${m.phone || ''}"`,
+      `"${(m.phone || '').replace(/"/g, '""')}"`,
+      `"${[m.phone2, ...(Array.isArray(m.additionalPhones) ? m.additionalPhones : [])]
+        .filter(Boolean)
+        .join(' / ')
+        .replace(/"/g, '""')}"`,
       `"${(m.discordUsername || '').replace(/"/g, '""')}"`,
       `"${m.email || ''}"`,
       `"${m.ageCategory || ''}"`,
@@ -340,6 +425,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         (m.email && m.email.toLowerCase().includes(q)) ||
         (m.userId16 && m.userId16.includes(q)) ||
         (m.phone && m.phone.includes(q)) ||
+        (m.phone2 && m.phone2.includes(q)) ||
+        (Array.isArray(m.additionalPhones) &&
+          m.additionalPhones.some((p) => typeof p === 'string' && p.includes(q))) ||
         (m.discordUsername && m.discordUsername.toLowerCase().includes(q)) ||
         (m.fandom && m.fandom.toLowerCase().includes(q)) ||
         (m.city && m.city.toLowerCase().includes(q));
@@ -695,6 +783,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     lama), menyimpan KCC ID yang belum tersimpan, dan membangun ulang koleksi publik memberCards untuk
                     pencarian kartu. Aman dijalankan berulang kali.
                   </p>
+                  {duplicateIdCount > 0 ? (
+                    <p className="text-xs font-semibold text-amber-300 mt-2 flex items-start gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span>
+                        Terdeteksi {duplicateIdCount} anggota dengan KCC ID ganda — tekan "Jalankan Perbaikan".
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-xs font-semibold text-emerald-300 mt-2 flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>Semua KCC ID unik.</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -832,6 +933,126 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </p>
               )}
             </div>
+          </div>
+
+          {/* DUPLICATE REGISTRATIONS: same person filled the form more than once (admin merge, on demand) */}
+          <div className="liquid-glass-card rounded-3xl p-6 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Pendaftaran Ganda (Orang yang Sama)</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
+                    Anggota yang mengisi formulir lebih dari sekali (nomor WhatsApp, Discord, email, atau media sosial
+                    yang sama). "Gabungkan" menyimpan data terbaru dan semua nomor WhatsApp ke pendaftaran paling awal
+                    (KCC ID-nya tetap), lalu menghapus data ganda beserta kartunya. Periksa dulu sebelum menggabungkan.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleScanDuplicateRegistrations}
+                disabled={mergingId !== null}
+                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Pindai Pendaftaran Ganda</span>
+              </button>
+            </div>
+
+            {mergeResult && (
+              <p
+                className={`mt-4 text-xs font-mono ${mergeResult.isError ? 'text-rose-300' : 'text-emerald-300'}`}
+              >
+                {mergeResult.isError ? 'Gagal: ' : 'Berhasil: '}
+                {mergeResult.message}
+              </p>
+            )}
+
+            {duplicateGroups !== null &&
+              (duplicateGroups.length === 0 ? (
+                <p className="mt-4 text-xs text-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Tidak ada pendaftaran ganda yang terdeteksi.</span>
+                </p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {duplicateGroups.map((group) => {
+                    const keeper = group.keeper;
+                    const keeperPhones = getMemberPhones(keeper);
+                    return (
+                      <div
+                        key={keeper.id}
+                        className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                          <div className="min-w-0 space-y-0.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                              <CheckCircle className="w-3 h-3" />
+                              <span>Dipertahankan (KCC ID tetap)</span>
+                            </span>
+                            <p className="font-bold text-white text-sm truncate">
+                              {keeper.name || keeper.cosplayName || keeper.id}
+                            </p>
+                            <p className="text-[11px] font-mono font-bold text-amber-300">
+                              {format16DigitUserId(keeper.userId16)}
+                            </p>
+                            <p className="text-[11px] text-emerald-300/90 font-mono break-all">
+                              {keeperPhones.length > 0 ? keeperPhones.join(' / ') : '—'}
+                            </p>
+                            {keeper.email && (
+                              <p className="text-[11px] text-slate-400 break-all">{keeper.email}</p>
+                            )}
+                            <p className="text-[11px] text-slate-500">
+                              {keeper.createdAt ? new Date(keeper.createdAt).toLocaleString() : '-'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {group.duplicates.map((dup) => {
+                          const dupPhones = getMemberPhones(dup);
+                          return (
+                            <div
+                              key={dup.id}
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-slate-800"
+                            >
+                              <div className="min-w-0 space-y-0.5">
+                                <p className="font-semibold text-slate-200 text-sm truncate">
+                                  {dup.name || dup.cosplayName || dup.id}
+                                </p>
+                                <p className="text-[11px] font-mono text-slate-300">
+                                  {format16DigitUserId(dup.userId16)}
+                                </p>
+                                <p className="text-[11px] text-emerald-300/80 font-mono break-all">
+                                  {dupPhones.length > 0 ? dupPhones.join(' / ') : '—'}
+                                </p>
+                                {dup.email && <p className="text-[11px] text-slate-400 break-all">{dup.email}</p>}
+                                <p className="text-[11px] text-slate-500">
+                                  {dup.createdAt ? new Date(dup.createdAt).toLocaleString() : '-'}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => handleMergeDuplicate(group, dup)}
+                                disabled={mergingId !== null}
+                                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                              >
+                                <RefreshCw className={`w-3.5 h-3.5 ${mergingId === dup.id ? 'animate-spin' : ''}`} />
+                                <span>
+                                  {mergingId === dup.id
+                                    ? 'Menggabungkan...'
+                                    : `Gabungkan ke ${format16DigitUserId(keeper.userId16)}`}
+                                </span>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
           </div>
 
           {/* Filters and Controls */}
@@ -1048,12 +1269,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
 
                         <td className="py-4 px-4">
-                          {m.phone ? (
-                            <p className="text-emerald-400 font-mono font-bold text-xs">{m.phone}</p>
-                          ) : (
-                            <p className="text-slate-500 italic text-xs">—</p>
-                          )}
-                          {m.email && <p className="text-[11px] text-slate-400">{m.email}</p>}
+                          <div className="space-y-0.5">
+                            {m.phone ? (
+                              <p className="text-emerald-400 font-mono font-bold text-xs">{m.phone}</p>
+                            ) : (
+                              <p className="text-slate-500 italic text-xs">—</p>
+                            )}
+                            {m.phone2 && (
+                              <p className="text-emerald-300/80 font-mono text-[11px] flex items-center gap-1">
+                                <span className="text-[9px] px-1 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-sans font-semibold">WA 2</span>
+                                <span>{m.phone2}</span>
+                              </p>
+                            )}
+                            {Array.isArray(m.additionalPhones) &&
+                              m.additionalPhones
+                                .filter((p): p is string => typeof p === 'string' && p.trim() !== '')
+                                .map((p, i) => (
+                                  <p
+                                    key={`${m.id}_wa_${i}`}
+                                    className="text-emerald-300/70 font-mono text-[11px] flex items-center gap-1"
+                                  >
+                                    <span className="text-[9px] px-1 py-0.2 bg-emerald-500/15 text-emerald-300 rounded font-sans font-semibold">WA+</span>
+                                    <span>{p}</span>
+                                  </p>
+                                ))}
+                            {m.email && <p className="text-[11px] text-slate-400">{m.email}</p>}
+                          </div>
                         </td>
 
                         <td className="py-4 px-4">

@@ -70,28 +70,40 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
       const finalEvent = (
         event === 'Lainnya (Tulis Sendiri)' && customEvent.trim() ? customEvent.trim() : event
       ).slice(0, PHOTO_FIELD_LIMITS.event);
-      const authorAlias = currentMember.name || currentMember.cosplayName || '';
+      const authorAlias = (currentMember.name || currentMember.cosplayName || '').trim();
 
+      const authorName =
+        (currentMember.name || currentMember.cosplayName || currentMember.fullName || 'Member')
+          .trim()
+          .slice(0, PHOTO_FIELD_LIMITS.authorName) || 'Member';
+
+      // Only the required keys go in the literal; optional keys are added below only when they have a
+      // value, so the payload never carries `undefined` fields (Firestore rejects them).
       const newPhotoPayload: Omit<Photo, 'id'> = {
-        memberId: currentMember.id,
-        userId16: currentMember.userId16 || undefined,
-        authorName: (currentMember.name || currentMember.cosplayName || currentMember.fullName || 'Member').slice(
-          0,
-          PHOTO_FIELD_LIMITS.authorName
-        ),
-        authorCosname: authorAlias.slice(0, PHOTO_FIELD_LIMITS.authorCosname) || undefined,
-        authorNameAlias: authorAlias.slice(0, PHOTO_FIELD_LIMITS.authorNameAlias) || undefined,
-        authorAvatar: currentMember.avatarUrl,
+        authorName,
         photoUrl,
         title: title.trim().slice(0, PHOTO_FIELD_LIMITS.title),
         character: character.trim().slice(0, PHOTO_FIELD_LIMITS.character),
         series: series.trim().slice(0, PHOTO_FIELD_LIMITS.series),
         event: finalEvent,
-        photographer: photographer.trim().slice(0, PHOTO_FIELD_LIMITS.photographer) || undefined,
-        caption: caption.trim().slice(0, PHOTO_FIELD_LIMITS.caption) || undefined,
         likesCount: 0,
         createdAt: new Date().toISOString(),
       };
+
+      if (currentMember.id) newPhotoPayload.memberId = currentMember.id;
+      if (currentMember.userId16) newPhotoPayload.userId16 = currentMember.userId16;
+      if (authorAlias) {
+        newPhotoPayload.authorCosname = authorAlias.slice(0, PHOTO_FIELD_LIMITS.authorCosname);
+        newPhotoPayload.authorNameAlias = authorAlias.slice(0, PHOTO_FIELD_LIMITS.authorNameAlias);
+      }
+      // Large inline (data URL) avatars exceed the rules limit and are left out instead of failing the upload
+      if (currentMember.avatarUrl && currentMember.avatarUrl.length <= PHOTO_FIELD_LIMITS.authorAvatar) {
+        newPhotoPayload.authorAvatar = currentMember.avatarUrl;
+      }
+      const finalPhotographer = photographer.trim().slice(0, PHOTO_FIELD_LIMITS.photographer);
+      if (finalPhotographer) newPhotoPayload.photographer = finalPhotographer;
+      const finalCaption = caption.trim().slice(0, PHOTO_FIELD_LIMITS.caption);
+      if (finalCaption) newPhotoPayload.caption = finalCaption;
 
       const docId = await addPhotoToFirestore(newPhotoPayload);
       const created: Photo = {

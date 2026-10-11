@@ -17,6 +17,7 @@ import {
   Layers,
   Search,
   ExternalLink,
+  Key,
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import type {
@@ -39,7 +40,9 @@ import { describeFirestoreError } from '../lib/firebase';
 interface GoogleSheetsSyncProps {
   user: User | null;
   accessToken: string | null;
-  onLogin: () => void; // scoped Google sign-in (Drive + Sheets), not the regular AuthModal login
+  // Scoped Google sign-in (Drive + Sheets) owned by App.handleConnectSheets, not the regular AuthModal login.
+  // App stores the new token and sets connectError; this component never signs in by itself.
+  onLogin: () => void | Promise<void>;
   connectError?: string | null;
   syncLogs: SyncLog[];
   syncLogsError?: SubscriptionErrorKind | null;
@@ -72,6 +75,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     cosplayName: -1,
     email: -1,
     phone: -1,
+    phone2: -1,
     discordUsername: -1,
     country: -1,
     province: -1,
@@ -112,21 +116,39 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     }
   }, [accessToken]);
 
-  const loadUserSpreadsheets = async () => {
-    if (!accessToken) return;
+  const loadUserSpreadsheets = async (tokenToUse?: string) => {
+    const token = tokenToUse || accessToken;
+    if (!token) return;
     setIsLoadingSheets(true);
     setErrorMsg(null);
     try {
-      const files = await fetchSpreadsheetsFromDrive(accessToken);
+      const files = await fetchSpreadsheetsFromDrive(token);
       setSpreadsheets(files);
       if (files.length > 0 && !selectedSpreadsheetId) {
         setSelectedSpreadsheetId(files[0].id);
       }
     } catch (err: unknown) {
       console.warn('Drive list info:', err);
-      setErrorMsg(
-        'Gagal memuat daftar Google Sheet dari Drive. Pastikan izin akses Google Drive & Sheets telah diberikan (tekan "Hubungkan Ulang Google Sheets"), atau tempel URL spreadsheet secara manual.'
-      );
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes('403') || errMsg.includes('401') || errMsg.includes('insufficient')) {
+        setErrorMsg('Izin akses Google Drive & Sheets belum aktif untuk sesi ini atau token kedaluwarsa. Silakan klik tombol "Beri Izin / Hubungkan Google" untuk memberikan otorisasi.');
+      } else {
+        setErrorMsg(
+          `Gagal memuat daftar Google Sheet dari Drive: ${errMsg}. Anda juga bisa menempelkan URL spreadsheet secara manual.`
+        );
+      }
+    } finally {
+      setIsLoadingSheets(false);
+    }
+  };
+
+  // Single authorization flow: App.handleConnectSheets (googleSignIn with Drive + Sheets scopes) stores the
+  // token and reports errors through connectError; the accessToken effect above then reloads the sheet list.
+  const handleAuthorizeGoogle = async () => {
+    setIsLoadingSheets(true);
+    setErrorMsg(null);
+    try {
+      await onLogin();
     } finally {
       setIsLoadingSheets(false);
     }
@@ -145,8 +167,12 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   // Fetch sheet tabs and preview rows
   const handleInspectSpreadsheet = async (sheetIdToInspect?: string) => {
     const targetId = extractSheetId(sheetIdToInspect || customSheetUrl || selectedSpreadsheetId);
-    if (!targetId || !accessToken) {
-      setErrorMsg('Silakan pilih atau masukkan ID/URL Google Sheet dan pastikan sudah login Google.');
+    if (!targetId) {
+      setErrorMsg('Silakan pilih atau masukkan ID/URL Google Sheet terlebih dahulu.');
+      return;
+    }
+    if (!accessToken) {
+      setErrorMsg('Token autentikasi Google belum tersedia. Silakan klik "Beri Izin / Hubungkan Google" di bawah.');
       return;
     }
 
@@ -174,7 +200,12 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       }
     } catch (err: unknown) {
       console.error('Inspect error:', err);
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal mengakses data spreadsheet.');
+      const msg = err instanceof Error ? err.message : 'Gagal mengakses data spreadsheet.';
+      if (msg.includes('403') || msg.includes('401') || msg.includes('insufficient')) {
+        setErrorMsg('Izin akses spreadsheet belum diberikan atau sesi token telah kedaluwarsa. Pastikan akun Google Anda memiliki akses ke dokumen ini dan klik "Beri Izin / Hubungkan Google".');
+      } else {
+        setErrorMsg(msg);
+      }
     } finally {
       setIsLoadingSheets(false);
     }
@@ -347,12 +378,27 @@ function onFormSubmit(e) {
           </span>
           <span className="text-xs text-slate-400">Transisi Google Form ke Firebase</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-          Sinkronisasi Database Spreadsheet & Google Form
-        </h1>
-        <p className="text-slate-300 text-sm sm:text-base max-w-3xl mt-1">
-          Impor database spreadsheet anggota lama yang sudah ada dan aktifkan sinkronisasi real-time sehingga setiap kali ada anggota baru mengisi Google Form selama masa transisi, data otomatis masuk ke Firebase.
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              Sinkronisasi Database Spreadsheet & Google Form
+            </h1>
+            <p className="text-slate-300 text-sm sm:text-base max-w-3xl mt-1">
+              Impor database spreadsheet anggota lama yang sudah ada dan aktifkan sinkronisasi real-time sehingga setiap kali ada anggota baru mengisi Google Form selama masa transisi, data otomatis masuk ke Firebase.
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAuthorizeGoogle}
+              disabled={isLoadingSheets}
+              className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 hover:border-emerald-500/50 text-xs font-bold flex items-center space-x-2 transition-all shadow-md active:scale-95 disabled:opacity-50"
+            >
+              <Key className="w-4 h-4 text-emerald-400" />
+              <span>{accessToken ? 'Perbarui Izin Akun Google' : 'Hubungkan Akun Google'}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Auth Alert if token is not ready */}
@@ -367,7 +413,7 @@ function onFormSubmit(e) {
                 Koneksi Google Sheets & Drive Diperlukan
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed max-w-xl">
-                Untuk membaca spreadsheet Google Form Anda secara langsung, masuk menggunakan akun Google yang memiliki akses ke spreadsheet respon pendaftaran KawanCosplay.
+                Untuk membaca spreadsheet Google Form Anda secara langsung, hubungkan akun Google yang memiliki akses ke file spreadsheet pendaftaran KawanCosplay.
               </p>
               <p className="text-xs text-amber-200/90 leading-relaxed max-w-xl mt-2">
                 Pilih akun Google admin (cosplaysehat@gmail.com) dan izinkan akses Google Drive & Sheets.
@@ -382,11 +428,12 @@ function onFormSubmit(e) {
           </div>
 
           <button
-            onClick={onLogin}
-            className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 transition-transform active:scale-95"
+            onClick={handleAuthorizeGoogle}
+            disabled={isLoadingSheets}
+            className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 transition-transform active:scale-95 disabled:opacity-50"
           >
             <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-            <span>Hubungkan Google Sheets</span>
+            <span>Hubungkan Google Drive & Sheets</span>
           </button>
         </div>
       )}
@@ -407,18 +454,6 @@ function onFormSubmit(e) {
                   <p className="text-xs text-slate-400">Pilih dari Drive kamu atau tempel link URL Spreadsheet</p>
                 </div>
               </div>
-
-              {accessToken && (
-                <button
-                  type="button"
-                  onClick={onLogin}
-                  title="Ganti token akses jika izin Drive / Sheets belum diberikan"
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700 inline-flex items-center gap-1.5 transition-colors shrink-0"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Hubungkan Ulang Google Sheets</span>
-                </button>
-              )}
             </div>
 
             {accessToken && connectError && (
@@ -612,6 +647,25 @@ function onFormSubmit(e) {
                   </select>
                 </div>
 
+                {/* WhatsApp Cadangan / No WA 2 */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                    Kolom WhatsApp Cadangan / No WA 2 <span className="text-slate-500 font-normal">(Opsional)</span>
+                  </label>
+                  <select
+                    value={columnMapping.phone2 ?? -1}
+                    onChange={(e) => setColumnMapping({ ...columnMapping, phone2: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                  >
+                    <option value={-1}>-- Tidak Ada / Kosong --</option>
+                    {headers.map((h, i) => (
+                      <option key={i} value={i}>
+                        {i + 1}. {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Username Discord */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
@@ -731,13 +785,17 @@ function onFormSubmit(e) {
                           (columnMapping.fullName >= 0 ? r[columnMapping.fullName] : '') ||
                           '-';
                         const waVal = columnMapping.phone >= 0 ? r[columnMapping.phone] || '-' : '-';
+                        const wa2Val = columnMapping.phone2 !== undefined && columnMapping.phone2 >= 0 ? r[columnMapping.phone2] : '';
                         const dcVal =
                           columnMapping.discordUsername >= 0 ? r[columnMapping.discordUsername] || '-' : '-';
                         const cityVal = columnMapping.city >= 0 ? r[columnMapping.city] || '-' : '-';
                         return (
                           <tr key={idx}>
                             <td className="py-1.5 pr-3 font-semibold text-white">{nameVal}</td>
-                            <td className="py-1.5 px-3 font-mono text-emerald-400">{waVal}</td>
+                            <td className="py-1.5 px-3 font-mono text-emerald-400">
+                              <span>{waVal}</span>
+                              {wa2Val && <span className="block text-[10px] text-emerald-300/80">No 2: {wa2Val}</span>}
+                            </td>
                             <td className="py-1.5 px-3 font-mono text-indigo-300">{dcVal}</td>
                             <td className="py-1.5 pl-3 text-slate-400">{cityVal}</td>
                           </tr>
@@ -786,9 +844,25 @@ function onFormSubmit(e) {
           )}
 
           {errorMsg && (
-            <div className="p-4 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-              <span>{errorMsg}</span>
+            <div className="p-5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-rose-100">{errorMsg}</p>
+                  <p className="text-[11px] text-rose-300/80 mt-1">
+                    Tips: Anda juga bisa langsung menempelkan URL Spreadsheet Google Form di kolom input atas lalu klik &quot;Periksa&quot;.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleAuthorizeGoogle}
+                disabled={isLoadingSheets}
+                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shrink-0 flex items-center space-x-2 shadow-md transition-transform active:scale-95 disabled:opacity-50"
+              >
+                <Key className="w-4 h-4 text-emerald-600" />
+                <span>Beri Izin / Hubungkan Google</span>
+              </button>
             </div>
           )}
         </div>

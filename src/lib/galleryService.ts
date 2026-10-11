@@ -17,18 +17,22 @@ const PHOTOS_COLLECTION = 'photos';
 
 // Field limits identical to firestore.rules isValidPhoto()
 export const PHOTO_FIELD_LIMITS = {
-  authorName: 60,
+  authorName: 100,
   authorCosname: 80,
   authorNameAlias: 80,
   authorAvatar: 2048,
   title: 120,
-  character: 80,
-  series: 80,
-  event: 100,
-  photographer: 80,
-  caption: 500,
+  character: 100,
+  series: 100,
+  event: 120,
+  photographer: 100,
+  caption: 1000,
   photoUrl: 1000000,
 } as const;
+
+// A photo write still pending after this long is treated as queued (it syncs when the connection
+// recovers), so the upload spinner never hangs and the user does not retry into a duplicate.
+const PHOTO_WRITE_TIMEOUT_MS = 15000;
 
 export function subscribeToPhotos(
   onUpdate: (photos: Photo[]) => void,
@@ -78,15 +82,16 @@ export async function addPhotoToFirestore(photo: Omit<Photo, 'id'>): Promise<str
   const id = `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const photoDocRef = doc(db, PHOTOS_COLLECTION, id);
 
-  // Only the keys allowed by firestore.rules, clamped to the rule limits
+  // Only the keys allowed by firestore.rules, clamped to the rule limits. Optional keys are added only
+  // when non-empty, so the payload never carries undefined values.
   const payload: Record<string, unknown> = {
     authorUid: currentUser.uid,
     authorName: clip(photo.authorName, PHOTO_FIELD_LIMITS.authorName) || 'Member',
     photoUrl,
-    title: clip(photo.title, PHOTO_FIELD_LIMITS.title),
-    character: clip(photo.character, PHOTO_FIELD_LIMITS.character),
-    series: clip(photo.series, PHOTO_FIELD_LIMITS.series),
-    event: clip(photo.event, PHOTO_FIELD_LIMITS.event),
+    title: clip(photo.title, PHOTO_FIELD_LIMITS.title) || 'Cosplay Photo',
+    character: clip(photo.character, PHOTO_FIELD_LIMITS.character) || 'Original',
+    series: clip(photo.series, PHOTO_FIELD_LIMITS.series) || 'Cosplay',
+    event: clip(photo.event, PHOTO_FIELD_LIMITS.event) || 'Gathering',
     likesCount: 0,
     createdAt:
       typeof photo.createdAt === 'string' && photo.createdAt ? photo.createdAt.slice(0, 40) : new Date().toISOString(),
@@ -112,11 +117,24 @@ export async function addPhotoToFirestore(photo: Omit<Photo, 'id'>): Promise<str
   const caption = clip(photo.caption, PHOTO_FIELD_LIMITS.caption);
   if (caption) payload.caption = caption;
 
+  const write = setDoc(photoDocRef, payload);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<'timeout'>((resolve) => {
+    timer = setTimeout(() => resolve('timeout'), PHOTO_WRITE_TIMEOUT_MS);
+  });
+
   try {
-    await setDoc(photoDocRef, payload);
+    const outcome = await Promise.race([write.then(() => 'written' as const), timeout]);
+    if (outcome === 'timeout') {
+      console.warn('Photo upload still pending after 15 s; it stays queued and syncs when the connection recovers.');
+      write.catch(console.error);
+    }
     return id;
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, `${PHOTOS_COLLECTION}/${id}`);
+    // Real failures (e.g. permission-denied) keep their FirebaseError.code
+    return handleFirestoreError(error, OperationType.WRITE, `${PHOTOS_COLLECTION}/${id}`);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 

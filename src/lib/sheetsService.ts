@@ -3,18 +3,28 @@ import { generateChronologicalUserId16 } from './idGenerator';
 
 export async function fetchSpreadsheetsFromDrive(accessToken: string): Promise<SheetFile[]> {
   try {
-    const res = await fetch(
-      "https://www.googleapis.com/drive/v3/files?q=mimeType='application/vnd.google-apps.spreadsheet'&fields=files(id,name,modifiedTime)&pageSize=25&orderBy=modifiedTime desc",
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const params = new URLSearchParams({
+      q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+      fields: 'files(id,name,modifiedTime)',
+      pageSize: '30',
+      orderBy: 'modifiedTime desc',
+    });
+
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Drive API error (${res.status}): ${err}`);
+      let errDetails = '';
+      try {
+        const errorJson = await res.json();
+        errDetails = errorJson.error?.message || JSON.stringify(errorJson);
+      } catch {
+        errDetails = await res.text();
+      }
+      throw new Error(`Drive API error (${res.status}): ${errDetails}`);
     }
 
     const data = await res.json();
@@ -87,7 +97,8 @@ export function autoDetectColumnMapping(headers: string[]): ColumnMapping {
     cosplayName: findIndex(['cosplay name', 'cosname', 'nama panggung', 'stage name', 'nickname', 'nama karakter', 'nama panggilan', 'nama']),
     fullName: findIndex(['nama lengkap', 'full name', 'nama asli']),
     email: findIndex(['email', 'surel', 'alamat email']),
-    phone: findIndex(['whatsapp', 'wa', 'telepon', 'hp', 'phone', 'kontak', 'nomor wa', 'no wa', 'no. wa']),
+    phone: findIndex(['nomor wa utama', 'whatsapp utama', 'whatsapp', 'wa', 'telepon', 'hp', 'phone', 'kontak', 'nomor wa', 'no wa', 'no. wa']),
+    phone2: findIndex(['nomor wa cadangan', 'wa cadangan', 'nomor wa 2', 'wa 2', 'whatsapp 2', 'no hp 2', 'nomor kedua', 'secondary phone', 'no wa kedua', 'hp 2']),
     discordUsername: findIndex([
       'discord',
       'username discord',
@@ -145,6 +156,7 @@ export function parseRowsToMembers(
     const primaryRole = (mapping.primaryRole >= 0 ? row[mapping.primaryRole] : '')?.trim() || 'Cosplayer';
     const fandom = (mapping.fandom >= 0 ? row[mapping.fandom] : '')?.trim() || 'Anime & Games';
     const phone = (mapping.phone >= 0 ? row[mapping.phone] : '')?.trim();
+    const phone2 = (mapping.phone2 !== undefined && mapping.phone2 >= 0 ? row[mapping.phone2] : '')?.trim();
     const discordIdx = mapping.discordUsername >= 0 ? mapping.discordUsername : autoDiscordIdx;
     const discordUsername = (discordIdx >= 0 ? row[discordIdx] : '')?.trim();
     const age = (mapping.age >= 0 ? row[mapping.age] : '')?.trim();
@@ -169,6 +181,7 @@ export function parseRowsToMembers(
       fullName: fullName ? fullName.substring(0, 100) : resolvedName.substring(0, 100),
       email: email ? email.substring(0, 120) : '',
       phone: phone ? phone.substring(0, 30) : undefined,
+      phone2: phone2 ? phone2.substring(0, 30) : undefined,
       discordUsername: discordUsername ? discordUsername.substring(0, 60) : undefined,
       country: country.substring(0, 80),
       province: province ? province.substring(0, 80) : undefined,

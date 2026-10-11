@@ -117,9 +117,14 @@ export function generateChronologicalUserId16(
 /**
  * Arranges a 16-digit User ID strictly based on sequence for regular members:
  * Structure: sequenceNumber.toString().padStart(16, '0')
+ * Note: Regular members start strictly after admin slots (0000 0000 0000 0101+).
+ * If a 1-based offset (1..100) is passed, it correctly maps to (100 + offset)
+ * so member #1 becomes 101, member #2 becomes 102, avoiding identical IDs.
  */
 export function generateSequentialUserId16(sequenceNumber: number): string {
-  return Math.max(101, sequenceNumber).toString().padStart(16, '0');
+  const num = Math.floor(sequenceNumber);
+  const resolved = num <= 0 ? 101 : num <= 100 ? 100 + num : num;
+  return resolved.toString().padStart(16, '0');
 }
 
 /**
@@ -337,14 +342,90 @@ function normalizeSocial(s?: string): string {
 }
 
 /**
+ * Extracts and normalizes all available phone numbers for a member or candidate record
+ */
+export function extractAllPhones(data?: {
+  phone?: string;
+  phone2?: string;
+  additionalPhones?: string[];
+}): string[] {
+  if (!data) return [];
+  const list: string[] = [];
+  // Legacy or hand-edited documents may hold non-string values: only strings are compared
+  if (typeof data.phone === 'string' && data.phone) list.push(data.phone);
+  if (typeof data.phone2 === 'string' && data.phone2) list.push(data.phone2);
+  if (Array.isArray(data.additionalPhones)) {
+    for (const p of data.additionalPhones) {
+      if (typeof p === 'string' && p) list.push(p);
+    }
+  }
+  return Array.from(new Set(list.map(normalizePhone).filter((p) => p.length >= 8)));
+}
+
+// Phone storage limits (identical to firestore.rules: phone/phone2 <= 30 chars, additionalPhones <= 3 x 30).
+// Kept local (not imported from firestoreService) to avoid an import cycle.
+export const PHONE_MAX_LENGTH = 30;
+export const MAX_ADDITIONAL_PHONES = 3;
+
+export interface PhoneFields {
+  phone?: string;
+  phone2?: string;
+  additionalPhones?: string[];
+}
+
+/**
+ * Merges the phone numbers of an existing record with those of an incoming submission.
+ * Existing numbers come first, so the existing primary number stays primary.
+ * Numbers are trimmed, clamped to PHONE_MAX_LENGTH and de-duplicated (by normalized digits when the
+ * number has 8+ digits, else by lowercased text). Result: phone = 1st, phone2 = 2nd, additionalPhones =
+ * up to MAX_ADDITIONAL_PHONES more. Keys without a value are omitted.
+ */
+export function mergeMemberPhones(
+  existing?: PhoneFields | null,
+  incoming?: PhoneFields | null
+): PhoneFields {
+  const raw: unknown[] = [];
+  const collect = (src?: PhoneFields | null) => {
+    if (!src) return;
+    raw.push(src.phone, src.phone2);
+    if (Array.isArray(src.additionalPhones)) raw.push(...src.additionalPhones);
+  };
+  collect(existing);
+  collect(incoming);
+
+  const seen = new Set<string>();
+  const list: string[] = [];
+  for (const value of raw) {
+    if (typeof value !== 'string') continue;
+    const clean = value.trim().slice(0, PHONE_MAX_LENGTH);
+    if (!clean) continue;
+    const digits = normalizePhone(clean);
+    const key = digits.length >= 8 ? digits : clean.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    list.push(clean);
+  }
+
+  const result: PhoneFields = {};
+  if (list[0]) result.phone = list[0];
+  if (list[1]) result.phone2 = list[1];
+  const extra = list.slice(2, 2 + MAX_ADDITIONAL_PHONES);
+  if (extra.length > 0) result.additionalPhones = extra;
+  return result;
+}
+
+/**
  * Checks if a member submission matches an existing member in the database.
  * Requirement: "Each member has a single KCC ID account" & "double filled form with the same/similar data shares the same user ID"
+ * Also supports members with multiple phone numbers (primary & secondary/phone2/additionalPhones).
  */
 export function findDuplicateMember(
   members: Member[],
   candidate: {
     email?: string;
     phone?: string;
+    phone2?: string;
+    additionalPhones?: string[];
     discordUsername?: string;
     name?: string;
     cosplayName?: string;
@@ -354,24 +435,32 @@ export function findDuplicateMember(
 ): Member | null {
   if (!members || members.length === 0) return null;
 
-  const candEmail = candidate.email?.trim().toLowerCase() || '';
-  const candPhone = normalizePhone(candidate.phone);
-  const candDiscord = candidate.discordUsername?.trim().toLowerCase().replace(/^@/, '') || '';
-  const candCosname = (candidate.name || candidate.cosplayName || '').trim().toLowerCase();
-  const candSocial = normalizeSocial(candidate.socialMedia);
+  // Raw / legacy documents may hold non-string values: they are treated as empty instead of throwing
+  const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+  const discordKey = (value: unknown): string => text(value).toLowerCase().replace(/^@/, '');
+
+  const candEmail = text(candidate.email).toLowerCase();
+  const candPhones = extractAllPhones(candidate);
+  const candDiscord = discordKey(candidate.discordUsername);
+  const candCosname = (text(candidate.name) || text(candidate.cosplayName)).toLowerCase();
+  const candSocial = normalizeSocial(text(candidate.socialMedia));
 
   for (const m of members) {
-    // 1. WhatsApp Phone match (primary single KCC ID identifier, at least 8 digits)
-    if (candPhone && candPhone.length >= 8) {
-      const existingPhone = normalizePhone(m.phone);
-      if (existingPhone && existingPhone === candPhone) {
+    if (!m) continue;
+    const existingPhones = extractAllPhones(m);
+    const existingDiscord = discordKey(m.discordUsername);
+    const existingEmail = text(m.email).toLowerCase();
+
+    // 1. WhatsApp Phone match (matches primary, secondary, or any additional phone numbers)
+    if (candPhones.length > 0 && existingPhones.length > 0) {
+      const hasSharedPhone = candPhones.some((cp) => existingPhones.includes(cp));
+      if (hasSharedPhone) {
         return m;
       }
     }
 
     // 2. Discord Username match
     if (candDiscord && candDiscord.length >= 2) {
-      const existingDiscord = m.discordUsername?.trim().toLowerCase().replace(/^@/, '') || '';
       if (existingDiscord && existingDiscord === candDiscord) {
         return m;
       }
@@ -379,7 +468,6 @@ export function findDuplicateMember(
 
     // 3. Email match (if provided and non-empty)
     if (candEmail && candEmail.length > 3) {
-      const existingEmail = m.email?.trim().toLowerCase() || '';
       if (existingEmail && existingEmail === candEmail) {
         return m;
       }
@@ -387,17 +475,32 @@ export function findDuplicateMember(
 
     // 4. Social media handle match
     if (candSocial && candSocial.length >= 3) {
-      const existingSocial = normalizeSocial(m.socialMedia);
+      const existingSocial = normalizeSocial(text(m.socialMedia));
       if (existingSocial && existingSocial === candSocial) {
         return m;
       }
     }
 
-    // 5. Exact Name / Cosplay Name match (case-insensitive, trimmed, min 3 chars)
+    // 5. Exact Name / Cosplay Name match only if not a generic placeholder and no conflicting contact info
     if (candCosname && candCosname.length >= 3) {
-      const existingCosname = (m.name || m.cosplayName || '').trim().toLowerCase();
-      if (existingCosname && existingCosname === candCosname) {
-        return m;
+      const genericNames = ['member', 'cosplayer', 'cosplay', 'guest', 'kawan', 'anonymous', 'anon', 'admin'];
+      if (!genericNames.includes(candCosname)) {
+        const existingCosname = (text(m.name) || text(m.cosplayName)).toLowerCase();
+        if (existingCosname && existingCosname === candCosname) {
+          // If both have phone numbers recorded and none match, they are distinct people!
+          if (candPhones.length > 0 && existingPhones.length > 0 && !candPhones.some((p) => existingPhones.includes(p))) {
+            continue;
+          }
+          // If both have Discord usernames and they differ, they are distinct people!
+          if (candDiscord && existingDiscord && existingDiscord !== candDiscord) {
+            continue;
+          }
+          // If both have emails and they differ, they are distinct people!
+          if (candEmail && existingEmail && existingEmail !== candEmail) {
+            continue;
+          }
+          return m;
+        }
       }
     }
   }

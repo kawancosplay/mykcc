@@ -118,8 +118,21 @@ Open:
 - **Duplicate registrations:** the scan finds 201 pairs (same cosname + same phone; duplicate ID = keeper ID + 346
   → the whole list was imported twice). Not merged yet. Plan: a bulk "merge all exact duplicates" admin button
   with one confirm.
-- **Google side (Gemini):** enable Google Drive API + Google Sheets API; OAuth consent screen test users
-  (the `drive` scope is restricted); Firestore is on "AI shared quota" — consider pay-as-you-go.
+- **Google side (Gemini) — status reported by Gemini 2026-10-11, verified by Claude in the Cloud console:**
+  - [x] Google Drive API + Google Sheets API enabled on `gen-lang-client-0922635128` (both listed under
+    Enabled APIs & Services, with traffic).
+  - [x] OAuth consent screen test user `cosplaysehat@gmail.com` added.
+  - [ ] Firestore billing upgrade deferred (stays on "AI shared quota" for now).
+  - [ ] Google Sheets sync end-to-end verification (ready to test: admin → "Hubungkan Google Sheets").
+  - [ ] **OAuth app is in "Testing" (External).** Google: "While publishing status is set to 'Testing', only test
+    users are able to access the app" (user cap shows 1 user lifetime). Firebase Google sign-in uses this project's
+    OAuth client, so **members' "Lanjutkan dengan Google" sign-in is blocked for everyone except test users.**
+    Fix (Google side): complete the Branding page (app name, support email, homepage https://mykcc.vercel.app,
+    privacy policy URL, authorized domain `mykcc.vercel.app`) → **Publish app** (In production). Member sign-in only
+    requests openid/email/profile (no verification needed). Only the admin "Hubungkan Google Sheets" flow requests
+    the restricted `drive` + `spreadsheets` scopes; in production an unverified app shows the admin a warning screen
+    ("Advanced → Go to MyKCC"), which is acceptable for a single admin. Narrower option: `drive.metadata.readonly`
+    + `spreadsheets.readonly`.
 - **Code side (Claude):** full localization of all UI text into all 20 languages (lazy-loaded per language);
   consistent liquid glass across the site; iOS-like fluid UI/UX; performance (the `worldLocations` chunk is
   8.7 MB because of `country-state-city`; PWA precaches ~9.9 MB); world regions for every country from

@@ -121,6 +121,12 @@ const FANDOMS = [
   'Original Character (OC) & Creative Fantasy',
 ];
 
+// Select values that switch to a free-text province / city input; the typed text is saved instead
+const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
+const CUSTOM_CITY_OPTION = 'Kustom / Kota Lainnya';
+const LEGACY_CUSTOM_CITY_OPTION = 'Other City / County';
+const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city === LEGACY_CUSTOM_CITY_OPTION;
+
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   memberCount,
   existingMembers = [],
@@ -174,8 +180,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     () => getStatesOfCountryByName(formData.country),
     [formData.country]
   );
+  // A custom province has no city list: the city is typed as well
   const availableCities = useMemo(
-    () => getCitiesOfStateByName(formData.country, formData.province),
+    () =>
+      formData.province === CUSTOM_PROVINCE_OPTION ? [] : getCitiesOfStateByName(formData.country, formData.province),
     [formData.country, formData.province]
   );
 
@@ -275,6 +283,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       return;
     }
 
+    if (isCustomCityValue(dataToSubmit.city) && !(dataToSubmit.customCity || '').trim()) {
+      setErrorMsg(
+        isId
+          ? 'Mohon ketik nama kota / kabupaten Anda (pilihan "Kustom / Kota Lainnya").'
+          : 'Please type your city / regency (the "Custom / Other City" option).'
+      );
+      return;
+    }
+
     if (!dataToSubmit.acceptedCodeOfConduct) {
       setErrorMsg(
         isId
@@ -292,15 +309,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           ? dataToSubmit.customCountry.trim()
           : dataToSubmit.country;
 
+      // Custom province / city: the typed text is saved, never the select's placeholder value (an empty
+      // custom province is simply left out; an empty custom city was rejected above)
       const finalProvince =
-        dataToSubmit.province === 'Worldwide State / Province' && dataToSubmit.customProvince
-          ? dataToSubmit.customProvince.trim()
+        dataToSubmit.province === CUSTOM_PROVINCE_OPTION
+          ? (dataToSubmit.customProvince || '').trim().slice(0, MEMBER_FIELD_LIMITS.province)
           : dataToSubmit.province;
 
-      const finalCity =
-        (dataToSubmit.city === 'Other City / County' || dataToSubmit.city === 'Kustom / Kota Lainnya') && dataToSubmit.customCity
-          ? dataToSubmit.customCity.trim()
-          : dataToSubmit.city;
+      const finalCity = isCustomCityValue(dataToSubmit.city)
+        ? (dataToSubmit.customCity || '').trim().slice(0, MEMBER_FIELD_LIMITS.city)
+        : dataToSubmit.city;
 
       // Resolve role: If 'Lainnya / Others' was selected, append custom role if typed (capped so the
       // stored role stays within the database primaryRole limit):
@@ -413,9 +431,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   const handleFillDemo = (demoData: any, autoSubmit: boolean = false) => {
     setIsDemoMode(true);
-    const updated = {
+    // Demo presets name the person `cosplayName`; the form field is `name` (no stray cosplayName key)
+    const { cosplayName: demoCosplayName, ...demoFields } = demoData || {};
+    const updated: typeof formData = {
       ...formData,
-      ...demoData,
+      ...demoFields,
+      name: demoFields.name || demoCosplayName || formData.name,
     };
     setFormData(updated);
 
@@ -526,18 +547,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
               <button
                 onClick={() => {
+                  // New person, same location / role / fandom presets: every personal field is cleared
                   setSubmittedMember(null);
                   setShowPhone2(false);
                   setIsDuplicateShared(false);
+                  setErrorMsg(null);
                   setFormData((prev) => ({
                     ...prev,
-                    cosplayName: '',
+                    name: '',
                     fullName: '',
                     email: '',
                     phone: '',
                     phone2: '',
                     discordUsername: '',
                     age: '',
+                    customRole: '',
                     socialMedia: '',
                     portfolioUrl: '',
                     avatarUrl: '',

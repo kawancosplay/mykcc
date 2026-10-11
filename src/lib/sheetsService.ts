@@ -1,79 +1,166 @@
-import { ColumnMapping, Member, SheetFile } from '../types';
+import { ColumnMapping, Member } from '../types';
 import { generateChronologicalUserId16 } from './idGenerator';
 
-export async function fetchSpreadsheetsFromDrive(accessToken: string): Promise<SheetFile[]> {
+// Read-only Google Sheets API access (googleAuth.SHEETS_READONLY_SCOPE). No Drive API: listing the
+// admin's Drive files needs a Drive scope, so the admin pastes the spreadsheet URL / ID instead.
+const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
+
+/**
+ * Failed Google Sheets API request. `status` is the HTTP status (0 = network failure, no response);
+ * `reason` is the google.rpc.ErrorInfo reason (e.g. ACCESS_TOKEN_SCOPE_INSUFFICIENT) when Google sent one.
+ */
+export class SheetsApiError extends Error {
+  readonly status: number;
+  readonly reason: string | null;
+
+  constructor(message: string, status: number, reason: string | null = null) {
+    super(message);
+    this.name = 'SheetsApiError';
+    this.status = status;
+    this.reason = reason;
+  }
+}
+
+export type SheetsErrorKind =
+  | 'unauthorized' // 401: token expired / revoked -> reconnect
+  | 'scope' // 403: the token lacks the Sheets read scope -> reconnect and grant it
+  | 'no-access' // 403: the signed-in Google account cannot open this spreadsheet
+  | 'not-found' // 404: no spreadsheet with this id (or no access)
+  | 'unsupported-file' // 400: e.g. an uploaded .xlsx file, not a native Google Sheets file
+  | 'bad-request' // 400: other (e.g. a tab that no longer exists)
+  | 'rate-limit' // 429
+  | 'network' // no response
+  | 'other';
+
+/**
+ * Category of a Google Sheets API error, or null when `error` did not come from the Sheets API
+ * (e.g. a Firestore error during the import).
+ */
+export function classifySheetsError(error: unknown): SheetsErrorKind | null {
+  if (!(error instanceof SheetsApiError)) return null;
+  const { status, reason, message } = error;
+  if (status === 0) return 'network';
+  if (status === 401) return 'unauthorized';
+  if (status === 403) {
+    if (reason === 'ACCESS_TOKEN_SCOPE_INSUFFICIENT' || /insufficient (authentication )?scopes?/i.test(message)) {
+      return 'scope';
+    }
+    if (reason === 'SERVICE_DISABLED' || reason === 'accessNotConfigured') return 'other';
+    return 'no-access';
+  }
+  if (status === 404) return 'not-found';
+  if (status === 429) return 'rate-limit';
+  if (status === 400) return /not supported for this document/i.test(message) ? 'unsupported-file' : 'bad-request';
+  return 'other';
+}
+
+// Valid spreadsheet ids are long URL-safe tokens (usually 44 characters)
+const SPREADSHEET_ID_PATTERN = /^[A-Za-z0-9_-]{15,}$/;
+
+/**
+ * Spreadsheet id from a full Google Sheets URL (…/spreadsheets/d/<id>/edit, also …/spreadsheets/u/1/d/<id>/…)
+ * or from a bare id. Null when the input holds neither (e.g. a "Publish to web" …/d/e/… link).
+ */
+export function parseSpreadsheetId(input: string): string | null {
+  const trimmed = (input || '').trim();
+  if (!trimmed) return null;
+  const urlMatch = trimmed.match(/\/spreadsheets\/(?:u\/\d+\/)?d\/([A-Za-z0-9_-]+)/);
+  const candidate = urlMatch ? urlMatch[1] : trimmed;
+  return SPREADSHEET_ID_PATTERN.test(candidate) ? candidate : null;
+}
+
+/**
+ * A1 range on a named tab, quoted so tab names with spaces or punctuation always parse
+ * (e.g. 'Form Responses 1'!A1:Z10).
+ */
+export function sheetRange(tabTitle: string, cells: string): string {
+  const title = (tabTitle || 'Sheet1').replace(/'/g, "''");
+  return `'${title}'!${cells}`;
+}
+
+async function toSheetsApiError(res: Response, label: string): Promise<SheetsApiError> {
+  let raw = '';
   try {
-    const params = new URLSearchParams({
-      q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
-      fields: 'files(id,name,modifiedTime)',
-      pageSize: '30',
-      orderBy: 'modifiedTime desc',
-    });
+    raw = await res.text();
+  } catch {
+    // Body unavailable
+  }
 
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!res.ok) {
-      let errDetails = '';
-      try {
-        const errorJson = await res.json();
-        errDetails = errorJson.error?.message || JSON.stringify(errorJson);
-      } catch {
-        errDetails = await res.text();
+  let detail = '';
+  let reason: string | null = null;
+  try {
+    const parsed = JSON.parse(raw) as { error?: { message?: unknown; details?: unknown } } | null;
+    const apiError = parsed?.error;
+    if (apiError) {
+      if (typeof apiError.message === 'string') detail = apiError.message;
+      if (Array.isArray(apiError.details)) {
+        for (const entry of apiError.details) {
+          const entryReason = entry && typeof entry === 'object' ? (entry as { reason?: unknown }).reason : undefined;
+          if (typeof entryReason === 'string') {
+            reason = entryReason;
+            break;
+          }
+        }
       }
-      throw new Error(`Drive API error (${res.status}): ${errDetails}`);
     }
-
-    const data = await res.json();
-    return data.files || [];
-  } catch (err) {
-    console.error('Failed to list spreadsheets:', err);
-    throw err;
+  } catch {
+    // Not JSON
   }
+
+  if (!detail) detail = raw.slice(0, 300) || res.statusText;
+  return new SheetsApiError(`Sheets API ${label} error (${res.status}): ${detail}`, res.status, reason);
 }
 
-export async function fetchSpreadsheetMetadata(accessToken: string, spreadsheetId: string) {
-  const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=properties.title,sheets.properties(sheetId,title,gridProperties)`,
-    {
+async function sheetsGet<T>(accessToken: string, url: string, label: string): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    }
-  );
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Sheets API metadata error (${res.status}): ${err}`);
+    });
+  } catch (err) {
+    throw new SheetsApiError(
+      `Sheets API ${label} request failed: ${err instanceof Error ? err.message : String(err)}`,
+      0
+    );
   }
 
-  return await res.json();
+  if (!res.ok) throw await toSheetsApiError(res, label);
+  return (await res.json()) as T;
 }
 
+export interface SpreadsheetMetadata {
+  properties?: { title?: string };
+  sheets?: Array<{
+    properties: {
+      sheetId?: number;
+      title: string;
+      gridProperties?: { rowCount?: number; columnCount?: number };
+    };
+  }>;
+}
+
+/** Spreadsheet title + tabs (spreadsheets.get). Throws SheetsApiError. */
+export async function fetchSpreadsheetMetadata(accessToken: string, spreadsheetId: string): Promise<SpreadsheetMetadata> {
+  return sheetsGet<SpreadsheetMetadata>(
+    accessToken,
+    `${SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=properties.title,sheets.properties(sheetId,title,gridProperties)`,
+    'metadata'
+  );
+}
+
+/** Cell values of a range (spreadsheets.values.get). Throws SheetsApiError. */
 export async function fetchSheetValues(
   accessToken: string,
   spreadsheetId: string,
   range: string = 'A1:Z1000'
 ): Promise<string[][]> {
-  const encodedRange = encodeURIComponent(range);
-  const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodedRange}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
+  const data = await sheetsGet<{ values?: string[][] }>(
+    accessToken,
+    `${SHEETS_API_BASE}/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`,
+    'values'
   );
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Sheets API values error (${res.status}): ${err}`);
-  }
-
-  const data = await res.json();
   return data.values || [];
 }
 

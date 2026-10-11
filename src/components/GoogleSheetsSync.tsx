@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   FileSpreadsheet,
   RefreshCw,
@@ -22,31 +22,96 @@ import {
 import type { User } from 'firebase/auth';
 import type {
   ColumnMapping,
-  SheetFile,
   SyncLog,
   BulkImportResult,
   SubscriptionErrorKind,
 } from '../types';
 import {
-  fetchSpreadsheetsFromDrive,
   fetchSpreadsheetMetadata,
   fetchSheetValues,
   autoDetectColumnMapping,
   parseRowsToMembers,
+  parseSpreadsheetId,
+  sheetRange,
+  classifySheetsError,
 } from '../lib/sheetsService';
 import { bulkImportMembers, recordSyncLog } from '../lib/firestoreService';
 import { describeFirestoreError } from '../lib/firebase';
+import type { LanguageCode } from '../lib/i18n';
 
 interface GoogleSheetsSyncProps {
   user: User | null;
   accessToken: string | null;
-  // Scoped Google sign-in (Drive + Sheets) owned by App.handleConnectSheets, not the regular AuthModal login.
-  // App stores the new token and sets connectError; this component never signs in by itself.
+  // On-demand Sheets authorization (read-only Sheets scope, same Google account) owned by
+  // App.handleConnectSheets, not the regular AuthModal login. App stores the new token and sets
+  // connectError; this component never signs in by itself.
   onLogin: () => void | Promise<void>;
   connectError?: string | null;
   syncLogs: SyncLog[];
   syncLogsError?: SubscriptionErrorKind | null;
   totalMembersInFirestore: number;
+  // UI language of the copy this component switches by language (defaults to Indonesian)
+  currentLang?: LanguageCode;
+}
+
+// Last spreadsheet inspected successfully in this browser (per-browser convenience only)
+const LAST_SPREADSHEET_ID_KEY = 'kcc_sheets_last_spreadsheet_id';
+
+function readLastSpreadsheetId(): string {
+  try {
+    if (typeof window === 'undefined') return '';
+    const stored = window.localStorage.getItem(LAST_SPREADSHEET_ID_KEY) || '';
+    return parseSpreadsheetId(stored) ? stored : '';
+  } catch {
+    // Storage blocked (privacy mode / sandboxed iframe)
+    return '';
+  }
+}
+
+function writeLastSpreadsheetId(spreadsheetId: string): void {
+  try {
+    window.localStorage.setItem(LAST_SPREADSHEET_ID_KEY, spreadsheetId);
+  } catch {
+    // Storage blocked / quota exceeded: only the convenience default is lost
+  }
+}
+
+/**
+ * Friendly bilingual message for a failed Google Sheets API call (classifySheetsError != null).
+ */
+function describeSheetsError(error: unknown, isId: boolean, accountEmail: string | null | undefined): string {
+  const account = accountEmail || (isId ? 'akun admin' : 'the admin account');
+  switch (classifySheetsError(error)) {
+    case 'unauthorized':
+      return isId
+        ? 'Izin Google Sheets sudah kedaluwarsa atau tidak berlaku lagi. Klik "Hubungkan Google Sheets" untuk memperbaruinya, lalu coba lagi.'
+        : 'The Google Sheets permission expired or is no longer valid. Click "Connect Google Sheets" to renew it, then try again.';
+    case 'scope':
+      return isId
+        ? 'Izin baca Google Sheets belum diberikan. Klik "Hubungkan Google Sheets" dan centang izin untuk melihat spreadsheet Google Sheets Anda.'
+        : 'Read access to Google Sheets was not granted. Click "Connect Google Sheets" and tick the permission to see your Google Sheets spreadsheets.';
+    case 'no-access':
+    case 'not-found':
+      return isId
+        ? `Akun Google yang sedang masuk (${account}) tidak memiliki akses ke spreadsheet ini, atau ID spreadsheet salah. Bagikan (Share) spreadsheet ke akun admin tersebut — akses Viewer sudah cukup — atau periksa kembali URL/ID-nya.`
+        : `The signed-in Google account (${account}) has no access to this spreadsheet, or the spreadsheet ID is wrong. Share the spreadsheet with that admin account (Viewer access is enough), or double-check the URL/ID.`;
+    case 'unsupported-file':
+      return isId
+        ? 'File ini bukan Google Sheets asli (misalnya file Excel .xlsx yang diunggah). Buka file tersebut lalu pilih File > Simpan sebagai Google Spreadsheet, kemudian pakai URL file barunya.'
+        : 'This file is not a native Google Sheets file (e.g. an uploaded Excel .xlsx). Open it, choose File > Save as Google Sheets, then use the new file URL.';
+    case 'rate-limit':
+      return isId
+        ? 'Batas permintaan Google Sheets API tercapai. Tunggu sekitar satu menit lalu coba lagi.'
+        : 'The Google Sheets API request limit was reached. Wait about a minute, then try again.';
+    case 'network':
+      return isId
+        ? 'Tidak dapat menghubungi Google Sheets. Periksa koneksi internet Anda lalu coba lagi.'
+        : 'Could not reach Google Sheets. Check your internet connection, then try again.';
+    default: {
+      const detail = error instanceof Error ? error.message : String(error);
+      return isId ? `Google Sheets menolak permintaan: ${detail}` : `Google Sheets rejected the request: ${detail}`;
+    }
+  }
 }
 
 export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
@@ -57,12 +122,18 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   syncLogs,
   syncLogsError = null,
   totalMembersInFirestore,
+  currentLang = 'id',
 }) => {
-  // Spreadsheet selection states
-  const [spreadsheets, setSpreadsheets] = useState<SheetFile[]>([]);
+  const isId = currentLang === 'id';
+
+  // Spreadsheet selection states. The Drive file list is gone (it needs a Drive scope): the admin pastes
+  // a spreadsheet URL or ID, prefilled with the last one used in this browser or the latest sync log's.
+  const [sheetInput, setSheetInput] = useState<string>(() => readLastSpreadsheetId());
+  const sheetInputTouchedRef = useRef(false);
   const [isLoadingSheets, setIsLoadingSheets] = useState(false);
+  // Spreadsheet that was inspected successfully: the import and the poller read this one
   const [selectedSpreadsheetId, setSelectedSpreadsheetId] = useState('');
-  const [customSheetUrl, setCustomSheetUrl] = useState('');
+  const [spreadsheetTitle, setSpreadsheetTitle] = useState('');
   const [sheetTabs, setSheetTabs] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState('');
 
@@ -109,41 +180,36 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   // poller skips Firestore entirely (no full members read and no writes every interval)
   const lastPollSignatureRef = useRef<string | null>(null);
 
-  // Fetch drive spreadsheets on token availability
-  useEffect(() => {
-    if (accessToken) {
-      loadUserSpreadsheets();
+  // Most recent sync log's spreadsheet (syncLogs are ordered newest first)
+  const latestLoggedSpreadsheetId = useMemo(() => {
+    for (const log of syncLogs) {
+      const id = parseSpreadsheetId(log.spreadsheetId || '');
+      if (id) return id;
     }
+    return null;
+  }, [syncLogs]);
+
+  // Default the input to the latest synced spreadsheet when this browser has no remembered one
+  // (sync logs arrive asynchronously; never overwrite what the admin typed)
+  useEffect(() => {
+    if (sheetInputTouchedRef.current || !latestLoggedSpreadsheetId) return;
+    setSheetInput((prev) => (prev.trim() ? prev : latestLoggedSpreadsheetId));
+  }, [latestLoggedSpreadsheetId]);
+
+  // A new Sheets token replaces the one an earlier error was about
+  useEffect(() => {
+    if (accessToken) setErrorMsg(null);
   }, [accessToken]);
 
-  const loadUserSpreadsheets = async (tokenToUse?: string) => {
-    const token = tokenToUse || accessToken;
-    if (!token) return;
-    setIsLoadingSheets(true);
-    setErrorMsg(null);
-    try {
-      const files = await fetchSpreadsheetsFromDrive(token);
-      setSpreadsheets(files);
-      if (files.length > 0 && !selectedSpreadsheetId) {
-        setSelectedSpreadsheetId(files[0].id);
-      }
-    } catch (err: unknown) {
-      console.warn('Drive list info:', err);
-      const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes('403') || errMsg.includes('401') || errMsg.includes('insufficient')) {
-        setErrorMsg('Izin akses Google Drive & Sheets belum aktif untuk sesi ini atau token kedaluwarsa. Silakan klik tombol "Beri Izin / Hubungkan Google" untuk memberikan otorisasi.');
-      } else {
-        setErrorMsg(
-          `Gagal memuat daftar Google Sheet dari Drive: ${errMsg}. Anda juga bisa menempelkan URL spreadsheet secara manual.`
-        );
-      }
-    } finally {
-      setIsLoadingSheets(false);
-    }
+  const parsedInputId = parseSpreadsheetId(sheetInput);
+
+  const handleSheetInputChange = (value: string) => {
+    sheetInputTouchedRef.current = true;
+    setSheetInput(value);
   };
 
-  // Single authorization flow: App.handleConnectSheets (googleSignIn with Drive + Sheets scopes) stores the
-  // token and reports errors through connectError; the accessToken effect above then reloads the sheet list.
+  // Single authorization flow: App.handleConnectSheets (googleSignIn, read-only Sheets scope requested on
+  // demand for the signed-in account) stores the token and reports errors through connectError.
   const handleAuthorizeGoogle = async () => {
     setIsLoadingSheets(true);
     setErrorMsg(null);
@@ -154,25 +220,28 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     }
   };
 
-  // Helper to extract sheet ID from raw ID or Docs URL
-  const extractSheetId = (input: string): string => {
-    const trimmed = input.trim();
-    const urlMatch = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    if (urlMatch && urlMatch[1]) {
-      return urlMatch[1];
-    }
-    return trimmed;
-  };
-
-  // Fetch sheet tabs and preview rows
-  const handleInspectSpreadsheet = async (sheetIdToInspect?: string) => {
-    const targetId = extractSheetId(sheetIdToInspect || customSheetUrl || selectedSpreadsheetId);
+  // Fetch sheet tabs and preview rows. `preferredTab` keeps the chosen tab when switching tabs.
+  const handleInspectSpreadsheet = async (rawInput?: string, preferredTab?: string) => {
+    const input = rawInput ?? sheetInput;
+    const targetId = parseSpreadsheetId(input);
     if (!targetId) {
-      setErrorMsg('Silakan pilih atau masukkan ID/URL Google Sheet terlebih dahulu.');
+      setErrorMsg(
+        input.trim()
+          ? isId
+            ? 'URL atau ID spreadsheet tidak valid. Tempel URL lengkap Google Sheets (https://docs.google.com/spreadsheets/d/…/edit) atau ID-nya saja.'
+            : 'Invalid spreadsheet URL or ID. Paste the full Google Sheets URL (https://docs.google.com/spreadsheets/d/…/edit) or just its ID.'
+          : isId
+          ? 'Masukkan URL atau ID Google Sheets terlebih dahulu.'
+          : 'Enter a Google Sheets URL or ID first.'
+      );
       return;
     }
     if (!accessToken) {
-      setErrorMsg('Token autentikasi Google belum tersedia. Silakan klik "Beri Izin / Hubungkan Google" di bawah.');
+      setErrorMsg(
+        isId
+          ? 'Izin Google Sheets belum diberikan. Klik "Hubungkan Google Sheets" terlebih dahulu.'
+          : 'Google Sheets access has not been granted yet. Click "Connect Google Sheets" first.'
+      );
       return;
     }
 
@@ -181,14 +250,17 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
 
     try {
       const meta = await fetchSpreadsheetMetadata(accessToken, targetId);
-      const tabs = meta.sheets?.map((s: { properties: { title: string } }) => s.properties.title) || [];
+      const tabs = (meta.sheets || []).map((s) => s.properties.title).filter((title) => !!title);
+      const activeTab = preferredTab && tabs.includes(preferredTab) ? preferredTab : tabs[0] || 'Sheet1';
       setSheetTabs(tabs);
-      const activeTab = tabs[0] || 'Sheet1';
       setSelectedTab(activeTab);
       setSelectedSpreadsheetId(targetId);
+      setSpreadsheetTitle(meta.properties?.title || '');
+      // Readable with this account: remember it for the next visit
+      writeLastSpreadsheetId(targetId);
 
       // Fetch first 10 rows for inspection
-      const rawValues = await fetchSheetValues(accessToken, targetId, `${activeTab}!A1:Z10`);
+      const rawValues = await fetchSheetValues(accessToken, targetId, sheetRange(activeTab, 'A1:Z10'));
       if (rawValues && rawValues.length > 0) {
         const detectedHeaders = rawValues[0] || [];
         setHeaders(detectedHeaders);
@@ -196,16 +268,26 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
         const autoMap = autoDetectColumnMapping(detectedHeaders);
         setColumnMapping(autoMap);
       } else {
-        setErrorMsg('Spreadsheet ini masih kosong atau belum memiliki data respon.');
+        // Never keep another sheet's columns / mapping for this one
+        setHeaders([]);
+        setPreviewRows([]);
+        setErrorMsg(
+          isId
+            ? 'Spreadsheet ini masih kosong atau belum memiliki data respon.'
+            : 'This spreadsheet is empty or has no responses yet.'
+        );
       }
     } catch (err: unknown) {
       console.error('Inspect error:', err);
-      const msg = err instanceof Error ? err.message : 'Gagal mengakses data spreadsheet.';
-      if (msg.includes('403') || msg.includes('401') || msg.includes('insufficient')) {
-        setErrorMsg('Izin akses spreadsheet belum diberikan atau sesi token telah kedaluwarsa. Pastikan akun Google Anda memiliki akses ke dokumen ini dan klik "Beri Izin / Hubungkan Google".');
-      } else {
-        setErrorMsg(msg);
-      }
+      setErrorMsg(
+        classifySheetsError(err)
+          ? describeSheetsError(err, isId, user?.email)
+          : err instanceof Error
+          ? err.message
+          : isId
+          ? 'Gagal mengakses data spreadsheet.'
+          : 'Could not read the spreadsheet.'
+      );
     } finally {
       setIsLoadingSheets(false);
     }
@@ -213,9 +295,13 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
 
   // Run bulk import into Firestore
   const handleImportToFirebase = async () => {
-    const targetId = selectedSpreadsheetId || extractSheetId(customSheetUrl);
+    const targetId = selectedSpreadsheetId;
     if (!targetId || !accessToken) {
-      setErrorMsg('Pilih spreadsheet terlebih dahulu.');
+      setErrorMsg(
+        isId
+          ? 'Hubungkan Google Sheets lalu periksa spreadsheet terlebih dahulu (Langkah 1).'
+          : 'Connect Google Sheets and inspect a spreadsheet first (Step 1).'
+      );
       return;
     }
 
@@ -225,9 +311,11 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
 
     try {
       // Fetch all rows
-      const allRows = await fetchSheetValues(accessToken, targetId, `${selectedTab || 'Sheet1'}!A1:Z2000`);
+      const allRows = await fetchSheetValues(accessToken, targetId, sheetRange(selectedTab, 'A1:Z2000'));
       if (allRows.length <= 1) {
-        throw new Error('Tidak ada baris data respon baru untuk diimpor.');
+        throw new Error(
+          isId ? 'Tidak ada baris data respon baru untuk diimpor.' : 'There are no response rows to import.'
+        );
       }
 
       const membersToImport = parseRowsToMembers(
@@ -238,7 +326,11 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       );
 
       if (membersToImport.length === 0) {
-        throw new Error('Tidak ada baris valid yang ditemukan berdasarkan pemetaan kolom.');
+        throw new Error(
+          isId
+            ? 'Tidak ada baris valid yang ditemukan berdasarkan pemetaan kolom.'
+            : 'No valid rows were found with this column mapping.'
+        );
       }
 
       setImportProgress({ completed: 0, total: membersToImport.length });
@@ -264,7 +356,9 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       }
     } catch (err: unknown) {
       console.error('Import error:', err);
-      setErrorMsg(describeFirestoreError(err, true));
+      setErrorMsg(
+        classifySheetsError(err) ? describeSheetsError(err, isId, user?.email) : describeFirestoreError(err, isId)
+      );
     } finally {
       setIsImporting(false);
     }
@@ -282,7 +376,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
           const rawValues = await fetchSheetValues(
             accessToken,
             selectedSpreadsheetId,
-            `${selectedTab || 'Sheet1'}!A1:Z2000`
+            sheetRange(selectedTab, 'A1:Z2000')
           );
 
           const signature = `${selectedSpreadsheetId}|${selectedTab}|${JSON.stringify(columnMapping)}|${JSON.stringify(rawValues)}`;
@@ -312,8 +406,11 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
           setLastPollTime(new Date());
         } catch (e) {
           console.warn('Auto poll error:', e);
-          // Stop the poller so a failing sync does not keep retrying writes every interval.
-          setErrorMsg(describeFirestoreError(e, true));
+          // Stop the poller so a failing sync does not keep retrying writes every interval
+          // (an expired Sheets token ends up here too: the message asks to reconnect).
+          setErrorMsg(
+            classifySheetsError(e) ? describeSheetsError(e, isId, user?.email) : describeFirestoreError(e, isId)
+          );
           setIsAutoSyncActive(false);
         } finally {
           pollInFlightRef.current = false;
@@ -395,7 +492,15 @@ function onFormSubmit(e) {
               className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 hover:border-emerald-500/50 text-xs font-bold flex items-center space-x-2 transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               <Key className="w-4 h-4 text-emerald-400" />
-              <span>{accessToken ? 'Perbarui Izin Akun Google' : 'Hubungkan Akun Google'}</span>
+              <span>
+                {accessToken
+                  ? isId
+                    ? 'Perbarui Izin Google Sheets'
+                    : 'Renew Google Sheets Access'
+                  : isId
+                  ? 'Hubungkan Google Sheets'
+                  : 'Connect Google Sheets'}
+              </span>
             </button>
           </div>
         </div>
@@ -410,13 +515,17 @@ function onFormSubmit(e) {
             </div>
             <div>
               <h3 className="text-lg font-bold text-white mb-1">
-                Koneksi Google Sheets & Drive Diperlukan
+                {isId ? 'Koneksi Google Sheets Diperlukan' : 'Google Sheets Connection Required'}
               </h3>
               <p className="text-sm text-slate-300 leading-relaxed max-w-xl">
-                Untuk membaca spreadsheet Google Form Anda secara langsung, hubungkan akun Google yang memiliki akses ke file spreadsheet pendaftaran KawanCosplay.
+                {isId
+                  ? 'Untuk membaca spreadsheet Google Form secara langsung, beri MyKCC izin baca Google Sheets untuk akun Google admin yang sedang masuk. Akun tersebut harus memiliki akses ke spreadsheet pendaftaran KawanCosplay.'
+                  : 'To read the Google Form spreadsheet directly, give MyKCC read access to Google Sheets for the signed-in admin Google account. That account must have access to the KawanCosplay registration spreadsheet.'}
               </p>
               <p className="text-xs text-amber-200/90 leading-relaxed max-w-xl mt-2">
-                Pilih akun Google admin (cosplaysehat@gmail.com) dan izinkan akses Google Drive & Sheets.
+                {isId
+                  ? `Izin diminta untuk akun yang sedang masuk${user?.email ? ` (${user.email})` : ''}. MyKCC hanya meminta akses baca Google Sheets, tanpa akses Google Drive.`
+                  : `Access is requested for the signed-in account${user?.email ? ` (${user.email})` : ''}. MyKCC only asks for read access to Google Sheets, no Google Drive access.`}
               </p>
               {connectError && (
                 <p className="text-xs text-rose-300 font-semibold leading-relaxed max-w-xl mt-2 flex items-start gap-1.5">
@@ -428,12 +537,13 @@ function onFormSubmit(e) {
           </div>
 
           <button
+            type="button"
             onClick={handleAuthorizeGoogle}
             disabled={isLoadingSheets}
             className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 transition-transform active:scale-95 disabled:opacity-50"
           >
             <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-            <span>Hubungkan Google Drive & Sheets</span>
+            <span>{isId ? 'Hubungkan Google Sheets' : 'Connect Google Sheets'}</span>
           </button>
         </div>
       )}
@@ -450,8 +560,14 @@ function onFormSubmit(e) {
                   1
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Pilih File Spreadsheet Google Form</h2>
-                  <p className="text-xs text-slate-400">Pilih dari Drive kamu atau tempel link URL Spreadsheet</p>
+                  <h2 className="text-lg font-bold text-white">
+                    {isId ? 'Spreadsheet Google Form' : 'Google Form Spreadsheet'}
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    {isId
+                      ? 'Tempel URL atau ID spreadsheet respon Google Form.'
+                      : 'Paste the URL or ID of the Google Form responses spreadsheet.'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -464,55 +580,35 @@ function onFormSubmit(e) {
             )}
 
             <div className="space-y-4">
-              {/* Drive file dropdown if available */}
-              {spreadsheets.length > 0 && (
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                    Spreadsheet dari Google Drive Kamu
-                  </label>
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedSpreadsheetId}
-                      onChange={(e) => setSelectedSpreadsheetId(e.target.value)}
-                      className="flex-1 px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500"
-                    >
-                      {spreadsheets.map((file) => (
-                        <option key={file.id} value={file.id}>
-                          📄 {file.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={() => handleInspectSpreadsheet(selectedSpreadsheetId)}
-                      disabled={isLoadingSheets}
-                      className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors shrink-0 disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${isLoadingSheets ? 'animate-spin' : ''}`} />
-                      <span>Muat Kolom</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Or manual URL / ID Input */}
+              {/* Spreadsheet URL / ID (Drive listing removed: it needs a Drive scope; only spreadsheets.readonly is requested) */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                  Atau Tempelkan URL / ID Google Spreadsheet
+                  {isId ? 'URL / ID Google Spreadsheet' : 'Google Spreadsheet URL / ID'}
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XR.../edit atau ID"
-                    value={customSheetUrl}
-                    onChange={(e) => setCustomSheetUrl(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500"
+                    inputMode="url"
+                    autoComplete="off"
+                    placeholder={
+                      isId
+                        ? 'https://docs.google.com/spreadsheets/d/…/edit atau ID'
+                        : 'https://docs.google.com/spreadsheets/d/…/edit or ID'
+                    }
+                    value={sheetInput}
+                    onChange={(e) => handleSheetInputChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleInspectSpreadsheet();
+                      }
+                    }}
+                    className="flex-1 min-w-0 px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-base sm:text-sm focus:outline-none focus:border-emerald-500"
                   />
                   <button
                     type="button"
                     onClick={() => handleInspectSpreadsheet()}
-                    disabled={isLoadingSheets || (!customSheetUrl && !selectedSpreadsheetId)}
+                    disabled={isLoadingSheets || !sheetInput.trim()}
                     className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors shrink-0 disabled:opacity-50"
                   >
                     <span>Periksa</span>
@@ -521,6 +617,14 @@ function onFormSubmit(e) {
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
                   Format: https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit
+                  {sheetInput.trim() && !parsedInputId && (
+                    <span className="block text-rose-300 mt-1">
+                      {isId ? 'URL / ID belum dikenali.' : 'URL / ID not recognised yet.'}
+                    </span>
+                  )}
+                  {spreadsheetTitle && selectedSpreadsheetId && (
+                    <span className="block text-emerald-300 mt-1">📄 {spreadsheetTitle}</span>
+                  )}
                 </p>
               </div>
 
@@ -534,7 +638,7 @@ function onFormSubmit(e) {
                     value={selectedTab}
                     onChange={(e) => {
                       setSelectedTab(e.target.value);
-                      handleInspectSpreadsheet(selectedSpreadsheetId);
+                      handleInspectSpreadsheet(selectedSpreadsheetId, e.target.value);
                     }}
                     className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm"
                   >
@@ -930,8 +1034,12 @@ function onFormSubmit(e) {
             <button
               type="button"
               onClick={() => {
-                if (!selectedSpreadsheetId && !customSheetUrl) {
-                  setErrorMsg('Pilih file spreadsheet terlebih dahulu pada Langkah 1.');
+                if (!isAutoSyncActive && !selectedSpreadsheetId) {
+                  setErrorMsg(
+                    isId
+                      ? 'Periksa spreadsheet terlebih dahulu pada Langkah 1.'
+                      : 'Check a spreadsheet first in Step 1.'
+                  );
                   return;
                 }
                 setIsAutoSyncActive(!isAutoSyncActive);

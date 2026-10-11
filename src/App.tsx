@@ -12,7 +12,14 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m =
 const SiteEditorModal = lazy(() => import('./components/SiteEditorModal').then(m => ({ default: m.SiteEditorModal })));
 
 import type { Member, Photo, SyncLog, SubscriptionErrorKind } from './types';
-import { initAuth, logout, googleSignIn, isPopupCancelledError } from './lib/googleAuth';
+import {
+  initAuth,
+  logout,
+  googleSignIn,
+  isPopupCancelledError,
+  isPopupBlockedError,
+  isUserMismatchError,
+} from './lib/googleAuth';
 import {
   subscribeToMembers,
   subscribeToSyncLogs,
@@ -178,7 +185,7 @@ export default function App() {
         }
         setUser(currentUser);
         setAuthReady(true);
-        // Only googleSignIn (Drive + Sheets scopes) fills this token. initAuth returns the
+        // Only googleSignIn (read-only Sheets scope) fills this token. initAuth returns the
         // session-persisted, uid-scoped token, so Sheets stays connected after a page reload.
         if (token) setAccessToken(token);
         loadMemberForUser(currentUser);
@@ -363,7 +370,7 @@ export default function App() {
     }
   };
 
-  // Admin "Connect Google Sheets": scoped Google sign-in (Drive + Sheets) for a usable access token.
+  // Admin "Connect Google Sheets": on-demand read-only Sheets scope for the signed-in admin account.
   // This is the ONLY Sheets authorization flow; GoogleSheetsSync calls it through onLogin.
   const handleConnectSheets = async () => {
     setSheetsConnectError(null);
@@ -382,12 +389,28 @@ export default function App() {
         );
         return;
       }
+      if (isUserMismatchError(err)) {
+        setSheetsConnectError(
+          currentLang === 'id'
+            ? 'Pilih akun Google yang sama dengan akun admin yang sedang masuk.'
+            : 'Choose the same Google account as the signed-in admin account.'
+        );
+        return;
+      }
+      if (isPopupBlockedError(err)) {
+        setSheetsConnectError(
+          currentLang === 'id'
+            ? 'Browser memblokir jendela login Google. Izinkan pop-up untuk situs ini, lalu coba lagi.'
+            : 'The browser blocked the Google sign-in window. Allow pop-ups for this site and try again.'
+        );
+        return;
+      }
       console.warn('Sheets connect failed:', err);
       const detail = (err as { code?: string })?.code || (err instanceof Error ? err.message : '');
       setSheetsConnectError(
         (currentLang === 'id'
-          ? 'Gagal menghubungkan Google Sheets. Pastikan memilih akun admin (cosplaysehat@gmail.com) dan memberi izin akses Drive & Sheets.'
-          : 'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and grant Drive & Sheets access.') +
+          ? 'Gagal menghubungkan Google Sheets. Pastikan memilih akun admin (cosplaysehat@gmail.com) dan memberi izin baca Google Sheets.'
+          : 'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and allow read access to Google Sheets.') +
           (detail ? ` (${detail})` : '')
       );
     }

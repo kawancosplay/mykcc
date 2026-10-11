@@ -28,6 +28,10 @@ import {
 } from '../lib/worldLocations';
 import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
 
+// Select values that switch to a free-text province / city input (same values as RegistrationForm)
+const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
+const CUSTOM_CITY_OPTION = 'Kustom / Kota Lainnya';
+
 interface UserProfileProps {
   member: Member;
   onUpdateMember: (updated: Member) => void;
@@ -104,6 +108,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     () => getCitiesOfStateByName(formData.country, formData.province),
     [formData.country, formData.province]
   );
+
+  // "Kustom" modes are tracked apart from the value, so the free-text inputs stay visible while typing
+  // (before, the input vanished after the first keystroke because the value stopped matching the option).
+  const [isCustomProvince, setIsCustomProvince] = useState(false);
+  const [isCustomCity, setIsCustomCity] = useState(false);
+  // A saved province / city that is not in the location lists (typed earlier) opens in custom mode
+  useEffect(() => {
+    const customProvince =
+      !!formData.province && !availableProvinces.some((p) => p.name === formData.province);
+    setIsCustomProvince(customProvince);
+    setIsCustomCity(customProvince || (!!formData.city && !availableCities.includes(formData.city)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member.id]);
 
   const handleCopyUserId = () => {
     if (member.userId16) {
@@ -425,26 +442,48 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 Provinsi / State / Prefecture
               </label>
-              <select
-                value={formData.province}
-                onChange={(e) => {
-                  const newProv = e.target.value;
-                  const cities = getCitiesOfStateByName(formData.country, newProv);
-                  setFormData({
-                    ...formData,
-                    province: newProv,
-                    city: cities[0] || '',
-                  });
-                }}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
-              >
-                {availableProvinces.map((p) => (
-                  <option key={p.isoCode || p.name} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-                <option value="Kustom / Wilayah Lainnya">Kustom / Wilayah Lainnya</option>
-              </select>
+              <div className="space-y-1.5">
+                <select
+                  value={isCustomProvince ? CUSTOM_PROVINCE_OPTION : formData.province}
+                  onChange={(e) => {
+                    const newProv = e.target.value;
+                    if (newProv === CUSTOM_PROVINCE_OPTION) {
+                      // A typed province has no city list: the city is typed as well
+                      setIsCustomProvince(true);
+                      setIsCustomCity(true);
+                      setFormData({ ...formData, province: '', city: '' });
+                      return;
+                    }
+                    const cities = getCitiesOfStateByName(formData.country, newProv);
+                    setIsCustomProvince(false);
+                    setIsCustomCity(false);
+                    setFormData({
+                      ...formData,
+                      province: newProv,
+                      city: cities[0] || '',
+                    });
+                  }}
+                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                >
+                  {availableProvinces.map((p) => (
+                    <option key={p.isoCode || p.name} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
+                  <option value={CUSTOM_PROVINCE_OPTION}>{CUSTOM_PROVINCE_OPTION}</option>
+                </select>
+
+                {isCustomProvince && (
+                  <input
+                    type="text"
+                    placeholder="Ketik nama provinsi / wilayah Anda"
+                    maxLength={MEMBER_FIELD_LIMITS.province}
+                    value={formData.province}
+                    onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-base sm:text-xs"
+                  />
+                )}
+              </div>
             </div>
 
             {/* Kota / Kabupaten / City */}
@@ -453,26 +492,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 Kota / Kabupaten / County
               </label>
               <div className="space-y-1.5">
-                <select
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
-                >
-                  {availableCities.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                  <option value="Kustom / Kota Lainnya">Kustom / Kota Lainnya</option>
-                </select>
+                {!isCustomProvince && (
+                  <select
+                    value={isCustomCity ? CUSTOM_CITY_OPTION : formData.city}
+                    onChange={(e) => {
+                      if (e.target.value === CUSTOM_CITY_OPTION) {
+                        setIsCustomCity(true);
+                        setFormData({ ...formData, city: '' });
+                        return;
+                      }
+                      setIsCustomCity(false);
+                      setFormData({ ...formData, city: e.target.value });
+                    }}
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                  >
+                    {availableCities.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                    <option value={CUSTOM_CITY_OPTION}>{CUSTOM_CITY_OPTION}</option>
+                  </select>
+                )}
 
-                {formData.city === 'Kustom / Kota Lainnya' && (
+                {(isCustomCity || isCustomProvince) && (
                   <input
                     type="text"
                     placeholder="Ketik nama kota atau wilayah Anda"
                     maxLength={MEMBER_FIELD_LIMITS.city}
+                    value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs"
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-base sm:text-xs"
                   />
                 )}
               </div>

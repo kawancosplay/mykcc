@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   ShieldCheck,
   Lock,
@@ -47,6 +47,8 @@ import {
   repairMemberIdsAndCards,
   findDuplicateRegistrationGroups,
   mergeDuplicateRegistration,
+  isExactDuplicateGroup,
+  EXACT_DUPLICATE_WINDOW_MS,
 } from '../lib/firestoreService';
 import { isMainAdminUser, describeFirestoreError } from '../lib/firebase';
 import { GoogleSheetsSync } from './GoogleSheetsSync';
@@ -67,7 +69,7 @@ interface AdminDashboardProps {
   currentLang: LanguageCode;
   onSelectMember: (member: Member) => void;
   onOpenAuth: () => void; // opens AuthModal (Google sign-in)
-  onConnectSheets: () => void | Promise<void>; // scoped googleSignIn (Drive + Sheets), owned by App
+  onConnectSheets: () => void | Promise<void>; // on-demand googleSignIn (read-only Sheets scope), owned by App
   sheetsConnectError: string | null;
   onLogout: () => void;
 }
@@ -82,6 +84,22 @@ const REPAIR_REASON_LABELS: Record<string, string> = {
   missing: 'ID belum tersimpan / missing',
   main_account: 'ID Main Account dipakai anggota lain / main account ID',
 };
+
+// Bulk duplicate merge: 'identical' = only exact copies (isExactDuplicateGroup), 'all' = every scanned group
+type BulkMergeMode = 'identical' | 'all';
+
+interface BulkMergeReport {
+  mode: BulkMergeMode;
+  groups: number; // groups processed
+  mergedGroups: number; // groups whose duplicates were all merged
+  mergedRecords: number; // duplicate records merged into their keeper (and deleted)
+  failedGroups: number; // groups with at least one failed merge
+  errors: string[];
+}
+
+// Number of error messages shown in the bulk merge report (all of them go to the console)
+const BULK_MERGE_ERRORS_SHOWN = 5;
+const EXACT_DUPLICATE_WINDOW_SECONDS = Math.round(EXACT_DUPLICATE_WINDOW_MS / 1000);
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   user,
@@ -156,6 +174,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateRegistrationGroup[] | null>(null);
   const [mergingId, setMergingId] = useState<string | null>(null);
   const [mergeResult, setMergeResult] = useState<{ isError: boolean; message: string } | null>(null);
+  // Bulk merge: progress in groups while running (null = idle) and the report of the last run
+  const [bulkMergeProgress, setBulkMergeProgress] = useState<{ done: number; total: number } | null>(null);
+  const [bulkMergeReport, setBulkMergeReport] = useState<BulkMergeReport | null>(null);
+  const isBulkMerging = bulkMergeProgress !== null;
+  const isAnyMergeRunning = mergingId !== null || isBulkMerging;
+
+  // Latest members snapshot for the re-scan after a bulk merge (the handler's own `members` is stale)
+  const membersRef = useRef<Member[]>(members);
+  useEffect(() => {
+    membersRef.current = members;
+  }, [members]);
+
+  // Scan summary: duplicate records in all groups and the exact-copy groups ("identical")
+  const duplicateRecordCount = useMemo(
+    () => (duplicateGroups || []).reduce((total, g) => total + g.duplicates.length, 0),
+    [duplicateGroups]
+  );
+  const exactDuplicateGroups = useMemo(
+    () => (duplicateGroups || []).filter((g) => isExactDuplicateGroup(g)),
+    [duplicateGroups]
+  );
 
   // Members holding reserved IDs (0000 0000 0000 0000 – 0000 0000 0000 0100), always computed live.
   // The signed-in main account's own doc is excluded.
@@ -267,12 +306,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // O(n²) duplicate-person scan: on demand only, never on every members snapshot.
   const handleScanDuplicateRegistrations = () => {
+    if (isAnyMergeRunning) return;
     setDuplicateGroups(findDuplicateRegistrationGroups(members));
     setMergeResult(null);
+    setBulkMergeReport(null);
   };
 
   const handleMergeDuplicate = async (group: DuplicateRegistrationGroup, dup: Member) => {
-    if (mergingId) return;
+    if (isAnyMergeRunning) return;
     const keeper = group.keeper;
     const keeperName = keeper.name || keeper.cosplayName || keeper.id;
     const dupName = dup.name || dup.cosplayName || dup.id;
@@ -308,6 +349,84 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       });
     } finally {
       setMergingId(null);
+    }
+  };
+
+  // Bulk merge with ONE confirm: runs the per-record merge (mergeDuplicateRegistration, <= 3 ops per
+  // batch) sequentially for every group, keeps going after a failed merge, then reports and re-scans.
+  const handleBulkMergeDuplicates = async (mode: BulkMergeMode) => {
+    if (isAnyMergeRunning || !duplicateGroups) return;
+    const groups = mode === 'identical' ? exactDuplicateGroups : duplicateGroups;
+    if (groups.length === 0) return;
+    const recordCount = groups.reduce((total, g) => total + g.duplicates.length, 0);
+
+    const confirmText =
+      mode === 'identical'
+        ? isId
+          ? `Gabungkan ${groups.length} grup pendaftaran ganda yang IDENTIK (${recordCount} data ganda)?\n\n` +
+            `Hanya grup dengan cosname dan nomor WhatsApp utama yang sama serta waktu daftar berselisih maksimal ${EXACT_DUPLICATE_WINDOW_SECONDS} detik (salinan persis / impor ganda).\n` +
+            'Data terbaru & nomor WhatsApp disalin ke pendaftaran paling awal (KCC ID-nya tetap), lalu data ganda dihapus permanen. Lanjutkan?'
+          : `Merge ${groups.length} IDENTICAL duplicate groups (${recordCount} duplicate records)?\n\n` +
+            `Only groups with the same cosname and primary WhatsApp number, created at most ${EXACT_DUPLICATE_WINDOW_SECONDS} seconds apart (exact copies / double imports).\n` +
+            'The newest data & every WhatsApp number go to the earliest registration (its KCC ID stays), then the duplicates are permanently deleted. Continue?'
+        : isId
+          ? `Gabungkan SEMUA ${groups.length} grup hasil pindaian (${recordCount} data ganda)?\n\n` +
+            'Termasuk grup yang hanya cocok lewat nomor WhatsApp, Discord, email, media sosial, atau nama yang sama — pastikan daftar di bawah sudah diperiksa.\n' +
+            'Data terbaru & nomor WhatsApp disalin ke pendaftaran paling awal (KCC ID-nya tetap), lalu data ganda dihapus permanen. Tindakan ini tidak dapat dibatalkan. Lanjutkan?'
+          : `Merge ALL ${groups.length} scanned groups (${recordCount} duplicate records)?\n\n` +
+            'This includes groups matched only by the same WhatsApp number, Discord, email, social media or name — make sure you have reviewed the list below.\n' +
+            'The newest data & every WhatsApp number go to the earliest registration (its KCC ID stays), then the duplicates are permanently deleted. This cannot be undone. Continue?';
+    if (!window.confirm(confirmText)) return;
+
+    setMergeResult(null);
+    setBulkMergeReport(null);
+    setBulkMergeProgress({ done: 0, total: groups.length });
+
+    const report: BulkMergeReport = {
+      mode,
+      groups: groups.length,
+      mergedGroups: 0,
+      mergedRecords: 0,
+      failedGroups: 0,
+      errors: [],
+    };
+    const mergedIds = new Set<string>();
+
+    try {
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
+        const keeperLabel = `${group.keeper.name || group.keeper.cosplayName || group.keeper.id} (${format16DigitUserId(
+          group.keeper.userId16
+        )})`;
+        let groupFailed = false;
+
+        // mergeDuplicateRegistration re-reads both docs from the server, so the keeper always receives
+        // the result of the previous merge of its group
+        for (const dup of group.duplicates) {
+          try {
+            await mergeDuplicateRegistration(group.keeper, dup);
+            mergedIds.add(dup.id);
+            report.mergedRecords++;
+          } catch (e) {
+            groupFailed = true;
+            console.error('Bulk merge duplicate registration error:', e);
+            const dupLabel = `${dup.name || dup.cosplayName || dup.id} (${format16DigitUserId(dup.userId16)})`;
+            report.errors.push(`${dupLabel} → ${keeperLabel}: ${describeFirestoreError(e, isId)}`);
+          }
+        }
+
+        if (groupFailed) report.failedGroups++;
+        else report.mergedGroups++;
+        setBulkMergeProgress({ done: i + 1, total: groups.length });
+      }
+    } finally {
+      setBulkMergeReport(report);
+      setBulkMergeProgress(null);
+      // Re-scan on the latest snapshot; merged duplicates are dropped explicitly in case their deletion
+      // has not reached the members snapshot yet
+      setDuplicateGroups(
+        findDuplicateRegistrationGroups(membersRef.current.filter((m) => !mergedIds.has(m.id)))
+      );
     }
   };
 
@@ -954,7 +1073,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <button
                 onClick={handleScanDuplicateRegistrations}
-                disabled={mergingId !== null}
+                disabled={isAnyMergeRunning}
                 className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
               >
                 <Search className="w-3.5 h-3.5" />
@@ -969,6 +1088,148 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {mergeResult.isError ? 'Gagal: ' : 'Berhasil: '}
                 {mergeResult.message}
               </p>
+            )}
+
+            {/* Report of the last bulk merge */}
+            {bulkMergeReport && (
+              <div
+                className={`mt-4 p-4 rounded-2xl border text-xs text-slate-200 space-y-3 ${
+                  bulkMergeReport.failedGroups > 0
+                    ? 'bg-amber-950/50 border-amber-500/30'
+                    : 'bg-emerald-950/50 border-emerald-500/30'
+                }`}
+              >
+                <p
+                  className={`font-bold flex items-center gap-1.5 ${
+                    bulkMergeReport.failedGroups > 0 ? 'text-amber-300' : 'text-emerald-300'
+                  }`}
+                >
+                  {bulkMergeReport.failedGroups > 0 ? (
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>
+                    {isId
+                      ? `Penggabungan massal selesai (${
+                          bulkMergeReport.mode === 'identical' ? 'grup identik' : 'semua hasil pindaian'
+                        }).`
+                      : `Bulk merge finished (${
+                          bulkMergeReport.mode === 'identical' ? 'identical groups' : 'all scan results'
+                        }).`}
+                  </span>
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { label: isId ? 'Grup diproses' : 'Groups processed', value: bulkMergeReport.groups },
+                    { label: isId ? 'Grup digabung' : 'Groups merged', value: bulkMergeReport.mergedGroups },
+                    { label: isId ? 'Data ganda digabung' : 'Duplicates merged', value: bulkMergeReport.mergedRecords },
+                    { label: isId ? 'Grup gagal' : 'Groups failed', value: bulkMergeReport.failedGroups },
+                  ].map((s) => (
+                    <div key={s.label} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
+                      <p className="text-lg font-black text-white">{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {bulkMergeReport.errors.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-rose-300 mb-1">
+                      {isId ? 'Kendala' : 'Errors'} ({bulkMergeReport.errors.length}):
+                    </p>
+                    <ul className="list-disc pl-5 space-y-0.5 text-rose-200 break-words">
+                      {bulkMergeReport.errors.slice(0, BULK_MERGE_ERRORS_SHOWN).map((errText, i) => (
+                        <li key={i}>{errText}</li>
+                      ))}
+                    </ul>
+                    {bulkMergeReport.errors.length > BULK_MERGE_ERRORS_SHOWN && (
+                      <p className="mt-1 text-slate-400">
+                        {isId
+                          ? `…dan ${bulkMergeReport.errors.length - BULK_MERGE_ERRORS_SHOWN} kendala lainnya (lihat console browser).`
+                          : `…and ${bulkMergeReport.errors.length - BULK_MERGE_ERRORS_SHOWN} more (see the browser console).`}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Scan summary + bulk merge (one confirm per action) */}
+            {duplicateGroups !== null && duplicateGroups.length > 0 && (
+              <div className="mt-4 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-3">
+                <p className="text-xs text-slate-200 leading-relaxed">
+                  {isId ? (
+                    <>
+                      Ditemukan <strong className="text-white">{duplicateGroups.length}</strong> grup pendaftaran ganda (
+                      <strong className="text-white">{duplicateRecordCount}</strong> data ganda), termasuk{' '}
+                      <strong className="text-emerald-300">{exactDuplicateGroups.length}</strong> grup identik (cosname
+                      & nomor WhatsApp utama sama, waktu daftar berselisih maksimal {EXACT_DUPLICATE_WINDOW_SECONDS}{' '}
+                      detik).
+                    </>
+                  ) : (
+                    <>
+                      Found <strong className="text-white">{duplicateGroups.length}</strong> duplicate groups (
+                      <strong className="text-white">{duplicateRecordCount}</strong> duplicate records), including{' '}
+                      <strong className="text-emerald-300">{exactDuplicateGroups.length}</strong> identical groups (same
+                      cosname & primary WhatsApp number, created at most {EXACT_DUPLICATE_WINDOW_SECONDS} seconds
+                      apart).
+                    </>
+                  )}
+                </p>
+
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                  <button
+                    onClick={() => handleBulkMergeDuplicates('identical')}
+                    disabled={isAnyMergeRunning || exactDuplicateGroups.length === 0}
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {isId
+                        ? `Gabungkan semua yang identik (${exactDuplicateGroups.length})`
+                        : `Merge all identical (${exactDuplicateGroups.length})`}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleBulkMergeDuplicates('all')}
+                    disabled={isAnyMergeRunning}
+                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Layers className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {isId
+                        ? `Gabungkan semua hasil pindaian (${duplicateGroups.length})`
+                        : `Merge all scan results (${duplicateGroups.length})`}
+                    </span>
+                  </button>
+                </div>
+
+                {bulkMergeProgress && (
+                  <div className="space-y-1.5" role="status" aria-live="polite">
+                    <p className="text-xs font-semibold text-indigo-200 flex items-center gap-1.5">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      <span>
+                        {isId
+                          ? `Menggabungkan ${bulkMergeProgress.done}/${bulkMergeProgress.total} grup…`
+                          : `Merging ${bulkMergeProgress.done}/${bulkMergeProgress.total} groups…`}
+                      </span>
+                    </p>
+                    <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-400 transition-all"
+                        style={{
+                          width: `${
+                            bulkMergeProgress.total > 0
+                              ? Math.round((bulkMergeProgress.done / bulkMergeProgress.total) * 100)
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {duplicateGroups !== null &&
@@ -1035,7 +1296,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               </div>
                               <button
                                 onClick={() => handleMergeDuplicate(group, dup)}
-                                disabled={mergingId !== null}
+                                disabled={isAnyMergeRunning}
                                 className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
                               >
                                 <RefreshCw className={`w-3.5 h-3.5 ${mergingId === dup.id ? 'animate-spin' : ''}`} />

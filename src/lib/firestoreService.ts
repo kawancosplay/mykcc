@@ -32,6 +32,7 @@ import {
   generate16DigitUserId,
   generateUniqueChronologicalUserId16,
   findDuplicateMember,
+  extractAllPhones,
   isValidUserId16,
   isReservedUserId16,
   mergeMemberPhones,
@@ -1052,6 +1053,46 @@ export function findDuplicateRegistrationGroups(members: Member[]): DuplicateReg
   return Array.from(groups.values())
     .filter((g) => g.duplicates.length > 0)
     .sort((a, b) => compareByCreatedAtThenId(a.keeper.id, a.keeper.createdAt, b.keeper.id, b.keeper.createdAt));
+}
+
+// Records of one person created at most this far apart count as one double submission / double import
+export const EXACT_DUPLICATE_WINDOW_MS = 60 * 1000;
+
+/**
+ * Admin bulk merge ("identical" mode): true when every record of the group (keeper + duplicates) has
+ * the same cosname (case- and whitespace-insensitive), the same primary WhatsApp number (normalized
+ * digits, at least 8) and a createdAt within EXACT_DUPLICATE_WINDOW_MS of each other, i.e. exact
+ * copies such as a sheet imported twice. Records without a usable name, primary number or createdAt
+ * never qualify.
+ */
+export function isExactDuplicateGroup(
+  group: DuplicateRegistrationGroup,
+  windowMs: number = EXACT_DUPLICATE_WINDOW_MS
+): boolean {
+  if (!group || !group.keeper || !Array.isArray(group.duplicates) || group.duplicates.length === 0) return false;
+
+  const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+  const cosnameKey = (m: Member): string =>
+    (text(m.name) || text(m.cosplayName)).normalize('NFKC').replace(/\s+/g, ' ').toLowerCase();
+  const primaryPhoneKey = (m: Member): string => {
+    const phone = text(m.phone);
+    return phone ? extractAllPhones({ phone })[0] || '' : '';
+  };
+
+  const keeperCosname = cosnameKey(group.keeper);
+  const keeperPhone = primaryPhoneKey(group.keeper);
+  if (!keeperCosname || !keeperPhone) return false;
+
+  let earliest = Number.POSITIVE_INFINITY;
+  let latest = Number.NEGATIVE_INFINITY;
+  for (const m of [group.keeper, ...group.duplicates]) {
+    if (!m || cosnameKey(m) !== keeperCosname || primaryPhoneKey(m) !== keeperPhone) return false;
+    const ms = createdAtMs(m.createdAt);
+    if (ms === Number.MAX_SAFE_INTEGER) return false; // missing / unparseable createdAt
+    earliest = Math.min(earliest, ms);
+    latest = Math.max(latest, ms);
+  }
+  return latest - earliest <= windowMs;
 }
 
 /**

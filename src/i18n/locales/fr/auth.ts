@@ -1,11 +1,7 @@
-import type { LocaleNamespace } from '../../types';
-
-const auth: Partial<LocaleNamespace<'auth'>> = {
-  loginTitle: 'Connexion à MyKCC',
-  signUpTitle: 'Créer un compte',
-  orContinueWith: 'Ou continuer avec d’autres options',
-  emailLabel: 'Adresse e-mail valide',
-  passwordLabel: 'Mot de passe',
-};
-
-export default auth;
+export default {
+  loginTitle: 'Sign In to MyKCC',
+  signUpTitle: 'Create New MyKCC Account',
+  orContinueWith: 'Or continue with other providers',
+  emailLabel: 'Active Email Address',
+  passwordLabel: 'Password',
+} as const;

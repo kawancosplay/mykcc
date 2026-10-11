@@ -1,25 +1,101 @@
-import type { LocaleNamespace } from '../../types';
-
-const common: Partial<LocaleNamespace<'common'>> = {
+export default {
   appName: 'MyKCC',
-  tagline: '글로벌 팝컬처, 코스프레 & 아이돌 팬 커뮤니티 (100% SFW)',
-  navForm: '등록 신청서',
-  navCard: '디지털 회원증',
-  navGallery: '갤러리',
-  navProfile: '내 프로필',
-  navAdmin: '관리자 대시보드',
-  navLogin: '로그인 / 가입',
-  navLogout: '로그아웃',
-  userId16Label: '공식 16자리 유저 ID',
-  officialBannerText: 'KawanCosplay 공식 사이트',
-  howYouKnow: '공식 사이트 확인법',
-  aboutKccTitle: '공식 글로벌 커뮤니티 (100% SFW)',
-  aboutKccDesc: '전 세계 팬들과 함께하는 건전 팝컬처 플랫폼입니다.',
-  secureSiteTitle: '보안 사이트는 HTTPS 및 자물쇠(🔒) 표시',
-  secureSiteDesc: '주소창의 자물쇠 기호를 확인하세요.',
-  officialContactTitle: '공식 WhatsApp 핫라인 & 이메일',
-  officialContactDesc: '문의는 WhatsApp 핫라인 +62 857-1103-2782 및 cosplaysehat@gmail.com을 통해 진행됩니다.',
-  whatsappHotline: '공식 WhatsApp 핫라인: +62 857-1103-2782',
-};
+  tagline: 'Global Pop-Culture, Cosplay & Wota Community (100% SFW)',
+  navForm: 'Registration Form',
+  navCard: 'My Digital Pass',
+  navGallery: 'Cosplay Gallery',
+  navProfile: 'My Profile',
+  navAdmin: 'Admin Dashboard',
+  navLogin: 'Sign In / Register',
+  navLogout: 'Sign Out',
+  userId16Label: 'Official KCC ID',
+  officialBannerText: 'Official website of KawanCosplay',
+  howYouKnow: "Here's how you know",
+  aboutKccTitle: 'Official International Community (100% SFW)',
+  aboutKccDesc: 'KawanCosplay is an international creative pop-culture community dedicated to 100% SFW (Safe For Work) healthy cosplay, idol appreciation, anime, and open to members worldwide.',
+  secureSiteTitle: 'Secure websites use HTTPS & Lock icon (🔒)',
+  secureSiteDesc: "Look at your browser's address bar. Official websites always begin with https:// and display a secure lock icon (🔒).",
+  officialContactTitle: 'Official WhatsApp Hotline & Email',
+  officialContactDesc: 'Official inquiries are exclusively handled via WhatsApp Hotline +62 857-1103-2782 and cosplaysehat@gmail.com.',
+  whatsappHotline: 'Official WhatsApp Hotline: +62 857-1103-2782',
 
-export default common;
+  // Generic
+  close: 'Close',
+  optional: '(Optional)',
+  tryAgain: 'Try Again',
+  errorWithDetail: '{message} ({detail})',
+  loadingApp: 'Loading App...',
+  loadingAdmin: 'Loading Admin...',
+
+  // Navbar & app shell
+  navFormShort: 'Registration',
+  navCardShort: 'KCC ID',
+  navGalleryShort: 'Gallery',
+  openMenu: 'Open menu',
+  closeMenu: 'Close menu',
+  chooseLanguage: 'Choose language ({language})',
+  siteEditorShort: 'Site Editor',
+  themeEditor: 'Theme Editor',
+  whatsappCommunity: 'WhatsApp Community',
+  whatsappContact: 'WhatsApp: +62 857-1103-2782',
+  emailContact: 'Email: cosplaysehat@gmail.com',
+  userFallbackName: 'User',
+  idValue: 'ID: {id}',
+  kccIdValue: 'KCC ID: {id}',
+  logoAlt: 'KawanCosplay logo',
+  officialBadge: 'Official',
+
+  // PWA install
+  pwaInstall: 'Install App',
+  pwaIosTitle: 'Install on iPhone / iPad',
+  pwaIosStep1: '1. Tap the {share} button in the Safari toolbar.',
+  pwaIosShare: 'Share',
+  pwaIosStep2: '2. Scroll down and tap {addToHome}.',
+  pwaIosAddToHome: 'Add to Home Screen',
+
+  // Admin portal shell
+  backToPublicSite: 'Back to Public Site',
+  adminPortalTitle: 'KawanCosplay Admin Portal',
+  googleSignInBadge: 'Google Sign-In',
+  adminRestricted: 'Admin Restricted',
+  lockAndExitAdminTitle: 'Lock and exit the admin portal',
+  lockExit: 'Lock / Exit',
+  adminPortal: 'Admin Portal',
+  adminPortalLinkTitle: 'KCC admin-only portal (admin Google sign-in)',
+  sheetsPopupClosed: 'The Google authorization window was closed before finishing.',
+  sheetsWrongAccount: 'Choose the same Google account as the signed-in admin account.',
+  sheetsPopupBlocked: 'The browser blocked the Google sign-in window. Allow pop-ups for this site and try again.',
+  sheetsConnectFailed:
+    'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and allow read access to Google Sheets.',
+
+  // KCC ID lookup page
+  cardPageBadge: "MyKCC Member's ID Card",
+  cardPageTitle: "Member's ID Card & KCC ID",
+  cardPageDesc:
+    'To protect the privacy of all members, the complete member list is restricted to the admin portal. Enter your 16-Digit KCC ID (e.g. 2026 1008 0715 3001) to display your official digital pass.',
+  connectedProfile: 'Connected Profile',
+  openPass: 'Open Pass',
+  lookupPlaceholder: '16-Digit KCC ID, e.g. 2026 1008 0715 3001',
+  lookupSubmit: "Search & View Member's ID Card",
+  searching: 'Searching...',
+  passFound: 'Pass Found!',
+  notRegisteredYet: 'Not registered yet?',
+  fillRegistrationForm: 'Fill Registration Form →',
+  lookupInvalidId: 'Please enter your 16-digit KCC ID (digits only, spaces allowed).',
+  lookupNotFound: 'No Member ID Card found for that KCC ID. Please double-check the 16 digits.',
+  lookupPermissionDenied:
+    'Card lookup is currently unavailable (database access denied). Please try again later or contact a KCC admin.',
+
+  // Profile tab states
+  profileLoadFailed: 'Could not load your member profile.',
+  checkConnectionRetry: 'Check your internet connection, then try again.',
+  preparingProfile: 'Preparing Member Profile...',
+  preparingProfileDesc: 'Connecting account to your digital KCC identity.',
+  pleaseSignIn: 'Please sign in',
+  clickToSignIn: 'Click here to sign in',
+
+  // Footer
+  footerPlatform: '100% SFW International Pop-Culture Platform.',
+  copyright: '© 2026 MyKCC. All rights reserved.',
+  privacyShieldActive: '16-Digit Identity & Privacy Shield System Active',
+} as const;

@@ -1,13 +1,9 @@
-import type { LocaleNamespace } from '../../types';
-
-const admin: Partial<LocaleNamespace<'admin'>> = {
-  dashboardTitle: 'Administrator-Dashboard',
-  dashboardDesc: 'Geschützter Verwaltungsbereich zum Schutz der Mitgliederdaten.',
-  loginPrompt: 'Admin-Schlüssel eingeben oder mit offizieller E-Mail anmelden.',
-  privacyRestrictedNotice: 'Aus Datenschutzgründen ist die Mitgliederliste nur für Administratoren zugänglich.',
-  exportCsv: 'CSV exportieren',
-  totalMembers: 'Registrierte Mitglieder',
-  resetFilter: 'Filter zurücksetzen',
-};
-
-export default admin;
+export default {
+  dashboardTitle: 'KawanCosplay Admin Dashboard',
+  dashboardDesc: 'Restricted administrative portal for community member roster and Google Sheets sync.',
+  loginPrompt: 'Enter Admin Passkey or sign in as cosplaysehat@gmail.com',
+  privacyRestrictedNotice: 'To protect member privacy, the member roster is strictly restricted to KawanCosplay administrators.',
+  exportCsv: 'Export CSV',
+  totalMembers: 'Total Registered Members',
+  resetFilter: 'Reset Filters',
+} as const;

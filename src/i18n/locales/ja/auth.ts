@@ -1,11 +1,7 @@
-import type { LocaleNamespace } from '../../types';
-
-const auth: Partial<LocaleNamespace<'auth'>> = {
-  loginTitle: 'ログイン',
-  signUpTitle: '新規アカウント作成',
-  orContinueWith: '外部アカウントでログイン',
-  emailLabel: 'メールアドレス',
-  passwordLabel: 'パスワード',
-};
-
-export default auth;
+export default {
+  loginTitle: 'Sign In to MyKCC',
+  signUpTitle: 'Create New MyKCC Account',
+  orContinueWith: 'Or continue with other providers',
+  emailLabel: 'Active Email Address',
+  passwordLabel: 'Password',
+} as const;

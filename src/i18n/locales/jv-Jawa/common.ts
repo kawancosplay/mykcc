@@ -1,25 +1,105 @@
 import type { LocaleNamespace } from '../../types';
 
-const common: Partial<LocaleNamespace<'common'>> = {
+const common: LocaleNamespace<'common'> = {
   appName: 'MyKCC',
-  tagline: 'ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ꦥꦺꦴꦥ꧀ꦏꦸꦭ꧀ꦠꦸꦂꦭꦤ꧀ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀ꦒ꧀ꦭꦺꦴꦧꦭ꧀(꧇꧑꧐꧐꧇%SFW)',
-  navForm: 'ꦥꦼꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀',
-  navCard: 'ꦏꦂꦠꦸꦏꦸꦭ',
-  navGallery: 'ꦒꦭꦺꦫꦶ',
-  navProfile: 'ꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀',
-  navAdmin: 'ꦥꦔꦸꦫꦸꦱ꧀ꦲꦢ꧀ꦩꦶꦤ꧀',
-  navLogin: 'ꦩ꧀ꦭꦼꦧꦸ',
-  navLogout: 'ꦩꦼꦠꦸ',
-  userId16Label: '꧇꧑꧖꧇ꦢꦶꦒꦶꦠ꧀ꦲꦶꦣ꧀',
-  officialBannerText: 'ꦱꦶꦠꦸꦱ꧀ꦉꦱ꧀ꦩꦶ',
-  howYouKnow: 'ꦕꦫꦤꦼꦱ꧀ꦛꦺꦏꦏꦺ',
-  aboutKccTitle: 'ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ꦉꦱ꧀ꦩꦶ(꧇꧑꧐꧐꧇%SFW)',
-  aboutKccDesc: 'ꦏꦮꦤ꧀ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀ꦒ꧀ꦭꦺꦴꦧꦭ꧀꧉',
-  secureSiteTitle: 'ꦱꦶꦠꦸꦱ꧀ꦲꦩꦤ꧀(🔒)',
-  secureSiteDesc: 'ꦒꦼꦩ꧀ꦧꦺꦴꦏ꧀(🔒)ꦲꦶꦁꦧꦿꦺꦴꦮ꧀ꦱꦼꦂ꧉',
-  officialContactTitle: 'ꦮ꦳ꦠ꧀ꦱꦥ꧀ꦉꦱ꧀ꦩꦶ',
-  officialContactDesc: 'WhatsApp +62 857-1103-2782',
-  whatsappHotline: 'Hotline WhatsApp: +62 857-1103-2782',
+  tagline: 'Komunitas Pop Culture, Cosplay & Wota Global (100% SFW)',
+  navForm: 'Form ꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀',
+  navCard: 'KCC ID Saya',
+  navGallery: 'ꦒꦭꦺꦫꦶ Cosplay',
+  navProfile: 'ꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀ ꦏꦸꦭ',
+  navAdmin: 'Dashboard Admin',
+  navLogin: 'ꦩ꧀ꦭꦼꦧꦼꦠ꧀ / Daftar',
+  navLogout: 'ꦩꦼꦢꦭ꧀',
+  userId16Label: 'KCC ID Resmi',
+  officialBannerText: 'Situs resmi KawanCosplay',
+  howYouKnow: 'Cara memastikan keaslian situs',
+  aboutKccTitle: 'Media & Komunitas Internasional (100% SFW)',
+  aboutKccDesc: 'KawanCosplay adalah wadah komunitas pop culture internasional yang mengedepankan konten 100% SFW (Safe For Work), ramah pemula, terbuka untuk cosplayer, wota, otaku, dan sahabat penggemar dari seluruh dunia.',
+  secureSiteTitle: 'Situs aman menggunakan HTTPS & Ikon Gembok (🔒)',
+  secureSiteDesc: 'Periksa bilah alamat browser Anda. Situs web resmi selalu menggunakan awalan https:// dan menampilkan ikon gembok terkunci (🔒).',
+  officialContactTitle: 'Hotline WhatsApp Resmi & Email',
+  officialContactDesc: 'Layanan resmi KawanCosplay hanya melalui WhatsApp Hotline +62 857-1103-2782 dan email cosplaysehat@gmail.com.',
+  whatsappHotline: 'Hotline WhatsApp Resmi: +62 857-1103-2782',
+
+  // Generic
+  close: 'Tutup',
+  optional: '(Opsional)',
+  tryAgain: 'Coba Lagi',
+  errorWithDetail: '{message} ({detail})',
+  loadingApp: 'Memuat Aplikasi...',
+  loadingAdmin: 'Memuat Admin...',
+
+  // Navbar & app shell
+  navFormShort: 'ꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀',
+  navCardShort: 'KCC ID',
+  navGalleryShort: 'Galeri',
+  openMenu: 'Buka Menu',
+  closeMenu: 'Tutup Menu',
+  chooseLanguage: 'Pilih Bahasa ({language})',
+  siteEditorShort: 'Editor Situs',
+  themeEditor: 'Editor Tema',
+  whatsappCommunity: 'Komunitas WhatsApp',
+  whatsappContact: 'WhatsApp: +62 857-1103-2782',
+  emailContact: 'Email: cosplaysehat@gmail.com',
+  userFallbackName: 'Pengguna',
+  idValue: 'ID: {id}',
+  kccIdValue: 'KCC ID: {id}',
+  logoAlt: 'Logo KawanCosplay',
+  officialBadge: 'Resmi',
+
+  // PWA install
+  pwaInstall: 'Pasang Aplikasi',
+  pwaIosTitle: 'Pasang di iPhone / iPad',
+  pwaIosStep1: '1. Ketuk tombol {share} di toolbar Safari.',
+  pwaIosShare: 'Bagikan',
+  pwaIosStep2: '2. Gulir ke bawah lalu ketuk {addToHome}.',
+  pwaIosAddToꦲꦺꦴꦩ꧀: 'Tambah ke Layar Utama',
+
+  // Admin portal shell
+  backToPublicSite: 'ꦩ꧀ꦧꦭꦶꦏ꧀ ke Situs Utama',
+  adminPortalTitle: 'ꦥꦺꦴꦂꦠꦭ꧀ ꦄꦢ꧀ꦩꦶꦤ꧀ KawanCosplay',
+  googleSignInBadge: 'Login Google',
+  adminRestricted: 'Khusus Admin',
+  lockAndExitAdminTitle: 'Kunci dan ꦩꦼꦢꦭ꧀ ꦥꦺꦴꦂꦠꦭ꧀ ꦄꦢ꧀ꦩꦶꦤ꧀',
+  lockExit: 'Kunci / ꦩꦼꦢꦭ꧀',
+  adminPortal: 'ꦥꦺꦴꦂꦠꦭ꧀ ꦄꦢ꧀ꦩꦶꦤ꧀',
+  adminPortalLinkTitle: 'Portal Khusus Admin KCC (Login Google Admin)',
+  sheetsPopupClosed: 'Jendela otorisasi Google ditutup sebelum selesai.',
+  sheetsWrongAccount: 'Pilih akun Google yang sama dengan akun admin yang sedang masuk.',
+  sheetsPopupBlocked: 'Browser memblokir jendela login Google. Izinkan pop-up untuk situs ini, lalu coba lagi.',
+  sheetsConnectFailed:
+    'Gagal menghubungkan Google Sheets. Pastikan memilih akun admin (cosplaysehat@gmail.com) dan memberi izin baca Google Sheets.',
+
+  // KCC ID lookup page
+  cardPageBadge: "MyKCC Member's ID Card",
+  cardPageTitle: "Member's ID Card & KCC ID",
+  cardPageDesc:
+    'Demi menjaga privasi seluruh anggota, daftar lengkap anggota hanya dapat diakses oleh Admin di portal terpisah. ꦩ꧀ꦭꦼꦧꦼꦠ꧀kan 16-Digit KCC ID Anda (contoh: 2026 1008 0715 3001) untuk menampilkan kartu identitas digital resmi Anda.',
+  connectedProfile: 'Akun Anda Terhubung',
+  openPass: 'Buka Kartu',
+  lookupPlaceholder: 'KCC ID 16 digit, contoh: 2026 1008 0715 3001',
+  lookupSubmit: "ꦒꦺꦴꦭꦺꦏ꧀ & Tampilkan Member's ID Card",
+  searching: 'Mencari...',
+  passFound: 'Data Ditemukan!',
+  notRegisteredYet: 'Belum terdaftar?',
+  fillꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀Form: 'Isi Formulir ꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀ →',
+  lookupInvalidId: 'Mohon masukkan 16 digit KCC ID Anda (angka saja, spasi boleh).',
+  lookupNotFound: 'Kartu anggota dengan KCC ID tersebut tidak ditemukan. Periksa kembali 16 digit KCC ID Anda.',
+  lookupPermissionDenied:
+    'Pencarian kartu sedang tidak tersedia (akses database ditolak). Silakan coba lagi nanti atau hubungi Admin KCC.',
+
+  // Profile tab states
+  profileLoadFailed: 'Gagal memuat profil member.',
+  checkConnectionRetry: 'Periksa koneksi internet Anda, lalu coba lagi.',
+  preparingProfile: 'Menyiapkan Profil Member...',
+  preparingProfileDesc: 'Menghubungkan akun ke identitas digital KCC Anda.',
+  pleaseSignIn: 'Harap login',
+  clickToSignIn: 'Klik di sini untuk login',
+
+  // Footer
+  footerPlatform: 'Platform Pop Culture Internasional 100% SFW.',
+  copyright: '© 2026 MyKCC. Hak cipta dilindungi.',
+  privacyShieldActive: 'Sistem Identitas 16 Digit & Perisai Privasi Aktif',
 };
 
 export default common;

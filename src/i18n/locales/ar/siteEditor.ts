@@ -1,5 +1,3 @@
-import type { LocaleNamespace } from '../../types';
-
-const siteEditor: Partial<LocaleNamespace<'siteEditor'>> = {};
-
-export default siteEditor;
+export default {
+  editorTitle: 'Site Appearance Editor',
+} as const;

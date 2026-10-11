@@ -1,8 +1,8 @@
 import type { LocaleNamespace } from '../../types';
 
-const profile: Partial<LocaleNamespace<'profile'>> = {
-  title: 'ꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀ꦏꦸꦭ',
-  updateProfile: 'ꦲꦚꦫꦶꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀',
+const profile: LocaleNamespace<'profile'> = {
+  title: 'Profil Anggota Saya',
+  updateProfile: 'Perbarui Data Profil Real-Time',
 };
 
 export default profile;

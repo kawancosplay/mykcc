@@ -1,5 +1,5 @@
 import type { LocaleNamespace } from '../../types';
 
-const demo: Partial<LocaleNamespace<'demo'>> = {};
+const demo: LocaleNamespace<'demo'> = {};
 
 export default demo;

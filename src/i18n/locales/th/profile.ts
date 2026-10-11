@@ -1,8 +1,4 @@
-import type { LocaleNamespace } from '../../types';
-
-const profile: Partial<LocaleNamespace<'profile'>> = {
-  title: 'โปรไฟล์สมาชิก',
-  updateProfile: 'อัปเดตโปรไฟล์',
-};
-
-export default profile;
+export default {
+  title: 'My Member Profile',
+  updateProfile: 'Update Profile Info in Real-Time',
+} as const;

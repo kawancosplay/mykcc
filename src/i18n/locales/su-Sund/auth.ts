@@ -1,11 +1,11 @@
 import type { LocaleNamespace } from '../../types';
 
-const auth: Partial<LocaleNamespace<'auth'>> = {
-  loginTitle: 'ᮃᮞᮥᮕ᮪',
-  signUpTitle: 'ᮓᮙᮨᮜ᮪ ᮃᮊᮥᮔ᮪',
-  orContinueWith: 'ᮃᮒᮔᮕᮤ ᮞᮔᮦᮞ᮪',
-  emailLabel: 'ᮞᮥᮛᮦᮜᮦᮊ᮪',
-  passwordLabel: 'ᮊᮨᮎᮕ᮪ ᮊᮧᮔ᮪ᮎᮤ',
+const auth: LocaleNamespace<'auth'> = {
+  loginTitle: 'ᮃᮞᮥᮕ᮪ ke Akun MyKCC',
+  signUpTitle: 'Buat Akun Member Baru MyKCC',
+  orContinueWith: 'Atau masuk dengan akun lain',
+  emailLabel: 'Alamat Email Aktif',
+  passwordLabel: 'Kata Sandi (Password)',
 };
 
 export default auth;

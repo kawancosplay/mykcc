@@ -1,13 +1,13 @@
 import type { LocaleNamespace } from '../../types';
 
-const admin: Partial<LocaleNamespace<'admin'>> = {
-  dashboardTitle: 'Dashboard Admin',
-  dashboardDesc: 'Papan mligi pengurus kanggo ngatur database.',
-  loginPrompt: 'Lebokake Kunci Sandhi Admin utawa login email resmi.',
-  privacyRestrictedNotice: 'Kanggo njaga privasi anggota, dhaptar anggota mung saged dipunbikak dening Admin.',
-  exportCsv: 'Undhuh CSV',
-  totalMembers: 'Gunggunge Anggota',
-  resetFilter: 'Baleni Filter',
+const admin: LocaleNamespace<'admin'> = {
+  dashboardTitle: 'Dashboard Admin KawanCosplay',
+  dashboardDesc: 'Area khusus pengelola untuk manajemen database member dan sinkronisasi formulir.',
+  loginPrompt: 'Masukkan Passkey Admin atau login dengan email cosplaysehat@gmail.com',
+  privacyRestrictedNotice: 'Demi privasi dan perlindungan data anggota, daftar anggota hanya dapat diakses oleh Admin KawanCosplay.',
+  exportCsv: 'Ekspor Data CSV',
+  totalMembers: 'Total Anggota Terdaftar',
+  resetFilter: 'Reset Filter',
 };
 
 export default admin;

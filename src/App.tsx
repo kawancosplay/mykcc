@@ -35,7 +35,8 @@ import {
   describeFirestoreError,
 } from './lib/firebase';
 import { format16DigitUserId, MAIN_ACCOUNT_UID } from './lib/idGenerator';
-import { LanguageCode, TRANSLATIONS, LANGUAGES } from './lib/i18n';
+import { TRANSLATIONS, LANGUAGES } from './lib/i18n';
+import { useI18n } from './i18n';
 import { useSiteTheme } from './lib/themeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { triggerHaptic } from './lib/haptic';
@@ -43,7 +44,8 @@ import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'form' | 'card' | 'gallery' | 'profile' | 'admin'>('form');
-  const [currentLang, setCurrentLang] = useState<LanguageCode>('en');
+  // Language state lives in <I18nProvider> (persisted in localStorage 'kcc_lang'); currentLang is kept as an alias.
+  const { lang: currentLang, setLang } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -606,7 +608,7 @@ export default function App() {
           memberCount={isAdmin && membersLoaded ? members.length : null}
           isAdmin={isAdmin}
           currentLang={currentLang}
-          onSelectLang={(lang) => setCurrentLang(lang)}
+          onSelectLang={setLang}
           isVisible={isVisible}
           isMobileMenuOpen={isMobileMenuOpen}
           onMobileMenuToggle={(open) => setIsMobileMenuOpen(open)}

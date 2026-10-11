@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   User,
   Sparkles,
@@ -25,6 +25,9 @@ import {
   getAllCountriesList,
   getStatesOfCountryByName,
   getCitiesOfStateByName,
+  isCountryLoaded,
+  resolveStateName,
+  useWorldLocations,
 } from '../lib/worldLocations';
 import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
 
@@ -98,29 +101,52 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     });
   }, [member]);
 
-  // Complete list of all 250 countries and dynamic state/cities
-  const allCountries = useMemo(() => getAllCountriesList(), []);
+  // Complete list of all 250 countries and dynamic state/cities (loaded on demand per country)
+  const geoVersion = useWorldLocations(formData.country);
+  const countryReady = isCountryLoaded(formData.country);
+  const allCountries = useMemo(() => getAllCountriesList(), [geoVersion]);
   const availableProvinces = useMemo(
     () => getStatesOfCountryByName(formData.country),
-    [formData.country]
+    [formData.country, geoVersion]
   );
   const availableCities = useMemo(
     () => getCitiesOfStateByName(formData.country, formData.province),
-    [formData.country, formData.province]
+    [formData.country, formData.province, geoVersion]
   );
 
   // "Kustom" modes are tracked apart from the value, so the free-text inputs stay visible while typing
   // (before, the input vanished after the first keystroke because the value stopped matching the option).
   const [isCustomProvince, setIsCustomProvince] = useState(false);
   const [isCustomCity, setIsCustomCity] = useState(false);
-  // A saved province / city that is not in the location lists (typed earlier) opens in custom mode
+  // Once the member's country is loaded: a legacy province spelling is mapped to the official name
+  // (e.g. "Jakarta" -> "DKI Jakarta"), and a saved province / city that is not in the lists (typed earlier)
+  // opens in custom mode. Runs once per member.
+  const customModeMemberRef = useRef<string | null>(null);
   useEffect(() => {
-    const customProvince =
-      !!formData.province && !availableProvinces.some((p) => p.name === formData.province);
+    if (!countryReady || customModeMemberRef.current === member.id) return;
+    customModeMemberRef.current = member.id;
+    const canonicalProvince = formData.province ? resolveStateName(formData.country, formData.province) : null;
+    if (canonicalProvince && canonicalProvince !== formData.province) {
+      setFormData((prev) => ({ ...prev, province: canonicalProvince }));
+    }
+    const customProvince = !!formData.province && !canonicalProvince;
+    const cities = customProvince ? [] : getCitiesOfStateByName(formData.country, canonicalProvince || formData.province);
     setIsCustomProvince(customProvince);
-    setIsCustomCity(customProvince || (!!formData.city && !availableCities.includes(formData.city)));
+    setIsCustomCity(customProvince || (!!formData.city && !cities.includes(formData.city)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [member.id]);
+  }, [member.id, countryReady]);
+
+  // After a country change made before its locations loaded, pick the first province / city once they arrive
+  useEffect(() => {
+    if (isCustomProvince || !countryReady) return;
+    if (!formData.province && availableProvinces.length > 0) {
+      const firstProv = availableProvinces[0].name;
+      const cities = getCitiesOfStateByName(formData.country, firstProv);
+      setFormData((prev) => ({ ...prev, province: firstProv, city: cities[0] || '' }));
+    } else if (!isCustomCity && !formData.city && availableCities.length > 0) {
+      setFormData((prev) => ({ ...prev, city: availableCities[0] }));
+    }
+  }, [countryReady, availableProvinces, availableCities, isCustomProvince, isCustomCity, formData.country, formData.province, formData.city]);
 
   const handleCopyUserId = () => {
     if (member.userId16) {
@@ -420,6 +446,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   const provs = getStatesOfCountryByName(newCountry);
                   const firstProv = provs[0]?.name || '';
                   const cities = getCitiesOfStateByName(newCountry, firstProv);
+                  setIsCustomProvince(false);
+                  setIsCustomCity(false);
                   setFormData({
                     ...formData,
                     country: newCountry,

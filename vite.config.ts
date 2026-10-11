@@ -25,7 +25,20 @@ export default defineConfig(() => {
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
         // Real pages/endpoints that must not be answered with the SPA shell by the service worker.
-        navigateFallbackDenylist: [/^\/privacy/, /^\/api\//],
+        navigateFallbackDenylist: [/^\/privacy/, /^\/api\//, /^\/geo\//],
+        // Location lists (public/geo, ~250 files): never precached; each country's file is cached the first
+        // time it is used, so address pickers keep working offline for countries already opened.
+        globIgnores: ['**/geo/**'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/geo\/[^/]+\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'kcc-geo',
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
       },
     })],
     resolve: {

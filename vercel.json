@@ -3,8 +3,14 @@
   "framework": "vite",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/geo/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }]
+    }
+  ],
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|geo/).*)", "destination": "/index.html" }
   ]
 }

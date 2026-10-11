@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Sparkles,
   User,
@@ -34,6 +34,7 @@ import {
   getAllCountriesList,
   getStatesOfCountryByName,
   getCitiesOfStateByName,
+  useWorldLocations,
   CountryOption,
 } from '../lib/worldLocations';
 import { LanguageCode, TRANSLATIONS, getFormTranslation, FormSpecificTranslations } from '../lib/i18n';
@@ -150,7 +151,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     age: '', // Optional exact age or birthdate
     country: 'Indonesia',
     province: 'DKI Jakarta',
-    city: 'Jakarta Selatan',
+    city: 'Kota Administrasi Jakarta Selatan',
     customCity: '',
     customProvince: '',
     customCountry: '',
@@ -174,18 +175,34 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [isDemoSubmission, setIsDemoSubmission] = useState(false);
 
-  // All 250 countries worldwide (Indonesia prioritized at top)
-  const allCountries = useMemo(() => getAllCountriesList(), []);
+  // All 250 countries worldwide (Indonesia prioritized at top); locations load on demand per country
+  const geoVersion = useWorldLocations(formData.country);
+  const allCountries = useMemo(() => getAllCountriesList(), [geoVersion]);
   const availableProvinces = useMemo(
     () => getStatesOfCountryByName(formData.country),
-    [formData.country]
+    [formData.country, geoVersion]
   );
   // A custom province has no city list: the city is typed as well
   const availableCities = useMemo(
     () =>
       formData.province === CUSTOM_PROVINCE_OPTION ? [] : getCitiesOfStateByName(formData.country, formData.province),
-    [formData.country, formData.province]
+    [formData.country, formData.province, geoVersion]
   );
+
+  // Once a country's locations arrive (or after a country change made before they loaded), keep the
+  // province / city selections pointing at real list entries
+  useEffect(() => {
+    if (formData.province === CUSTOM_PROVINCE_OPTION) return;
+    if (availableProvinces.length > 0 && !availableProvinces.some((p) => p.name === formData.province)) {
+      const firstProv = availableProvinces[0].name;
+      const cities = getCitiesOfStateByName(formData.country, firstProv);
+      setFormData((prev) => ({ ...prev, province: firstProv, city: cities[0] || '' }));
+      return;
+    }
+    if (!isCustomCityValue(formData.city) && availableCities.length > 0 && !availableCities.includes(formData.city)) {
+      setFormData((prev) => ({ ...prev, city: availableCities[0] }));
+    }
+  }, [availableProvinces, availableCities, formData.country, formData.province, formData.city]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -219,7 +236,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         age: '',
         country: 'Indonesia',
         province: 'DKI Jakarta',
-        city: 'Jakarta Selatan',
+        city: 'Kota Administrasi Jakarta Selatan',
         customCity: '',
         customProvince: '',
         customCountry: '',

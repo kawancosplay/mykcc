@@ -11,6 +11,7 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 import { MAIN_ACCOUNT_EMAIL } from './idGenerator';
 import type { SubscriptionErrorKind } from '../types';
+import { translate } from '../i18n';
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const customDbId = (firebaseConfig as Record<string, any>).firestoreDatabaseId;
@@ -147,29 +148,24 @@ export function classifyFirestoreError(error: unknown): SubscriptionErrorKind {
 }
 
 /**
- * Friendly bilingual (ID / EN) message for a failed Firestore read/write.
+ * Friendly message for a failed Firestore read/write, in the language selected in the I18nProvider.
+ * `_isId` is ignored; it is kept so existing callers still compile.
  */
-export function describeFirestoreError(error: unknown, isId: boolean = true): string {
+export function describeFirestoreError(error: unknown, _isId?: boolean): string {
   const code = getFirestoreErrorCode(error);
   if (code === 'permission-denied') {
-    return isId
-      ? 'Akses ditolak oleh database (permission denied). Data belum tersimpan. Pastikan semua isian tidak melebihi batas karakter, atau masuk dengan akun yang berwenang, lalu coba lagi.'
-      : 'Access denied by the database (permission denied). Nothing was saved. Make sure every field is within its character limit, or sign in with an authorized account, then try again.';
+    return translate('errors.firestorePermissionDenied');
   }
   if (code === 'unauthenticated') {
-    return isId ? 'Silakan login terlebih dahulu untuk melanjutkan.' : 'Please sign in first to continue.';
+    return translate('errors.signInRequired');
   }
   if (classifyFirestoreError(error) === 'unavailable') {
-    return isId
-      ? 'Koneksi ke database terputus. Periksa internet Anda lalu coba lagi.'
-      : 'Could not reach the database. Check your internet connection and try again.';
+    return translate('errors.databaseUnavailable');
   }
   if (error instanceof Error && error.message && !error.message.trim().startsWith('{')) {
     return error.message;
   }
-  return isId
-    ? 'Terjadi kendala saat menyimpan data. Silakan coba lagi.'
-    : 'Something went wrong while saving. Please try again.';
+  return translate('errors.saveFailed');
 }
 
 // Test connection on startup as mandated by security skill

@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Member } from '../types';
+import { useI18n } from '../i18n';
 
 export interface DemoFormPreset {
   id: string;
@@ -50,26 +51,24 @@ export interface DemoFormPreset {
 interface DemoFormTesterProps {
   onFillDemo: (data: DemoFormPreset['data'], autoSubmit?: boolean) => void;
   existingMembers: Member[];
-  isId: boolean;
+  isId: boolean; // Kept for existing callers; the language comes from useI18n()
 }
 
 export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
   onFillDemo,
   existingMembers,
-  isId,
 }) => {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(true);
   const [lastFilledPreset, setLastFilledPreset] = useState<string | null>(null);
 
   const presets: DemoFormPreset[] = [
     {
       id: 'cosplayer_timestamp',
-      name: isId ? 'Demo Cosplayer (Timestamp UID)' : 'Demo Cosplayer (Timestamp UID)',
-      badge: 'Timestamp UID',
+      name: t('demo.presetCosplayerName'),
+      badge: t('demo.presetCosplayerBadge'),
       badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
-      expectedUidType: isId
-        ? 'UID 16-digit diatur berdasar tanggal & jam submit (YYYYMMDDHHmmssSeq)'
-        : '16-digit UID arranged by submission timestamp (YYYYMMDDHHmmssSeq)',
+      expectedUidType: t('demo.presetCosplayerDesc'),
       icon: <Sparkles className="w-4 h-4 text-indigo-400" />,
       data: {
         cosplayName: 'Yukari_Cos / Aoi',
@@ -93,12 +92,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     },
     {
       id: 'kcc_admin',
-      name: isId ? 'Demo KCC Admin (UID 0001-0100)' : 'Demo KCC Admin (UID 0001-0100)',
-      badge: 'Admin UID Range',
+      name: t('demo.presetAdminName'),
+      badge: t('demo.presetAdminBadge'),
       badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-      expectedUidType: isId
-        ? 'UID 0000 0000 0000 0001 s/d 0000 0000 0000 0100 khusus KCC Admin'
-        : 'UID 0000 0000 0000 0001 to 0000 0000 0000 0100 for KCC Admin',
+      expectedUidType: t('demo.presetAdminDesc'),
       icon: <Shield className="w-4 h-4 text-rose-400" />,
       data: {
         cosplayName: 'Admin_KCC_Staff',
@@ -122,12 +119,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     },
     {
       id: 'main_account',
-      name: isId ? 'Demo KCC Main Account (UID 0000)' : 'Demo KCC Main Account (UID 0000)',
+      name: t('demo.presetMainAccountName'),
       badge: '0000 0000 0000 0000',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-      expectedUidType: isId
-        ? 'UID 0000 0000 0000 0000 khusus akun utama cosplaysehat@gmail.com'
-        : 'UID 0000 0000 0000 0000 strictly for main account cosplaysehat@gmail.com',
+      expectedUidType: t('demo.presetMainAccountDesc'),
       icon: <Crown className="w-4 h-4 text-amber-400" />,
       data: {
         cosplayName: 'KCC Leader / Ken',
@@ -151,12 +146,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     },
     {
       id: 'prop_maker',
-      name: isId ? 'Demo Prop Maker / Crafter' : 'Demo Prop Maker / Crafter',
-      badge: 'Crafter (Timestamp)',
+      name: t('demo.presetPropMakerName'),
+      badge: t('demo.presetPropMakerBadge'),
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      expectedUidType: isId
-        ? 'Pengrajin kostum / prop dengan UID berbasis timestamp'
-        : 'Prop & armor artisan with timestamp-based UID',
+      expectedUidType: t('demo.presetPropMakerDesc'),
       icon: <Wrench className="w-4 h-4 text-emerald-400" />,
       data: {
         cosplayName: 'Vulcan Props Studio',
@@ -180,12 +173,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     },
     {
       id: 'photographer',
-      name: isId ? 'Demo Fotografer Cosplay' : 'Demo Cosplay Photographer',
-      badge: 'Photographer',
+      name: t('demo.presetPhotographerName'),
+      badge: t('demo.presetPhotographerBadge'),
       badgeColor: 'bg-pink-500/20 text-pink-300 border-pink-500/40',
-      expectedUidType: isId
-        ? 'Fotografer & videografer dengan UID berbasis timestamp'
-        : 'Photographer & videographer with timestamp-based UID',
+      expectedUidType: t('demo.presetPhotographerDesc'),
       icon: <Camera className="w-4 h-4 text-pink-400" />,
       data: {
         cosplayName: 'ShutterLens_ID',
@@ -209,12 +200,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     },
     {
       id: 'others_role',
-      name: isId ? 'Demo Peran Lainnya / Others' : 'Demo Others / Custom Role',
-      badge: 'Others Role',
+      name: t('demo.presetOthersName'),
+      badge: t('demo.presetOthersBadge'),
       badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
-      expectedUidType: isId
-        ? 'Peran kustom "Lainnya / Others" dengan spesialisasi Makeup & Wig Stylist'
-        : 'Custom role "Others" with specialized Cosplay Makeup & Wig Stylist',
+      expectedUidType: t('demo.presetOthersDesc'),
       icon: <Sparkles className="w-4 h-4 text-violet-400" />,
       data: {
         cosplayName: 'Miyu_MakeArt',
@@ -245,14 +234,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     const matchName = existingWithPhone.name || existingWithPhone.cosplayName || 'Member';
     presets.push({
       id: 'duplicate_test',
-      name: isId
-        ? `Uji Akun Tunggal (Duplikat: ${matchName})`
-        : `Single KCC ID Test (Match: ${matchName})`,
-      badge: 'Single KCC ID Check',
+      name: t('demo.presetDuplicateName', { name: matchName }),
+      badge: t('demo.presetDuplicateBadge'),
       badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-      expectedUidType: isId
-        ? `Memverifikasi nomor WA sama mempertahankan KCC ID: ${existingWithPhone.userId16}`
-        : `Verifies matching WhatsApp maintains KCC ID: ${existingWithPhone.userId16}`,
+      expectedUidType: t('demo.presetDuplicateDesc', { id: existingWithPhone.userId16 || '' }),
       icon: <CopyCheck className="w-4 h-4 text-cyan-400" />,
       data: {
         name: matchName,
@@ -278,14 +263,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
 
     presets.push({
       id: 'secondary_phone_test',
-      name: isId
-        ? `Uji 2 Nomor (Cadangan: ${matchName})`
-        : `Secondary Phone Test (2 Numbers: ${matchName})`,
-      badge: '2 Nomor WA Check',
+      name: t('demo.presetSecondaryPhoneName', { name: matchName }),
+      badge: t('demo.presetSecondaryPhoneBadge'),
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      expectedUidType: isId
-        ? `Menambah nomor WA cadangan & mempertahankan KCC ID: ${existingWithPhone.userId16}`
-        : `Adds secondary phone & preserves KCC ID: ${existingWithPhone.userId16}`,
+      expectedUidType: t('demo.presetSecondaryPhoneDesc', { id: existingWithPhone.userId16 || '' }),
       icon: <CopyCheck className="w-4 h-4 text-emerald-400" />,
       data: {
         name: matchName,
@@ -367,16 +348,14 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xs sm:text-sm font-black text-white tracking-wide">
-                {isId ? 'Mode Pengujian Formulir Demo (Demo Form Testing)' : 'Demo Form Testing Sandbox'}
+                {t('demo.title')}
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Sandbox Mode
+                {t('demo.sandboxBadge')}
               </span>
             </div>
             <p className="text-[11px] text-purple-200/80 hidden sm:block">
-              {isId
-                ? 'Klik 1-tombol untuk auto-fill data demo dan menguji pembuatan KCC ID (Timestamp UID, Admin UID 0001-0100, Main Account 0000).'
-                : '1-click preset auto-fill to test KCC ID generation (Timestamp UID, Admin UID 0001-0100, Main Account 0000).'}
+              {t('demo.description')}
             </p>
           </div>
         </div>
@@ -389,10 +368,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
               handleRandomize();
             }}
             className="px-2.5 py-1 rounded-lg bg-purple-800/60 hover:bg-purple-700 text-purple-200 text-xs font-semibold inline-flex items-center gap-1 transition-all"
-            title="Generate Random Persona"
+            title={t('demo.randomizeTitle')}
           >
             <Dices className="w-3.5 h-3.5 text-purple-300" />
-            <span className="hidden sm:inline">Acak Data</span>
+            <span className="hidden sm:inline">{t('demo.randomize')}</span>
           </button>
 
           <button
@@ -412,20 +391,20 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
             <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-white">
-                {isId ? 'Aturan Alokasi User ID KawanCosplay:' : 'KawanCosplay User ID Rules:'}
+                {t('demo.rulesTitle')}
               </p>
               <ul className="list-disc list-inside space-y-0.5 text-[11px] text-purple-300/80 mt-1 font-mono">
                 <li>
                   <span className="text-amber-300 font-bold">0000 0000 0000 0000</span>:{' '}
-                  {isId ? 'KCC Main Account (cosplaysehat@gmail.com)' : 'KCC Main Account'}
+                  {t('demo.ruleMainAccount')}
                 </li>
                 <li>
                   <span className="text-rose-300 font-bold">0000 0000 0000 0001 - 0100</span>:{' '}
-                  {isId ? 'KCC Admin (Pengurus Inti)' : 'KCC Admin Range'}
+                  {t('demo.ruleAdminRange')}
                 </li>
                 <li>
                   <span className="text-indigo-300 font-bold">YYYY MMDD HHmm ssSS</span>:{' '}
-                  {isId ? 'Member Reguler berdasar Timestamp pengisian' : 'Timestamp-arranged Member UID'}
+                  {t('demo.ruleTimestamp')}
                 </li>
               </ul>
             </div>
@@ -463,13 +442,13 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
 
                     <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800 text-[10px] font-mono text-slate-400 space-y-0.5 mb-2.5">
                       <div className="truncate">
-                        <span className="text-slate-500">Nama:</span> <span className="text-slate-200">{preset.data.cosplayName}</span>
+                        <span className="text-slate-500">{t('demo.previewName')}</span> <span className="text-slate-200">{preset.data.cosplayName}</span>
                       </div>
                       <div className="truncate">
-                        <span className="text-slate-500">WA:</span> <span className="text-emerald-400">{preset.data.phone}</span>
+                        <span className="text-slate-500">{t('demo.previewWhatsapp')}</span> <span className="text-emerald-400">{preset.data.phone}</span>
                       </div>
                       <div className="truncate">
-                        <span className="text-slate-500">DC:</span> <span className="text-indigo-300">{preset.data.discordUsername}</span>
+                        <span className="text-slate-500">{t('demo.previewDiscord')}</span> <span className="text-indigo-300">{preset.data.discordUsername}</span>
                       </div>
                     </div>
                   </div>
@@ -481,7 +460,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
                       onClick={() => handleSelectPreset(preset, false)}
                       className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1"
                     >
-                      <span>Isi Form</span>
+                      <span>{t('demo.fillForm')}</span>
                     </button>
 
                     <button
@@ -490,7 +469,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
                       className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-purple-600 to-rose-600 hover:brightness-110 text-white text-[11px] font-bold shadow transition-all flex items-center justify-center gap-1"
                     >
                       <Zap className="w-3 h-3 text-amber-300" />
-                      <span>Kirim Tes</span>
+                      <span>{t('demo.submitTest')}</span>
                     </button>
                   </div>
                 </div>
@@ -501,14 +480,12 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
           {/* Quick random footer note */}
           <div className="flex items-center justify-between text-[11px] text-purple-300/70 pt-1 border-t border-purple-500/20">
             <span>
-              {isId
-                ? 'Tip: Tekan "Kirim Tes" untuk langsung mensimulasikan penyimpanan data & memeriksa kartu KCC ID serta unlock grup WA.'
-                : 'Tip: Click "Kirim Tes" to instantly simulate submission and view the generated KCC ID card and WhatsApp unlock.'}
+              {t('demo.tip', { action: t('demo.submitTest') })}
             </span>
             {lastFilledPreset && (
               <span className="text-emerald-300 font-semibold flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Preset dimuat</span>
+                <span>{t('demo.presetLoaded')}</span>
               </span>
             )}
           </div>

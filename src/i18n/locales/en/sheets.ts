@@ -98,6 +98,10 @@ export default {
   logsLoadFailed: 'Could not load the sync history. Check your connection, then reload the page.',
   logsEmpty: 'No sync activity recorded yet.',
   logImportedRows: 'Imported {count} rows',
+  logImportSummary:
+    'Import finished: {added} new members, {updated} updated, {unchanged} unchanged, {skipped} failed.',
+  logAutoSummary: 'Automatic: {added} new, {updated} updated.',
+  // Label of the stored log source 'Google Sheets Importer' (the poller's logs are labelled with pollerTitle)
   logSourceImporter: 'Google Sheets Importer',
 
   // Errors

@@ -21,7 +21,7 @@ export default {
   emailLabel: 'Active Email Address',
   emailOptionalNotice: 'Optional. You can leave this empty as our community database never required emails.',
   emailRequiredNotice: 'Email is required for registration.',
-  emailPlaceholder: 'Your answer (optional, e.g. name@example.com)',
+  emailPlaceholder: 'Your answer (e.g. name@example.com)',
   ageCategoryLabel: 'Age Status (Minor vs. Legal Age / Adult)',
   legalAge: 'Legal Age / Adult (18+ years old)',
   minorAge: 'Minor (<18 years old)',
@@ -72,4 +72,85 @@ export default {
   joinWhatsappButton: 'Join WhatsApp Community Group',
   viewMyKccId: 'View & Download My Digital Pass',
   submitAnother: 'Submit another response',
+
+  // Generic form bits
+  optionalTag: '(Optional)',
+  officialHotlineLabel: 'Official WhatsApp Hotline:',
+  needHelpHotline: 'Need assistance? WhatsApp Hotline:',
+  clearFormConfirm: 'Clear all form inputs?',
+
+  // Backup WhatsApp number
+  addBackupPhone: '+ Have more than one WhatsApp number? Add a Backup Number (Optional)',
+  backupPhoneLabel: 'Backup / Additional WhatsApp Number',
+  removeBackupPhone: 'Cancel / Remove',
+  backupPhoneNotice:
+    'This number is saved as a backup number. If you fill in the form again while signed in with the same account, your KCC ID stays the same; duplicate registrations made without signing in will be merged by an admin.',
+  backupPhonePlaceholder: 'e.g. 08123456789 or +62 857...',
+
+  // Location (option labels only; the stored values stay 'Kustom / Wilayah Lainnya' / 'Kustom / Kota Lainnya')
+  customProvinceOption: 'Custom / Other Region',
+  customCityOption: 'Custom / Other City',
+  customProvincePlaceholder: 'Enter your state / province / region...',
+
+  // Primary role labels (the stored primaryRole values are unchanged)
+  roleCosplayer: 'Cosplayer / Crossplayer',
+  roleIdolFan: 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
+  roleOtaku: 'Anime, Manga & Gaming Otaku (Anime, games & pop-culture enthusiast)',
+  roleGeneralEnthusiast: 'General Enthusiast / Supporter (General friend, supporter & meetup attendee)',
+  rolePropMaker: 'Prop Maker / Crafter (Weapons, armor & accessory creator)',
+  rolePhotographer: 'Cosplay Photographer / Videographer',
+  roleCostumeMaker: 'Costume Maker / Seamstress / Wig Stylist',
+  roleEventCrew: 'Event Crew, Stage Staff & Volunteer',
+  roleContentCreator: 'Content Creator / Streamer',
+
+  // Fandom labels (the stored fandom values are unchanged)
+  fandomHoyoverse: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
+  fandomShonenSeinen: 'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+  fandomIdolMusic: 'Idol & Music (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
+  fandomIsekaiFantasy: 'Isekai & Fantasy (Frieren, Slime, Re:Zero, DanMachi)',
+  fandomGamingEsports: 'Gaming & Esports (Valorant, League of Legends, MLBB, Elden Ring)',
+  fandomVtuber: 'VTuber (Hololive, Nijisanji, Indie VTubers)',
+  fandomTokusatsuMecha: 'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)',
+  fandomWesternPopCulture: 'Western Pop Culture (Marvel, DC, Star Wars, Disney)',
+  fandomOriginalCharacter: 'Original Character (OC) & Creative Fantasy',
+
+  // Experience labels (the stored experience values are unchanged)
+  experienceBeginner: 'Beginner (< 1 year)',
+  experienceOneToThreeYears: '1 - 3 years',
+  experienceVeteran: 'Veteran (> 3 years)',
+  experienceCasual: 'Casual / Enthusiast',
+
+  // Avatar
+  avatarTooLarge: 'Max file size is {maxMb}MB for the avatar photo.',
+  photoProcessFailed: 'Failed to process the photo.',
+  avatarPreviewAlt: 'Avatar preview',
+  presetAvatarAria: 'Preset avatar {number}',
+
+  // Validation errors
+  nameRequiredError: 'Please provide your Cosplay Name / Alias / Stage Name.',
+  emailRequiredError: 'Email address is required.',
+  whatsappRequiredError:
+    'A valid WhatsApp mobile number is required (minimum {minDigits} digits) as KawanCosplay is a WhatsApp-based community.',
+  backupPhoneTooShortError: 'The backup WhatsApp number needs at least {minDigits} digits (or leave it empty).',
+  customCityRequiredError: 'Please type your city / regency (the "{option}" option).',
+  codeOfConductRequiredError: 'Please check the agreement to the KawanCosplay Community Code of Conduct.',
+
+  // Demo sandbox (admin only)
+  sandboxActiveNotice: 'Sandbox Mode Active: This demo test is isolated and will NOT be saved to the Firestore database.',
+  exitSandbox: 'Exit Sandbox',
+  sandboxSubmissionNotice: '🧪 Sandboxed Demo Test: This test ran in local memory and was NOT saved to the database.',
+
+  // Success screen
+  duplicateMergedNotice:
+    '✓ Your details match an earlier registration. Each member holds a single KCC ID — your KCC ID stays the same and your profile has been updated.',
+  verifiedMemberLabel: 'Verified Member:',
+  discordValue: 'Discord: {username}',
+
+  // Prefilled WhatsApp message to the admins (one line each; optional lines are left out)
+  whatsappMessageIntro: 'Hi KawanCosplay Admin! I have filled in the member registration form.',
+  whatsappMessageName: 'Name: {name}',
+  whatsappMessageKccId: 'KCC ID: {id}',
+  whatsappMessagePhone: 'WhatsApp No.: {phone}',
+  whatsappMessagePhone2: 'WhatsApp No. 2: {phone}',
+  whatsappMessageRequest: 'Please send me the invite link to the KawanCosplay Community WhatsApp Group. Thank you!',
 } as const;

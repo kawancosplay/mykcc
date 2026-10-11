@@ -29,26 +29,57 @@ import {
   resolveStateName,
   useWorldLocations,
 } from '../lib/worldLocations';
-import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
+import { useI18n } from '../i18n';
+import type { LanguageCode, TranslationKey } from '../i18n';
 
 // Select values that switch to a free-text province / city input (same values as RegistrationForm)
 const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
 const CUSTOM_CITY_OPTION = 'Kustom / Kota Lainnya';
 
+// Option values are what gets saved to Firestore and are never translated; only labelKey is shown
+interface LabeledOption {
+  val: string;
+  labelKey: TranslationKey;
+}
+
+// Same stored values as the RegistrationForm roles, with short labels for this dropdown
+const OTHER_ROLE = 'Lainnya / Others';
+const CUSTOM_ROLE_PATTERN = /^Lainnya \/ Others \((.*)\)$/;
+const ROLE_OPTIONS: LabeledOption[] = [
+  { val: 'Cosplayer / Crossplayer', labelKey: 'registration.roleCosplayer' },
+  { val: 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)', labelKey: 'profile.roleIdolFan' },
+  { val: 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)', labelKey: 'profile.roleOtaku' },
+  {
+    val: 'Sahabat Umum / General Enthusiast (Penikmat umum, teman pendukung & penonton gathering)',
+    labelKey: 'profile.roleGeneralEnthusiast',
+  },
+  { val: 'Prop Maker / Crafter / Pembuat Aksesori', labelKey: 'profile.rolePropMaker' },
+  { val: 'Fotografer / Videografer Cosplay', labelKey: 'registration.rolePhotographer' },
+  { val: 'Costume Maker / Seamstress / Wig Stylist', labelKey: 'profile.roleCostumeMaker' },
+  { val: 'Event Crew, Stage Staff & Volunteer', labelKey: 'profile.roleEventCrew' },
+  { val: 'Kreator Konten / Streamer', labelKey: 'registration.roleContentCreator' },
+  { val: OTHER_ROLE, labelKey: 'registration.roleOthers' },
+];
+
+const AGE_CATEGORY_OPTIONS: LabeledOption[] = [
+  { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
+  { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
+  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
+];
+
 interface UserProfileProps {
   member: Member;
   onUpdateMember: (updated: Member) => void;
   onOpenCardModal: (member: Member) => void;
-  currentLang: LanguageCode;
+  currentLang: LanguageCode; // Kept for App; the component reads the language from useI18n()
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({
   member,
   onUpdateMember,
   onOpenCardModal,
-  currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.id;
+  const { t, lang, intlLocale, countryName } = useI18n();
 
   const initialName = member.name || member.cosplayName || '';
 
@@ -105,6 +136,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const geoVersion = useWorldLocations(formData.country);
   const countryReady = isCountryLoaded(formData.country);
   const allCountries = useMemo(() => getAllCountriesList(), [geoVersion]);
+  // Country names in the selected language, sorted for that language (Indonesia stays first); the saved
+  // value stays the English name
+  const countryOptions = useMemo(() => {
+    const collator = new Intl.Collator(intlLocale);
+    return allCountries
+      .map((c) => ({ ...c, label: countryName(c.isoCode, c.name) }))
+      .sort((a, b) => (a.isoCode === 'ID' ? -1 : b.isoCode === 'ID' ? 1 : collator.compare(a.label, b.label)));
+  }, [allCountries, countryName, intlLocale]);
   const availableProvinces = useMemo(
     () => getStatesOfCountryByName(formData.country),
     [formData.country, geoVersion]
@@ -160,7 +199,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      alert('Ukuran foto maksimal 10MB.');
+      alert(t('registration.avatarTooLarge', { maxMb: 10 }));
       return;
     }
     try {
@@ -168,9 +207,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       setFormData((prev) => ({ ...prev, avatarUrl: compressed }));
     } catch (err) {
       console.error('Failed to compress avatar:', err);
-      alert('Gagal memproses foto profil.');
+      alert(t('registration.photoProcessFailed'));
     }
   };
+
+  // Role badge: the label of a known role, the typed text of a custom role, else the stored value as is
+  const knownRole = ROLE_OPTIONS.find((r) => r.val === formData.primaryRole);
+  const roleBadge = knownRole
+    ? t(knownRole.labelKey)
+    : formData.primaryRole.replace(CUSTOM_ROLE_PATTERN, '$1');
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,7 +235,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: unknown) {
       console.error('Update profile error:', err);
-      setErrorMsg(describeFirestoreError(err, currentLang === 'id'));
+      setErrorMsg(describeFirestoreError(err, lang === 'id'));
     } finally {
       setIsSaving(false);
     }
@@ -219,11 +264,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               )}
             </div>
 
-            <label className="absolute -bottom-2 -right-2 p-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow-lg cursor-pointer transition-transform hover:scale-110">
+            <label
+              title={t('profile.changeAvatar')}
+              className="absolute -bottom-2 -right-2 p-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow-lg cursor-pointer transition-transform hover:scale-110"
+            >
               <Camera className="w-4 h-4" />
               <input
                 type="file"
                 accept="image/*"
+                aria-label={t('profile.changeAvatar')}
                 onChange={handleAvatarChange}
                 className="hidden"
               />
@@ -234,11 +283,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                {formData.primaryRole}
+                {roleBadge}
               </span>
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Terverifikasi Aktif</span>
+                <span>{t('profile.verifiedActive')}</span>
               </span>
             </div>
 
@@ -251,7 +300,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             <div className="mt-4 inline-flex items-center space-x-3 bg-slate-950/90 border border-rose-500/30 rounded-2xl px-4 py-2.5 shadow-inner">
               <div className="text-left">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
-                  KCC ID (16 DIGIT)
+                  {t('profile.kccIdLabel')}
                 </span>
                 <span className="font-mono font-black text-sm sm:text-base text-rose-400 tracking-wider">
                   {format16DigitUserId(member.userId16, member.email)}
@@ -262,7 +311,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 type="button"
                 onClick={handleCopyUserId}
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-                title="Salin KCC ID"
+                title={t('profile.copyKccId')}
+                aria-label={t('profile.copyKccId')}
               >
                 {copiedId ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
@@ -276,7 +326,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs shadow-md shadow-rose-600/30 inline-flex items-center justify-center gap-1.5 transition-transform active:scale-95"
             >
               <IdCard className="w-3.5 h-3.5" />
-              <span>View Member's ID Card</span>
+              <span>{t('profile.viewIdCard')}</span>
             </button>
           </div>
         </div>
@@ -287,16 +337,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
             <div>
-              <h2 className="text-lg font-bold text-white">Informasi Profil Anggota</h2>
+              <h2 className="text-lg font-bold text-white">{t('profile.infoTitle')}</h2>
               <p className="text-xs text-slate-400">
-                Data ini dapat kamu ubah kapan saja dan tersimpan secara real-time ke database MyKCC
+                {t('profile.infoDesc')}
               </p>
             </div>
 
             {saveSuccess && (
               <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-lg border border-emerald-500/40 flex items-center gap-1.5 animate-fade-in">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Tersimpan Real-Time!</span>
+                <span>{t('profile.savedRealtime')}</span>
               </span>
             )}
           </div>
@@ -305,7 +355,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Nama (Name / Cosname / Alias) */}
             <div className="md:col-span-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Nama (Name / Cosname / Alias) <span className="text-rose-400">*</span>
+                {t('registration.nameLabel')} <span className="text-rose-400">*</span>
               </label>
               <input
                 type="text"
@@ -320,27 +370,29 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Kategori Usia */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Kategori Usia
+                {t('profile.ageCategoryLabel')}
               </label>
               <select
                 value={formData.ageCategory}
                 onChange={(e) => setFormData({ ...formData, ageCategory: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
               >
-                <option value="Legal Age / Dewasa (18+ tahun)">Legal Age / Dewasa (18+ tahun)</option>
-                <option value="Minor / Di Bawah Umur (<18 tahun)">Minor / Di Bawah Umur (&lt;18 tahun)</option>
-                <option value="Memilih untuk tidak menyebutkan">Memilih untuk tidak menyebutkan</option>
+                {AGE_CATEGORY_OPTIONS.map((opt) => (
+                  <option key={opt.val} value={opt.val}>
+                    {t(opt.labelKey)}
+                  </option>
+                ))}
               </select>
             </div>
 
             {/* Usia Pasti */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Usia / Tanggal Lahir (Opsional)
+                {t('profile.ageLabel')}
               </label>
               <input
                 type="text"
-                placeholder="Contoh: 21 tahun atau 15 Mei"
+                placeholder={t('profile.agePlaceholder')}
                 maxLength={MEMBER_FIELD_LIMITS.age}
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
@@ -351,7 +403,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* WhatsApp (Wajib) */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Nomor WhatsApp Aktif <span className="text-rose-400">*</span>
+                {t('profile.whatsappLabel')} <span className="text-rose-400">*</span>
               </label>
               <input
                 type="tel"
@@ -367,11 +419,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Nomor WhatsApp Kedua / Cadangan (Opsional) */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Nomor WhatsApp Kedua / Cadangan <span className="text-slate-500 font-normal">(Opsional)</span>
+                {t('profile.backupPhoneLabel')}{' '}
+                <span className="text-slate-500 font-normal">{t('registration.optionalTag')}</span>
               </label>
               <input
                 type="tel"
-                placeholder="Contoh: 0812... atau +62 857..."
+                placeholder={t('profile.backupPhonePlaceholder')}
                 maxLength={MEMBER_FIELD_LIMITS.phone2}
                 value={formData.phone2}
                 onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
@@ -382,11 +435,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Username Discord */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Username Discord
+                {t('registration.discordLabel')}
               </label>
               <input
                 type="text"
-                placeholder="Contoh: alyachan_cos atau user#0001"
+                placeholder={t('profile.discordPlaceholder')}
                 maxLength={MEMBER_FIELD_LIMITS.discordUsername}
                 value={formData.discordUsername}
                 onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
@@ -397,36 +450,31 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Peran Utama */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Peran Utama di Komunitas
+                {t('profile.roleLabel')}
               </label>
               <select
                 value={formData.primaryRole}
                 onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
               >
-                <option value="Cosplayer / Crossplayer">Cosplayer / Crossplayer</option>
-                <option value="Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)">Idol Fan / Wota</option>
-                <option value="Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)">Anime, Manga & Gaming Otaku</option>
-                <option value="Sahabat Umum / General Enthusiast (Penikmat umum, teman pendukung & penonton gathering)">Sahabat Umum / General Enthusiast</option>
-                <option value="Prop Maker / Crafter / Pembuat Aksesori">Prop Maker / Crafter</option>
-                <option value="Fotografer / Videografer Cosplay">Fotografer / Videografer Cosplay</option>
-                <option value="Costume Maker / Seamstress / Wig Stylist">Costume Maker / Seamstress</option>
-                <option value="Event Crew, Stage Staff & Volunteer">Event Crew & Staff</option>
-                <option value="Kreator Konten / Streamer">Kreator Konten / Streamer</option>
-                <option value="Lainnya / Others">Lainnya / Others (Peran Lainnya)</option>
+                {ROLE_OPTIONS.map((role) => (
+                  <option key={role.val} value={role.val}>
+                    {t(role.labelKey)}
+                  </option>
+                ))}
               </select>
               {formData.primaryRole.includes('Lainnya') && (
                 <input
                   type="text"
-                  placeholder="Ketik peran / spesialisasi Anda lainnya..."
+                  placeholder={t('profile.customRolePlaceholder')}
                   maxLength={MEMBER_FIELD_LIMITS.customRole}
-                  value={formData.primaryRole === 'Lainnya / Others' ? '' : formData.primaryRole.replace(/^Lainnya \/ Others \((.*)\)$/, '$1')}
+                  value={formData.primaryRole === OTHER_ROLE ? '' : formData.primaryRole.replace(CUSTOM_ROLE_PATTERN, '$1')}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
                       primaryRole: e.target.value.trim()
-                        ? `Lainnya / Others (${e.target.value.trim()})`
-                        : 'Lainnya / Others',
+                        ? `${OTHER_ROLE} (${e.target.value.trim()})`
+                        : OTHER_ROLE,
                     })
                   }
                   className="mt-2 w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 focus:outline-none focus:border-purple-500"
@@ -437,7 +485,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Negera (Country) */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Negara (Country)
+                {t('registration.countryLabel')}
               </label>
               <select
                 value={formData.country}
@@ -457,9 +505,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 }}
                 className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
               >
-                {allCountries.map((c) => (
+                {countryOptions.map((c) => (
                   <option key={c.isoCode} value={c.name}>
-                    {c.flag} {c.name} ({c.isoCode})
+                    {c.flag} {c.label} ({c.isoCode})
                   </option>
                 ))}
               </select>
@@ -468,7 +516,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Provinsi / State */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Provinsi / State / Prefecture
+                {t('registration.provinceLabel')}
               </label>
               <div className="space-y-1.5">
                 <select
@@ -498,13 +546,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                       {p.name}
                     </option>
                   ))}
-                  <option value={CUSTOM_PROVINCE_OPTION}>{CUSTOM_PROVINCE_OPTION}</option>
+                  <option value={CUSTOM_PROVINCE_OPTION}>{t('registration.customProvinceOption')}</option>
                 </select>
 
                 {isCustomProvince && (
                   <input
                     type="text"
-                    placeholder="Ketik nama provinsi / wilayah Anda"
+                    placeholder={t('registration.customProvincePlaceholder')}
                     maxLength={MEMBER_FIELD_LIMITS.province}
                     value={formData.province}
                     onChange={(e) => setFormData({ ...formData, province: e.target.value })}
@@ -517,7 +565,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Kota / Kabupaten / City */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Kota / Kabupaten / County
+                {t('registration.cityLabel')}
               </label>
               <div className="space-y-1.5">
                 {!isCustomProvince && (
@@ -539,14 +587,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                         {city}
                       </option>
                     ))}
-                    <option value={CUSTOM_CITY_OPTION}>{CUSTOM_CITY_OPTION}</option>
+                    <option value={CUSTOM_CITY_OPTION}>{t('registration.customCityOption')}</option>
                   </select>
                 )}
 
                 {(isCustomCity || isCustomProvince) && (
                   <input
                     type="text"
-                    placeholder="Ketik nama kota atau wilayah Anda"
+                    placeholder={t('registration.customCityPlaceholder')}
                     maxLength={MEMBER_FIELD_LIMITS.city}
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
@@ -559,7 +607,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Fandom */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Fandom / Seri Anime & Game
+                {t('registration.fandomTitle')}
               </label>
               <input
                 type="text"
@@ -573,11 +621,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Media Sosial */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Akun Media Sosial
+                {t('registration.socialMediaTitle')}
               </label>
               <input
                 type="text"
-                placeholder="@username (Instagram / X / TikTok)"
+                placeholder={t('profile.socialMediaPlaceholder')}
                 maxLength={MEMBER_FIELD_LIMITS.socialMedia}
                 value={formData.socialMedia}
                 onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
@@ -588,7 +636,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* Link Portofolio */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Link Portofolio / Google Drive
+                {t('registration.portfolioTitle')}
               </label>
               <input
                 type="url"
@@ -604,7 +652,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           {/* Bio / Reason */}
           <div className="mt-5">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Alasan Bergabung & Catatan Profil
+              {t('profile.reasonLabel')}
             </label>
             <textarea
               rows={3}
@@ -633,7 +681,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               ) : (
                 <>
                   <Save className="w-3.5 h-3.5" />
-                  <span>{t.updateProfile}</span>
+                  <span>{t('profile.updateProfile')}</span>
                 </>
               )}
             </button>

@@ -29,8 +29,10 @@ import {
   NavbarStyle,
   EmblemType,
 } from '../lib/themeContext';
+import { useI18n } from '../i18n';
 
 export const SiteEditorModal: React.FC = () => {
+  const { t } = useI18n();
   const { theme, updateTheme, resetTheme, isEditorOpen, setIsEditorOpen, saveError, clearSaveError } = useSiteTheme();
   const [activeTab, setActiveTab] = useState<'layout' | 'background' | 'colors' | 'font' | 'logo'>('layout');
 
@@ -44,32 +46,32 @@ export const SiteEditorModal: React.FC = () => {
   }[] = [
     {
       id: 'bright-purple-fluent',
-      name: 'Bright Purple Fluent (Default)',
-      desc: 'Fluent purple-violet luminous glass aura with smooth depth',
+      name: t('siteEditor.bgBrightPurpleName'),
+      desc: t('siteEditor.bgBrightPurpleDesc'),
       previewGrad: 'linear-gradient(135deg, #2e1065 0%, #1e1145 40%, #3b0764 75%, #4c1d95 100%)',
     },
     {
       id: 'cyber-purple',
-      name: 'Cyberpunk Neon Violet',
-      desc: 'High contrast electric violet with hot magenta accents',
+      name: t('siteEditor.bgCyberPurpleName'),
+      desc: t('siteEditor.bgCyberPurpleDesc'),
       previewGrad: 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #581c87 100%)',
     },
     {
       id: 'cosmic-dark',
-      name: 'Cosmic Midnight',
-      desc: 'Deep space navy and obsidian with purple nebulae',
+      name: t('siteEditor.bgCosmicDarkName'),
+      desc: t('siteEditor.bgCosmicDarkDesc'),
       previewGrad: 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #20133e 100%)',
     },
     {
       id: 'fluent-lavender',
-      name: 'Soft Fluent Lavender',
-      desc: 'Luminous pastel purple glow with gentle frosted glass',
+      name: t('siteEditor.bgFluentLavenderName'),
+      desc: t('siteEditor.bgFluentLavenderDesc'),
       previewGrad: 'linear-gradient(135deg, #371b58 0%, #4c2a76 50%, #5c3b88 100%)',
     },
     {
       id: 'dark-onyx',
-      name: 'Obsidian Onyx',
-      desc: 'Ultra-dark sleek graphite with subtle purple specular rim',
+      name: t('siteEditor.bgDarkOnyxName'),
+      desc: t('siteEditor.bgDarkOnyxDesc'),
       previewGrad: 'linear-gradient(135deg, #0a0910 0%, #12101b 50%, #1a1727 100%)',
     },
   ];
@@ -80,12 +82,12 @@ export const SiteEditorModal: React.FC = () => {
     hex: string;
     secondaryHex: string;
   }[] = [
-    { id: 'purple', name: 'Royal Purple (Default)', hex: '#a855f7', secondaryHex: '#c084fc' },
-    { id: 'rose', name: 'Sakura Rose', hex: '#f43f5e', secondaryHex: '#fb7185' },
-    { id: 'indigo', name: 'Electric Indigo', hex: '#6366f1', secondaryHex: '#818cf8' },
-    { id: 'emerald', name: 'Emerald Jade', hex: '#10b981', secondaryHex: '#34d399' },
-    { id: 'amber', name: 'Sunset Amber', hex: '#f59e0b', secondaryHex: '#fbbf24' },
-    { id: 'cyan', name: 'Cyber Cyan', hex: '#06b6d4', secondaryHex: '#22d3ee' },
+    { id: 'purple', name: t('siteEditor.colorPurple'), hex: '#a855f7', secondaryHex: '#c084fc' },
+    { id: 'rose', name: t('siteEditor.colorRose'), hex: '#f43f5e', secondaryHex: '#fb7185' },
+    { id: 'indigo', name: t('siteEditor.colorIndigo'), hex: '#6366f1', secondaryHex: '#818cf8' },
+    { id: 'emerald', name: t('siteEditor.colorEmerald'), hex: '#10b981', secondaryHex: '#34d399' },
+    { id: 'amber', name: t('siteEditor.colorAmber'), hex: '#f59e0b', secondaryHex: '#fbbf24' },
+    { id: 'cyan', name: t('siteEditor.colorCyan'), hex: '#06b6d4', secondaryHex: '#22d3ee' },
   ];
 
   const fontOptions: {
@@ -96,8 +98,8 @@ export const SiteEditorModal: React.FC = () => {
   }[] = [
     {
       id: 'din-next',
-      name: 'DIN Next (Official)',
-      desc: 'Modern geometric DIN typography — crisp, clean and authoritative',
+      name: t('siteEditor.fontDinNextName'),
+      desc: t('siteEditor.fontDinNextDesc'),
       family: "'DIN Next', sans-serif",
     },
   ];
@@ -107,11 +109,11 @@ export const SiteEditorModal: React.FC = () => {
     name: string;
     icon: React.ReactNode;
   }[] = [
-    { id: 'kitsune', name: 'Kitsune Mask (Official KCC)', icon: <Sparkles className="w-5 h-5 text-rose-400" /> },
-    { id: 'crown', name: 'Royal Crown', icon: <Crown className="w-5 h-5 text-amber-400" /> },
-    { id: 'shield', name: 'Community Shield', icon: <Shield className="w-5 h-5 text-indigo-400" /> },
-    { id: 'heart', name: 'Friendship Heart', icon: <Heart className="w-5 h-5 text-pink-400" /> },
-    { id: 'sparkle', name: 'Magic Star Sparkle', icon: <Sparkles className="w-5 h-5 text-yellow-400" /> },
+    { id: 'kitsune', name: t('siteEditor.emblemKitsune'), icon: <Sparkles className="w-5 h-5 text-rose-400" /> },
+    { id: 'crown', name: t('siteEditor.emblemCrown'), icon: <Crown className="w-5 h-5 text-amber-400" /> },
+    { id: 'shield', name: t('siteEditor.emblemShield'), icon: <Shield className="w-5 h-5 text-indigo-400" /> },
+    { id: 'heart', name: t('siteEditor.emblemHeart'), icon: <Heart className="w-5 h-5 text-pink-400" /> },
+    { id: 'sparkle', name: t('siteEditor.emblemSparkle'), icon: <Sparkles className="w-5 h-5 text-yellow-400" /> },
   ];
 
   return (
@@ -125,10 +127,10 @@ export const SiteEditorModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-white">
-                Editor Tampilan Situs (Site Appearance Editor)
+                {t('siteEditor.editorTitle')}
               </h2>
               <p className="text-xs text-purple-200/80">
-                Kustomisasi tata letak, warna, latar belakang, font, dan logo secara langsung (real-time).
+                {t('siteEditor.editorDesc')}
               </p>
             </div>
           </div>
@@ -137,14 +139,16 @@ export const SiteEditorModal: React.FC = () => {
             <button
               onClick={resetTheme}
               className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
-              title="Reset ke tampilan bawaan"
+              title={t('siteEditor.resetTitle')}
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset Default</span>
+              <span className="hidden sm:inline">{t('siteEditor.resetDefault')}</span>
             </button>
 
             <button
               onClick={() => setIsEditorOpen(false)}
+              aria-label={t('common.close')}
+              title={t('common.close')}
               className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
@@ -163,7 +167,7 @@ export const SiteEditorModal: React.FC = () => {
             }`}
           >
             <Layout className="w-3.5 h-3.5 text-purple-400" />
-            <span>Tata Letak (Layout)</span>
+            <span>{t('siteEditor.tabLayout')}</span>
           </button>
 
           <button
@@ -175,7 +179,7 @@ export const SiteEditorModal: React.FC = () => {
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Latar Belakang (Background)</span>
+            <span>{t('siteEditor.tabBackground')}</span>
           </button>
 
           <button
@@ -187,7 +191,7 @@ export const SiteEditorModal: React.FC = () => {
             }`}
           >
             <Palette className="w-3.5 h-3.5 text-pink-400" />
-            <span>Skema Warna (Colors)</span>
+            <span>{t('siteEditor.tabColors')}</span>
           </button>
 
           <button
@@ -199,7 +203,7 @@ export const SiteEditorModal: React.FC = () => {
             }`}
           >
             <Type className="w-3.5 h-3.5 text-amber-400" />
-            <span>Font & Tipografi</span>
+            <span>{t('siteEditor.tabFont')}</span>
           </button>
 
           <button
@@ -211,18 +215,19 @@ export const SiteEditorModal: React.FC = () => {
             }`}
           >
             <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Logo & Identitas</span>
+            <span>{t('siteEditor.tabLogo')}</span>
           </button>
         </div>
 
         {/* Save error (only a signed-in admin can save site settings) */}
         {saveError && (
           <div className="mx-6 mt-4 p-3 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-start justify-between gap-3">
-            <span>Perubahan tampilan gagal disimpan: {saveError}</span>
+            <span>{t('siteEditor.saveFailed', { error: saveError })}</span>
             <button
               type="button"
               onClick={clearSaveError}
-              title="Tutup"
+              aria-label={t('common.close')}
+              title={t('common.close')}
               className="p-1 rounded-lg hover:bg-rose-900/60 text-rose-300 hover:text-white transition-colors shrink-0"
             >
               <X className="w-3.5 h-3.5" />
@@ -237,13 +242,13 @@ export const SiteEditorModal: React.FC = () => {
             <div className="space-y-6 animate-fade-in">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Lebar Konten Halaman (Max Width)
+                  {t('siteEditor.layoutWidthLabel')}
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { id: '7xl', label: 'Lebar Normal (7XL - 1280px)', desc: 'Ukuran standar ramah desktop & mobile' },
-                    { id: '6xl', label: 'Ringkas (6XL - 1152px)', desc: 'Lebih rapat dan fokus ke konten tengah' },
-                    { id: 'full', label: 'Layar Penuh (Full Width)', desc: 'Membentang memenuhi seluruh lebar layar' },
+                    { id: '7xl', label: t('siteEditor.widthNormal'), desc: t('siteEditor.widthNormalDesc') },
+                    { id: '6xl', label: t('siteEditor.widthCompact'), desc: t('siteEditor.widthCompactDesc') },
+                    { id: 'full', label: t('siteEditor.widthFull'), desc: t('siteEditor.widthFullDesc') },
                   ].map((opt) => (
                     <button
                       key={opt.id}
@@ -263,13 +268,17 @@ export const SiteEditorModal: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Gaya Bilah Navigasi (Navbar Style)
+                  {t('siteEditor.navbarStyleLabel')}
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { id: 'glass-bar', label: 'Bilah Kaca Penuh (Glass Bar)', desc: 'Menempel di atas dengan efek blur' },
-                    { id: 'floating-pill', label: 'Kapsul Melayang (Floating Pill)', desc: 'Terapung manis di tengah atas' },
-                    { id: 'minimal', label: 'Gaya Minimalis (Clean Minimal)', desc: 'Sederhana dan hemat ruang' },
+                    { id: 'glass-bar', label: t('siteEditor.navbarGlassBar'), desc: t('siteEditor.navbarGlassBarDesc') },
+                    {
+                      id: 'floating-pill',
+                      label: t('siteEditor.navbarFloatingPill'),
+                      desc: t('siteEditor.navbarFloatingPillDesc'),
+                    },
+                    { id: 'minimal', label: t('siteEditor.navbarMinimal'), desc: t('siteEditor.navbarMinimalDesc') },
                   ].map((opt) => (
                     <button
                       key={opt.id}
@@ -289,14 +298,14 @@ export const SiteEditorModal: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Kelengkungan Sudut Kartu (Card Corner Radius)
+                  {t('siteEditor.cardRadiusLabel')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { id: 'rounded-3xl', label: 'Sangat Bulat (3XL)', preview: 'rounded-3xl' },
-                    { id: 'rounded-2xl', label: 'Modern Bulat (2XL)', preview: 'rounded-2xl' },
-                    { id: 'rounded-xl', label: 'Standar (XL)', preview: 'rounded-xl' },
-                    { id: 'rounded-lg', label: 'Teknis / Ramping (LG)', preview: 'rounded-lg' },
+                    { id: 'rounded-3xl', label: t('siteEditor.radius3xl'), preview: 'rounded-3xl' },
+                    { id: 'rounded-2xl', label: t('siteEditor.radius2xl'), preview: 'rounded-2xl' },
+                    { id: 'rounded-xl', label: t('siteEditor.radiusXl'), preview: 'rounded-xl' },
+                    { id: 'rounded-lg', label: t('siteEditor.radiusLg'), preview: 'rounded-lg' },
                   ].map((opt) => (
                     <button
                       key={opt.id}
@@ -319,7 +328,7 @@ export const SiteEditorModal: React.FC = () => {
           {activeTab === 'background' && (
             <div className="space-y-6 animate-fade-in">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Pilihan Latar Belakang (Fluent Background Presets)
+                {t('siteEditor.backgroundPresetsLabel')}
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -358,10 +367,10 @@ export const SiteEditorModal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                      Gradient Kustom (Custom CSS Gradient)
+                      {t('siteEditor.customGradientTitle')}
                     </h4>
                     <p className="text-[11px] text-slate-400">
-                      Masukkan kode CSS background atau linear-gradient Anda sendiri.
+                      {t('siteEditor.customGradientDesc')}
                     </p>
                   </div>
                   <button
@@ -372,12 +381,13 @@ export const SiteEditorModal: React.FC = () => {
                         : 'bg-slate-800 text-slate-300 hover:text-white'
                     }`}
                   >
-                    Gunakan Kustom
+                    {t('siteEditor.useCustom')}
                   </button>
                 </div>
                 <input
                   type="text"
                   placeholder="linear-gradient(135deg, #1e102e 0%, #3b0764 100%)"
+                  aria-label={t('siteEditor.customGradientTitle')}
                   value={theme.customBgGradient || ''}
                   onChange={(e) => updateTheme({ customBgGradient: e.target.value, background: 'custom' })}
                   className="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-purple-200 focus:outline-none focus:border-purple-500"
@@ -390,7 +400,7 @@ export const SiteEditorModal: React.FC = () => {
           {activeTab === 'colors' && (
             <div className="space-y-6 animate-fade-in">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Palet Aksen Warna (Theme Accent Color)
+                {t('siteEditor.accentColorLabel')}
               </label>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
@@ -423,19 +433,21 @@ export const SiteEditorModal: React.FC = () => {
               <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                    Warna Hex Kustom (Custom Color Picker)
+                    {t('siteEditor.customColorTitle')}
                   </h4>
-                  <p className="text-[11px] text-slate-400">Pilih warna aksen primer sesuka hati.</p>
+                  <p className="text-[11px] text-slate-400">{t('siteEditor.customColorDesc')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
+                    aria-label={t('siteEditor.customColorTitle')}
                     value={theme.customPrimaryColor || '#a855f7'}
                     onChange={(e) => updateTheme({ customPrimaryColor: e.target.value, colorScheme: 'custom' })}
                     className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0"
                   />
                   <input
                     type="text"
+                    aria-label={t('siteEditor.customColorTitle')}
                     value={theme.customPrimaryColor || '#a855f7'}
                     onChange={(e) => updateTheme({ customPrimaryColor: e.target.value, colorScheme: 'custom' })}
                     className="w-24 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-white focus:outline-none"
@@ -449,7 +461,7 @@ export const SiteEditorModal: React.FC = () => {
           {activeTab === 'font' && (
             <div className="space-y-6 animate-fade-in">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Tipografi & Font Situs
+                {t('siteEditor.fontLabel')}
               </label>
 
               <div className="space-y-3">
@@ -475,7 +487,7 @@ export const SiteEditorModal: React.FC = () => {
                           </h4>
                           {isSelected && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-500 text-white font-bold">
-                              Aktif
+                              {t('siteEditor.fontActive')}
                             </span>
                           )}
                         </div>
@@ -484,7 +496,7 @@ export const SiteEditorModal: React.FC = () => {
                           className="text-xs text-purple-200 mt-2 tracking-wide font-medium"
                           style={{ fontFamily: f.family }}
                         >
-                          The quick brown fox jumps over the lazy dog • 0123456789 • KawanCosplay 2026
+                          {t('siteEditor.fontSample')}
                         </p>
                       </div>
 
@@ -501,27 +513,29 @@ export const SiteEditorModal: React.FC = () => {
             <div className="space-y-6 animate-fade-in">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Teks Nama & Subtitle Logo
+                  {t('siteEditor.logoTextLabel')}
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Judul Utama Logo</label>
+                    <label className="block text-[11px] text-slate-400 mb-1">{t('siteEditor.logoTitleLabel')}</label>
                     <input
                       type="text"
                       value={theme.logo.title}
                       onChange={(e) => updateTheme({ logo: { ...theme.logo, title: e.target.value } })}
                       placeholder="KawanCosplay"
+                      aria-label={t('siteEditor.logoTitleLabel')}
                       className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-purple-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Subtitle / Tagline</label>
+                    <label className="block text-[11px] text-slate-400 mb-1">{t('siteEditor.logoSubtitleLabel')}</label>
                     <input
                       type="text"
                       value={theme.logo.subtitle}
                       onChange={(e) => updateTheme({ logo: { ...theme.logo, subtitle: e.target.value } })}
-                      placeholder="Community Member Portal"
+                      placeholder={t('siteEditor.logoSubtitlePlaceholder')}
+                      aria-label={t('siteEditor.logoSubtitleLabel')}
                       className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-purple-500"
                     />
                   </div>
@@ -530,7 +544,7 @@ export const SiteEditorModal: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Pilih Lambang / Emblem Bawaan
+                  {t('siteEditor.emblemLabel')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {emblemOptions.map((emblem) => {
@@ -556,7 +570,7 @@ export const SiteEditorModal: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                  Atau Gunakan Gambar Logo Kustom (Custom Image URL)
+                  {t('siteEditor.customLogoLabel')}
                 </label>
                 <input
                   type="url"
@@ -571,10 +585,11 @@ export const SiteEditorModal: React.FC = () => {
                     })
                   }
                   placeholder="https://domain.com/logo-kawancosplay.png"
+                  aria-label={t('siteEditor.customLogoLabel')}
                   className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Masukkan link gambar logo PNG/SVG transparan atau biarkan kosong untuk menggunakan emblem resmi.
+                  {t('siteEditor.customLogoHint')}
                 </p>
               </div>
             </div>
@@ -585,14 +600,14 @@ export const SiteEditorModal: React.FC = () => {
         <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
           <span className="text-xs text-purple-300 font-semibold flex items-center gap-1.5">
             <Check className="w-4 h-4 text-emerald-400" />
-            <span>Perubahan otomatis tersimpan ke database situs (khusus admin).</span>
+            <span>{t('siteEditor.autoSaveNotice')}</span>
           </span>
 
           <button
             onClick={() => setIsEditorOpen(false)}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-rose-600 hover:brightness-110 text-white font-bold text-xs sm:text-sm shadow-lg transition-all"
           >
-            Selesai & Tutup
+            {t('siteEditor.doneClose')}
           </button>
         </div>
       </div>

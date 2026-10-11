@@ -18,15 +18,15 @@ export default {
   uploadNow: 'Upload a Photo Now',
   downloadPhoto: 'Download Photo',
   byAuthor: 'By: {name}',
-  shortId: 'ID: {id}',
-  close: 'Close',
   detailCosplayer: 'Cosplayer:',
-  detailKccId: '16-digit ID:',
+  detailKccId: '16-Digit ID:',
   detailEvent: 'Event / Location:',
   detailPhotographer: 'Photographer:',
   shootNotes: 'Shoot Notes',
   likeWithCount: 'Like ({count})',
   download: 'Download',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'Other',
 
   // UploadPhotoModal
   photoTooLarge: 'The maximum photo size is {maxMb} MB.',
@@ -48,6 +48,7 @@ export default {
   seriesLabel: 'Anime / Game / Fandom Series',
   seriesPlaceholder: 'Example: Genshin Impact, Sousou no Frieren',
   eventLabel: 'Event / Shoot Location',
+  // Event option labels (the saved Firestore value stays the English preset text)
   eventMonthlyGathering: 'KawanCosplay Monthly Gathering',
   eventOutdoorShoot: 'Outdoor Nature Photoshoot',
   eventIndoorStudio: 'Indoor Studio Session',

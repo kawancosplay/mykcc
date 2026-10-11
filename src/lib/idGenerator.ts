@@ -1,4 +1,5 @@
 import { Member } from '../types';
+import { translate } from '../i18n';
 
 export const MAIN_ACCOUNT_EMAIL = 'cosplaysehat@gmail.com';
 export const FOUNDER_ADMIN_EMAIL = MAIN_ACCOUNT_EMAIL;
@@ -299,7 +300,7 @@ export function getUserIdBadgeInfo(
   if (clean === MAIN_ACCOUNT_UID) {
     return {
       type: 'main',
-      label: 'KCC Main Account (0000)',
+      label: translate('errors.badgeMainAccount'),
       badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     };
   }
@@ -307,13 +308,13 @@ export function getUserIdBadgeInfo(
   if (num >= ADMIN_UID_START && num <= ADMIN_UID_END) {
     return {
       type: 'admin',
-      label: `KCC Admin #${num.toString().padStart(4, '0')}`,
+      label: translate('errors.badgeAdmin', { number: num.toString().padStart(4, '0') }),
       badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
     };
   }
   return {
     type: 'member',
-    label: 'Member (Timestamp)',
+    label: translate('errors.badgeMember'),
     badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
   };
 }

@@ -4,7 +4,8 @@ const stats: LocaleNamespace<'stats'> = {
   badge: 'Analitik Komunitas',
   subtitle: 'Demografi & Minat KawanCosplay',
   title: 'Statistik & Demografi Komunitas',
-  description: 'Gambaran umum ekosistem member KawanCosplay berdasarkan divisi keahlian, sebaran kota domisili, dan judul fandom favorit.',
+  description:
+    'Gambaran umum ekosistem member KawanCosplay berdasarkan divisi keahlian, sebaran kota domisili, dan judul fandom favorit.',
   allVerifiedActive: '100% Terverifikasi Aktif',
   webFormLabel: 'Web Form Pendaftaran',
   webFormDesc: 'Pendaftar sistem baru',

@@ -39,6 +39,7 @@ import {
   MAX_ADDITIONAL_PHONES,
   MAIN_ACCOUNT_UID,
 } from './idGenerator';
+import { translate } from '../i18n';
 
 export const MEMBERS_COLLECTION = 'members';
 // Public, non-private projection used by the KCC ID card lookup (doc id == userId16)
@@ -379,7 +380,7 @@ export function sanitizeMemberProfileUpdate(fields: Partial<Member>): Record<str
     if (key === 'avatarUrl') {
       const avatar = typeof value === 'string' ? value : '';
       if (avatar.length > MEMBER_FIELD_LIMITS.avatarUrl) {
-        throw new Error('Ukuran foto profil terlalu besar. Silakan pilih foto lain. / Profile photo is too large.');
+        throw new Error(translate('errors.profilePhotoTooLarge'));
       }
       clean.avatarUrl = avatar;
       continue;
@@ -405,7 +406,7 @@ export function sanitizeMemberProfileUpdate(fields: Partial<Member>): Record<str
   if ('name' in clean || 'cosplayName' in clean) {
     const resolvedName = 'name' in clean ? String(clean.name || '') : String(clean.cosplayName || '');
     if (!resolvedName) {
-      throw new Error('Nama wajib diisi. / Name is required.');
+      throw new Error(translate('errors.nameRequired'));
     }
     clean.name = resolvedName;
     clean.cosplayName = resolvedName;
@@ -468,7 +469,7 @@ function memberCardPayload(card: MemberCard): Record<string, unknown> {
  */
 export async function upsertMemberCard(card: MemberCard): Promise<void> {
   if (!card || !isValidUserId16(card.userId16)) {
-    throw new Error(`KCC ID tidak valid untuk kartu anggota. / Invalid KCC ID for member card: ${card?.userId16 ?? ''}`);
+    throw new Error(translate('errors.invalidCardId', { id: card?.userId16 ?? '' }));
   }
   await setDoc(doc(db, MEMBER_CARDS_COLLECTION, card.userId16), memberCardPayload(card));
 }
@@ -538,7 +539,7 @@ export async function assignNewUserId16(options?: { allowMainAccount?: boolean }
     if (!existingCard.exists()) return candidate;
   }
 
-  throw new Error('Gagal membuat KCC ID unik. Silakan coba lagi. / Could not create a unique KCC ID. Please try again.');
+  throw new Error(translate('errors.uniqueIdFailed'));
 }
 
 /**
@@ -1103,10 +1104,10 @@ export function isExactDuplicateGroup(
  */
 export async function mergeDuplicateRegistration(keeper: Member, duplicate: Member): Promise<Member> {
   if (!(await checkIsAdminUser(auth.currentUser))) {
-    throw new Error('Hanya admin yang dapat menggabungkan data. / Admin only.');
+    throw new Error(translate('errors.mergeAdminOnly'));
   }
   if (!keeper || !duplicate || keeper.id === duplicate.id) {
-    throw new Error('Data yang sama tidak dapat digabungkan dengan dirinya sendiri. / A record cannot be merged into itself.');
+    throw new Error(translate('errors.mergeSameRecord'));
   }
 
   const keeperRef = doc(db, MEMBERS_COLLECTION, keeper.id);
@@ -1117,7 +1118,7 @@ export async function mergeDuplicateRegistration(keeper: Member, duplicate: Memb
     getDocFromServer(duplicateRef),
   ]).catch((error: unknown) => handleFirestoreError(error, OperationType.GET, `${MEMBERS_COLLECTION}/${duplicate.id}`));
   if (!keeperSnap.exists() || !duplicateSnap.exists()) {
-    throw new Error('Data anggota sudah tidak ada (mungkin sudah digabung atau dihapus). / Member record no longer exists.');
+    throw new Error(translate('errors.memberRecordMissing'));
   }
 
   const keeperRaw = keeperSnap.data() as Partial<Omit<Member, 'id'>>;
@@ -1125,9 +1126,7 @@ export async function mergeDuplicateRegistration(keeper: Member, duplicate: Memb
   const keeperAuthUid = typeof keeperRaw.authUid === 'string' ? keeperRaw.authUid : '';
   const duplicateAuthUid = typeof duplicateRaw.authUid === 'string' ? duplicateRaw.authUid : '';
   if (keeperAuthUid && duplicateAuthUid && keeperAuthUid !== duplicateAuthUid) {
-    throw new Error(
-      'Kedua data terhubung ke akun login yang berbeda, sehingga tidak dapat digabung. / Both records are linked to different sign-in accounts and cannot be merged.'
-    );
+    throw new Error(translate('errors.mergeDifferentAccounts'));
   }
 
   const keeperFresh = normalizeMember(keeper.id, keeperRaw);
@@ -1202,7 +1201,7 @@ export async function repairMemberIdsAndCards(
 ): Promise<MemberRepairReport> {
   const currentUser = auth.currentUser;
   if (!(await checkIsAdminUser(currentUser))) {
-    throw new Error('Hanya admin yang dapat menjalankan perbaikan. / Admin only.');
+    throw new Error(translate('errors.repairAdminOnly'));
   }
 
   const report: MemberRepairReport = {
@@ -1312,7 +1311,9 @@ export async function repairMemberIdsAndCards(
       await batch.commit();
     } catch (error) {
       chunk.forEach((r) => failedRowIds.add(r.id));
-      report.errors.push(`KCC ID update failed (${chunk.map((r) => r.id).join(', ')}): ${errorText(error)}`);
+      report.errors.push(
+        translate('errors.repairIdUpdateFailed', { ids: chunk.map((r) => r.id).join(', '), detail: errorText(error) })
+      );
     }
     done += chunk.length;
     if (onProgress) onProgress(done, total);
@@ -1333,7 +1334,12 @@ export async function repairMemberIdsAndCards(
       await batch.commit();
       report.cardsWritten += chunk.length;
     } catch (error) {
-      report.errors.push(`Member card write failed (${chunk.map((r) => r.finalId).join(', ')}): ${errorText(error)}`);
+      report.errors.push(
+        translate('errors.repairCardWriteFailed', {
+          ids: chunk.map((r) => r.finalId).join(', '),
+          detail: errorText(error),
+        })
+      );
     }
     done += chunk.length;
     if (onProgress) onProgress(done, total);
@@ -1363,7 +1369,7 @@ export async function repairMemberIdsAndCards(
       await batch.commit();
       report.cardsDeleted += chunk.length;
     } catch (error) {
-      report.errors.push(`Member card delete failed (${chunk.join(', ')}): ${errorText(error)}`);
+      report.errors.push(translate('errors.repairCardDeleteFailed', { ids: chunk.join(', '), detail: errorText(error) }));
     }
     done += chunk.length;
     if (onProgress) onProgress(done, total);

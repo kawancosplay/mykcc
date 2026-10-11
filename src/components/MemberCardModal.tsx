@@ -12,6 +12,7 @@ import {
 import { Member } from '../types';
 import { format16DigitUserId, getUserIdBadgeInfo } from '../lib/idGenerator';
 import { KawanCosplayLogo } from './KawanCosplayLogo';
+import { useI18n } from '../i18n';
 
 interface MemberCardModalProps {
   member: Member | null;
@@ -20,6 +21,7 @@ interface MemberCardModalProps {
 
 export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const { t, formatDate } = useI18n();
 
   if (!member) return null;
 
@@ -29,12 +31,12 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
   const handleShareCard = async () => {
     const kccIdFormatted = format16DigitUserId(member.userId16);
-    const memberDisplayName = member.name || member.cosplayName || 'Member';
-    const text = `Halo! Saya ${memberDisplayName}, anggota resmi KawanCosplay Community. KCC ID saya: ${kccIdFormatted}. Bergabunglah di komunitas pop-culture, cosplay & wota 100% SFW! Hotline WA: +62 857-1103-2782`;
+    const memberDisplayName = member.name || member.cosplayName || t('card.memberFallbackName');
+    const text = t('card.shareText', { name: memberDisplayName, id: kccIdFormatted });
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'MyKCC Member\'s ID Card',
+          title: t('card.shareTitle'),
           text,
           url: window.location.href,
         });
@@ -43,14 +45,14 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
       }
     } else {
       navigator.clipboard.writeText(text);
-      alert('Teks Member\'s ID Card & KCC ID telah disalin ke clipboard!');
+      alert(t('card.shareCopied'));
     }
   };
 
   const createdDate = new Date(member.createdAt);
   const formattedDate = isNaN(createdDate.getTime())
     ? '-'
-    : createdDate.toLocaleDateString('id-ID', {
+    : formatDate(createdDate, {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -63,7 +65,8 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10 backdrop-blur-md"
-          title="Tutup / Close"
+          title={t('common.close')}
+          aria-label={t('common.close')}
         >
           <X className="w-5 h-5" />
         </button>
@@ -71,13 +74,13 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         <div className="text-center mb-6">
           <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 mb-2">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Member's ID Card</span>
+            <span>{t('card.badge')}</span>
           </span>
           <h3 className="text-xl sm:text-2xl font-black text-white">
-            Official KawanCosplay ID Card
+            {t('card.title')}
           </h3>
           <p className="text-xs text-slate-400 mt-1">
-            Official 100% SFW Pop Culture & Cosplay Pass
+            {t('card.subtitle')}
           </p>
         </div>
 
@@ -99,7 +102,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             {/* ONLY KCC ID is used - No separate redundant card number */}
             <div className="text-right">
               <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 block">
-                KCC ID
+                {t('card.kccIdLabel')}
               </span>
               <span className="font-mono font-black text-xs sm:text-sm text-rose-400 tracking-wider">
                 {format16DigitUserId(member.userId16, member.email)}
@@ -114,7 +117,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               {member.avatarUrl ? (
                 <img
                   src={member.avatarUrl}
-                  alt={member.name || member.cosplayName || 'Member'}
+                  alt={member.name || member.cosplayName || t('card.memberFallbackName')}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -144,7 +147,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             <div className="space-y-1">
               {member.fandom && (
                 <p className="text-[10px] text-slate-400 font-mono">
-                  FANDOM: <span className="text-slate-200 font-semibold">{member.fandom}</span>
+                  {t('card.fandomLabel')} <span className="text-slate-200 font-semibold">{member.fandom}</span>
                 </p>
               )}
               {member.discordUsername && (
@@ -153,14 +156,14 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                 </p>
               )}
               <p className="text-[10px] text-slate-400 font-mono">
-                JOINED: <span className="text-slate-200 font-semibold">{formattedDate}</span>
+                {t('card.joinedLabel')} <span className="text-slate-200 font-semibold">{formattedDate}</span>
               </p>
               <p className="text-[9px] text-emerald-300 font-mono">
-                HOTLINE WA: +62 857-1103-2782
+                {t('card.hotlineWa')}
               </p>
               <div className="flex items-center space-x-1 text-[10px] text-emerald-400 font-semibold mt-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Verified KCC Member • 100% SFW</span>
+                <span>{t('card.verifiedMember')}</span>
               </div>
             </div>
 
@@ -168,7 +171,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             <div className="p-2 bg-white rounded-xl shadow-md flex flex-col items-center justify-center shrink-0">
               <QrCode className="w-10 h-10 text-slate-900" />
               <span className="text-[8px] font-mono font-bold text-slate-900 mt-0.5 tracking-tight">
-                KCC PASS
+                {t('card.passStamp')}
               </span>
             </div>
           </div>
@@ -181,7 +184,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             className="flex-1 sm:flex-initial py-2.5 px-4 liquid-glass-button text-white font-bold rounded-xl text-xs sm:text-sm transition-all shadow-md inline-flex items-center justify-center gap-2"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Cetak / Unduh Kartu</span>
+            <span>{t('card.printDownload')}</span>
           </button>
 
           <button
@@ -189,7 +192,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             className="py-2.5 px-4 bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white font-semibold rounded-xl text-xs sm:text-sm transition-all border border-white/15 backdrop-blur-md inline-flex items-center justify-center gap-1.5"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>Bagikan</span>
+            <span>{t('card.share')}</span>
           </button>
 
           <a
@@ -197,7 +200,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             target="_blank"
             rel="noopener noreferrer"
             className="py-2.5 px-3.5 bg-emerald-950/80 hover:bg-emerald-900/80 text-emerald-300 font-semibold rounded-xl text-xs sm:text-sm transition-all border border-emerald-500/30 inline-flex items-center justify-center gap-1.5"
-            title="Hubungi Admin KCC via WhatsApp"
+            title={t('card.contactAdminWhatsapp')}
           >
             <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
             <span className="hidden sm:inline">WhatsApp</span>

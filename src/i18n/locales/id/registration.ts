@@ -23,7 +23,7 @@ const registration: LocaleNamespace<'registration'> = {
   emailLabel: 'Alamat Email Aktif',
   emailOptionalNotice: 'Boleh dikosongkan. Database mendukung email kosong karena formulir lama kami tidak pernah menanyakan email.',
   emailRequiredNotice: 'Email wajib diisi untuk pendaftaran.',
-  emailPlaceholder: 'Jawaban Anda (opsional, contoh: nama@gmail.com)',
+  emailPlaceholder: 'Jawaban Anda (contoh: nama@gmail.com)',
   ageCategoryLabel: 'Kategori Usia (Minor vs Legal Age / Dewasa)',
   legalAge: 'Legal Age / Dewasa (18+ tahun)',
   minorAge: 'Minor / Di Bawah Umur (<18 tahun)',
@@ -74,6 +74,88 @@ const registration: LocaleNamespace<'registration'> = {
   joinWhatsappButton: 'Masuk Grup WhatsApp KawanCosplay',
   viewMyKccId: 'Lihat & Unduh KCC ID Saya',
   submitAnother: 'Kirim tanggapan lain',
+
+  // Generic form bits
+  optionalTag: '(Opsional)',
+  officialHotlineLabel: 'WhatsApp Hotline Pengurus:',
+  needHelpHotline: 'Butuh bantuan? WhatsApp Hotline:',
+  clearFormConfirm: 'Kosongkan semua isian formulir?',
+
+  // Backup WhatsApp number
+  addBackupPhone: '+ Punya lebih dari 1 nomor WhatsApp? Tambah Nomor Cadangan (Opsional)',
+  backupPhoneLabel: 'Nomor WhatsApp Cadangan / Tambahan',
+  removeBackupPhone: 'Batal / Hapus',
+  backupPhoneNotice:
+    'Nomor ini disimpan sebagai nomor cadangan. Jika Anda mengisi formulir lagi saat masuk (login) dengan akun yang sama, KCC ID Anda tetap sama; pendaftaran ganda tanpa login akan digabungkan oleh admin.',
+  backupPhonePlaceholder: 'Contoh: 08123456789 atau +62 857...',
+
+  // Location
+  customProvinceOption: 'Kustom / Wilayah Lainnya',
+  customCityOption: 'Kustom / Kota Lainnya',
+  customProvincePlaceholder: 'Ketik nama provinsi / wilayah / negara bagian Anda...',
+
+  // Primary role labels
+  roleCosplayer: 'Cosplayer / Crossplayer',
+  roleIdolFan: 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
+  roleOtaku: 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)',
+  roleGeneralEnthusiast: 'Sahabat Umum / Penikmat Acara (Teman pendukung, pengunjung & penikmat gathering)',
+  rolePropMaker: 'Prop Maker / Crafter / Pembuat Aksesori',
+  rolePhotographer: 'Fotografer / Videografer Cosplay',
+  roleCostumeMaker: 'Costume Maker / Seamstress / Wig Stylist',
+  roleEventCrew: 'Event Crew, Stage Staff & Volunteer',
+  roleContentCreator: 'Kreator Konten / Streamer',
+
+  // Fandom labels
+  fandomHoyoverse: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
+  fandomShonenSeinen: 'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+  fandomIdolMusic: 'Idol & Musik (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
+  fandomIsekaiFantasy: 'Isekai & Fantasi (Frieren, Slime, Re:Zero, DanMachi)',
+  fandomGamingEsports: 'Gaming & Esports (Valorant, League of Legends, MLBB, Elden Ring)',
+  fandomVtuber: 'VTuber (Hololive, Nijisanji, VTuber Indie)',
+  fandomTokusatsuMecha: 'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)',
+  fandomWesternPopCulture: 'Budaya Pop Barat (Marvel, DC, Star Wars, Disney)',
+  fandomOriginalCharacter: 'Original Character (OC) & Fantasi Kreatif',
+
+  // Experience labels
+  experienceBeginner: 'Pemula (< 1 tahun)',
+  experienceOneToThreeYears: '1 - 3 tahun',
+  experienceVeteran: '> 3 tahun',
+  experienceCasual: 'Penikmat Santai / Casual',
+
+  // Avatar
+  avatarTooLarge: 'Ukuran foto maksimal {maxMb}MB untuk avatar profil.',
+  photoProcessFailed: 'Gagal memproses foto.',
+  avatarPreviewAlt: 'Pratinjau avatar',
+  presetAvatarAria: 'Ilustrasi avatar {number}',
+
+  // Validation errors
+  nameRequiredError: 'Mohon isi Nama Panggung / Cosname / Nama Samaran Anda.',
+  emailRequiredError: 'Mohon isi alamat email aktif Anda.',
+  whatsappRequiredError:
+    'Nomor WhatsApp wajib diisi (minimal {minDigits} digit) karena komunitas KawanCosplay berbasis grup WhatsApp.',
+  backupPhoneTooShortError: 'Nomor WhatsApp cadangan minimal {minDigits} digit (atau kosongkan).',
+  customCityRequiredError: 'Mohon ketik nama kota / kabupaten Anda (pilihan "{option}").',
+  codeOfConductRequiredError: 'Mohon centang persetujuan Kode Etik Komunitas KawanCosplay.',
+
+  // Demo sandbox (admin only)
+  sandboxActiveNotice: 'Mode Sandbox Aktif: Data demo ini terisolasi dan TIDAK akan disimpan ke database Firestore.',
+  exitSandbox: 'Kembali ke Form Asli',
+  sandboxSubmissionNotice:
+    '🧪 Mode Sandbox Demo: Pengujian ini berjalan di memori lokal dan TIDAK disimpan ke database Firestore.',
+
+  // Success screen
+  duplicateMergedNotice:
+    '✓ Data Anda cocok dengan pendaftaran sebelumnya. Setiap anggota hanya memiliki 1 KCC ID — KCC ID Anda tetap sama dan data profil Anda telah diperbarui.',
+  verifiedMemberLabel: 'Anggota Terverifikasi:',
+  discordValue: 'Discord: {username}',
+
+  // Prefilled WhatsApp message to the admins
+  whatsappMessageIntro: 'Halo Admin KawanCosplay! Saya sudah mengisi form pendaftaran anggota.',
+  whatsappMessageName: 'Nama: {name}',
+  whatsappMessageKccId: 'KCC ID: {id}',
+  whatsappMessagePhone: 'No. WA: {phone}',
+  whatsappMessagePhone2: 'No. WA 2: {phone}',
+  whatsappMessageRequest: 'Mohon tautan undangan masuk ke Grup WhatsApp Komunitas KawanCosplay. Terima kasih!',
 };
 
 export default registration;

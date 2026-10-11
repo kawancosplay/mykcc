@@ -15,7 +15,8 @@ import {
   X,
 } from 'lucide-react';
 import { Member } from '../types';
-import { LanguageCode, LANGUAGES, TRANSLATIONS } from '../lib/i18n';
+import { LANGUAGES, useI18n } from '../i18n';
+import type { LanguageCode } from '../i18n';
 import { KawanCosplayLogo } from './KawanCosplayLogo';
 import { useSiteTheme } from '../lib/themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -69,8 +70,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const navbarRef = useRef<HTMLElement>(null);
   const { setIsEditorOpen } = useSiteTheme();
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  const { t } = useI18n();
   const currentLangMeta = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
+  const userFallbackName = t('common.userFallbackName');
 
   const shouldShrink = false;
 
@@ -103,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setActiveTab('form')}
                 className={`transition-colors px-4 py-2 rounded-xl hover:text-white whitespace-nowrap ${activeTab === 'form' ? 'text-white bg-white/10 font-bold' : ''}`}
               >
-                Registration
+                {t('common.navFormShort')}
               </button>
 
               <button
@@ -111,7 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setActiveTab('card')}
                 className={`transition-colors px-4 py-2 rounded-xl hover:text-white whitespace-nowrap ${activeTab === 'card' ? 'text-white bg-white/10 font-bold' : ''}`}
               >
-                KCC ID
+                {t('common.navCardShort')}
               </button>
 
               <button
@@ -119,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setActiveTab('gallery')}
                 className={`transition-colors px-4 py-2 rounded-xl hover:text-white whitespace-nowrap ${activeTab === 'gallery' ? 'text-white bg-white/10 font-bold' : ''}`}
               >
-                Gallery
+                {t('common.navGalleryShort')}
               </button>
 
               {(user || currentMember) && (
@@ -128,7 +130,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => setActiveTab('profile')}
                   className={`transition-colors px-4 py-2 rounded-xl hover:text-white whitespace-nowrap ${activeTab === 'profile' ? 'text-white bg-white/10 font-bold' : ''}`}
                 >
-                  {t.navProfile}
+                  {t('common.navProfile')}
                 </button>
               )}
             </nav>
@@ -143,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'liquid-glass-menu-item text-white border-white/20 hover:bg-white/10'
               }`}
               onClick={handleToggleMobileMenu}
-              aria-label={isMobileMenuOpen ? 'Tutup Menu' : 'Buka Menu'}
+              aria-label={isMobileMenuOpen ? t('common.closeMenu') : t('common.openMenu')}
               aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X className="w-5 h-5 text-rose-300" /> : <Menu className="w-5 h-5 text-white" />}
@@ -155,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 rel="noopener noreferrer"
                 onClick={() => triggerHaptic(10)}
                 className="p-3 text-slate-300 hover:text-white transition-colors"
-                title="Official WhatsApp Hotline: +62 857-1103-2782"
+                title={t('common.whatsappHotline')}
               >
                 <MessageCircle className="w-5 h-5" />
               </a>
@@ -165,7 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   type="button"
                   onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
                   className="p-3 text-sm font-medium text-slate-300 hover:text-white transition-colors uppercase"
-                  title={`Pilih Bahasa (${currentLangMeta.nativeName})`}
+                  title={t('common.chooseLanguage', { language: currentLangMeta.nativeName })}
                 >
                   {currentLang}
                 </button>
@@ -197,7 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   type="button"
                   onClick={() => setIsEditorOpen(true)}
                   className="p-2 text-slate-300 hover:text-white transition-colors"
-                  title={currentLang === 'id' ? 'Editor Tampilan Situs' : 'Site Editor'}
+                  title={t('siteEditor.editorTitle')}
                 >
                   <Palette className="w-5 h-5" />
                 </button>
@@ -217,12 +219,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {currentMember?.avatarUrl || user?.photoURL ? (
                       <img
                         src={currentMember?.avatarUrl || user?.photoURL || ''}
-                        alt={currentMember?.name || currentMember?.cosplayName || user?.displayName || 'User'}
+                        alt={currentMember?.name || currentMember?.cosplayName || user?.displayName || userFallbackName}
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white">
-                        {((currentMember?.name || currentMember?.cosplayName || user?.displayName || 'U')[0] || 'U').toUpperCase()}
+                        {((currentMember?.name || currentMember?.cosplayName || user?.displayName || userFallbackName)[0] || 'U').toUpperCase()}
                       </div>
                     )}
                   </button>
@@ -230,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     type="button"
                     onClick={onLogout}
-                    title={t.navLogout}
+                    title={t('common.navLogout')}
                     className="p-2 text-slate-400 hover:text-white transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
@@ -242,7 +244,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={onOpenAuth}
                   className="bg-white hover:bg-slate-100 text-slate-900 font-medium text-sm px-4 py-2 rounded-full transition-all"
                 >
-                  {t.navLogin}
+                  {t('common.navLogin')}
                 </button>
               )}
             </div>
@@ -269,17 +271,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {currentMember?.avatarUrl || user?.photoURL ? (
                     <img
                         src={currentMember?.avatarUrl || user?.photoURL || ''}
-                        alt={currentMember?.name || currentMember?.cosplayName || user?.displayName || 'User'}
+                        alt={currentMember?.name || currentMember?.cosplayName || user?.displayName || userFallbackName}
                         className="w-10 h-10 rounded-full object-cover shrink-0 border border-purple-400/40"
                     />
                     ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-700 to-rose-700 flex items-center justify-center font-bold text-white shrink-0">
-                        {((currentMember?.name || currentMember?.cosplayName || user?.displayName || 'U')[0] || 'U').toUpperCase()}
+                        {((currentMember?.name || currentMember?.cosplayName || user?.displayName || userFallbackName)[0] || 'U').toUpperCase()}
                     </div>
                     )}
                     <div className="flex flex-col min-w-0">
                         <span className="font-bold text-white truncate text-sm">{currentMember?.name || currentMember?.cosplayName || user?.displayName}</span>
-                        <span className="text-xs font-mono text-purple-300">ID: {currentMember?.userId16?.slice(-4)}</span>
+                        <span className="text-xs font-mono text-purple-300">{t('common.idValue', { id: currentMember?.userId16?.slice(-4) ?? '' })}</span>
                     </div>
                 </div>
              )}
@@ -297,7 +299,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-300 shrink-0">
                  <Sparkles className="w-4 h-4" />
                </div>
-               <span className="text-sm font-semibold">{t.navForm}</span>
+               <span className="text-sm font-semibold">{t('common.navForm')}</span>
              </button>
 
              <button
@@ -312,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
                  <IdCard className="w-4 h-4" />
                </div>
-               <span className="text-sm font-semibold">KCC ID</span>
+               <span className="text-sm font-semibold">{t('common.navCardShort')}</span>
              </button>
 
              <button
@@ -327,7 +329,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-300 shrink-0">
                  <Camera className="w-4 h-4" />
                </div>
-               <span className="text-sm font-semibold">{t.navGallery}</span>
+               <span className="text-sm font-semibold">{t('common.navGallery')}</span>
              </button>
 
              {(user || currentMember) && (
@@ -343,7 +345,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                  <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shrink-0">
                    <UserIcon className="w-4 h-4" />
                  </div>
-                 <span className="text-sm font-semibold">{t.navProfile}</span>
+                 <span className="text-sm font-semibold">{t('common.navProfile')}</span>
                </button>
              )}
              
@@ -396,7 +398,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                     <MessageCircle className="w-4 h-4" />
                   </div>
-                  <span className="text-sm font-medium">WhatsApp Community</span>
+                  <span className="text-sm font-medium">{t('common.whatsappCommunity')}</span>
                 </a>
 
                 {isAdmin && (
@@ -408,7 +410,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
                       <Palette className="w-4 h-4" />
                     </div>
-                    <span className="text-sm font-medium">Theme Editor</span>
+                    <span className="text-sm font-medium">{t('common.themeEditor')}</span>
                   </button>
                 )}
 
@@ -423,7 +425,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="flex items-center justify-center gap-2 p-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 hover:bg-rose-500/30 font-bold transition-colors mt-1"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
+                    <span>{t('common.navLogout')}</span>
                   </button>
                 ) : (
                   <button
@@ -432,7 +434,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-bold transition-all shadow-lg border border-white/20 mt-1"
                   >
                     <UserIcon className="w-4 h-4" />
-                    <span>Login / Sign In</span>
+                    <span>{t('common.navLogin')}</span>
                   </button>
                 )}
              </div>

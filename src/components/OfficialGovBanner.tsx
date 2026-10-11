@@ -10,15 +10,17 @@ import {
   Heart,
   ExternalLink,
 } from 'lucide-react';
-import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
+import { useI18n } from '../i18n';
+import type { LanguageCode } from '../i18n';
 
 interface OfficialGovBannerProps {
+  /** Kept for existing callers; the text follows the I18nProvider language. */
   currentLang: LanguageCode;
 }
 
-export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLang }) => {
+export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  const { t } = useI18n();
 
   return (
     <div className="liquid-glass border-b border-slate-800 text-slate-300 text-xs transition-colors">
@@ -33,7 +35,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
 
             <div className="flex items-center space-x-1.5 flex-wrap">
               <span className="font-bold text-slate-200">
-                {t.officialBannerText}
+                {t('common.officialBannerText')}
               </span>
             </div>
           </div>
@@ -46,7 +48,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
               className="inline-flex items-center space-x-1 text-rose-400 hover:text-rose-300 font-semibold underline underline-offset-2 transition-colors cursor-pointer"
               aria-expanded={isOpen}
             >
-              <span>{t.howYouKnow}</span>
+              <span>{t('common.howYouKnow')}</span>
               {isOpen ? (
                 <ChevronUp className="w-3.5 h-3.5" />
               ) : (
@@ -68,10 +70,10 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
               </div>
               <div className="space-y-1">
                 <h4 className="font-bold text-white text-xs sm:text-sm">
-                  {t.aboutKccTitle}
+                  {t('common.aboutKccTitle')}
                 </h4>
                 <p className="text-slate-300 text-[11px] sm:text-xs leading-relaxed">
-                  {t.aboutKccDesc}
+                  {t('common.aboutKccDesc')}
                 </p>
               </div>
             </div>
@@ -83,10 +85,10 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
               </div>
               <div className="space-y-1">
                 <h4 className="font-bold text-white text-xs sm:text-sm">
-                  {t.secureSiteTitle}
+                  {t('common.secureSiteTitle')}
                 </h4>
                 <p className="text-slate-300 text-[11px] sm:text-xs leading-relaxed">
-                  {t.secureSiteDesc}
+                  {t('common.secureSiteDesc')}
                 </p>
               </div>
             </div>
@@ -98,10 +100,10 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
               </div>
               <div className="space-y-1">
                 <h4 className="font-bold text-white text-xs sm:text-sm">
-                  {t.officialContactTitle}
+                  {t('common.officialContactTitle')}
                 </h4>
                 <p className="text-slate-300 text-[11px] sm:text-xs leading-relaxed">
-                  {t.officialContactDesc}
+                  {t('common.officialContactDesc')}
                 </p>
                 <div className="pt-1 flex flex-col space-y-1">
                   <a
@@ -110,14 +112,14 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = ({ currentLan
                     rel="noopener noreferrer"
                     className="inline-flex items-center space-x-1.5 text-emerald-400 font-bold hover:underline"
                   >
-                    <span>WhatsApp: +62 857-1103-2782</span>
+                    <span>{t('common.whatsappContact')}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                   <a
                     href="mailto:cosplaysehat@gmail.com"
                     className="inline-flex items-center space-x-1.5 text-indigo-400 font-bold hover:underline"
                   >
-                    <span>Email: cosplaysehat@gmail.com</span>
+                    <span>{t('common.emailContact')}</span>
                   </a>
                 </div>
               </div>

@@ -15,12 +15,14 @@ import {
   loginWithGoogleOAuth,
   resetPassword,
 } from '../lib/authService';
-import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
+import { useI18n } from '../i18n';
+import type { LanguageCode } from '../i18n';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAuthSuccess: (user: User, member: Member | null, token?: string) => void;
+  /** Kept for existing callers; the text follows the I18nProvider language. */
   currentLang: LanguageCode;
 }
 
@@ -28,9 +30,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   onAuthSuccess,
-  currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.id;
+  const { t } = useI18n();
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
 
   // Form fields
@@ -51,19 +52,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (mode === 'forgot') {
-        if (!email.trim()) throw new Error('Email diperlukan.');
+        if (!email.trim()) throw new Error(t('auth.emailRequired'));
         await resetPassword(email);
-        alert('Email untuk reset kata sandi telah dikirim.');
+        alert(t('auth.resetEmailSent'));
         setMode('login');
       } else if (mode === 'signup') {
         if (!email.trim() || !password || password.length < 6) {
-          throw new Error('Email valid dan kata sandi minimal 6 karakter diperlukan.');
+          throw new Error(t('auth.signUpRequirements'));
         }
         const { user, member } = await signUpWithEmail(email, password, fullName, cosplayName);
         onAuthSuccess(user, member);
         onClose();
       } else if (mode === 'login') {
-        if (!email.trim()) throw new Error('Email diperlukan.');
+        if (!email.trim()) throw new Error(t('auth.emailRequired'));
 
         const { user, member } = await loginWithEmail(email, password);
         onAuthSuccess(user, member);
@@ -71,7 +72,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     } catch (err: unknown) {
       console.error('Auth error:', err);
-      setErrorMsg(err instanceof Error ? err.message : 'Terjadi kendala autentikasi.');
+      setErrorMsg(err instanceof Error ? err.message : t('auth.authFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +87,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClose();
     } catch (err: unknown) {
       console.warn('Google sign in note:', err);
-      setErrorMsg('Login dengan Google dibatalkan atau terkendala.');
+      setErrorMsg(t('auth.googleLoginFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -98,6 +99,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-800/80 rounded-full transition-colors z-10"
+          aria-label={t('common.close')}
         >
           <X className="w-5 h-5" />
         </button>
@@ -107,10 +109,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             KC
           </div>
           <h3 className="text-xl sm:text-2xl font-black text-white">
-            {mode === 'signup' ? t.signUpTitle : mode === 'forgot' ? 'Lupa Kata Sandi' : t.loginTitle}
+            {mode === 'signup'
+              ? t('auth.signUpTitle')
+              : mode === 'forgot'
+              ? t('auth.forgotPasswordTitle')
+              : t('auth.loginTitle')}
           </h3>
           <p className="text-xs text-slate-400 mt-1">
-            Portal Komunitas Resmi MyKCC (16-Digit User ID)
+            {t('auth.portalSubtitle')}
           </p>
         </div>
 
@@ -126,7 +132,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 mode === 'login' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Login
+              {t('auth.loginTab')}
             </button>
             <button
               type="button"
@@ -138,7 +144,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 mode === 'signup' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Sign Up
+              {t('auth.signUpTab')}
             </button>
           </div>
         )}
@@ -154,13 +160,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {mode === 'signup' && (
             <div>
               <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                Nama (Name / Cosname / Alias) <span className="text-slate-400 font-normal">(Opsional)</span>
+                {t('auth.nameLabel')} <span className="text-slate-400 font-normal">{t('common.optional')}</span>
               </label>
               <div className="relative">
                 <Sparkles className="absolute left-3 top-3 w-4 h-4 text-rose-400" />
                 <input
                   type="text"
-                  placeholder="Contoh: Rian_Cos / Alya / Ken"
+                  placeholder={t('auth.namePlaceholder')}
                   maxLength={80}
                   value={cosplayName}
                   onChange={(e) => setCosplayName(e.target.value)}
@@ -168,7 +174,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
               </div>
               <p className="text-[10px] text-slate-400 mt-1">
-                Opsional saat buat akun. Nama lengkap & cosname dapat diisi saat mengisi formulir komunitas.
+                {t('auth.nameHint')}
               </p>
             </div>
           )}
@@ -176,14 +182,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <>
             <div>
               <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                Alamat Email
+                {t('auth.emailLabel')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <input
                   type="email"
                   required
-                  placeholder="nama@gmail.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
@@ -195,11 +201,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="block text-[11px] font-bold text-slate-300 uppercase">
-                    Kata Sandi (Password)
+                    {t('auth.passwordLabel')}
                   </label>
                   {mode === 'login' && (
                     <button type="button" onClick={() => setMode('forgot')} className="text-[10px] text-rose-400 hover:underline">
-                      Lupa kata sandi?
+                      {t('auth.forgotPasswordLink')}
                     </button>
                   )}
                 </div>
@@ -208,7 +214,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <input
                     type="password"
                     required
-                    placeholder="Minimal 6 karakter"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-rose-500"
@@ -229,10 +235,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <>
                 <span>
                   {mode === 'signup'
-                    ? 'Buat Akun & Dapatkan 16-Digit ID'
+                    ? t('auth.signUpSubmit')
                     : mode === 'forgot'
-                    ? 'Kirim Email Reset'
-                    : 'Masuk ke Akun MyKCC'}
+                    ? t('auth.sendResetEmail')
+                    : t('auth.loginTitle')}
                 </span>
                 <ArrowRight className="w-4 h-4" />
               </>
@@ -240,7 +246,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
           {mode === 'forgot' && (
             <button type="button" onClick={() => setMode('login')} className="w-full text-center text-xs text-slate-400 hover:text-white pt-2">
-              Kembali ke Login
+              {t('auth.backToLogin')}
             </button>
           )}
         </form>
@@ -252,7 +258,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="w-full border-t border-slate-800"></div>
               </div>
               <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-slate-900 px-3 text-slate-400">Atau masuk dengan</span>
+                <span className="bg-slate-900 px-3 text-slate-400">{t('auth.orContinueWith')}</span>
               </div>
             </div>
 
@@ -262,7 +268,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onClick={handleGoogleLogin}
                 className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs rounded-xl flex items-center justify-center space-x-2 transition-colors border border-slate-200 shadow-sm"
               >
-                <span>Lanjutkan dengan Google</span>
+                <span>{t('auth.continueWithGoogle')}</span>
               </button>
             </div>
           </>

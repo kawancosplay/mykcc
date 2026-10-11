@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Camera,
   Heart,
@@ -16,9 +16,11 @@ import {
 } from 'lucide-react';
 import { Photo, Member } from '../types';
 import { toggleLikePhoto } from '../lib/galleryService';
-import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
 import { format16DigitUserId } from '../lib/idGenerator';
 import { User as FirebaseUser } from 'firebase/auth';
+import { useI18n } from '../i18n';
+import type { LanguageCode } from '../i18n';
+import { OTHER_EVENT_VALUE, PHOTO_EVENT_OPTIONS } from './UploadPhotoModal';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -26,7 +28,22 @@ interface PhotoGalleryProps {
   user: FirebaseUser | null;
   onOpenUpload: () => void;
   onRequireLogin: () => void;
+  /** Kept for existing callers; the language comes from useI18n(). */
   currentLang: LanguageCode;
+}
+
+/** Renders a translated template with its "{placeholder}" replaced by a React node (e.g. a <strong>). */
+function renderWithNode(template: string, placeholder: string, node: React.ReactNode): React.ReactNode {
+  const token = `{${placeholder}}`;
+  const index = template.indexOf(token);
+  if (index === -1) return template;
+  return (
+    <>
+      {template.slice(0, index)}
+      {node}
+      {template.slice(index + token.length)}
+    </>
+  );
 }
 
 export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
@@ -35,14 +52,33 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   user,
   onOpenUpload,
   onRequireLogin,
-  currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.id;
+  const { t, formatNumber, formatDate, intlLocale } = useI18n();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState('ALL');
   const [selectedEvent, setSelectedEvent] = useState('ALL');
   const [activePhotoModal, setActivePhotoModal] = useState<Photo | null>(null);
+
+  const pluralRules = useMemo(() => {
+    try {
+      return new Intl.PluralRules(intlLocale);
+    } catch {
+      return null;
+    }
+  }, [intlLocale]);
+  const isOne = (count: number) => (pluralRules ? pluralRules.select(count) === 'one' : count === 1);
+
+  // Preset events are saved with their English text (or the "Other" value): show the localized label.
+  // Events members typed themselves are shown as they are.
+  const eventLabel = useCallback(
+    (value: string): string => {
+      if (value === OTHER_EVENT_VALUE) return t('gallery.eventOtherShort');
+      const preset = PHOTO_EVENT_OPTIONS.find((option) => option.value === value);
+      return preset?.labelKey ? t(preset.labelKey) : value;
+    },
+    [t]
+  );
 
   // Extract unique characters & events for filter dropdowns
   const availableCharacters = useMemo(() => {
@@ -58,8 +94,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     photos.forEach((p) => {
       if (p.event) set.add(p.event);
     });
-    return Array.from(set).sort();
-  }, [photos]);
+    return Array.from(set).sort((a, b) => eventLabel(a).localeCompare(eventLabel(b), intlLocale));
+  }, [photos, eventLabel, intlLocale]);
 
   // Filtered photos
   const filteredPhotos = useMemo(() => {
@@ -71,14 +107,15 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         p.character.toLowerCase().includes(q) ||
         p.series.toLowerCase().includes(q) ||
         p.authorName.toLowerCase().includes(q) ||
-        p.event.toLowerCase().includes(q);
+        p.event.toLowerCase().includes(q) ||
+        eventLabel(p.event).toLowerCase().includes(q);
 
       const matchChar = selectedCharacter === 'ALL' || p.character === selectedCharacter;
       const matchEvt = selectedEvent === 'ALL' || p.event === selectedEvent;
 
       return matchSearch && matchChar && matchEvt;
     });
-  }, [photos, searchQuery, selectedCharacter, selectedEvent]);
+  }, [photos, searchQuery, selectedCharacter, selectedEvent, eventLabel]);
 
   const handleLike = (e: React.MouseEvent, photo: Photo) => {
     e.stopPropagation();
@@ -136,17 +173,19 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
           <div className="flex items-center space-x-2 mb-1.5">
             <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30 flex items-center gap-1.5">
               <Camera className="w-3.5 h-3.5 text-pink-400" />
-              <span>{t.galleryTitle}</span>
+              <span>{t('gallery.title')}</span>
             </span>
             <span className="text-xs text-slate-400">
-              {photos.length} Karya Foto Tersedia
+              {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
+                count: formatNumber(photos.length),
+              })}
             </span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            KawanCosplay Photo Showcase
+            {t('gallery.showcaseHeading')}
           </h1>
           <p className="text-slate-400 text-sm max-w-2xl mt-1">
-            {t.galleryDesc}
+            {t('gallery.description')}
           </p>
         </div>
 
@@ -162,7 +201,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
           className="px-4 py-2 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md inline-flex items-center justify-center gap-1.5 transition-transform active:scale-95 shrink-0 self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>{t.uploadPhoto}</span>
+          <span>{t('gallery.uploadPhoto')}</span>
         </button>
       </div>
 
@@ -174,7 +213,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari berdasarkan nama karakter, seri, fotografer, atau event..."
+              placeholder={t('gallery.searchPlaceholder')}
+              aria-label={t('gallery.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
@@ -186,9 +226,15 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <select
               value={selectedCharacter}
               onChange={(e) => setSelectedCharacter(e.target.value)}
+              aria-label={t('gallery.allCharacters')}
               className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-rose-500"
             >
-              <option value="ALL">Semua Karakter ({availableCharacters.length})</option>
+              <option value="ALL">
+                {t('gallery.filterOptionWithCount', {
+                  label: t('gallery.allCharacters'),
+                  count: formatNumber(availableCharacters.length),
+                })}
+              </option>
               {availableCharacters.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -202,12 +248,18 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <select
               value={selectedEvent}
               onChange={(e) => setSelectedEvent(e.target.value)}
+              aria-label={t('gallery.allEvents')}
               className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-rose-500"
             >
-              <option value="ALL">Semua Event ({availableEvents.length})</option>
+              <option value="ALL">
+                {t('gallery.filterOptionWithCount', {
+                  label: t('gallery.allEvents'),
+                  count: formatNumber(availableEvents.length),
+                })}
+              </option>
               {availableEvents.map((evt) => (
                 <option key={evt} value={evt}>
-                  {evt}
+                  {eventLabel(evt)}
                 </option>
               ))}
             </select>
@@ -217,7 +269,11 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         {/* Filter Summary */}
         <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-800/60">
           <span>
-            Menampilkan <strong className="text-white">{filteredPhotos.length}</strong> karya cosplay
+            {renderWithNode(
+              t(isOne(filteredPhotos.length) ? 'gallery.showingCountOne' : 'gallery.showingCountOther'),
+              'count',
+              <strong className="text-white">{formatNumber(filteredPhotos.length)}</strong>
+            )}
           </span>
           {(searchQuery || selectedCharacter !== 'ALL' || selectedEvent !== 'ALL') && (
             <button
@@ -228,7 +284,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               }}
               className="text-rose-400 hover:underline"
             >
-              Reset Filter
+              {t('admin.resetFilter')}
             </button>
           )}
         </div>
@@ -238,9 +294,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       {filteredPhotos.length === 0 ? (
         <div className="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800">
           <Camera className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">Belum ada foto dalam kategori ini</h3>
+          <h3 className="text-lg font-bold text-white mb-1">{t('gallery.emptyTitle')}</h3>
           <p className="text-sm text-slate-400 max-w-sm mx-auto mb-4">
-            Jadilah yang pertama mengunggah foto cosplay untuk karakter atau event ini!
+            {t('gallery.emptyDesc')}
           </p>
           <button
             onClick={() => {
@@ -249,7 +305,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             }}
             className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold"
           >
-            Unggah Foto Sekarang
+            {t('gallery.uploadNow')}
           </button>
         </div>
       ) : (
@@ -289,7 +345,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                   <div className="absolute top-3 right-3 flex items-center space-x-1.5 z-10">
                     <button
                       type="button"
-                      title={currentLang === 'id' ? 'Unduh Foto' : 'Download Photo'}
+                      title={t('gallery.downloadPhoto')}
+                      aria-label={t('gallery.downloadPhoto')}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownload(photo);
@@ -301,10 +358,11 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     <button
                       type="button"
                       onClick={(e) => handleLike(e, photo)}
+                      aria-label={t('gallery.likeWithCount', { count: formatNumber(photo.likesCount || 0) })}
                       className="p-2 rounded-full bg-slate-900/80 hover:bg-rose-600 text-slate-200 hover:text-white backdrop-blur-md transition-all flex items-center space-x-1 shadow-md"
                     >
                       <Heart className="w-3.5 h-3.5 fill-current text-rose-400 group-hover:scale-110" />
-                      <span className="text-[11px] font-bold">{photo.likesCount || 0}</span>
+                      <span className="text-[11px] font-bold">{formatNumber(photo.likesCount || 0)}</span>
                     </button>
                   </div>
 
@@ -314,10 +372,16 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                       {photo.title}
                     </h3>
                     <div className="flex items-center space-x-2 mt-1 text-xs text-slate-300">
-                      <span>Oleh: <strong className="text-rose-400">{photo.authorName}</strong></span>
+                      <span>
+                        {renderWithNode(
+                          t('gallery.byAuthor'),
+                          'name',
+                          <strong className="text-rose-400">{photo.authorName}</strong>
+                        )}
+                      </span>
                       {photo.userId16 && (
                         <span className="text-[10px] font-mono text-slate-400">
-                          ID: {photo.userId16.slice(-4)}
+                          {t('common.idValue', { id: photo.userId16.slice(-4) })}
                         </span>
                       )}
                     </div>
@@ -329,7 +393,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                   <div className="flex items-center justify-between text-slate-400">
                     <span className="flex items-center gap-1 truncate max-w-[200px]">
                       <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                      <span className="truncate">{photo.event}</span>
+                      <span className="truncate">{eventLabel(photo.event)}</span>
                     </span>
                     {photo.photographer && (
                       <span className="text-[11px] text-pink-300 font-mono truncate max-w-[120px]">
@@ -356,6 +420,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
           <div className="relative w-full max-w-4xl bg-slate-900 border border-rose-500/30 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
             <button
               onClick={() => setActivePhotoModal(null)}
+              aria-label={t('common.close')}
+              title={t('common.close')}
               className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-950/80 rounded-full transition-colors z-20"
             >
               <X className="w-5 h-5" />
@@ -389,24 +455,24 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
                 <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 mb-4 space-y-1.5 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Cosplayer:</span>
+                    <span className="text-slate-400">{t('gallery.detailCosplayer')}</span>
                     <span className="font-bold text-rose-400">{activePhotoModal.authorName}</span>
                   </div>
                   {activePhotoModal.userId16 && (
                     <div className="flex justify-between">
-                      <span className="text-slate-400">16-Digit ID:</span>
+                      <span className="text-slate-400">{t('gallery.detailKccId')}</span>
                       <span className="font-mono text-slate-300">
                         {format16DigitUserId(activePhotoModal.userId16)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Event / Lokasi:</span>
-                    <span className="font-semibold text-slate-200">{activePhotoModal.event}</span>
+                    <span className="text-slate-400">{t('gallery.detailEvent')}</span>
+                    <span className="font-semibold text-slate-200">{eventLabel(activePhotoModal.event)}</span>
                   </div>
                   {activePhotoModal.photographer && (
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Fotografer:</span>
+                      <span className="text-slate-400">{t('gallery.detailPhotographer')}</span>
                       <span className="font-mono text-pink-300">{activePhotoModal.photographer}</span>
                     </div>
                   )}
@@ -415,7 +481,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 {activePhotoModal.caption && (
                   <div className="mb-6">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                      Catatan Pemotretan
+                      {t('gallery.shootNotes')}
                     </h4>
                     <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                       {activePhotoModal.caption}
@@ -432,23 +498,21 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-rose-500/30"
                   >
                     <Heart className="w-4 h-4 fill-current text-rose-400" />
-                    <span>Sukai ({activePhotoModal.likesCount || 0})</span>
+                    <span>
+                      {t('gallery.likeWithCount', { count: formatNumber(activePhotoModal.likesCount || 0) })}
+                    </span>
                   </button>
                   <button
                     onClick={() => handleDownload(activePhotoModal)}
                     className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-slate-700"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Unduh</span>
+                    <span>{t('gallery.download')}</span>
                   </button>
                 </div>
 
                 <span className="text-[11px] text-slate-500 font-mono">
-                  {new Date(activePhotoModal.createdAt).toLocaleDateString('id-ID', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {formatDate(activePhotoModal.createdAt)}
                 </span>
               </div>
             </div>

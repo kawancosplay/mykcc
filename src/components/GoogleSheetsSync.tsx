@@ -37,7 +37,8 @@ import {
 } from '../lib/sheetsService';
 import { bulkImportMembers, recordSyncLog } from '../lib/firestoreService';
 import { describeFirestoreError } from '../lib/firebase';
-import type { LanguageCode } from '../lib/i18n';
+import { useI18n } from '../i18n';
+import type { LanguageCode, TranslateFn, TranslationKey } from '../i18n';
 
 interface GoogleSheetsSyncProps {
   user: User | null;
@@ -50,7 +51,7 @@ interface GoogleSheetsSyncProps {
   syncLogs: SyncLog[];
   syncLogsError?: SubscriptionErrorKind | null;
   totalMembersInFirestore: number;
-  // UI language of the copy this component switches by language (defaults to Indonesian)
+  // Kept for callers that still pass it; the UI language comes from useI18n()
   currentLang?: LanguageCode;
 }
 
@@ -77,41 +78,64 @@ function writeLastSpreadsheetId(spreadsheetId: string): void {
 }
 
 /**
- * Friendly bilingual message for a failed Google Sheets API call (classifySheetsError != null).
+ * Friendly message for a failed Google Sheets API call (classifySheetsError != null).
  */
-function describeSheetsError(error: unknown, isId: boolean, accountEmail: string | null | undefined): string {
-  const account = accountEmail || (isId ? 'akun admin' : 'the admin account');
+function describeSheetsError(error: unknown, t: TranslateFn, accountEmail: string | null | undefined): string {
+  const account = accountEmail || t('sheets.adminAccountFallback');
   switch (classifySheetsError(error)) {
     case 'unauthorized':
-      return isId
-        ? 'Izin Google Sheets sudah kedaluwarsa atau tidak berlaku lagi. Klik "Hubungkan Google Sheets" untuk memperbaruinya, lalu coba lagi.'
-        : 'The Google Sheets permission expired or is no longer valid. Click "Connect Google Sheets" to renew it, then try again.';
+      return t('sheets.errorUnauthorized');
     case 'scope':
-      return isId
-        ? 'Izin baca Google Sheets belum diberikan. Klik "Hubungkan Google Sheets" dan centang izin untuk melihat spreadsheet Google Sheets Anda.'
-        : 'Read access to Google Sheets was not granted. Click "Connect Google Sheets" and tick the permission to see your Google Sheets spreadsheets.';
+      return t('sheets.errorScope');
     case 'no-access':
     case 'not-found':
-      return isId
-        ? `Akun Google yang sedang masuk (${account}) tidak memiliki akses ke spreadsheet ini, atau ID spreadsheet salah. Bagikan (Share) spreadsheet ke akun admin tersebut — akses Viewer sudah cukup — atau periksa kembali URL/ID-nya.`
-        : `The signed-in Google account (${account}) has no access to this spreadsheet, or the spreadsheet ID is wrong. Share the spreadsheet with that admin account (Viewer access is enough), or double-check the URL/ID.`;
+      return t('sheets.errorNoAccess', { account });
     case 'unsupported-file':
-      return isId
-        ? 'File ini bukan Google Sheets asli (misalnya file Excel .xlsx yang diunggah). Buka file tersebut lalu pilih File > Simpan sebagai Google Spreadsheet, kemudian pakai URL file barunya.'
-        : 'This file is not a native Google Sheets file (e.g. an uploaded Excel .xlsx). Open it, choose File > Save as Google Sheets, then use the new file URL.';
+      return t('sheets.errorUnsupportedFile');
     case 'rate-limit':
-      return isId
-        ? 'Batas permintaan Google Sheets API tercapai. Tunggu sekitar satu menit lalu coba lagi.'
-        : 'The Google Sheets API request limit was reached. Wait about a minute, then try again.';
+      return t('sheets.errorRateLimit');
     case 'network':
-      return isId
-        ? 'Tidak dapat menghubungi Google Sheets. Periksa koneksi internet Anda lalu coba lagi.'
-        : 'Could not reach Google Sheets. Check your internet connection, then try again.';
+      return t('sheets.errorNetwork');
     default: {
       const detail = error instanceof Error ? error.message : String(error);
-      return isId ? `Google Sheets menolak permintaan: ${detail}` : `Google Sheets rejected the request: ${detail}`;
+      return t('sheets.errorRejected', { detail });
     }
   }
+}
+
+/**
+ * Renders the <strong>…</strong> / <em>…</em> markers of a translation as bold / italic text
+ * (plain React nodes, never HTML injection).
+ */
+function renderMarkedText(text: string): React.ReactNode[] {
+  return text.split(/(<strong>[\s\S]*?<\/strong>|<em>[\s\S]*?<\/em>)/g).map((part, i) => {
+    const strong = part.match(/^<strong>([\s\S]*)<\/strong>$/);
+    if (strong) return <strong key={i}>{strong[1]}</strong>;
+    const em = part.match(/^<em>([\s\S]*)<\/em>$/);
+    if (em) return <em key={i}>{em[1]}</em>;
+    return part;
+  });
+}
+
+// Sync log `source` values stored in Firestore (data: never translated) and their display labels
+const SYNC_SOURCE_IMPORTER = 'Google Sheets Importer';
+const SYNC_SOURCE_POLLER = 'Real-Time Transition Poller';
+const SYNC_SOURCE_LABEL_KEYS = new Map<string, TranslationKey>([
+  [SYNC_SOURCE_IMPORTER, 'sheets.logSourceImporter'],
+  [SYNC_SOURCE_POLLER, 'sheets.pollerTitle'],
+]);
+
+// Sync log `details` are stored as Indonesian text (data, format kept unchanged for existing logs).
+// The two formats written here are parsed back and shown in the selected language.
+const IMPORT_LOG_DETAILS_PATTERN = /^Impor selesai: (\d+) anggota baru, (\d+) diperbarui, (\d+) tidak berubah, (\d+) gagal\.$/;
+const AUTO_LOG_DETAILS_PATTERN = /^Otomatis: (\d+) baru, (\d+) diperbarui\.$/;
+
+function importLogDetails(result: BulkImportResult): string {
+  return `Impor selesai: ${result.added} anggota baru, ${result.updated} diperbarui, ${result.unchanged} tidak berubah, ${result.skipped} gagal.`;
+}
+
+function autoSyncLogDetails(result: BulkImportResult): string {
+  return `Otomatis: ${result.added} baru, ${result.updated} diperbarui.`;
 }
 
 export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
@@ -122,9 +146,36 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   syncLogs,
   syncLogsError = null,
   totalMembersInFirestore,
-  currentLang = 'id',
 }) => {
-  const isId = currentLang === 'id';
+  const { t, formatNumber, formatDate } = useI18n();
+
+  // Display label of a stored sync log source (unknown sources are shown as stored)
+  const describeLogSource = (source: string): string => {
+    const key = SYNC_SOURCE_LABEL_KEYS.get(source);
+    return key ? t(key) : source;
+  };
+
+  // Display text of a stored sync log summary (unknown formats are shown as stored)
+  const describeLogDetails = (log: SyncLog): string => {
+    if (!log.details) return t('sheets.logImportedRows', { count: formatNumber(log.importedCount || 0) });
+    const imported = log.details.match(IMPORT_LOG_DETAILS_PATTERN);
+    if (imported) {
+      return t('sheets.logImportSummary', {
+        added: formatNumber(Number(imported[1])),
+        updated: formatNumber(Number(imported[2])),
+        unchanged: formatNumber(Number(imported[3])),
+        skipped: formatNumber(Number(imported[4])),
+      });
+    }
+    const automatic = log.details.match(AUTO_LOG_DETAILS_PATTERN);
+    if (automatic) {
+      return t('sheets.logAutoSummary', {
+        added: formatNumber(Number(automatic[1])),
+        updated: formatNumber(Number(automatic[2])),
+      });
+    }
+    return log.details;
+  };
 
   // Spreadsheet selection states. The Drive file list is gone (it needs a Drive scope): the admin pastes
   // a spreadsheet URL or ID, prefilled with the last one used in this browser or the latest sync log's.
@@ -179,6 +230,9 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   // Sheet / tab / mapping + raw values of the last fully imported poll: while the sheet is unchanged the
   // poller skips Firestore entirely (no full members read and no writes every interval)
   const lastPollSignatureRef = useRef<string | null>(null);
+  // Latest t() for the poller callback, so a language switch does not restart the running poller
+  const tRef = useRef(t);
+  tRef.current = t;
 
   // Most recent sync log's spreadsheet (syncLogs are ordered newest first)
   const latestLoggedSpreadsheetId = useMemo(() => {
@@ -225,23 +279,11 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     const input = rawInput ?? sheetInput;
     const targetId = parseSpreadsheetId(input);
     if (!targetId) {
-      setErrorMsg(
-        input.trim()
-          ? isId
-            ? 'URL atau ID spreadsheet tidak valid. Tempel URL lengkap Google Sheets (https://docs.google.com/spreadsheets/d/…/edit) atau ID-nya saja.'
-            : 'Invalid spreadsheet URL or ID. Paste the full Google Sheets URL (https://docs.google.com/spreadsheets/d/…/edit) or just its ID.'
-          : isId
-          ? 'Masukkan URL atau ID Google Sheets terlebih dahulu.'
-          : 'Enter a Google Sheets URL or ID first.'
-      );
+      setErrorMsg(input.trim() ? t('sheets.errorInvalidInput') : t('sheets.errorEmptyInput'));
       return;
     }
     if (!accessToken) {
-      setErrorMsg(
-        isId
-          ? 'Izin Google Sheets belum diberikan. Klik "Hubungkan Google Sheets" terlebih dahulu.'
-          : 'Google Sheets access has not been granted yet. Click "Connect Google Sheets" first.'
-      );
+      setErrorMsg(t('sheets.errorNotConnected'));
       return;
     }
 
@@ -271,22 +313,16 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
         // Never keep another sheet's columns / mapping for this one
         setHeaders([]);
         setPreviewRows([]);
-        setErrorMsg(
-          isId
-            ? 'Spreadsheet ini masih kosong atau belum memiliki data respon.'
-            : 'This spreadsheet is empty or has no responses yet.'
-        );
+        setErrorMsg(t('sheets.errorEmptySheet'));
       }
     } catch (err: unknown) {
       console.error('Inspect error:', err);
       setErrorMsg(
         classifySheetsError(err)
-          ? describeSheetsError(err, isId, user?.email)
+          ? describeSheetsError(err, t, user?.email)
           : err instanceof Error
           ? err.message
-          : isId
-          ? 'Gagal mengakses data spreadsheet.'
-          : 'Could not read the spreadsheet.'
+          : t('sheets.errorReadFailed')
       );
     } finally {
       setIsLoadingSheets(false);
@@ -297,11 +333,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   const handleImportToFirebase = async () => {
     const targetId = selectedSpreadsheetId;
     if (!targetId || !accessToken) {
-      setErrorMsg(
-        isId
-          ? 'Hubungkan Google Sheets lalu periksa spreadsheet terlebih dahulu (Langkah 1).'
-          : 'Connect Google Sheets and inspect a spreadsheet first (Step 1).'
-      );
+      setErrorMsg(t('sheets.errorInspectFirst'));
       return;
     }
 
@@ -313,9 +345,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       // Fetch all rows
       const allRows = await fetchSheetValues(accessToken, targetId, sheetRange(selectedTab, 'A1:Z2000'));
       if (allRows.length <= 1) {
-        throw new Error(
-          isId ? 'Tidak ada baris data respon baru untuk diimpor.' : 'There are no response rows to import.'
-        );
+        throw new Error(t('sheets.errorNoRows'));
       }
 
       const membersToImport = parseRowsToMembers(
@@ -326,11 +356,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       );
 
       if (membersToImport.length === 0) {
-        throw new Error(
-          isId
-            ? 'Tidak ada baris valid yang ditemukan berdasarkan pemetaan kolom.'
-            : 'No valid rows were found with this column mapping.'
-        );
+        throw new Error(t('sheets.errorNoValidRows'));
       }
 
       setImportProgress({ completed: 0, total: membersToImport.length });
@@ -347,18 +373,16 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
         await recordSyncLog({
           spreadsheetId: targetId,
           importedCount: result.added,
-          source: 'Google Sheets Importer',
+          source: SYNC_SOURCE_IMPORTER,
           syncedAt: new Date().toISOString(),
-          details: `Impor selesai: ${result.added} anggota baru, ${result.updated} diperbarui, ${result.unchanged} tidak berubah, ${result.skipped} gagal.`,
+          details: importLogDetails(result),
         });
       } catch (logErr) {
         console.warn('Sync log write failed:', logErr);
       }
     } catch (err: unknown) {
       console.error('Import error:', err);
-      setErrorMsg(
-        classifySheetsError(err) ? describeSheetsError(err, isId, user?.email) : describeFirestoreError(err, isId)
-      );
+      setErrorMsg(classifySheetsError(err) ? describeSheetsError(err, t, user?.email) : describeFirestoreError(err));
     } finally {
       setIsImporting(false);
     }
@@ -395,9 +419,9 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
               await recordSyncLog({
                 spreadsheetId: selectedSpreadsheetId,
                 importedCount: res.added,
-                source: 'Real-Time Transition Poller',
+                source: SYNC_SOURCE_POLLER,
                 syncedAt: new Date().toISOString(),
-                details: `Otomatis: ${res.added} baru, ${res.updated} diperbarui.`,
+                details: autoSyncLogDetails(res),
               });
             }
             // Rows that failed are retried on the next poll; a clean run is not repeated until the sheet changes
@@ -409,7 +433,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
           // Stop the poller so a failing sync does not keep retrying writes every interval
           // (an expired Sheets token ends up here too: the message asks to reconnect).
           setErrorMsg(
-            classifySheetsError(e) ? describeSheetsError(e, isId, user?.email) : describeFirestoreError(e, isId)
+            classifySheetsError(e) ? describeSheetsError(e, tRef.current, user?.email) : describeFirestoreError(e)
           );
           setIsAutoSyncActive(false);
         } finally {
@@ -427,13 +451,13 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   const webhookUrl = `${window.location.origin}/api/sync-form`;
   const appsScriptCode = `/**
  * KAWANCOSPLAY GOOGLE FORM REAL-TIME SYNC BRIDGE
- * Pasang di: Google Sheet Tanggapan -> Ekstensi -> Apps Script
- * Pemicu (Trigger): onFormSubmit -> Saat Mengirim Formulir
+ * ${t('sheets.scriptCommentInstall')}
+ * ${t('sheets.scriptCommentTrigger')}
  */
 function onFormSubmit(e) {
   var targetUrl = "${webhookUrl}";
-  
-  // Ambil data respon form
+
+  // ${t('sheets.scriptCommentResponseData')}
   var responseData = e ? (e.namedValues || e.values) : {};
   
   var payload = {
@@ -471,18 +495,14 @@ function onFormSubmit(e) {
         <div className="flex items-center space-x-2 mb-2">
           <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
             <Zap className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Google Sheets & Form Real-Time Bridge</span>
+            <span>{t('sheets.bridgeBadge')}</span>
           </span>
-          <span className="text-xs text-slate-400">Transisi Google Form ke Firebase</span>
+          <span className="text-xs text-slate-400">{t('sheets.bridgeSubtitle')}</span>
         </div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Sinkronisasi Database Spreadsheet & Google Form
-            </h1>
-            <p className="text-slate-300 text-sm sm:text-base max-w-3xl mt-1">
-              Impor database spreadsheet anggota lama yang sudah ada dan aktifkan sinkronisasi real-time sehingga setiap kali ada anggota baru mengisi Google Form selama masa transisi, data otomatis masuk ke Firebase.
-            </p>
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">{t('sheets.pageTitle')}</h1>
+            <p className="text-slate-300 text-sm sm:text-base max-w-3xl mt-1">{t('sheets.pageDesc')}</p>
           </div>
           <div className="shrink-0 flex items-center gap-2">
             <button
@@ -492,15 +512,7 @@ function onFormSubmit(e) {
               className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 hover:border-emerald-500/50 text-xs font-bold flex items-center space-x-2 transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               <Key className="w-4 h-4 text-emerald-400" />
-              <span>
-                {accessToken
-                  ? isId
-                    ? 'Perbarui Izin Google Sheets'
-                    : 'Renew Google Sheets Access'
-                  : isId
-                  ? 'Hubungkan Google Sheets'
-                  : 'Connect Google Sheets'}
-              </span>
+              <span>{accessToken ? t('sheets.renewAccess') : t('sheets.connectSheets')}</span>
             </button>
           </div>
         </div>
@@ -514,18 +526,12 @@ function onFormSubmit(e) {
               <AlertCircle className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white mb-1">
-                {isId ? 'Koneksi Google Sheets Diperlukan' : 'Google Sheets Connection Required'}
-              </h3>
-              <p className="text-sm text-slate-300 leading-relaxed max-w-xl">
-                {isId
-                  ? 'Untuk membaca spreadsheet Google Form secara langsung, beri MyKCC izin baca Google Sheets untuk akun Google admin yang sedang masuk. Akun tersebut harus memiliki akses ke spreadsheet pendaftaran KawanCosplay.'
-                  : 'To read the Google Form spreadsheet directly, give MyKCC read access to Google Sheets for the signed-in admin Google account. That account must have access to the KawanCosplay registration spreadsheet.'}
-              </p>
+              <h3 className="text-lg font-bold text-white mb-1">{t('sheets.connectionRequiredTitle')}</h3>
+              <p className="text-sm text-slate-300 leading-relaxed max-w-xl">{t('sheets.connectionRequiredDesc')}</p>
               <p className="text-xs text-amber-200/90 leading-relaxed max-w-xl mt-2">
-                {isId
-                  ? `Izin diminta untuk akun yang sedang masuk${user?.email ? ` (${user.email})` : ''}. MyKCC hanya meminta akses baca Google Sheets, tanpa akses Google Drive.`
-                  : `Access is requested for the signed-in account${user?.email ? ` (${user.email})` : ''}. MyKCC only asks for read access to Google Sheets, no Google Drive access.`}
+                {user?.email
+                  ? t('sheets.accessRequestNoticeWithEmail', { email: user.email })
+                  : t('sheets.accessRequestNotice')}
               </p>
               {connectError && (
                 <p className="text-xs text-rose-300 font-semibold leading-relaxed max-w-xl mt-2 flex items-start gap-1.5">
@@ -543,7 +549,7 @@ function onFormSubmit(e) {
             className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 transition-transform active:scale-95 disabled:opacity-50"
           >
             <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-            <span>{isId ? 'Hubungkan Google Sheets' : 'Connect Google Sheets'}</span>
+            <span>{t('sheets.connectSheets')}</span>
           </button>
         </div>
       )}
@@ -560,14 +566,8 @@ function onFormSubmit(e) {
                   1
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">
-                    {isId ? 'Spreadsheet Google Form' : 'Google Form Spreadsheet'}
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    {isId
-                      ? 'Tempel URL atau ID spreadsheet respon Google Form.'
-                      : 'Paste the URL or ID of the Google Form responses spreadsheet.'}
-                  </p>
+                  <h2 className="text-lg font-bold text-white">{t('sheets.step1Title')}</h2>
+                  <p className="text-xs text-slate-400">{t('sheets.step1Desc')}</p>
                 </div>
               </div>
             </div>
@@ -583,18 +583,15 @@ function onFormSubmit(e) {
               {/* Spreadsheet URL / ID (Drive listing removed: it needs a Drive scope; only spreadsheets.readonly is requested) */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                  {isId ? 'URL / ID Google Spreadsheet' : 'Google Spreadsheet URL / ID'}
+                  {t('sheets.spreadsheetInputLabel')}
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     inputMode="url"
                     autoComplete="off"
-                    placeholder={
-                      isId
-                        ? 'https://docs.google.com/spreadsheets/d/…/edit atau ID'
-                        : 'https://docs.google.com/spreadsheets/d/…/edit or ID'
-                    }
+                    aria-label={t('sheets.spreadsheetInputLabel')}
+                    placeholder={t('sheets.spreadsheetInputPlaceholder')}
                     value={sheetInput}
                     onChange={(e) => handleSheetInputChange(e.target.value)}
                     onKeyDown={(e) => {
@@ -611,16 +608,14 @@ function onFormSubmit(e) {
                     disabled={isLoadingSheets || !sheetInput.trim()}
                     className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors shrink-0 disabled:opacity-50"
                   >
-                    <span>Periksa</span>
+                    <span>{t('sheets.inspectButton')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Format: https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit
+                  {renderMarkedText(t('sheets.formatHint'))}
                   {sheetInput.trim() && !parsedInputId && (
-                    <span className="block text-rose-300 mt-1">
-                      {isId ? 'URL / ID belum dikenali.' : 'URL / ID not recognised yet.'}
-                    </span>
+                    <span className="block text-rose-300 mt-1">{t('sheets.inputNotRecognised')}</span>
                   )}
                   {spreadsheetTitle && selectedSpreadsheetId && (
                     <span className="block text-emerald-300 mt-1">📄 {spreadsheetTitle}</span>
@@ -632,7 +627,7 @@ function onFormSubmit(e) {
               {sheetTabs.length > 1 && (
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                    Pilih Tab Lembar Kerja (Sheet Tab)
+                    {t('sheets.sheetTabLabel')}
                   </label>
                   <select
                     value={selectedTab}
@@ -662,15 +657,15 @@ function onFormSubmit(e) {
                     2
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-white">Pemetaan Kolom Respon (Mapping)</h2>
+                    <h2 className="text-lg font-bold text-white">{t('sheets.step2Title')}</h2>
                     <p className="text-xs text-slate-400">
-                      Sistem telah mendeteksi {headers.length} kolom dari form Google kamu
+                      {t('sheets.step2Desc', { count: formatNumber(headers.length) })}
                     </p>
                   </div>
                 </div>
 
                 <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-lg border border-emerald-500/30">
-                  Auto-Detected
+                  {t('sheets.autoDetectedBadge')}
                 </span>
               </div>
 
@@ -678,14 +673,14 @@ function onFormSubmit(e) {
                 {/* Nama Lengkap */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Nama Lengkap <span className="text-rose-400">*</span>
+                    {t('sheets.columnFullName')} <span className="text-rose-400">*</span>
                   </label>
                   <select
                     value={columnMapping.fullName}
                     onChange={(e) => setColumnMapping({ ...columnMapping, fullName: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Pilih Kolom --</option>
+                    <option value={-1}>{t('sheets.optionChooseColumn')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -697,14 +692,14 @@ function onFormSubmit(e) {
                 {/* Cosplay Name */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Cosname / Alias <span className="text-rose-400">*</span>
+                    {t('sheets.columnCosname')} <span className="text-rose-400">*</span>
                   </label>
                   <select
                     value={columnMapping.cosplayName}
                     onChange={(e) => setColumnMapping({ ...columnMapping, cosplayName: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Pilih Kolom --</option>
+                    <option value={-1}>{t('sheets.optionChooseColumn')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -716,14 +711,14 @@ function onFormSubmit(e) {
                 {/* Email */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Email <span className="text-rose-400">*</span>
+                    {t('sheets.columnEmail')} <span className="text-rose-400">*</span>
                   </label>
                   <select
                     value={columnMapping.email}
                     onChange={(e) => setColumnMapping({ ...columnMapping, email: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Pilih Kolom --</option>
+                    <option value={-1}>{t('sheets.optionChooseColumn')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -735,14 +730,14 @@ function onFormSubmit(e) {
                 {/* WhatsApp */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom WhatsApp / No HP <span className="text-rose-400">*</span>
+                    {t('sheets.columnWhatsapp')} <span className="text-rose-400">*</span>
                   </label>
                   <select
                     value={columnMapping.phone}
                     onChange={(e) => setColumnMapping({ ...columnMapping, phone: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Tidak Ada / Kosong --</option>
+                    <option value={-1}>{t('sheets.optionNone')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -754,14 +749,15 @@ function onFormSubmit(e) {
                 {/* WhatsApp Cadangan / No WA 2 */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom WhatsApp Cadangan / No WA 2 <span className="text-slate-500 font-normal">(Opsional)</span>
+                    {t('sheets.columnWhatsapp2')}{' '}
+                    <span className="text-slate-500 font-normal">{t('sheets.optionalTag')}</span>
                   </label>
                   <select
                     value={columnMapping.phone2 ?? -1}
                     onChange={(e) => setColumnMapping({ ...columnMapping, phone2: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Tidak Ada / Kosong --</option>
+                    <option value={-1}>{t('sheets.optionNone')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -773,14 +769,14 @@ function onFormSubmit(e) {
                 {/* Username Discord */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Username Discord
+                    {t('sheets.columnDiscord')}
                   </label>
                   <select
                     value={columnMapping.discordUsername}
                     onChange={(e) => setColumnMapping({ ...columnMapping, discordUsername: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Tidak Ada / Kosong --</option>
+                    <option value={-1}>{t('sheets.optionNone')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -792,14 +788,14 @@ function onFormSubmit(e) {
                 {/* Domisili / Kota */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Kota / Domisili
+                    {t('sheets.columnCity')}
                   </label>
                   <select
                     value={columnMapping.city}
                     onChange={(e) => setColumnMapping({ ...columnMapping, city: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Default (Indonesia) --</option>
+                    <option value={-1}>{t('sheets.optionDefaultIndonesia')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -811,14 +807,14 @@ function onFormSubmit(e) {
                 {/* Peran / Role */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Peran / Minat (Cosplayer/Crafter/dll)
+                    {t('sheets.columnRole')}
                   </label>
                   <select
                     value={columnMapping.primaryRole}
                     onChange={(e) => setColumnMapping({ ...columnMapping, primaryRole: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Default (Cosplayer) --</option>
+                    <option value={-1}>{t('sheets.optionDefaultCosplayer')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -830,14 +826,14 @@ function onFormSubmit(e) {
                 {/* Fandom */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Fandom / Karakter Favorit
+                    {t('sheets.columnFandom')}
                   </label>
                   <select
                     value={columnMapping.fandom}
                     onChange={(e) => setColumnMapping({ ...columnMapping, fandom: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Default (Anime & Games) --</option>
+                    <option value={-1}>{t('sheets.optionDefaultAnimeGames')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -849,14 +845,14 @@ function onFormSubmit(e) {
                 {/* Timestamp */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    Kolom Timestamp Respon
+                    {t('sheets.columnTimestamp')}
                   </label>
                   <select
                     value={columnMapping.timestamp}
                     onChange={(e) => setColumnMapping({ ...columnMapping, timestamp: Number(e.target.value) })}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
                   >
-                    <option value={-1}>-- Waktu Saat Ini --</option>
+                    <option value={-1}>{t('sheets.optionCurrentTime')}</option>
                     {headers.map((h, i) => (
                       <option key={i} value={i}>
                         {i + 1}. {h}
@@ -870,15 +866,15 @@ function onFormSubmit(e) {
               {previewRows.length > 0 && (
                 <div className="mb-6 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 overflow-x-auto">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2">
-                    Pratinjau Data Spreadsheet (Nama, WhatsApp & Discord Username):
+                    {t('sheets.previewTitle')}
                   </p>
                   <table className="w-full text-left text-xs">
                     <thead className="text-slate-400 border-b border-slate-800 font-mono text-[10px] uppercase">
                       <tr>
-                        <th className="py-1.5 pr-3">Nama / Cosname</th>
+                        <th className="py-1.5 pr-3">{t('sheets.previewColName')}</th>
                         <th className="py-1.5 px-3">WhatsApp</th>
-                        <th className="py-1.5 px-3">Discord Username</th>
-                        <th className="py-1.5 pl-3">Domisili</th>
+                        <th className="py-1.5 px-3">{t('sheets.previewColDiscord')}</th>
+                        <th className="py-1.5 pl-3">{t('sheets.previewColCity')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-slate-200">
@@ -898,7 +894,11 @@ function onFormSubmit(e) {
                             <td className="py-1.5 pr-3 font-semibold text-white">{nameVal}</td>
                             <td className="py-1.5 px-3 font-mono text-emerald-400">
                               <span>{waVal}</span>
-                              {wa2Val && <span className="block text-[10px] text-emerald-300/80">No 2: {wa2Val}</span>}
+                              {wa2Val && (
+                                <span className="block text-[10px] text-emerald-300/80">
+                                  {t('sheets.previewPhone2', { phone: wa2Val })}
+                                </span>
+                              )}
                             </td>
                             <td className="py-1.5 px-3 font-mono text-indigo-300">{dcVal}</td>
                             <td className="py-1.5 pl-3 text-slate-400">{cityVal}</td>
@@ -921,13 +921,16 @@ function onFormSubmit(e) {
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>
-                      Mengimpor ke Firestore ({importProgress.completed}/{importProgress.total})...
+                      {t('sheets.importing', {
+                        completed: formatNumber(importProgress.completed),
+                        total: formatNumber(importProgress.total),
+                      })}
                     </span>
                   </>
                 ) : (
                   <>
                     <Database className="w-4 h-4" />
-                    <span>Impor Seluruh Respon Spreadsheet (Termasuk Discord & WA) ke Firebase</span>
+                    <span>{t('sheets.importAllButton')}</span>
                   </>
                 )}
               </button>
@@ -938,8 +941,14 @@ function onFormSubmit(e) {
                   <div className="flex items-center space-x-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                     <span>
-                      Impor selesai: <strong>{importResult.added} anggota baru</strong>, {importResult.updated} diperbarui,{' '}
-                      {importResult.unchanged} tidak berubah, {importResult.skipped} gagal.
+                      {renderMarkedText(
+                        t('sheets.importResult', {
+                          added: formatNumber(importResult.added),
+                          updated: formatNumber(importResult.updated),
+                          unchanged: formatNumber(importResult.unchanged),
+                          skipped: formatNumber(importResult.skipped),
+                        })
+                      )}
                     </span>
                   </div>
                 </div>
@@ -953,9 +962,7 @@ function onFormSubmit(e) {
                 <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-rose-100">{errorMsg}</p>
-                  <p className="text-[11px] text-rose-300/80 mt-1">
-                    Tips: Anda juga bisa langsung menempelkan URL Spreadsheet Google Form di kolom input atas lalu klik &quot;Periksa&quot;.
-                  </p>
+                  <p className="text-[11px] text-rose-300/80 mt-1">{t('sheets.errorTip')}</p>
                 </div>
               </div>
               <button
@@ -965,7 +972,7 @@ function onFormSubmit(e) {
                 className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shrink-0 flex items-center space-x-2 shadow-md transition-transform active:scale-95 disabled:opacity-50"
               >
                 <Key className="w-4 h-4 text-emerald-600" />
-                <span>Beri Izin / Hubungkan Google</span>
+                <span>{t('sheets.grantAccessButton')}</span>
               </button>
             </div>
           )}
@@ -991,7 +998,7 @@ function onFormSubmit(e) {
                     }`}
                   ></span>
                 </span>
-                <h3 className="font-bold text-white text-base">Real-Time Transition Poller</h3>
+                <h3 className="font-bold text-white text-base">{t('sheets.pollerTitle')}</h3>
               </div>
 
               <span
@@ -1001,32 +1008,35 @@ function onFormSubmit(e) {
                     : 'bg-slate-800 text-slate-400'
                 }`}
               >
-                {isAutoSyncActive ? 'Aktif (Live)' : 'Nonaktif'}
+                {isAutoSyncActive ? t('sheets.pollerActive') : t('sheets.pollerInactive')}
               </span>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              Ketika fitur ini aktif, aplikasi akan memeriksa spreadsheet setiap {pollIntervalSeconds} detik. Setiap ada respon Google Form baru yang masuk, anggota otomatis ditambahkan ke Firebase dan KCC ID langsung diterbitkan.
+              {t('sheets.pollerDesc', { seconds: formatNumber(pollIntervalSeconds) })}
             </p>
 
             <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 mb-5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Interval Pemeriksaan:</span>
+                <span className="text-slate-400">{t('sheets.pollIntervalLabel')}</span>
                 <select
                   value={pollIntervalSeconds}
                   onChange={(e) => setPollIntervalSeconds(Number(e.target.value))}
+                  aria-label={t('sheets.pollIntervalLabel')}
                   className="bg-slate-900 border border-slate-700 text-white rounded-lg px-2 py-1 text-xs"
                 >
-                  <option value={15}>Setiap 15 detik</option>
-                  <option value={30}>Setiap 30 detik (Optimal)</option>
-                  <option value={60}>Setiap 60 detik</option>
+                  <option value={15}>{t('sheets.pollEverySeconds', { seconds: formatNumber(15) })}</option>
+                  <option value={30}>{t('sheets.pollEverySecondsOptimal', { seconds: formatNumber(30) })}</option>
+                  <option value={60}>{t('sheets.pollEverySeconds', { seconds: formatNumber(60) })}</option>
                 </select>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Pemeriksaan Terakhir:</span>
+                <span className="text-slate-400">{t('sheets.lastPollLabel')}</span>
                 <span className="font-mono text-slate-200">
-                  {lastPollTime ? lastPollTime.toLocaleTimeString('id-ID') : 'Belum dijalankan'}
+                  {lastPollTime
+                    ? formatDate(lastPollTime, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                    : t('sheets.lastPollNever')}
                 </span>
               </div>
             </div>
@@ -1035,11 +1045,7 @@ function onFormSubmit(e) {
               type="button"
               onClick={() => {
                 if (!isAutoSyncActive && !selectedSpreadsheetId) {
-                  setErrorMsg(
-                    isId
-                      ? 'Periksa spreadsheet terlebih dahulu pada Langkah 1.'
-                      : 'Check a spreadsheet first in Step 1.'
-                  );
+                  setErrorMsg(t('sheets.errorCheckFirst'));
                   return;
                 }
                 setIsAutoSyncActive(!isAutoSyncActive);
@@ -1051,11 +1057,11 @@ function onFormSubmit(e) {
               }`}
             >
               {isAutoSyncActive ? (
-                <span>Hentikan Live Poller</span>
+                <span>{t('sheets.stopPoller')}</span>
               ) : (
                 <>
                   <Play className="w-4 h-4 fill-current" />
-                  <span>Mulai Real-Time Auto Sync</span>
+                  <span>{t('sheets.startAutoSync')}</span>
                 </>
               )}
             </button>
@@ -1065,11 +1071,9 @@ function onFormSubmit(e) {
           <div className="bg-slate-900/90 border border-indigo-500/30 rounded-3xl p-6 sm:p-7 shadow-xl">
             <div className="flex items-center space-x-2 mb-3">
               <Code2 className="w-5 h-5 text-indigo-400" />
-              <h3 className="font-bold text-white text-base">Google Apps Script Webhook</h3>
+              <h3 className="font-bold text-white text-base">{t('sheets.webhookTitle')}</h3>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              Ingin respon Google Form langsung terkirim seketika saat tombol <em>Submit</em> ditekan tanpa perlu menunggu interval polling? Pasang script ini di Google Sheet responmu:
-            </p>
+            <p className="text-xs text-slate-300 leading-relaxed mb-4">{renderMarkedText(t('sheets.webhookDesc'))}</p>
 
             {/* Code Box */}
             <div className="relative bg-slate-950 border border-slate-800 rounded-2xl p-4 font-mono text-[11px] text-slate-300 overflow-x-auto max-h-48 mb-4">
@@ -1080,23 +1084,23 @@ function onFormSubmit(e) {
                 {copiedCode ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">Tersalin!</span>
+                    <span className="text-emerald-400">{t('sheets.copied')}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Salin Script</span>
+                    <span>{t('sheets.copyScript')}</span>
                   </>
                 )}
               </button>
-              <pre className="text-slate-400">{appsScriptCode}</pre>
+              <pre className="text-slate-400" dir="ltr">{appsScriptCode}</pre>
             </div>
 
             <div className="space-y-1.5 text-xs text-slate-300">
-              <p className="font-bold text-white">Langkah Pasang Cepat (1 Menit):</p>
-              <p>1. Buka Google Sheet responmu &gt; Menu <strong>Ekstensi</strong> &gt; <strong>Apps Script</strong>.</p>
-              <p>2. Paste kode di atas &gt; Simpan.</p>
-              <p>3. Di menu kiri klik <strong>Pemicu (Triggers)</strong> &gt; Tambah Pemicu &gt; Pilih acara: <em>Saat mengirim formulir</em>.</p>
+              <p className="font-bold text-white">{t('sheets.installStepsTitle')}</p>
+              <p>{renderMarkedText(t('sheets.installStep1'))}</p>
+              <p>{renderMarkedText(t('sheets.installStep2'))}</p>
+              <p>{renderMarkedText(t('sheets.installStep3'))}</p>
             </div>
           </div>
 
@@ -1105,23 +1109,19 @@ function onFormSubmit(e) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-slate-400" />
-                <h3 className="font-bold text-white text-sm">Riwayat Sinkronisasi Terbaru</h3>
+                <h3 className="font-bold text-white text-sm">{t('sheets.recentSyncTitle')}</h3>
               </div>
-              <span className="text-xs text-slate-500 font-mono">{syncLogs.length} Log</span>
+              <span className="text-xs text-slate-500 font-mono">
+                {t('sheets.logCount', { count: formatNumber(syncLogs.length) })}
+              </span>
             </div>
 
             {syncLogsError === 'permission-denied' ? (
-              <p className="text-xs text-rose-300 font-semibold py-3 text-center">
-                Akses log sinkronisasi ditolak — masuk dengan akun Google admin.
-              </p>
+              <p className="text-xs text-rose-300 font-semibold py-3 text-center">{t('sheets.logsPermissionDenied')}</p>
             ) : syncLogsError ? (
-              <p className="text-xs text-amber-300 py-3 text-center">
-                Gagal memuat riwayat sinkronisasi. Periksa koneksi lalu muat ulang halaman.
-              </p>
+              <p className="text-xs text-amber-300 py-3 text-center">{t('sheets.logsLoadFailed')}</p>
             ) : syncLogs.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-3 text-center">
-                Belum ada aktivitas sinkronisasi yang tercatat.
-              </p>
+              <p className="text-xs text-slate-500 italic py-3 text-center">{t('sheets.logsEmpty')}</p>
             ) : (
               <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
                 {syncLogs.map((log) => (
@@ -1130,15 +1130,12 @@ function onFormSubmit(e) {
                     className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-xs space-y-1"
                   >
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-emerald-400">{log.source}</span>
+                      <span className="font-semibold text-emerald-400">{describeLogSource(log.source)}</span>
                       <span className="text-[10px] text-slate-500 font-mono">
-                        {new Date(log.syncedAt).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatDate(log.syncedAt, { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-[11px]">{log.details || `Impor ${log.importedCount} baris`}</p>
+                    <p className="text-slate-300 text-[11px]">{describeLogDetails(log)}</p>
                   </div>
                 ))}
               </div>

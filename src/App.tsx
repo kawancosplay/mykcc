@@ -35,7 +35,6 @@ import {
   describeFirestoreError,
 } from './lib/firebase';
 import { format16DigitUserId, MAIN_ACCOUNT_UID } from './lib/idGenerator';
-import { TRANSLATIONS, LANGUAGES } from './lib/i18n';
 import { useI18n } from './i18n';
 import { useSiteTheme } from './lib/themeContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,7 +44,7 @@ import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-
 export default function App() {
   const [activeTab, setActiveTab] = useState<'form' | 'card' | 'gallery' | 'profile' | 'admin'>('form');
   // Language state lives in <I18nProvider> (persisted in localStorage 'kcc_lang'); currentLang is kept as an alias.
-  const { lang: currentLang, setLang } = useI18n();
+  const { lang: currentLang, setLang, t, dir } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -142,9 +141,6 @@ export default function App() {
   const [lookupResult, setLookupResult] = useState<Member | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
-
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
-  const isRtl = LANGUAGES.find((l) => l.code === currentLang)?.isRtl || false;
 
   // Listen for URL hash `#admin` for direct admin portal access
   useEffect(() => {
@@ -384,37 +380,21 @@ export default function App() {
       }
     } catch (err) {
       if (isPopupCancelledError(err)) {
-        setSheetsConnectError(
-          currentLang === 'id'
-            ? 'Jendela otorisasi Google ditutup sebelum selesai.'
-            : 'The Google authorization window was closed before finishing.'
-        );
+        setSheetsConnectError(t('common.sheetsPopupClosed'));
         return;
       }
       if (isUserMismatchError(err)) {
-        setSheetsConnectError(
-          currentLang === 'id'
-            ? 'Pilih akun Google yang sama dengan akun admin yang sedang masuk.'
-            : 'Choose the same Google account as the signed-in admin account.'
-        );
+        setSheetsConnectError(t('common.sheetsWrongAccount'));
         return;
       }
       if (isPopupBlockedError(err)) {
-        setSheetsConnectError(
-          currentLang === 'id'
-            ? 'Browser memblokir jendela login Google. Izinkan pop-up untuk situs ini, lalu coba lagi.'
-            : 'The browser blocked the Google sign-in window. Allow pop-ups for this site and try again.'
-        );
+        setSheetsConnectError(t('common.sheetsPopupBlocked'));
         return;
       }
       console.warn('Sheets connect failed:', err);
       const detail = (err as { code?: string })?.code || (err instanceof Error ? err.message : '');
-      setSheetsConnectError(
-        (currentLang === 'id'
-          ? 'Gagal menghubungkan Google Sheets. Pastikan memilih akun admin (cosplaysehat@gmail.com) dan memberi izin baca Google Sheets.'
-          : 'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and allow read access to Google Sheets.') +
-          (detail ? ` (${detail})` : '')
-      );
+      const message = t('common.sheetsConnectFailed');
+      setSheetsConnectError(detail ? t('common.errorWithDetail', { message, detail }) : message);
     }
   };
 
@@ -436,11 +416,7 @@ export default function App() {
 
     const digits = lookupQuery.replace(/\D/g, '');
     if (digits.length !== 16) {
-      setLookupError(
-        currentLang === 'id'
-          ? 'Mohon masukkan 16 digit KCC ID Anda (angka saja, spasi boleh).'
-          : 'Please enter your 16-digit KCC ID (digits only, spaces allowed).'
-      );
+      setLookupError(t('common.lookupInvalidId'));
       return;
     }
 
@@ -450,21 +426,13 @@ export default function App() {
       if (card) {
         setLookupResult(memberCardToMember(card));
       } else {
-        setLookupError(
-          currentLang === 'id'
-            ? 'Kartu anggota dengan KCC ID tersebut tidak ditemukan. Periksa kembali 16 digit KCC ID Anda.'
-            : 'No Member ID Card found for that KCC ID. Please double-check the 16 digits.'
-        );
+        setLookupError(t('common.lookupNotFound'));
       }
     } catch (err) {
       console.warn('KCC ID card lookup failed:', err);
       if (classifyFirestoreError(err) === 'permission-denied') {
         // describeFirestoreError's permission text is about saving; a lookup needs its own wording
-        setLookupError(
-          currentLang === 'id'
-            ? 'Pencarian kartu sedang tidak tersedia (akses database ditolak). Silakan coba lagi nanti atau hubungi Admin KCC.'
-            : 'Card lookup is currently unavailable (database access denied). Please try again later or contact a KCC admin.'
-        );
+        setLookupError(t('common.lookupPermissionDenied'));
       } else {
         setLookupError(describeFirestoreError(err, currentLang === 'id'));
       }
@@ -476,9 +444,9 @@ export default function App() {
   // DEDICATED SEPARATE PAGE: ADMIN DASHBOARD (RESTRICTED: GOOGLE SIGN-IN AS A FIREBASE ADMIN)
   if (activeTab === 'admin') {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">Loading Admin...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">{t('common.loadingAdmin')}</div>}>
       <div
-        dir={isRtl ? 'rtl' : 'ltr'}
+        dir={dir}
         style={getBgStyle()}
         className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
       >
@@ -499,16 +467,16 @@ export default function App() {
               className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700/80 hover:border-slate-600 text-slate-200 hover:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5"
             >
               <span>&larr;</span>
-              <span>{currentLang === 'id' ? 'Kembali ke Situs Utama' : 'Back to Public Site'}</span>
+              <span>{t('common.backToPublicSite')}</span>
             </button>
 
             <div className="flex items-center space-x-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
               <span className="font-extrabold text-white text-sm sm:text-base tracking-tight">
-                KawanCosplay Admin Portal
+                {t('common.adminPortalTitle')}
               </span>
               <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                Google Sign-In
+                {t('common.googleSignInBadge')}
               </span>
             </div>
           </div>
@@ -518,14 +486,14 @@ export default function App() {
               <button
                 onClick={() => setIsEditorOpen(true)}
                 className="px-3 py-1.5 rounded-lg bg-purple-950/70 hover:bg-purple-900/70 border border-purple-500/30 text-purple-200 hover:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-                title="Editor Tampilan Situs"
+                title={t('siteEditor.editorTitle')}
               >
                 <Palette className="w-3.5 h-3.5 text-pink-300" />
-                <span className="hidden sm:inline">Editor Situs</span>
+                <span className="hidden sm:inline">{t('common.siteEditorShort')}</span>
               </button>
             )}
             <span className="hidden md:inline-block text-xs text-slate-300 font-mono">
-              {user?.email || 'Admin Restricted'}
+              {user?.email || t('common.adminRestricted')}
             </span>
             <button
               onClick={() => {
@@ -533,10 +501,10 @@ export default function App() {
                 if (window.location.hash === '#admin') window.location.hash = '';
               }}
               className="px-3 py-1.5 rounded-lg bg-rose-950/70 hover:bg-rose-900/70 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
-              title="Kunci dan Keluar Portal Admin"
+              title={t('common.lockAndExitAdminTitle')}
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>{currentLang === 'id' ? 'Kunci / Keluar' : 'Lock / Exit'}</span>
+              <span>{t('common.lockExit')}</span>
             </button>
           </div>
         </header>
@@ -579,9 +547,9 @@ export default function App() {
 
   // PUBLIC SITE LAYOUT (ZERO ACCESS TO MEMBER LIST FOR ALL MEMBERS)
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">Loading App...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">{t('common.loadingApp')}</div>}>
     <div
-      dir={isRtl ? 'rtl' : 'ltr'}
+      dir={dir}
       style={getBgStyle()}
       className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
     >
@@ -646,15 +614,13 @@ export default function App() {
           <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 text-center animate-fade-in">
             <div className="liquid-glass-elevated rounded-3xl p-8 sm:p-12 shadow-2xl">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 mb-3 inline-block">
-                MyKCC Member's ID Card
+                {t('common.cardPageBadge')}
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
-                Member's ID Card & KCC ID
+                {t('common.cardPageTitle')}
               </h2>
               <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto mb-6 leading-relaxed">
-                {currentLang === 'id'
-                  ? 'Demi menjaga privasi seluruh anggota, daftar lengkap anggota hanya dapat diakses oleh Admin di portal terpisah. Masukkan 16-Digit KCC ID Anda (contoh: 2026 1008 0715 3001) untuk menampilkan kartu identitas digital resmi Anda.'
-                  : 'To protect the privacy of all members, the complete member list is restricted to the admin portal. Enter your 16-Digit KCC ID (e.g. 2026 1008 0715 3001) to display your official digital pass.'}
+                {t('common.cardPageDesc')}
               </p>
 
               {/* If user has a current active profile */}
@@ -662,11 +628,11 @@ export default function App() {
                 <div className="mb-8 p-5 liquid-glass rounded-2xl max-w-md mx-auto text-left flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-purple-300 uppercase font-mono tracking-wider block">
-                      {currentLang === 'id' ? 'Akun Anda Terhubung' : 'Connected Profile'}
+                      {t('common.connectedProfile')}
                     </span>
                     <h4 className="font-bold text-white text-base">{currentMember.cosplayName}</h4>
                     <p className="text-xs font-mono text-purple-300">
-                      KCC ID: {format16DigitUserId(currentMember.userId16, currentMember.email)}
+                      {t('common.kccIdValue', { id: format16DigitUserId(currentMember.userId16, currentMember.email) })}
                     </p>
                   </div>
                   <button
@@ -674,7 +640,7 @@ export default function App() {
                     className="px-3.5 py-2 liquid-glass-button text-white rounded-xl text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5"
                   >
                     <IdCard className="w-3.5 h-3.5" />
-                    <span>{currentLang === 'id' ? 'Buka Kartu' : 'Open Pass'}</span>
+                    <span>{t('common.openPass')}</span>
                   </button>
                 </div>
               )}
@@ -687,11 +653,7 @@ export default function App() {
                     type="text"
                     inputMode="numeric"
                     maxLength={24}
-                    placeholder={
-                      currentLang === 'id'
-                        ? 'KCC ID 16 digit, contoh: 2026 1008 0715 3001'
-                        : '16-Digit KCC ID, e.g. 2026 1008 0715 3001'
-                    }
+                    placeholder={t('common.lookupPlaceholder')}
                     value={lookupQuery}
                     onChange={(e) => setLookupQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-xl text-white text-xs sm:text-sm focus:outline-none"
@@ -708,15 +670,7 @@ export default function App() {
                   className="w-full py-2.5 px-5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Search className="w-4 h-4" />
-                  <span>
-                    {isLookingUp
-                      ? currentLang === 'id'
-                        ? 'Mencari...'
-                        : 'Searching...'
-                      : currentLang === 'id'
-                      ? "Cari & Tampilkan Member's ID Card"
-                      : "Search & View Member's ID Card"}
-                  </span>
+                  <span>{isLookingUp ? t('common.searching') : t('common.lookupSubmit')}</span>
                 </button>
               </form>
 
@@ -725,30 +679,30 @@ export default function App() {
                 <div className="mt-6 p-4 rounded-2xl bg-slate-950 border border-emerald-500/40 text-left max-w-md mx-auto flex items-center justify-between animate-fade-in">
                   <div>
                     <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
-                      {currentLang === 'id' ? 'Data Ditemukan!' : 'Pass Found!'}
+                      {t('common.passFound')}
                     </span>
                     <h4 className="font-bold text-white text-sm">{lookupResult.cosplayName}</h4>
                     <p className="text-xs font-mono text-slate-400">
-                      ID: {format16DigitUserId(lookupResult.userId16, lookupResult.email)}
+                      {t('common.idValue', { id: format16DigitUserId(lookupResult.userId16, lookupResult.email) })}
                     </p>
                   </div>
                   <button
                     onClick={() => handleOpenCard(lookupResult)}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-colors"
                   >
-                    {currentLang === 'id' ? 'Buka Kartu' : 'Open Pass'}
+                    {t('common.openPass')}
                   </button>
                 </div>
               )}
 
               <div className="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-rose-400" />
-                <span>{currentLang === 'id' ? 'Belum terdaftar?' : 'Not registered yet?'}</span>
+                <span>{t('common.notRegisteredYet')}</span>
                 <button
                   onClick={() => setActiveTab('form')}
                   className="text-rose-400 font-bold hover:underline"
                 >
-                  {currentLang === 'id' ? 'Isi Formulir Pendaftaran →' : 'Fill Registration Form →'}
+                  {t('common.fillRegistrationForm')}
                 </button>
               </div>
             </div>
@@ -784,36 +738,34 @@ export default function App() {
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
               <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-4" />
               <p className="text-base font-bold text-white mb-2">
-                {currentLang === 'id' ? 'Gagal memuat profil member.' : 'Could not load your member profile.'}
+                {t('common.profileLoadFailed')}
               </p>
               <p className="text-xs text-slate-400 mb-4">
-                {currentLang === 'id'
-                  ? 'Periksa koneksi internet Anda, lalu coba lagi.'
-                  : 'Check your internet connection, then try again.'}
+                {t('common.checkConnectionRetry')}
               </p>
               <button
                 type="button"
                 onClick={() => loadMemberForUser(user)}
                 className="px-4 py-2 rounded-xl liquid-glass-button text-white font-bold text-xs shadow-md transition-all"
               >
-                {currentLang === 'id' ? 'Coba Lagi' : 'Try Again'}
+                {t('common.tryAgain')}
               </button>
             </div>
           ) : user ? (
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
               <div className="w-12 h-12 border-4 border-rose-500/30 border-t-rose-500 rounded-full animate-spin mx-auto mb-4"></div>
               <p className="text-base font-bold text-white mb-2">
-                {currentLang === 'id' ? 'Menyiapkan Profil Member...' : 'Preparing Member Profile...'}
+                {t('common.preparingProfile')}
               </p>
               <p className="text-xs text-slate-400">
-                {currentLang === 'id' ? 'Menghubungkan akun ke identitas digital KCC Anda.' : 'Connecting account to your digital KCC identity.'}
+                {t('common.preparingProfileDesc')}
               </p>
             </div>
           ) : (
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400">
-               <p className="text-lg font-bold text-white mb-2">Harap login</p>
+               <p className="text-lg font-bold text-white mb-2">{t('common.pleaseSignIn')}</p>
                <button onClick={() => setIsAuthModalOpen(true)} className="text-rose-400 font-bold hover:underline">
-                 Klik di sini untuk login
+                 {t('common.clickToSignIn')}
                </button>
             </div>
           )
@@ -860,20 +812,20 @@ export default function App() {
             <div>
               <p className="font-bold text-white text-sm">MyKCC • KawanCosplay Community</p>
               <p className="text-slate-500 text-[11px]">
-                {t.tagline} • 100% SFW International Pop-Culture Platform.
+                {t('common.tagline')} • {t('common.footerPlatform')}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
             <button onClick={() => setActiveTab('form')} className="hover:text-white transition-colors">
-              {t.navForm}
+              {t('common.navForm')}
             </button>
             <button onClick={() => setActiveTab('card')} className="hover:text-white transition-colors">
-              {t.navCard}
+              {t('common.navCard')}
             </button>
             <button onClick={() => setActiveTab('gallery')} className="hover:text-pink-400 transition-colors">
-              {t.navGallery}
+              {t('common.navGallery')}
             </button>
             {/* Discreet Admin Portal Link for Managers */}
             <button
@@ -882,10 +834,10 @@ export default function App() {
                 window.location.hash = 'admin';
               }}
               className="text-slate-500 hover:text-amber-400 transition-colors flex items-center space-x-1"
-              title="Portal Khusus Admin KCC (Login Google Admin)"
+              title={t('common.adminPortalLinkTitle')}
             >
               <Lock className="w-3 h-3 text-amber-500/80" />
-              <span>{currentLang === 'id' ? 'Portal Admin' : 'Admin Portal'}</span>
+              <span>{t('common.adminPortal')}</span>
             </button>
             <a
               href="https://wa.me/6285711032782"
@@ -893,7 +845,7 @@ export default function App() {
               rel="noopener noreferrer"
               className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center space-x-1"
             >
-              <span>WhatsApp: +62 857-1103-2782</span>
+              <span>{t('common.whatsappContact')}</span>
             </a>
             <a
               href="mailto:cosplaysehat@gmail.com"
@@ -904,9 +856,9 @@ export default function App() {
           </div>
 
           <div className="text-center md:text-right text-slate-500">
-            <p>&copy; 2026 MyKCC. All rights reserved.</p>
+            <p>{t('common.copyright')}</p>
             <p className="text-[10px] text-emerald-400/80 mt-0.5">
-              ● 16-Digit Identity & Privacy Shield System Active
+              ● {t('common.privacyShieldActive')}
             </p>
           </div>
         </div>

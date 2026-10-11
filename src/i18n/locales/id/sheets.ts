@@ -99,6 +99,9 @@ const sheets: LocaleNamespace<'sheets'> = {
   logsLoadFailed: 'Gagal memuat riwayat sinkronisasi. Periksa koneksi lalu muat ulang halaman.',
   logsEmpty: 'Belum ada aktivitas sinkronisasi yang tercatat.',
   logImportedRows: 'Impor {count} baris',
+  logImportSummary:
+    'Impor selesai: {added} anggota baru, {updated} diperbarui, {unchanged} tidak berubah, {skipped} gagal.',
+  logAutoSummary: 'Otomatis: {added} baru, {updated} diperbarui.',
   logSourceImporter: 'Importer Google Sheets',
 
   // Errors

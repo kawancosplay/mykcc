@@ -20,8 +20,6 @@ const gallery: LocaleNamespace<'gallery'> = {
   uploadNow: 'Unggah Foto Sekarang',
   downloadPhoto: 'Unduh Foto',
   byAuthor: 'Oleh: {name}',
-  shortId: 'ID: {id}',
-  close: 'Tutup',
   detailCosplayer: 'Cosplayer:',
   detailKccId: 'ID 16 Digit:',
   detailEvent: 'Event / Lokasi:',
@@ -29,6 +27,7 @@ const gallery: LocaleNamespace<'gallery'> = {
   shootNotes: 'Catatan Pemotretan',
   likeWithCount: 'Sukai ({count})',
   download: 'Unduh',
+  eventOtherShort: 'Lainnya',
 
   // UploadPhotoModal
   photoTooLarge: 'Ukuran foto maksimal {maxMb} MB.',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSiteTheme } from '../lib/themeContext';
+import { useI18n } from '../i18n';
 import { Crown, Shield, Heart, Sparkles } from 'lucide-react';
 
 interface KawanCosplayLogoProps {
@@ -20,6 +21,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
   mobileLogoUrl,
 }) => {
   const { theme } = useSiteTheme();
+  const { t } = useI18n();
   const [logoSrc, setLogoSrc] = useState(desktopLogoUrl);
   const [hasImageError, setHasImageError] = useState(false);
 
@@ -56,7 +58,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
         {logoSrc && !hasImageError ? (
           <img
             src={logoSrc}
-            alt="KawanCosplay Logo"
+            alt={t('common.logoAlt')}
             className="h-11 sm:h-14 w-auto max-w-[210px] object-contain block"
             loading="eager"
             onError={() => setHasImageError(true)}
@@ -64,7 +66,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
         ) : customLogoUrl ? (
           <img
             src={customLogoUrl}
-            alt="Logo"
+            alt={t('common.logoAlt')}
             className={`${noContainer ? iconDimensions : 'w-full h-full'} object-contain ${noContainer ? '' : 'rounded-2xl border border-rose-500/40 shadow-md'}`}
           />
         ) : emblemType === 'crown' ? (
@@ -209,7 +211,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
               {logoTitle}
             </span>
             <span className="px-1.5 py-0.5 text-[8px] sm:text-[9px] font-extrabold tracking-wider uppercase rounded-md bg-gradient-to-r from-rose-500/20 to-purple-500/20 text-rose-300 border border-rose-500/30 leading-none">
-              Official
+              {t('common.officialBadge')}
             </span>
           </div>
           <span className="text-[9px] sm:text-[11px] font-bold text-slate-400 tracking-wider uppercase mt-0.5 sm:mt-1 leading-none">

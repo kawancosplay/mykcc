@@ -1,5 +1,6 @@
 import { ColumnMapping, Member } from '../types';
 import { generateChronologicalUserId16 } from './idGenerator';
+import { translate } from '../i18n';
 
 // Read-only Google Sheets API access (googleAuth.SHEETS_READONLY_SCOPE). No Drive API: listing the
 // admin's Drive files needs a Drive scope, so the admin pastes the spreadsheet URL / ID instead.
@@ -108,7 +109,12 @@ async function toSheetsApiError(res: Response, label: string): Promise<SheetsApi
   }
 
   if (!detail) detail = raw.slice(0, 300) || res.statusText;
-  return new SheetsApiError(`Sheets API ${label} error (${res.status}): ${detail}`, res.status, reason);
+  // The message keeps Google's own `detail` text: classifySheetsError matches on it
+  return new SheetsApiError(
+    translate('errors.sheetsApiResponseError', { label, status: res.status, detail }),
+    res.status,
+    reason
+  );
 }
 
 async function sheetsGet<T>(accessToken: string, url: string, label: string): Promise<T> {
@@ -121,7 +127,10 @@ async function sheetsGet<T>(accessToken: string, url: string, label: string): Pr
     });
   } catch (err) {
     throw new SheetsApiError(
-      `Sheets API ${label} request failed: ${err instanceof Error ? err.message : String(err)}`,
+      translate('errors.sheetsApiRequestFailed', {
+        label,
+        detail: err instanceof Error ? err.message : String(err),
+      }),
       0
     );
   }

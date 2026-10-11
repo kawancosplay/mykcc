@@ -7,6 +7,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { auth } from './firebase';
+import { translate } from '../i18n';
 
 /**
  * Least-privilege scope of the admin Google Sheets sync. The sync only READS spreadsheet metadata (tab names)
@@ -218,7 +219,7 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
       : await signInWithPopup(auth, createSheetsProvider(null));
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
-      throw new Error('Failed to retrieve access token from Google sign in');
+      throw new Error(translate('errors.googleAccessTokenMissing'));
     }
 
     setAccessToken(credential.accessToken, result.user.uid);

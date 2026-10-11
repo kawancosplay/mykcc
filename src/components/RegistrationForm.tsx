@@ -37,7 +37,8 @@ import {
   useWorldLocations,
   CountryOption,
 } from '../lib/worldLocations';
-import { LanguageCode, TRANSLATIONS, getFormTranslation, FormSpecificTranslations } from '../lib/i18n';
+import { useI18n } from '../i18n';
+import type { LanguageCode, TranslationKey } from '../i18n';
 import { DemoFormTester } from './DemoFormTester';
 
 interface RegistrationFormProps {
@@ -45,7 +46,7 @@ interface RegistrationFormProps {
   existingMembers?: Member[]; // Only used by the admin DemoFormTester
   onRegistered: (newMember: Member) => void;
   onOpenCardModal: (member: Member) => void;
-  currentLang: LanguageCode;
+  currentLang: LanguageCode; // Kept for App; the component reads the language from useI18n()
   isAdmin?: boolean;
 }
 
@@ -57,70 +58,59 @@ const PRESET_AVATARS = [
   'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&auto=format&fit=crop&q=80',
 ];
 
-const getCommunityRoles = (isId: boolean, ft?: FormSpecificTranslations) => [
-  { val: 'Cosplayer / Crossplayer', label: 'Cosplayer / Crossplayer' },
-  {
-    val: 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
-    label: isId
-      ? 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)'
-      : 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
-  },
-  {
-    val: 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)',
-    label: isId
-      ? 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)'
-      : 'Anime, Manga & Gaming Otaku (Anime, games & pop-culture enthusiast)',
-  },
+// Option values are what gets saved to Firestore and are never translated; only labelKey is shown
+interface LabeledOption {
+  val: string;
+  labelKey: TranslationKey;
+}
+
+const COMMUNITY_ROLES: LabeledOption[] = [
+  { val: 'Cosplayer / Crossplayer', labelKey: 'registration.roleCosplayer' },
+  { val: 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)', labelKey: 'registration.roleIdolFan' },
+  { val: 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)', labelKey: 'registration.roleOtaku' },
   {
     val: 'Sahabat Umum / General Enthusiast (Penikmat umum, teman pendukung & penonton gathering)',
-    label: isId
-      ? 'Sahabat Umum / Penikmat Acara (Teman pendukung, pengunjung & penikmat gathering)'
-      : 'General Enthusiast / Supporter (General friend, supporter & meetup attendee)',
+    labelKey: 'registration.roleGeneralEnthusiast',
   },
-  {
-    val: 'Prop Maker / Crafter / Pembuat Aksesori',
-    label: isId ? 'Prop Maker / Crafter / Pembuat Aksesori' : 'Prop Maker / Crafter (Weapons, armor & accessory creator)',
-  },
-  {
-    val: 'Fotografer / Videografer Cosplay',
-    label: isId ? 'Fotografer / Videografer Cosplay' : 'Cosplay Photographer / Videographer',
-  },
-  {
-    val: 'Costume Maker / Seamstress / Wig Stylist',
-    label: isId ? 'Costume Maker / Seamstress / Wig Stylist' : 'Costume Maker / Seamstress / Wig Stylist',
-  },
-  {
-    val: 'Event Crew, Stage Staff & Volunteer',
-    label: isId ? 'Event Crew, Stage Staff & Volunteer' : 'Event Crew, Stage Staff & Volunteer',
-  },
-  {
-    val: 'Kreator Konten / Streamer',
-    label: isId ? 'Kreator Konten / Streamer' : 'Content Creator / Streamer',
-  },
-  {
-    val: 'Lainnya / Others',
-    label: ft?.roleOthers || (isId ? 'Lainnya / Others (Peran Lainnya)' : 'Others / Custom Role'),
-  },
+  { val: 'Prop Maker / Crafter / Pembuat Aksesori', labelKey: 'registration.rolePropMaker' },
+  { val: 'Fotografer / Videografer Cosplay', labelKey: 'registration.rolePhotographer' },
+  { val: 'Costume Maker / Seamstress / Wig Stylist', labelKey: 'registration.roleCostumeMaker' },
+  { val: 'Event Crew, Stage Staff & Volunteer', labelKey: 'registration.roleEventCrew' },
+  { val: 'Kreator Konten / Streamer', labelKey: 'registration.roleContentCreator' },
+  { val: 'Lainnya / Others', labelKey: 'registration.roleOthers' },
 ];
 
-const getExperienceLevels = (isId: boolean) => [
-  { val: 'Pemula (< 1 tahun)', label: isId ? 'Pemula (< 1 tahun)' : 'Beginner (< 1 year)' },
-  { val: '1 - 3 tahun', label: isId ? '1 - 3 tahun' : '1 - 3 years' },
-  { val: '> 3 tahun', label: isId ? '> 3 tahun' : 'Veteran (> 3 years)' },
-  { val: 'Penikmat Santai / Casual', label: isId ? 'Penikmat Santai / Casual' : 'Casual / Enthusiast' },
+const EXPERIENCE_LEVELS: LabeledOption[] = [
+  { val: 'Pemula (< 1 tahun)', labelKey: 'registration.experienceBeginner' },
+  { val: '1 - 3 tahun', labelKey: 'registration.experienceOneToThreeYears' },
+  { val: '> 3 tahun', labelKey: 'registration.experienceVeteran' },
+  { val: 'Penikmat Santai / Casual', labelKey: 'registration.experienceCasual' },
 ];
 
-const FANDOMS = [
-  'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
-  'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
-  'Idol & Music (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
-  'Isekai & Fantasy (Frieren, Slime, Re:Zero, DanMachi)',
-  'Gaming & Esports (Valorant, League of Legends, MLBB, Elden Ring)',
-  'VTuber (Hololive, Nijisanji, Indie VTubers)',
-  'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)',
-  'Western Pop Culture (Marvel, DC, Star Wars, Disney)',
-  'Original Character (OC) & Creative Fantasy',
+const FANDOMS: LabeledOption[] = [
+  { val: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)', labelKey: 'registration.fandomHoyoverse' },
+  {
+    val: 'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+    labelKey: 'registration.fandomShonenSeinen',
+  },
+  { val: 'Idol & Music (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)', labelKey: 'registration.fandomIdolMusic' },
+  { val: 'Isekai & Fantasy (Frieren, Slime, Re:Zero, DanMachi)', labelKey: 'registration.fandomIsekaiFantasy' },
+  { val: 'Gaming & Esports (Valorant, League of Legends, MLBB, Elden Ring)', labelKey: 'registration.fandomGamingEsports' },
+  { val: 'VTuber (Hololive, Nijisanji, Indie VTubers)', labelKey: 'registration.fandomVtuber' },
+  { val: 'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)', labelKey: 'registration.fandomTokusatsuMecha' },
+  { val: 'Western Pop Culture (Marvel, DC, Star Wars, Disney)', labelKey: 'registration.fandomWesternPopCulture' },
+  { val: 'Original Character (OC) & Creative Fantasy', labelKey: 'registration.fandomOriginalCharacter' },
 ];
+const OTHER_FANDOM_OPTION = 'Lainnya / Multigenre';
+
+const AGE_CATEGORIES: LabeledOption[] = [
+  { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
+  { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
+  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
+];
+
+// Minimum digits of a WhatsApp number (primary and backup)
+const MIN_PHONE_DIGITS = 8;
 
 // Select values that switch to a free-text province / city input; the typed text is saved instead
 const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
@@ -133,12 +123,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   existingMembers = [],
   onRegistered,
   onOpenCardModal,
-  currentLang,
   isAdmin = false,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
-  const ft = getFormTranslation(currentLang);
-  const isId = currentLang === 'id';
+  const { t, lang, intlLocale, countryName } = useI18n();
+  // DemoFormTester and describeFirestoreError still take an "Indonesian?" flag
+  const isId = lang === 'id';
 
   const [formData, setFormData] = useState({
     name: '', // Primary required identity
@@ -178,6 +167,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   // All 250 countries worldwide (Indonesia prioritized at top); locations load on demand per country
   const geoVersion = useWorldLocations(formData.country);
   const allCountries = useMemo(() => getAllCountriesList(), [geoVersion]);
+  // Country names in the selected language, sorted for that language (Indonesia stays first); the saved
+  // value stays the English name
+  const countryOptions = useMemo(() => {
+    const collator = new Intl.Collator(intlLocale);
+    return allCountries
+      .map((c) => ({ ...c, label: countryName(c.isoCode, c.name) }))
+      .sort((a, b) => (a.isoCode === 'ID' ? -1 : b.isoCode === 'ID' ? 1 : collator.compare(a.label, b.label)));
+  }, [allCountries, countryName, intlLocale]);
   const availableProvinces = useMemo(
     () => getStatesOfCountryByName(formData.country),
     [formData.country, geoVersion]
@@ -209,7 +206,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     if (!file) return;
 
     if (file.size > 15 * 1024 * 1024) {
-      alert(isId ? 'Ukuran foto maksimal 15MB untuk avatar profil.' : 'Max file size is 15MB for avatar.');
+      alert(t('registration.avatarTooLarge', { maxMb: 15 }));
       return;
     }
 
@@ -218,13 +215,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       setFormData((prev) => ({ ...prev, avatarUrl: compressed }));
     } catch (err) {
       console.error('Failed to compress avatar:', err);
-      alert(isId ? 'Gagal memproses foto.' : 'Failed to process photo.');
+      alert(t('registration.photoProcessFailed'));
     }
   };
 
   const handleClearForm = () => {
-    const confirmText = isId ? 'Kosongkan semua isian formulir?' : 'Clear all form inputs?';
-    if (window.confirm(confirmText)) {
+    if (window.confirm(t('registration.clearFormConfirm'))) {
       setFormData({
         name: '',
         fullName: '',
@@ -263,58 +259,34 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
     // PRIVACY ENFORCEMENT: Name, Email, and WhatsApp Mobile Number are required (community is WhatsApp-based)
     if (!dataToSubmit.name.trim()) {
-      setErrorMsg(
-        isId
-          ? 'Mohon isi Nama Panggung / Cosname / Nama Samaran Anda.'
-          : 'Please provide your Cosplay Name / Alias / Stage Name.'
-      );
+      setErrorMsg(t('registration.nameRequiredError'));
       return;
     }
 
     if (!dataToSubmit.email.trim()) {
-      setErrorMsg(
-        isId
-          ? 'Mohon isi alamat email aktif Anda.'
-          : 'Email address is required.'
-      );
+      setErrorMsg(t('registration.emailRequiredError'));
       return;
     }
 
     const phoneDigits = dataToSubmit.phone.replace(/\D/g, '');
-    if (!dataToSubmit.phone.trim() || phoneDigits.length < 8) {
-      setErrorMsg(
-        isId
-          ? 'Nomor WhatsApp wajib diisi (minimal 8 digit) karena komunitas KawanCosplay berbasis grup WhatsApp.'
-          : 'A valid WhatsApp mobile number is required (minimum 8 digits) as KawanCosplay is a WhatsApp-based community.'
-      );
+    if (!dataToSubmit.phone.trim() || phoneDigits.length < MIN_PHONE_DIGITS) {
+      setErrorMsg(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }));
       return;
     }
 
     const phone2Raw = (dataToSubmit.phone2 || '').trim();
-    if (phone2Raw && phone2Raw.replace(/\D/g, '').length < 8) {
-      setErrorMsg(
-        isId
-          ? 'Nomor WhatsApp cadangan minimal 8 digit (atau kosongkan).'
-          : 'The backup WhatsApp number needs at least 8 digits (or leave it empty).'
-      );
+    if (phone2Raw && phone2Raw.replace(/\D/g, '').length < MIN_PHONE_DIGITS) {
+      setErrorMsg(t('registration.backupPhoneTooShortError', { minDigits: MIN_PHONE_DIGITS }));
       return;
     }
 
     if (isCustomCityValue(dataToSubmit.city) && !(dataToSubmit.customCity || '').trim()) {
-      setErrorMsg(
-        isId
-          ? 'Mohon ketik nama kota / kabupaten Anda (pilihan "Kustom / Kota Lainnya").'
-          : 'Please type your city / regency (the "Custom / Other City" option).'
-      );
+      setErrorMsg(t('registration.customCityRequiredError', { option: t('registration.customCityOption') }));
       return;
     }
 
     if (!dataToSubmit.acceptedCodeOfConduct) {
-      setErrorMsg(
-        isId
-          ? 'Mohon centang persetujuan Kode Etik Komunitas KawanCosplay.'
-          : 'Please check the agreement to the KawanCosplay Community Code of Conduct.'
-      );
+      setErrorMsg(t('registration.codeOfConductRequiredError'));
       return;
     }
 
@@ -464,6 +436,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   // SUCCESS SCREEN: Google Form style response confirmation
   if (submittedMember) {
+    const memberName = submittedMember.name || submittedMember.cosplayName || '';
+    // Prefilled WhatsApp message to the admins; the backup number / Discord lines are left out when empty
+    const whatsappMessage = [
+      t('registration.whatsappMessageIntro'),
+      t('registration.whatsappMessageName', { name: memberName }),
+      t('registration.whatsappMessageKccId', { id: format16DigitUserId(submittedMember.userId16) }),
+      t('registration.whatsappMessagePhone', { phone: submittedMember.phone || '-' }),
+      submittedMember.phone2 ? t('registration.whatsappMessagePhone2', { phone: submittedMember.phone2 }) : null,
+      submittedMember.discordUsername
+        ? t('registration.discordValue', { username: submittedMember.discordUsername })
+        : null,
+      t('registration.whatsappMessageRequest'),
+    ]
+      .filter(Boolean)
+      .join('\n');
+
     return (
       <div className="max-w-2xl mx-auto py-12 px-4 animate-fade-in text-slate-100">
         <div className="liquid-glass-elevated border-emerald-500/30 rounded-3xl overflow-hidden shadow-2xl">
@@ -478,11 +466,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             {isDemoSubmission && (
               <div className="mb-4 p-3 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-center gap-2">
                 <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="font-semibold">
-                  {isId
-                    ? '🧪 Mode Sandbox Demo: Pengujian ini berjalan di memori lokal dan TIDAK disimpan ke database Firestore.'
-                    : '🧪 Sandboxed Demo Test: This test ran in local memory and was NOT saved to the database.'}
-                </span>
+                <span className="font-semibold">{t('registration.sandboxSubmissionNotice')}</span>
               </div>
             )}
 
@@ -490,29 +474,28 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               KawanCosplay Community
             </h2>
             <p className="text-slate-300 text-sm sm:text-base mb-6">
-              {t.responseRecorded}
+              {t('registration.responseRecorded')}
             </p>
 
             {/* 16-Digit Single KCC ID Account highlight */}
             <div className="liquid-glass border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-                {ft.singleAccountIdTitle}
+                {t('registration.singleAccountIdTitle')}
               </span>
               <span className="font-mono font-black text-xl sm:text-2xl text-rose-400 tracking-wider">
                 {format16DigitUserId(submittedMember.userId16)}
               </span>
               {isDuplicateShared ? (
                 <p className="text-xs text-emerald-400 mt-2 font-medium">
-                  {isId
-                    ? '✓ Data Anda cocok dengan pendaftaran sebelumnya. Setiap anggota hanya memiliki 1 KCC ID — KCC ID Anda tetap sama dan data profil Anda telah diperbarui.'
-                    : '✓ Your details match an earlier registration. Each member holds a single KCC ID — your KCC ID stays the same and your profile has been updated.'}
+                  {t('registration.duplicateMergedNotice')}
                 </p>
               ) : (
                 <p className="text-[11px] text-slate-300 mt-1.5">
-                  {isId ? 'Anggota Terverifikasi: ' : 'Verified Member: '}
-                  <strong className="text-white">{submittedMember.name || submittedMember.cosplayName}</strong>
+                  {t('registration.verifiedMemberLabel')} <strong className="text-white">{memberName}</strong>
                   {submittedMember.discordUsername && (
-                    <span className="ml-2 text-indigo-300">• Discord: {submittedMember.discordUsername}</span>
+                    <span className="ml-2 text-indigo-300">
+                      • {t('registration.discordValue', { username: submittedMember.discordUsername })}
+                    </span>
                   )}
                 </p>
               )}
@@ -522,32 +505,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <div className="bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center shadow-lg">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{ft.whatsappUnlockedBadge}</span>
+                <span>{t('registration.whatsappUnlockedBadge')}</span>
               </div>
               <h3 className="text-base sm:text-lg font-extrabold text-white mb-1">
-                {ft.whatsappUnlockedTitle}
+                {t('registration.whatsappUnlockedTitle')}
               </h3>
               <p className="text-xs text-emerald-200/90 mb-4 leading-relaxed">
-                {ft.whatsappUnlockedDesc}
+                {t('registration.whatsappUnlockedDesc')}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
                 <a
-                  href={`https://wa.me/6285711032782?text=${encodeURIComponent(
-                    `Halo Admin KawanCosplay! Saya sudah mengisi form pendaftaran anggota.\nNama: ${submittedMember.name || submittedMember.cosplayName}\nKCC ID: ${format16DigitUserId(
-                      submittedMember.userId16
-                    )}\nNo. WA: ${submittedMember.phone || '-'}${
-                      submittedMember.phone2 ? `\nNo. WA 2: ${submittedMember.phone2}` : ''
-                    }${
-                      submittedMember.discordUsername ? `\nDiscord: ${submittedMember.discordUsername}` : ''
-                    }\nMohon tautan undangan masuk ke Grup WhatsApp Komunitas KawanCosplay. Terima kasih!`
-                  )}`}
+                  href={`https://wa.me/6285711032782?text=${encodeURIComponent(whatsappMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 inline-flex items-center justify-center gap-2 transition-all"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>{ft.joinWhatsappButton}</span>
+                  <span>{t('registration.joinWhatsappButton')}</span>
                 </a>
               </div>
             </div>
@@ -559,7 +534,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 className="px-5 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all inline-flex items-center justify-center gap-2"
               >
                 <Eye className="w-4 h-4" />
-                <span>{t.viewMyKccId || t.viewMyKta}</span>
+                <span>{t('registration.viewMyKccId')}</span>
               </button>
 
               <button
@@ -588,14 +563,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 }}
                 className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition-colors"
               >
-                {t.submitAnother}
+                {t('registration.submitAnother')}
               </button>
             </div>
 
             {/* Hotline footer */}
             <div className="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-center space-x-2">
               <MessageCircle className="w-4 h-4 text-emerald-400" />
-              <span>{isId ? 'Butuh bantuan? WhatsApp Hotline:' : 'Need assistance? WhatsApp Hotline:'}</span>
+              <span>{t('registration.needHelpHotline')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
@@ -611,9 +586,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     );
   }
 
-  const communityRoles = getCommunityRoles(isId, ft);
-  const experienceLevels = getExperienceLevels(isId);
-
   return (
     <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
       {/* GOOGLE FORM HEADER CARD */}
@@ -625,26 +597,26 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1.5">
               <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-              <span>{ft.officialFormTag}</span>
+              <span>{t('registration.officialFormTag')}</span>
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              {ft.safeCommunityTag}
+              {t('registration.safeCommunityTag')}
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
-            {t.formTitle}
+            {t('registration.formTitle')}
           </h1>
 
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
-            {t.formDesc}
+            {t('registration.formDesc')}
           </p>
 
           {/* Inclusive Notice */}
           <div className="p-3.5 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl flex items-start space-x-3 text-xs text-indigo-200 mb-4">
             <Heart className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
             <div>
-              <strong>{t.inclusiveWelcome}</strong>
+              <strong>{t('registration.inclusiveWelcome')}</strong>
             </div>
           </div>
 
@@ -652,7 +624,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
             <div className="flex items-center space-x-2">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{isId ? 'WhatsApp Hotline Pengurus:' : 'Official WhatsApp Hotline:'}</span>
+              <span>{t('registration.officialHotlineLabel')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
@@ -663,7 +635,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               </a>
             </div>
 
-            <span className="text-rose-400 font-semibold">{t.requiredIndicator}</span>
+            <span className="text-rose-400 font-semibold">{t('registration.requiredIndicator')}</span>
           </div>
         </div>
       </div>
@@ -689,11 +661,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         <div className="mb-5 p-3.5 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between gap-3 shadow-md animate-fade-in">
           <div className="flex items-center gap-2.5">
             <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>
-              {isId
-                ? 'Mode Sandbox Aktif: Data demo ini terisolasi dan TIDAK akan disimpan ke database Firestore.'
-                : 'Sandbox Mode Active: This demo test is isolated and will NOT be saved to Firestore database.'}
-            </span>
+            <span>{t('registration.sandboxActiveNotice')}</span>
           </div>
           <button
             type="button"
@@ -703,7 +671,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             }}
             className="px-2.5 py-1 rounded-lg bg-amber-800/80 hover:bg-amber-700 text-white font-bold text-[10px] shrink-0 transition-colors"
           >
-            {isId ? 'Kembali ke Form Asli' : 'Exit Sandbox'}
+            {t('registration.exitSandbox')}
           </button>
         </div>
       )}
@@ -713,17 +681,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 1: NAME (JUST ASK NAME) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.nameLabel} <span className="text-rose-500">*</span>
+            {t('registration.nameLabel')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-rose-300/90 mb-4 flex items-start space-x-1.5">
             <ShieldCheck className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{ft.namePrivacyNotice}</span>
+            <span>{t('registration.namePrivacyNotice')}</span>
           </p>
 
           <input
             type="text"
             required
-            placeholder={ft.namePlaceholder}
+            placeholder={t('registration.namePlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.name}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -735,18 +703,18 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-500/25 space-y-4">
           <div>
             <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-              {ft.whatsappLabel}{' '}
+              {t('registration.whatsappLabel')}{' '}
               <span className="text-rose-500">*</span>
             </label>
             <p className="text-xs text-emerald-300/90 mb-3 flex items-start space-x-1.5">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span>{ft.whatsappNotice}</span>
+              <span>{t('registration.whatsappNotice')}</span>
             </p>
 
             <input
               type="tel"
               required
-              placeholder={ft.whatsappPlaceholder}
+              placeholder={t('registration.whatsappPlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.phone}
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -762,13 +730,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 onClick={() => setShowPhone2(true)}
                 className="text-xs text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 transition-colors py-1 cursor-pointer"
               >
-                <span>+ Punya lebih dari 1 nomor WhatsApp? Tambah Nomor Cadangan (Opsional)</span>
+                <span>{t('registration.addBackupPhone')}</span>
               </button>
             ) : (
               <div className="space-y-1.5 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs sm:text-sm font-bold text-slate-200">
-                    Nomor WhatsApp Cadangan / Tambahan <span className="text-slate-400 font-normal">(Opsional)</span>
+                    {t('registration.backupPhoneLabel')}{' '}
+                    <span className="text-slate-400 font-normal">{t('registration.optionalTag')}</span>
                   </label>
                   <button
                     type="button"
@@ -778,15 +747,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     }}
                     className="text-[11px] text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
                   >
-                    Batal / Hapus
+                    {t('registration.removeBackupPhone')}
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Nomor ini disimpan sebagai nomor cadangan. Jika Anda mengisi formulir lagi saat masuk (login) dengan akun yang sama, KCC ID Anda tetap sama; pendaftaran ganda tanpa login akan digabungkan oleh admin.
+                  {t('registration.backupPhoneNotice')}
                 </p>
                 <input
                   type="tel"
-                  placeholder="Contoh: 08123456789 atau +62 857..."
+                  placeholder={t('registration.backupPhonePlaceholder')}
                   maxLength={MEMBER_FIELD_LIMITS.phone2}
                   value={formData.phone2}
                   onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
@@ -800,16 +769,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 3: DISCORD USERNAME COLUMN */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.discordLabel}{' '}
-            <span className="text-xs text-slate-400 font-normal">({isId ? 'Opsional' : 'Optional'})</span>
+            {t('registration.discordLabel')}{' '}
+            <span className="text-xs text-slate-400 font-normal">{t('registration.optionalTag')}</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.discordDesc}
+            {t('registration.discordDesc')}
           </p>
 
           <input
             type="text"
-            placeholder={ft.discordPlaceholder}
+            placeholder={t('registration.discordPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.discordUsername}
             value={formData.discordUsername}
             onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
@@ -820,16 +789,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 4: EMAIL (REQUIRED) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.emailLabel} <span className="text-rose-500">*</span>
+            {t('registration.emailLabel')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.emailRequiredNotice || 'Email is required for registration.'}
+            {t('registration.emailRequiredNotice')}
           </p>
 
           <input
             type="email"
             required
-            placeholder={ft.emailPlaceholder}
+            placeholder={t('registration.emailPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.email}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -841,7 +810,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-sm sm:text-base font-bold text-white">
-              {t.ageCategoryLabel} <span className="text-rose-500">*</span>
+              {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
             </label>
 
             <button
@@ -850,23 +819,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               className="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1 underline"
             >
               <Info className="w-3.5 h-3.5" />
-              <span>{t.ageExplanationTitle}</span>
+              <span>{t('registration.ageExplanationTitle')}</span>
             </button>
           </div>
 
           {showAgeExplainer && (
             <div className="p-3.5 bg-slate-950 border border-rose-500/30 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
-              <strong className="text-rose-300 block mb-1">{t.ageExplanationTitle}</strong>
-              <p>{t.ageExplanationDesc}</p>
+              <strong className="text-rose-300 block mb-1">{t('registration.ageExplanationTitle')}</strong>
+              <p>{t('registration.ageExplanationDesc')}</p>
             </div>
           )}
 
           <div className="space-y-3 mt-3">
-            {[
-              { val: 'Legal Age / Dewasa (18+ tahun)', label: t.legalAge },
-              { val: 'Minor / Di Bawah Umur (<18 tahun)', label: t.minorAge },
-              { val: 'Memilih untuk tidak menyebutkan', label: t.preferNotToSay },
-            ].map((opt) => (
+            {AGE_CATEGORIES.map((opt) => (
               <label key={opt.val} className="flex items-center space-x-3 cursor-pointer group">
                 <input
                   type="radio"
@@ -877,7 +842,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   className="w-4 h-4 text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
                 />
                 <span className="text-xs sm:text-sm text-slate-200 group-hover:text-white">
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </span>
               </label>
             ))}
@@ -887,15 +852,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {t.exactAgeOptional}
+            {t('registration.exactAgeOptional')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.ageDesc}
+            {t('registration.ageDesc')}
           </p>
 
           <input
             type="text"
-            placeholder={ft.agePlaceholder}
+            placeholder={t('registration.agePlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.age}
             value={formData.age}
             onChange={(e) => setFormData({ ...formData, age: e.target.value })}
@@ -906,15 +871,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 6: LOCATION / DOMICILE (COUNTRY, PROVINCE, CITY) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.locationTitle} <span className="text-rose-500">*</span>
+            {t('registration.locationTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.locationNotice}
+            {t('registration.locationNotice')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">{t.country}</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+                {t('registration.countryLabel')}
+              </label>
               <select
                 value={formData.country}
                 onChange={(e) => {
@@ -933,16 +900,18 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 }}
                 className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
               >
-                {allCountries.map((c) => (
+                {countryOptions.map((c) => (
                   <option key={c.isoCode} value={c.name}>
-                    {c.flag} {c.name} ({c.isoCode})
+                    {c.flag} {c.label} ({c.isoCode})
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">{t.province}</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+                {t('registration.provinceLabel')}
+              </label>
               <select
                 value={formData.province}
                 onChange={(e) => {
@@ -962,12 +931,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     {p.name}
                   </option>
                 ))}
-                <option value="Kustom / Wilayah Lainnya">{isId ? 'Kustom / Wilayah Lainnya' : 'Custom / Other Region'}</option>
+                <option value={CUSTOM_PROVINCE_OPTION}>{t('registration.customProvinceOption')}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">{t.city}</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+                {t('registration.cityLabel')}
+              </label>
               <select
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
@@ -978,15 +949,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     {city}
                   </option>
                 ))}
-                <option value="Kustom / Kota Lainnya">{isId ? 'Kustom / Kota Lainnya' : 'Custom / Other City'}</option>
+                <option value={CUSTOM_CITY_OPTION}>{t('registration.customCityOption')}</option>
               </select>
             </div>
           </div>
 
-          {formData.province === 'Kustom / Wilayah Lainnya' && (
+          {formData.province === CUSTOM_PROVINCE_OPTION && (
             <input
               type="text"
-              placeholder={isId ? 'Ketik nama provinsi / wilayah / negara bagian Anda...' : 'Enter your state / province / region...'}
+              placeholder={t('registration.customProvincePlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.province}
               value={formData.customProvince}
               onChange={(e) => setFormData({ ...formData, customProvince: e.target.value })}
@@ -994,10 +965,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             />
           )}
 
-          {(formData.city === 'Other City / County' || formData.city === 'Kustom / Kota Lainnya') && (
+          {isCustomCityValue(formData.city) && (
             <input
               type="text"
-              placeholder={ft.customCityPlaceholder}
+              placeholder={t('registration.customCityPlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.city}
               value={formData.customCity}
               onChange={(e) => setFormData({ ...formData, customCity: e.target.value })}
@@ -1009,14 +980,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 7: PRIMARY ROLE / INTEREST (INCLUSIVE) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.roleTitle} <span className="text-rose-500">*</span>
+            {t('registration.roleTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.roleDesc}
+            {t('registration.roleDesc')}
           </p>
 
           <div className="space-y-3">
-            {communityRoles.map((role) => (
+            {COMMUNITY_ROLES.map((role) => (
               <div key={role.val}>
                 <label className="flex items-center space-x-3 cursor-pointer group">
                   <input
@@ -1028,7 +999,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     className="w-4 h-4 text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
                   />
                   <span className="text-xs sm:text-sm text-slate-200 group-hover:text-white">
-                    {role.label}
+                    {t(role.labelKey)}
                   </span>
                 </label>
 
@@ -1036,7 +1007,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   <div className="mt-2.5 ml-7">
                     <input
                       type="text"
-                      placeholder={ft.roleOthersPlaceholder}
+                      placeholder={t('registration.roleOthersPlaceholder')}
                       maxLength={MEMBER_FIELD_LIMITS.customRole}
                       value={formData.customRole}
                       onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
@@ -1052,10 +1023,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 8: FAVORITE FANDOM / IDOL GROUP / SERIES */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.fandomTitle} <span className="text-rose-500">*</span>
+            {t('registration.fandomTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.fandomDesc}
+            {t('registration.fandomDesc')}
           </p>
 
           <select
@@ -1064,25 +1035,25 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-purple-500"
           >
             {FANDOMS.map((f) => (
-              <option key={f} value={f}>
-                {f}
+              <option key={f.val} value={f.val}>
+                {t(f.labelKey)}
               </option>
             ))}
-            <option value="Lainnya / Multigenre">{ft.fandomOther}</option>
+            <option value={OTHER_FANDOM_OPTION}>{t('registration.fandomOther')}</option>
           </select>
         </div>
 
         {/* QUESTION 9: EXPERIENCE (OPTIONAL) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.experienceTitle}
+            {t('registration.experienceTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.experienceDesc}
+            {t('registration.experienceDesc')}
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {experienceLevels.map((exp) => (
+            {EXPERIENCE_LEVELS.map((exp) => (
               <button
                 type="button"
                 key={exp.val}
@@ -1093,7 +1064,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
                 }`}
               >
-                {exp.label}
+                {t(exp.labelKey)}
               </button>
             ))}
           </div>
@@ -1102,15 +1073,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 10: SOCIAL MEDIA (OPTIONAL) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.socialMediaTitle}
+            {t('registration.socialMediaTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.socialMediaDesc}
+            {t('registration.socialMediaDesc')}
           </p>
 
           <input
             type="text"
-            placeholder={ft.socialMediaPlaceholder}
+            placeholder={t('registration.socialMediaPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.socialMedia}
             value={formData.socialMedia}
             onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
@@ -1121,15 +1092,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 11: PORTFOLIO / DRIVE LINK (OPTIONAL) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.portfolioTitle}
+            {t('registration.portfolioTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.portfolioDesc}
+            {t('registration.portfolioDesc')}
           </p>
 
           <input
             type="url"
-            placeholder={ft.portfolioPlaceholder}
+            placeholder={t('registration.portfolioPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.portfolioUrl}
             value={formData.portfolioUrl}
             onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
@@ -1140,16 +1111,20 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 12: AVATAR / PROFILE PHOTO (OPTIONAL) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.avatarTitle}
+            {t('registration.avatarTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.avatarDesc}
+            {t('registration.avatarDesc')}
           </p>
 
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
               {formData.avatarUrl ? (
-                <img src={formData.avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                <img
+                  src={formData.avatarUrl}
+                  alt={t('registration.avatarPreviewAlt')}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <Camera className="w-6 h-6 text-slate-600" />
               )}
@@ -1157,18 +1132,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
             <label className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700">
               <Upload className="w-4 h-4 text-purple-400" />
-              <span>{ft.uploadButton}</span>
+              <span>{t('registration.uploadButton')}</span>
               <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </label>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400 mb-2">{ft.presetAvatarLabel}</p>
+            <p className="text-xs text-slate-400 mb-2">{t('registration.presetAvatarLabel')}</p>
             <div className="flex space-x-2">
               {PRESET_AVATARS.map((url, i) => (
                 <button
                   key={i}
                   type="button"
+                  aria-label={t('registration.presetAvatarAria', { number: i + 1 })}
                   onClick={() => setFormData({ ...formData, avatarUrl: url })}
                   className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-all ${
                     formData.avatarUrl === url ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60'
@@ -1184,15 +1160,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 13: REASON & EXPECTATIONS (OPTIONAL) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.reasonTitle}
+            {t('registration.reasonTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.reasonDesc}
+            {t('registration.reasonDesc')}
           </p>
 
           <textarea
             rows={3}
-            placeholder={ft.reasonPlaceholder}
+            placeholder={t('registration.reasonPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.reason}
             value={formData.reason}
             onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
@@ -1203,7 +1179,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         {/* QUESTION 14: CODE OF CONDUCT (REQUIRED CHECKBOX) */}
         <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
           <label className="block text-sm sm:text-base font-bold text-white mb-3">
-            {ft.codeOfConductTitle} <span className="text-rose-500">*</span>
+            {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
           </label>
 
           <label className="flex items-start space-x-3 cursor-pointer">
@@ -1215,7 +1191,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               className="mt-1 w-4 h-4 rounded text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
             />
             <span className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-              {t.codeOfConduct}
+              {t('registration.codeOfConductAgreement')}
             </span>
           </label>
         </div>
@@ -1237,12 +1213,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             {isSubmitting ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>{ft.submittingText}</span>
+                <span>{t('registration.submittingText')}</span>
               </>
             ) : (
               <>
                 <Send className="w-3.5 h-3.5" />
-                <span>{t.submitButton}</span>
+                <span>{t('registration.submitButton')}</span>
               </>
             )}
           </button>
@@ -1253,7 +1229,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             className="px-3 py-1.5 rounded-lg text-xs text-rose-300 hover:text-white hover:bg-rose-500/15 transition-colors inline-flex items-center justify-center gap-1.5 font-semibold"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>{t.clearForm}</span>
+            <span>{t('registration.clearForm')}</span>
           </button>
         </div>
 

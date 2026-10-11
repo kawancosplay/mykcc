@@ -53,7 +53,8 @@ import {
 import { isMainAdminUser, describeFirestoreError } from '../lib/firebase';
 import { GoogleSheetsSync } from './GoogleSheetsSync';
 import { StatsOverview } from './StatsOverview';
-import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
+import { useI18n } from '../i18n';
+import type { LanguageCode, TranslationKey } from '../i18n';
 import type { User } from 'firebase/auth';
 
 interface AdminDashboardProps {
@@ -66,7 +67,7 @@ interface AdminDashboardProps {
   membersError: SubscriptionErrorKind | null;
   syncLogs: SyncLog[];
   syncLogsError: SubscriptionErrorKind | null;
-  currentLang: LanguageCode;
+  currentLang: LanguageCode; // Kept for existing callers; the language comes from useI18n()
   onSelectMember: (member: Member) => void;
   onOpenAuth: () => void; // opens AuthModal (Google sign-in)
   onConnectSheets: () => void | Promise<void>; // on-demand googleSignIn (read-only Sheets scope), owned by App
@@ -77,13 +78,47 @@ interface AdminDashboardProps {
 // Display only. Admin access is decided by Firebase Auth + Firestore rules (isAdmin prop).
 const OFFICIAL_ADMIN_EMAIL = 'cosplaysehat@gmail.com';
 const NAMED_DATABASE_ID = 'ai-studio-kawancosplaymemb-f672c087-2a65-4410-827e-a10092d7e040';
-
-// Labels for MemberIdReassignment.reason in the repair report
-const REPAIR_REASON_LABELS: Record<string, string> = {
-  duplicate: 'ID ganda / duplicate',
-  missing: 'ID belum tersimpan / missing',
-  main_account: 'ID Main Account dipakai anggota lain / main account ID',
+const ADMIN_WHATSAPP_DISPLAY = '+62 857-1103-2782';
+const RESERVED_ID_RANGE_LABEL = '0000 0000 0000 0000 – 0000 0000 0000 0100';
+// Keyword the admin must type to confirm the purge (compared in code, never translated)
+const PURGE_CONFIRM_KEYWORD = 'PURGE';
+// Registration date + time (with seconds: exact duplicates are seconds apart) in the duplicate list
+const DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
 };
+
+// Translation keys for MemberIdReassignment.reason in the repair report (unknown reasons are shown as-is)
+const REPAIR_REASON_KEYS: Record<string, TranslationKey> = {
+  duplicate: 'admin.repairReasonDuplicate',
+  missing: 'admin.repairReasonMissing',
+  main_account: 'admin.repairReasonMainAccount',
+};
+
+// Display labels for the member status values stored in Firestore (the values themselves never change)
+type MemberStatus = 'pending' | 'verified' | 'active';
+const STATUS_LABEL_KEYS: Record<MemberStatus, TranslationKey> = {
+  verified: 'admin.statusVerified',
+  active: 'admin.statusActive',
+  pending: 'admin.statusPending',
+};
+
+// Renders a translated template whose {placeholders} are React nodes (e.g. bold counts).
+// Placeholders without a node are left as they are.
+const renderRich = (template: string, nodes: Record<string, React.ReactNode>): React.ReactNode[] =>
+  template
+    .split(/\{(\w+)\}/g)
+    .map((part, i) =>
+      i % 2 === 1 ? (
+        <React.Fragment key={i}>{part in nodes ? nodes[part] : `{${part}}`}</React.Fragment>
+      ) : (
+        part
+      )
+    );
 
 // Bulk duplicate merge: 'identical' = only exact copies (isExactDuplicateGroup), 'all' = every scanned group
 type BulkMergeMode = 'identical' | 'all';
@@ -111,15 +146,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   membersError,
   syncLogs,
   syncLogsError,
-  currentLang,
   onSelectMember,
   onOpenAuth,
   onConnectSheets,
   sheetsConnectError,
   onLogout,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
-  const isId = currentLang === 'id';
+  const { t, lang, formatNumber, formatDate } = useI18n();
+  // Only for describeFirestoreError's legacy (error, isId) signature
+  const isId = lang === 'id';
 
   // Sub-tabs in Admin Dashboard
   const [adminTab, setAdminTab] = useState<'members' | 'sync' | 'analytics'>('members');
@@ -224,37 +259,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleStatusChange = async (
     memberId: string,
-    newStatus: 'pending' | 'verified' | 'active',
+    newStatus: MemberStatus,
     userId16?: string
   ) => {
     try {
       await updateMemberStatus(memberId, newStatus, userId16);
     } catch (e) {
-      alert('Gagal memperbarui status member: ' + describeFirestoreError(e, isId));
+      alert(t('admin.statusUpdateFailed', { error: describeFirestoreError(e, isId) }));
     }
   };
 
   const handleDeleteMember = async (member: Member) => {
     const confirmDelete = window.confirm(
-      `Hapus data member "${member.name || member.cosplayName}" (KCC ID: ${format16DigitUserId(member.userId16)}) dari database Firestore?`
+      t('admin.deleteMemberConfirm', {
+        name: member.name || member.cosplayName || '',
+        id: format16DigitUserId(member.userId16),
+      })
     );
     if (!confirmDelete) return;
 
     try {
       await deleteMember(member.id, member.userId16);
     } catch (e) {
-      alert('Gagal menghapus member: ' + describeFirestoreError(e, isId));
+      alert(t('admin.deleteMemberFailed', { error: describeFirestoreError(e, isId) }));
     }
   };
 
   const handleRunRepair = async () => {
     if (isRepairing) return;
-    const confirmRepair = window.confirm(
-      'Jalankan perbaikan KCC ID & kartu publik untuk seluruh anggota?\n\n' +
-        '- Anggota dengan KCC ID ganda akan mendapat ID baru (yang terdaftar paling awal tetap memakai ID lama).\n' +
-        '- KCC ID yang belum tersimpan akan disimpan.\n' +
-        '- Koleksi publik memberCards dibangun ulang.\n\nAman dijalankan berulang kali. Lanjutkan?'
-    );
+    const confirmRepair = window.confirm(t('admin.repairConfirm'));
     if (!confirmRepair) return;
 
     setIsRepairing(true);
@@ -275,14 +308,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleReassignReservedId = async (member: Member) => {
     if (reassigningId) return;
     const displayName = member.name || member.cosplayName || member.id;
-    const confirmReassign = window.confirm(
-      `Tetapkan KCC ID baru untuk "${displayName}" (saat ini ${format16DigitUserId(member.userId16)})?` +
-        (isMainAccountUserId(member.userId16)
-          ? '\n\nPERHATIAN: ini adalah ID Main Account. Jangan lanjutkan jika anggota ini adalah akun resmi ' +
-            OFFICIAL_ADMIN_EMAIL +
-            '.'
-          : '')
-    );
+    const confirmLines = [
+      t('admin.reassignConfirm', { name: displayName, id: format16DigitUserId(member.userId16) }),
+    ];
+    if (isMainAccountUserId(member.userId16)) {
+      confirmLines.push(t('admin.reassignMainAccountWarning', { email: OFFICIAL_ADMIN_EMAIL }));
+    }
+    const confirmReassign = window.confirm(confirmLines.join('\n\n'));
     if (!confirmReassign) return;
 
     setReassigningId(member.id);
@@ -318,7 +350,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const keeperName = keeper.name || keeper.cosplayName || keeper.id;
     const dupName = dup.name || dup.cosplayName || dup.id;
     const confirmMerge = window.confirm(
-      `Gabungkan "${dupName}" (${format16DigitUserId(dup.userId16)}) ke "${keeperName}" (${format16DigitUserId(keeper.userId16)})?\n\nData terbaru & nomor WhatsApp disalin ke pendaftaran paling awal, lalu data ganda dihapus permanen. Lanjutkan?`
+      t('admin.mergeConfirm', {
+        duplicate: dupName,
+        duplicateId: format16DigitUserId(dup.userId16),
+        keeper: keeperName,
+        keeperId: format16DigitUserId(keeper.userId16),
+      })
     );
     if (!confirmMerge) return;
 
@@ -339,7 +376,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       );
       setMergeResult({
         isError: false,
-        message: `"${dupName}" digabung ke "${merged.name || merged.cosplayName || keeperName}" — KCC ID ${format16DigitUserId(merged.userId16)} tetap.`,
+        message: t('admin.mergeSuccess', {
+          duplicate: dupName,
+          keeper: merged.name || merged.cosplayName || keeperName,
+          id: format16DigitUserId(merged.userId16),
+        }),
       });
     } catch (e) {
       console.error('Merge duplicate registration error:', e);
@@ -360,22 +401,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (groups.length === 0) return;
     const recordCount = groups.reduce((total, g) => total + g.duplicates.length, 0);
 
-    const confirmText =
-      mode === 'identical'
-        ? isId
-          ? `Gabungkan ${groups.length} grup pendaftaran ganda yang IDENTIK (${recordCount} data ganda)?\n\n` +
-            `Hanya grup dengan cosname dan nomor WhatsApp utama yang sama serta waktu daftar berselisih maksimal ${EXACT_DUPLICATE_WINDOW_SECONDS} detik (salinan persis / impor ganda).\n` +
-            'Data terbaru & nomor WhatsApp disalin ke pendaftaran paling awal (KCC ID-nya tetap), lalu data ganda dihapus permanen. Lanjutkan?'
-          : `Merge ${groups.length} IDENTICAL duplicate groups (${recordCount} duplicate records)?\n\n` +
-            `Only groups with the same cosname and primary WhatsApp number, created at most ${EXACT_DUPLICATE_WINDOW_SECONDS} seconds apart (exact copies / double imports).\n` +
-            'The newest data & every WhatsApp number go to the earliest registration (its KCC ID stays), then the duplicates are permanently deleted. Continue?'
-        : isId
-          ? `Gabungkan SEMUA ${groups.length} grup hasil pindaian (${recordCount} data ganda)?\n\n` +
-            'Termasuk grup yang hanya cocok lewat nomor WhatsApp, Discord, email, media sosial, atau nama yang sama — pastikan daftar di bawah sudah diperiksa.\n' +
-            'Data terbaru & nomor WhatsApp disalin ke pendaftaran paling awal (KCC ID-nya tetap), lalu data ganda dihapus permanen. Tindakan ini tidak dapat dibatalkan. Lanjutkan?'
-          : `Merge ALL ${groups.length} scanned groups (${recordCount} duplicate records)?\n\n` +
-            'This includes groups matched only by the same WhatsApp number, Discord, email, social media or name — make sure you have reviewed the list below.\n' +
-            'The newest data & every WhatsApp number go to the earliest registration (its KCC ID stays), then the duplicates are permanently deleted. This cannot be undone. Continue?';
+    const confirmText = t(
+      mode === 'identical' ? 'admin.bulkMergeIdenticalConfirm' : 'admin.bulkMergeAllConfirm',
+      {
+        groups: formatNumber(groups.length),
+        records: formatNumber(recordCount),
+        seconds: formatNumber(EXACT_DUPLICATE_WINDOW_SECONDS),
+      }
+    );
     if (!window.confirm(confirmText)) return;
 
     setMergeResult(null);
@@ -437,12 +470,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
 
   const handlePurgeAll = async () => {
-    const confirmCode = window.prompt(
-      "PERINGATAN KERAS: Tindakan ini akan MENGHAPUS SEMUA DATA ANGGOTA dari database Firestore secara permanen.\n\nKetik 'PURGE' (huruf besar) untuk konfirmasi pembersihan database:"
-    );
-    if (confirmCode !== 'PURGE') {
+    const confirmCode = window.prompt(t('admin.purgePrompt', { keyword: PURGE_CONFIRM_KEYWORD }));
+    if (confirmCode !== PURGE_CONFIRM_KEYWORD) {
       if (confirmCode !== null) {
-        alert("Konfirmasi dibatalkan (kata kunci tidak sesuai).");
+        alert(t('admin.purgeCancelled'));
       }
       return;
     }
@@ -450,9 +481,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsPurging(true);
     try {
       const deletedCount = await purgeAllMembersFromFirestore();
-      alert(`Pembersihan Berhasil: ${deletedCount} data anggota telah dihapus dari database.`);
+      alert(t('admin.purgeSuccess', { count: formatNumber(deletedCount) }));
     } catch (e) {
-      alert('Gagal menghapus data anggota: ' + describeFirestoreError(e, isId));
+      alert(t('admin.purgeFailed', { error: describeFirestoreError(e, isId) }));
     } finally {
       setIsPurging(false);
     }
@@ -460,29 +491,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const exportToCsv = () => {
     if (filteredMembers.length === 0) {
-      alert('Tidak ada data untuk diekspor.');
+      alert(t('admin.exportNoData'));
       return;
     }
 
-    const headers = [
-      'KCC ID (16 Digit)',
-      'Cosname / Alias',
-      'Nama Legal',
-      'WhatsApp Utama',
-      'WhatsApp Cadangan',
-      'Username Discord',
-      'Email',
-      'Kategori Usia',
-      'Usia/Lahir',
-      'Negara',
-      'Provinsi',
-      'Kota',
-      'Peran Utama',
-      'Fandom',
-      'Pengalaman',
-      'Status',
-      'Tanggal Daftar',
-    ];
+    // Translated column titles, quoted so a comma in any language cannot shift the columns
+    const headers = (
+      [
+        'admin.csvKccId',
+        'admin.csvCosname',
+        'admin.csvLegalName',
+        'admin.csvPrimaryWhatsapp',
+        'admin.csvBackupWhatsapp',
+        'admin.csvDiscord',
+        'admin.csvEmail',
+        'admin.csvAgeCategory',
+        'admin.csvAge',
+        'admin.csvCountry',
+        'admin.csvProvince',
+        'admin.csvCity',
+        'admin.csvPrimaryRole',
+        'admin.csvFandom',
+        'admin.csvExperience',
+        'admin.csvStatus',
+        'admin.csvRegisteredAt',
+      ] as const
+    ).map((key) => `"${t(key).replace(/"/g, '""')}"`);
 
     const rows = filteredMembers.map((m) => [
       `"${m.userId16 || ''}"`,
@@ -647,17 +681,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Lock className="w-8 h-8" />
           </div>
 
-          <h2 className="text-2xl font-black text-white mb-2">{t.adminTitle}</h2>
+          <h2 className="text-2xl font-black text-white mb-2">{t('admin.dashboardTitle')}</h2>
 
           {isAdminChecking ? (
             <div className="flex flex-col items-center gap-3 py-6">
               <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-xs sm:text-sm text-slate-300">Memeriksa akses admin... / Checking admin access...</p>
+              <p className="text-xs sm:text-sm text-slate-300">{t('admin.checkingAccess')}</p>
             </div>
           ) : (
             <>
               <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
-                {t.privacyRestrictedNotice}
+                {t('admin.privacyRestrictedNotice')}
               </p>
 
               {user && (
@@ -665,15 +699,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <p className="flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                     <span>
-                      Anda masuk sebagai <strong className="text-white break-all">{signedInLabel}</strong> — akun ini
-                      bukan admin KCC. / Signed in as <strong className="text-white break-all">{signedInLabel}</strong> —
-                      this account is not a KCC admin.
+                      {renderRich(t('admin.signedInNotAdmin'), {
+                        account: <strong className="text-white break-all">{signedInLabel}</strong>,
+                      })}
                     </span>
                   </p>
                   {isUnverifiedAdminEmail && (
-                    <p className="pl-6 text-amber-300 font-semibold">
-                      Email belum terverifikasi — gunakan Login Google. / Email not verified — use Google sign-in.
-                    </p>
+                    <p className="pl-6 text-amber-300 font-semibold">{t('admin.emailNotVerified')}</p>
                   )}
                 </div>
               )}
@@ -683,7 +715,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold text-sm shadow-lg hover:brightness-110 transition-all flex items-center justify-center space-x-2"
               >
                 <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Masuk dengan Akun Google Admin ({OFFICIAL_ADMIN_EMAIL})</span>
+                <span>{t('admin.signInWithAdminGoogleEmail', { email: OFFICIAL_ADMIN_EMAIL })}</span>
               </button>
 
               {user && (
@@ -692,7 +724,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="w-full mt-3 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center justify-center space-x-2"
                 >
                   <LogOut className="w-4 h-4 text-rose-400" />
-                  <span>Keluar dari akun ini / Sign out</span>
+                  <span>{t('admin.signOutThisAccount')}</span>
                 </button>
               )}
             </>
@@ -706,7 +738,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               className="inline-flex items-center space-x-1.5 text-xs text-emerald-400 hover:underline"
             >
               <Phone className="w-3.5 h-3.5" />
-              <span>Bantuan Admin via WhatsApp: +62 857-1103-2782</span>
+              <span>{t('admin.whatsappAdminHelp', { phone: ADMIN_WHATSAPP_DISPLAY })}</span>
             </a>
           </div>
         </div>
@@ -724,16 +756,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="flex items-center space-x-2 mb-2">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-rose-400" />
-                <span>KawanCosplay Management Portal</span>
+                <span>{t('admin.managementPortalBadge')}</span>
               </span>
               <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Akses Terverifikasi
+                {t('admin.verifiedAccessBadge')}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white">{t.adminTitle}</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-white">{t('admin.dashboardTitle')}</h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
-              {t.adminDesc} Privasi anggota dijaga ketat: hanya admin terdaftar yang dapat melihat daftar nama & kontak.
+              {t('admin.dashboardDesc')} {t('admin.dashboardPrivacyNote')}
             </p>
           </div>
 
@@ -745,7 +777,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               className="px-3.5 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold hover:bg-emerald-600/30 transition-all inline-flex items-center gap-1.5"
             >
               <Phone className="w-3.5 h-3.5" />
-              <span>Hotline WA: +62 857-1103-2782</span>
+              <span>{t('admin.whatsappHotlineShort', { phone: ADMIN_WHATSAPP_DISPLAY })}</span>
             </a>
 
             <button
@@ -753,7 +785,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5 text-amber-400" />
-              <span>Keluar Akun Admin</span>
+              <span>{t('admin.signOutAdmin')}</span>
             </button>
           </div>
         </div>
@@ -761,25 +793,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Quick Stats Summary ('—' until the first successful members snapshot) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/10">
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-              <p className="text-xs text-slate-400">Total Anggota</p>
-              <p className="text-2xl font-black text-white">{membersLoaded ? members.length : '—'}</p>
+              <p className="text-xs text-slate-400">{t('admin.totalMembers')}</p>
+              <p className="text-2xl font-black text-white">{membersLoaded ? formatNumber(members.length) : '—'}</p>
            </div>
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-              <p className="text-xs text-slate-400">Status Verified</p>
+              <p className="text-xs text-slate-400">
+                {t('admin.statusStat', { status: t(STATUS_LABEL_KEYS.verified) })}
+              </p>
               <p className="text-2xl font-black text-emerald-400">
-                {membersLoaded ? members.filter((m) => m.status === 'verified').length : '—'}
+                {membersLoaded ? formatNumber(members.filter((m) => m.status === 'verified').length) : '—'}
               </p>
            </div>
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-              <p className="text-xs text-slate-400">Status Active</p>
+              <p className="text-xs text-slate-400">
+                {t('admin.statusStat', { status: t(STATUS_LABEL_KEYS.active) })}
+              </p>
               <p className="text-2xl font-black text-indigo-400">
-                {membersLoaded ? members.filter((m) => m.status === 'active').length : '—'}
+                {membersLoaded ? formatNumber(members.filter((m) => m.status === 'active').length) : '—'}
               </p>
            </div>
            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-              <p className="text-xs text-slate-400">Status Pending</p>
+              <p className="text-xs text-slate-400">
+                {t('admin.statusStat', { status: t(STATUS_LABEL_KEYS.pending) })}
+              </p>
               <p className="text-2xl font-black text-amber-400">
-                {membersLoaded ? members.filter((m) => m.status === 'pending').length : '—'}
+                {membersLoaded ? formatNumber(members.filter((m) => m.status === 'pending').length) : '—'}
               </p>
            </div>
         </div>
@@ -795,7 +833,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Daftar Anggota & Roster ({membersLoaded ? members.length : '—'})</span>
+            <span>{t('admin.tabMembers', { count: membersLoaded ? formatNumber(members.length) : '—' })}</span>
           </button>
 
           <button
@@ -807,7 +845,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Google Sheets & Form Sync</span>
+            <span>{t('admin.tabSync')}</span>
           </button>
 
           <button
@@ -819,7 +857,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
-            <span>Statistik Komunitas</span>
+            <span>{t('admin.tabStats')}</span>
           </button>
         </div>
       </div>
@@ -831,12 +869,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
             <Lock className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">Akses Ditolak (Permission Denied)</h3>
+          <h3 className="text-lg font-bold text-white mb-2">{t('admin.permissionDeniedTitle')}</h3>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
-            Database menolak akses daftar anggota untuk akun ini. Masuk dengan akun Google admin ({OFFICIAL_ADMIN_EMAIL})
-            atau akun yang terdaftar di koleksi admins, lalu muat ulang halaman. Pastikan juga Firestore Rules terbaru
-            sudah dipublikasikan ke database{' '}
-            <span className="font-mono text-amber-300 break-all">{NAMED_DATABASE_ID}</span>.
+            {renderRich(t('admin.permissionDeniedDesc', { email: OFFICIAL_ADMIN_EMAIL }), {
+              database: <span className="font-mono text-amber-300 break-all">{NAMED_DATABASE_ID}</span>,
+            })}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
@@ -844,14 +881,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center gap-1.5"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>Masuk dengan Akun Google Admin</span>
+              <span>{t('admin.signInWithAdminGoogle')}</span>
             </button>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Muat Ulang Halaman</span>
+              <span>{t('admin.reloadPage')}</span>
             </button>
           </div>
         </div>
@@ -863,16 +900,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">Gagal Memuat Daftar Anggota</h3>
+          <h3 className="text-lg font-bold text-white mb-2">{t('admin.loadMembersFailedTitle')}</h3>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
-            Gagal memuat daftar anggota. Periksa koneksi lalu muat ulang halaman. / Could not load the member list.
+            {t('admin.loadMembersFailedDesc')}
           </p>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Muat Ulang Halaman</span>
+            <span>{t('admin.reloadPage')}</span>
           </button>
         </div>
       )}
@@ -881,7 +918,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {adminTab === 'members' && !membersError && !membersLoaded && (
         <div className="liquid-glass-card rounded-3xl p-10 shadow-xl flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs sm:text-sm text-slate-300">Memuat data anggota...</p>
+          <p className="text-xs sm:text-sm text-slate-300">{t('admin.loadingMembers')}</p>
         </div>
       )}
 
@@ -896,23 +933,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <Wrench className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Perbaikan KCC ID & Kartu Publik (Repair)</h3>
+                  <h3 className="text-base font-bold text-white">{t('admin.repairTitle')}</h3>
                   <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
-                    Memberi KCC ID unik untuk anggota yang ID-nya ganda (yang terdaftar paling awal tetap memakai ID
-                    lama), menyimpan KCC ID yang belum tersimpan, dan membangun ulang koleksi publik memberCards untuk
-                    pencarian kartu. Aman dijalankan berulang kali.
+                    {t('admin.repairDesc')}
                   </p>
                   {duplicateIdCount > 0 ? (
                     <p className="text-xs font-semibold text-amber-300 mt-2 flex items-start gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                       <span>
-                        Terdeteksi {duplicateIdCount} anggota dengan KCC ID ganda — tekan "Jalankan Perbaikan".
+                        {t('admin.repairDuplicatesDetected', {
+                          count: formatNumber(duplicateIdCount),
+                          action: t('admin.runRepair'),
+                        })}
                       </span>
                     </p>
                   ) : (
                     <p className="text-xs font-semibold text-emerald-300 mt-2 flex items-center gap-1.5">
                       <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>Semua KCC ID unik.</span>
+                      <span>{t('admin.allIdsUnique')}</span>
                     </p>
                   )}
                 </div>
@@ -926,12 +964,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
                 <span>
                   {isRepairing
-                    ? `Memproses Perbaikan${
-                        repairProgress && repairProgress.total > 0
-                          ? ` (${repairProgress.done}/${repairProgress.total})`
-                          : ''
-                      }...`
-                    : 'Jalankan Perbaikan'}
+                    ? repairProgress && repairProgress.total > 0
+                      ? t('admin.repairRunningProgress', {
+                          done: formatNumber(repairProgress.done),
+                          total: formatNumber(repairProgress.total),
+                        })
+                      : t('admin.repairRunning')
+                    : t('admin.runRepair')}
                 </span>
               </button>
             </div>
@@ -939,7 +978,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {repairError && (
               <div className="mt-4 p-3.5 rounded-2xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>Perbaikan gagal: {repairError}</span>
+                <span>{t('admin.repairFailed', { error: repairError })}</span>
               </div>
             )}
 
@@ -947,18 +986,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="mt-4 p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/30 text-xs text-slate-200 space-y-3">
                 <p className="font-bold text-emerald-300 flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4" />
-                  <span>Perbaikan selesai.</span>
+                  <span>{t('admin.repairDone')}</span>
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { label: 'Anggota dipindai', value: repairReport.scanned },
-                    { label: 'Grup ID ganda', value: repairReport.duplicateGroups },
-                    { label: 'Kartu ditulis', value: repairReport.cardsWritten },
-                    { label: 'Kartu dihapus', value: repairReport.cardsDeleted },
+                    { id: 'scanned', label: t('admin.repairStatScanned'), value: repairReport.scanned },
+                    { id: 'groups', label: t('admin.repairStatDuplicateGroups'), value: repairReport.duplicateGroups },
+                    { id: 'written', label: t('admin.repairStatCardsWritten'), value: repairReport.cardsWritten },
+                    { id: 'deleted', label: t('admin.repairStatCardsDeleted'), value: repairReport.cardsDeleted },
                   ].map((s) => (
-                    <div key={s.label} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <div key={s.id} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
                       <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
-                      <p className="text-lg font-black text-white">{s.value}</p>
+                      <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
                     </div>
                   ))}
                 </div>
@@ -966,25 +1005,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {repairReport.reassigned.length > 0 ? (
                   <div>
                     <p className="font-semibold text-white mb-1.5">
-                      KCC ID yang diubah / disimpan ({repairReport.reassigned.length}):
+                      {t('admin.reassignedListTitle', { count: formatNumber(repairReport.reassigned.length) })}
                     </p>
                     <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
                       {repairReport.reassigned.map((r) => (
                         <li key={`${r.memberId}_${r.toUserId16}`} className="font-mono text-[11px] text-slate-300">
                           <span className="font-sans font-semibold text-white">{r.name}</span>:{' '}
                           {format16DigitUserId(r.fromUserId16 || undefined)} → {format16DigitUserId(r.toUserId16)}{' '}
-                          <span className="font-sans text-slate-400">({REPAIR_REASON_LABELS[r.reason] || r.reason})</span>
+                          <span className="font-sans text-slate-400">
+                            ({REPAIR_REASON_KEYS[r.reason] ? t(REPAIR_REASON_KEYS[r.reason]) : r.reason})
+                          </span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 ) : (
-                  <p className="text-slate-400">Tidak ada KCC ID yang perlu diubah.</p>
+                  <p className="text-slate-400">{t('admin.noIdsChanged')}</p>
                 )}
 
                 {repairReport.errors.length > 0 && (
                   <div>
-                    <p className="font-semibold text-rose-300 mb-1">Kendala ({repairReport.errors.length}):</p>
+                    <p className="font-semibold text-rose-300 mb-1">
+                      {t('admin.issuesCount', { count: formatNumber(repairReport.errors.length) })}
+                    </p>
                     <ul className="list-disc pl-5 space-y-0.5 text-rose-200 max-h-32 overflow-y-auto">
                       {repairReport.errors.map((errText, i) => (
                         <li key={i}>{errText}</li>
@@ -999,18 +1042,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="mt-6 pt-5 border-t border-white/10">
               <h4 className="text-sm font-bold text-white flex items-start gap-2">
                 <Shield className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>KCC ID Khusus Admin / Main Account (0000 0000 0000 0000 – 0000 0000 0000 0100)</span>
+                <span>{t('admin.reservedIdsTitle', { range: RESERVED_ID_RANGE_LABEL })}</span>
               </h4>
               <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
-                ID di rentang ini hanya untuk akun utama & admin KCC. Anggota di bawah ini mendapatkannya dari isian
-                peran/email pada formulir publik (sistem lama). Tekan "Tetapkan ID Baru" untuk memberi KCC ID kronologis
-                yang unik.
+                {t('admin.reservedIdsDesc', { action: t('admin.assignNewId') })}
               </p>
 
               {reservedHolders.length === 0 ? (
                 <p className="mt-3 text-xs text-emerald-300 flex items-center gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Tidak ada anggota yang memegang KCC ID khusus admin.</span>
+                  <span>{t('admin.noReservedHolders')}</span>
                 </p>
               ) : (
                 <div className="mt-3 space-y-2">
@@ -1025,7 +1066,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {format16DigitUserId(m.userId16)}
                         </p>
                         <p className="text-[11px] text-slate-400 truncate">
-                          Sumber: {m.source} • Peran: {m.primaryRole}
+                          {t('admin.reservedHolderMeta', { source: m.source || '', role: m.primaryRole || '' })}
                         </p>
                       </div>
                       <button
@@ -1034,7 +1075,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${reassigningId === m.id ? 'animate-spin' : ''}`} />
-                        <span>{reassigningId === m.id ? 'Memproses...' : 'Tetapkan ID Baru'}</span>
+                        <span>{reassigningId === m.id ? t('admin.processing') : t('admin.assignNewId')}</span>
                       </button>
                     </div>
                   ))}
@@ -1047,8 +1088,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     reassignResult.isError ? 'text-rose-300' : 'text-emerald-300'
                   }`}
                 >
-                  {reassignResult.isError ? 'Gagal: ' : 'Berhasil: '}
-                  {reassignResult.message}
+                  {t(reassignResult.isError ? 'admin.resultFailed' : 'admin.resultSuccess', {
+                    message: reassignResult.message,
+                  })}
                 </p>
               )}
             </div>
@@ -1062,11 +1104,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <Layers className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Pendaftaran Ganda (Orang yang Sama)</h3>
+                  <h3 className="text-base font-bold text-white">{t('admin.duplicatesTitle')}</h3>
                   <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
-                    Anggota yang mengisi formulir lebih dari sekali (nomor WhatsApp, Discord, email, atau media sosial
-                    yang sama). "Gabungkan" menyimpan data terbaru dan semua nomor WhatsApp ke pendaftaran paling awal
-                    (KCC ID-nya tetap), lalu menghapus data ganda beserta kartunya. Periksa dulu sebelum menggabungkan.
+                    {t('admin.duplicatesDesc')}
                   </p>
                 </div>
               </div>
@@ -1077,7 +1117,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
               >
                 <Search className="w-3.5 h-3.5" />
-                <span>Pindai Pendaftaran Ganda</span>
+                <span>{t('admin.scanDuplicates')}</span>
               </button>
             </div>
 
@@ -1085,8 +1125,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <p
                 className={`mt-4 text-xs font-mono ${mergeResult.isError ? 'text-rose-300' : 'text-emerald-300'}`}
               >
-                {mergeResult.isError ? 'Gagal: ' : 'Berhasil: '}
-                {mergeResult.message}
+                {t(mergeResult.isError ? 'admin.resultFailed' : 'admin.resultSuccess', {
+                  message: mergeResult.message,
+                })}
               </p>
             )}
 
@@ -1110,25 +1151,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <CheckCircle className="w-4 h-4 shrink-0" />
                   )}
                   <span>
-                    {isId
-                      ? `Penggabungan massal selesai (${
-                          bulkMergeReport.mode === 'identical' ? 'grup identik' : 'semua hasil pindaian'
-                        }).`
-                      : `Bulk merge finished (${
-                          bulkMergeReport.mode === 'identical' ? 'identical groups' : 'all scan results'
-                        }).`}
+                    {t('admin.bulkMergeDone', {
+                      mode: t(bulkMergeReport.mode === 'identical' ? 'admin.bulkModeIdentical' : 'admin.bulkModeAll'),
+                    })}
                   </span>
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { label: isId ? 'Grup diproses' : 'Groups processed', value: bulkMergeReport.groups },
-                    { label: isId ? 'Grup digabung' : 'Groups merged', value: bulkMergeReport.mergedGroups },
-                    { label: isId ? 'Data ganda digabung' : 'Duplicates merged', value: bulkMergeReport.mergedRecords },
-                    { label: isId ? 'Grup gagal' : 'Groups failed', value: bulkMergeReport.failedGroups },
+                    { id: 'groups', label: t('admin.bulkStatGroups'), value: bulkMergeReport.groups },
+                    { id: 'mergedGroups', label: t('admin.bulkStatMergedGroups'), value: bulkMergeReport.mergedGroups },
+                    { id: 'mergedRecords', label: t('admin.bulkStatMergedRecords'), value: bulkMergeReport.mergedRecords },
+                    { id: 'failedGroups', label: t('admin.bulkStatFailedGroups'), value: bulkMergeReport.failedGroups },
                   ].map((s) => (
-                    <div key={s.label} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <div key={s.id} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
                       <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
-                      <p className="text-lg font-black text-white">{s.value}</p>
+                      <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
                     </div>
                   ))}
                 </div>
@@ -1136,7 +1173,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {bulkMergeReport.errors.length > 0 && (
                   <div>
                     <p className="font-semibold text-rose-300 mb-1">
-                      {isId ? 'Kendala' : 'Errors'} ({bulkMergeReport.errors.length}):
+                      {t('admin.issuesCount', { count: formatNumber(bulkMergeReport.errors.length) })}
                     </p>
                     <ul className="list-disc pl-5 space-y-0.5 text-rose-200 break-words">
                       {bulkMergeReport.errors.slice(0, BULK_MERGE_ERRORS_SHOWN).map((errText, i) => (
@@ -1145,9 +1182,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </ul>
                     {bulkMergeReport.errors.length > BULK_MERGE_ERRORS_SHOWN && (
                       <p className="mt-1 text-slate-400">
-                        {isId
-                          ? `…dan ${bulkMergeReport.errors.length - BULK_MERGE_ERRORS_SHOWN} kendala lainnya (lihat console browser).`
-                          : `…and ${bulkMergeReport.errors.length - BULK_MERGE_ERRORS_SHOWN} more (see the browser console).`}
+                        {t('admin.bulkMoreErrors', {
+                          count: formatNumber(bulkMergeReport.errors.length - BULK_MERGE_ERRORS_SHOWN),
+                        })}
                       </p>
                     )}
                   </div>
@@ -1159,23 +1196,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {duplicateGroups !== null && duplicateGroups.length > 0 && (
               <div className="mt-4 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-3">
                 <p className="text-xs text-slate-200 leading-relaxed">
-                  {isId ? (
-                    <>
-                      Ditemukan <strong className="text-white">{duplicateGroups.length}</strong> grup pendaftaran ganda (
-                      <strong className="text-white">{duplicateRecordCount}</strong> data ganda), termasuk{' '}
-                      <strong className="text-emerald-300">{exactDuplicateGroups.length}</strong> grup identik (cosname
-                      & nomor WhatsApp utama sama, waktu daftar berselisih maksimal {EXACT_DUPLICATE_WINDOW_SECONDS}{' '}
-                      detik).
-                    </>
-                  ) : (
-                    <>
-                      Found <strong className="text-white">{duplicateGroups.length}</strong> duplicate groups (
-                      <strong className="text-white">{duplicateRecordCount}</strong> duplicate records), including{' '}
-                      <strong className="text-emerald-300">{exactDuplicateGroups.length}</strong> identical groups (same
-                      cosname & primary WhatsApp number, created at most {EXACT_DUPLICATE_WINDOW_SECONDS} seconds
-                      apart).
-                    </>
-                  )}
+                  {renderRich(t('admin.scanSummary', { seconds: formatNumber(EXACT_DUPLICATE_WINDOW_SECONDS) }), {
+                    groups: <strong className="text-white">{formatNumber(duplicateGroups.length)}</strong>,
+                    records: <strong className="text-white">{formatNumber(duplicateRecordCount)}</strong>,
+                    identical: <strong className="text-emerald-300">{formatNumber(exactDuplicateGroups.length)}</strong>,
+                  })}
                 </p>
 
                 <div className="flex flex-col sm:flex-row flex-wrap gap-2">
@@ -1185,11 +1210,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      {isId
-                        ? `Gabungkan semua yang identik (${exactDuplicateGroups.length})`
-                        : `Merge all identical (${exactDuplicateGroups.length})`}
-                    </span>
+                    <span>{t('admin.mergeAllIdentical', { count: formatNumber(exactDuplicateGroups.length) })}</span>
                   </button>
                   <button
                     onClick={() => handleBulkMergeDuplicates('all')}
@@ -1197,11 +1218,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <Layers className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      {isId
-                        ? `Gabungkan semua hasil pindaian (${duplicateGroups.length})`
-                        : `Merge all scan results (${duplicateGroups.length})`}
-                    </span>
+                    <span>{t('admin.mergeAllScanned', { count: formatNumber(duplicateGroups.length) })}</span>
                   </button>
                 </div>
 
@@ -1210,9 +1227,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <p className="text-xs font-semibold text-indigo-200 flex items-center gap-1.5">
                       <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
                       <span>
-                        {isId
-                          ? `Menggabungkan ${bulkMergeProgress.done}/${bulkMergeProgress.total} grup…`
-                          : `Merging ${bulkMergeProgress.done}/${bulkMergeProgress.total} groups…`}
+                        {t('admin.bulkMergeProgress', {
+                          done: formatNumber(bulkMergeProgress.done),
+                          total: formatNumber(bulkMergeProgress.total),
+                        })}
                       </span>
                     </p>
                     <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -1236,7 +1254,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               (duplicateGroups.length === 0 ? (
                 <p className="mt-4 text-xs text-emerald-300 flex items-center gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5" />
-                  <span>Tidak ada pendaftaran ganda yang terdeteksi.</span>
+                  <span>{t('admin.noDuplicatesFound')}</span>
                 </p>
               ) : (
                 <div className="mt-4 space-y-3">
@@ -1252,7 +1270,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="min-w-0 space-y-0.5">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                               <CheckCircle className="w-3 h-3" />
-                              <span>Dipertahankan (KCC ID tetap)</span>
+                              <span>{t('admin.keeperBadge')}</span>
                             </span>
                             <p className="font-bold text-white text-sm truncate">
                               {keeper.name || keeper.cosplayName || keeper.id}
@@ -1267,7 +1285,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               <p className="text-[11px] text-slate-400 break-all">{keeper.email}</p>
                             )}
                             <p className="text-[11px] text-slate-500">
-                              {keeper.createdAt ? new Date(keeper.createdAt).toLocaleString() : '-'}
+                              {keeper.createdAt ? formatDate(keeper.createdAt, DATE_TIME_OPTIONS) : '-'}
                             </p>
                           </div>
                         </div>
@@ -1291,7 +1309,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </p>
                                 {dup.email && <p className="text-[11px] text-slate-400 break-all">{dup.email}</p>}
                                 <p className="text-[11px] text-slate-500">
-                                  {dup.createdAt ? new Date(dup.createdAt).toLocaleString() : '-'}
+                                  {dup.createdAt ? formatDate(dup.createdAt, DATE_TIME_OPTIONS) : '-'}
                                 </p>
                               </div>
                               <button
@@ -1302,8 +1320,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 <RefreshCw className={`w-3.5 h-3.5 ${mergingId === dup.id ? 'animate-spin' : ''}`} />
                                 <span>
                                   {mergingId === dup.id
-                                    ? 'Menggabungkan...'
-                                    : `Gabungkan ke ${format16DigitUserId(keeper.userId16)}`}
+                                    ? t('admin.merging')
+                                    : t('admin.mergeInto', { id: format16DigitUserId(keeper.userId16) })}
                                 </span>
                               </button>
                             </div>
@@ -1324,7 +1342,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <Search className="absolute left-4 top-4.5 w-5 h-5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Cari..."
+                  placeholder={t('admin.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-12 pr-6 py-4 liquid-glass-input rounded-2xl text-white text-sm sm:text-base"
@@ -1338,7 +1356,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setSelectedRole(e.target.value)}
                   className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
                 >
-                  <option value="ALL">Semua Peran ({members.length})</option>
+                  <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
                   {availableRoles.map((r) => (
                     <option key={r} value={r}>
                       {r}
@@ -1350,7 +1368,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setSelectedCity(e.target.value)}
                   className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
                 >
-                  <option value="ALL">Semua Domisili</option>
+                  <option value="ALL">{t('admin.filterAllCities')}</option>
                   {availableCities.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -1362,10 +1380,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setSelectedAgeCategory(e.target.value)}
                   className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
                 >
-                  <option value="ALL">Semua Usia</option>
-                  <option value="Legal Age / Dewasa (18+)">Legal Age (18+)</option>
-                  <option value="Minor / Di Bawah Umur (<18)">Minor (&lt;18)</option>
-                  <option value="Memilih untuk tidak menyebutkan">Tidak menyebutkan</option>
+                  <option value="ALL">{t('admin.filterAllAges')}</option>
+                  {/* Values are the stored ageCategory strings; only the labels are translated */}
+                  <option value="Legal Age / Dewasa (18+)">{t('admin.filterLegalAge')}</option>
+                  <option value="Minor / Di Bawah Umur (<18)">{t('admin.filterMinor')}</option>
+                  <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
                 </select>
                 
                 {/* Sort Order Selector (Simplified) */}
@@ -1376,8 +1395,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     onChange={(e) => setSortMode(e.target.value as any)}
                     className="bg-transparent text-xs text-slate-200 focus:outline-none pr-1 cursor-pointer"
                   >
-                    <option value="timestamp_desc">🕒 Waktu: Terbaru</option>
-                    <option value="name_asc">🔤 Nama: A → Z</option>
+                    <option value="timestamp_desc">{t('admin.sortNewest')}</option>
+                    <option value="name_asc">{t('admin.sortNameAsc')}</option>
                   </select>
                 </div>
                 
@@ -1386,16 +1405,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-slate-900 inline-flex items-center gap-1.5 shadow-md"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>{t.exportCsv}</span>
+                  <span>{t('admin.exportCsv')}</span>
                 </button>
                 <button
                   onClick={handlePurgeAll}
                   disabled={isPurging}
-                  title="Purge / Hapus seluruh data anggota di Firestore"
+                  title={t('admin.purgeButtonTitle')}
                   className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-md"
                 >
                   <Trash2 className={`w-3.5 h-3.5 ${isPurging ? 'animate-spin' : ''}`} />
-                  <span>{isPurging ? 'Memproses Purge...' : 'Purge Data Member'}</span>
+                  <span>{isPurging ? t('admin.purging') : t('admin.purgeButton')}</span>
                 </button>
               </div>
             </div>
@@ -1403,7 +1422,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Filter Summary */}
             <div className="mt-4 flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/60">
               <span>
-                Menampilkan <strong>{filteredMembers.length}</strong> dari {members.length} anggota
+                {renderRich(t('admin.showingMembers', { total: formatNumber(members.length) }), {
+                  shown: <strong>{formatNumber(filteredMembers.length)}</strong>,
+                })}
               </span>
               {(selectedRole !== 'ALL' || selectedCity !== 'ALL' || selectedAgeCategory !== 'ALL' || searchQuery) && (
                 <button
@@ -1415,7 +1436,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   }}
                   className="text-rose-400 hover:underline"
                 >
-                  {t.resetFilter}
+                  {t('admin.resetFilter')}
                 </button>
               )}
             </div>
@@ -1429,56 +1450,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <tr>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('name')}>
                       <div className="inline-flex items-center gap-1.5">
-                        <span>Member / Cosname</span>
+                        <span>{t('admin.colMember')}</span>
                         {sortMode.startsWith('name') && (
-                          <span className="text-rose-400 font-bold">{sortMode === 'name_asc' ? '▲ A-Z' : '▼ Z-A'}</span>
+                          <span className="text-rose-400 font-bold">
+                            {sortMode === 'name_asc' ? t('admin.sortAz') : t('admin.sortZa')}
+                          </span>
                         )}
                       </div>
                     </th>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('uid')}>
                       <div className="inline-flex items-center gap-1.5">
-                        <span>16-Digit KCC ID</span>
+                        <span>{t('admin.colKccId')}</span>
                         {sortMode === 'uid_asc' && (
-                          <span className="text-rose-400 font-bold">▲ ID</span>
+                          <span className="text-rose-400 font-bold">{t('admin.sortIdAsc')}</span>
                         )}
                       </div>
                     </th>
-                    <th className="py-4 px-4">WhatsApp & Kontak</th>
-                    <th className="py-4 px-4">Username Discord</th>
-                    <th className="py-4 px-4">Peran & Minat</th>
+                    <th className="py-4 px-4">{t('admin.colContact')}</th>
+                    <th className="py-4 px-4">{t('admin.colDiscord')}</th>
+                    <th className="py-4 px-4">{t('admin.colRole')}</th>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('age')}>
                       <div className="inline-flex items-center gap-1.5">
-                        <span>Usia</span>
+                        <span>{t('admin.colAge')}</span>
                         {sortMode.startsWith('age') && (
-                          <span className="text-rose-400 font-bold">{sortMode === 'age_asc' ? '▲ Muda' : '▼ Tua'}</span>
+                          <span className="text-rose-400 font-bold">
+                            {sortMode === 'age_asc' ? t('admin.sortAgeYoungest') : t('admin.sortAgeOldest')}
+                          </span>
                         )}
                       </div>
                     </th>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('location')}>
                       <div className="inline-flex items-center gap-1.5">
-                        <span>Domisili</span>
+                        <span>{t('admin.colLocation')}</span>
                         {sortMode.startsWith('location') && (
-                          <span className="text-rose-400 font-bold">{sortMode === 'location_asc' ? '▲ A-Z' : '▼ Z-A'}</span>
+                          <span className="text-rose-400 font-bold">
+                            {sortMode === 'location_asc' ? t('admin.sortAz') : t('admin.sortZa')}
+                          </span>
                         )}
                       </div>
                     </th>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('status')}>
                       <div className="inline-flex items-center gap-1.5">
-                        <span>Status</span>
+                        <span>{t('admin.colStatus')}</span>
                         {sortMode.startsWith('status') && (
-                          <span className="text-rose-400 font-bold">{sortMode === 'status_asc' ? '▲ Ver' : '▼ Pen'}</span>
+                          <span className="text-rose-400 font-bold">
+                            {sortMode === 'status_asc' ? t('admin.sortStatusAsc') : t('admin.sortStatusDesc')}
+                          </span>
                         )}
                       </div>
                     </th>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('timestamp')}>
                       <div className="inline-flex items-center gap-1.5">
-                        <span>Waktu Daftar</span>
+                        <span>{t('admin.colRegistered')}</span>
                         {sortMode.startsWith('timestamp') && (
-                          <span className="text-rose-400 font-bold">{sortMode === 'timestamp_desc' ? '▼ Baru' : '▲ Lama'}</span>
+                          <span className="text-rose-400 font-bold">
+                            {sortMode === 'timestamp_desc' ? t('admin.sortTimeNewest') : t('admin.sortTimeOldest')}
+                          </span>
                         )}
                       </div>
                     </th>
-                    <th className="py-4 px-4 text-right">Aksi / Hapus</th>
+                    <th className="py-4 px-4 text-right">{t('admin.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -1499,7 +1530,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div>
                               <p className="font-bold text-white text-sm">{m.name || m.cosplayName}</p>
                               {m.fullName && m.fullName !== (m.name || m.cosplayName) && (
-                                <p className="text-[11px] text-slate-400">Legal: {m.fullName}</p>
+                                <p className="text-[11px] text-slate-400">{t('admin.legalNameValue', { name: m.fullName })}</p>
                               )}
                             </div>
                           </div>
@@ -1513,17 +1544,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             {isMainAccountUserId(m.userId16) ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans">
                                 <Crown className="w-3 h-3 text-amber-400" />
-                                <span>KCC Main Account</span>
+                                <span>{t('admin.mainAccountBadge')}</span>
                               </span>
                             ) : isAdminUserId(m.userId16) ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 font-sans">
                                 <Shield className="w-3 h-3 text-rose-400" />
-                                <span>KCC Admin #{parseInt((m.userId16 || '').replace(/\D/g, '') || '1').toString().padStart(4, '0')}</span>
+                                <span>
+                                  {t('admin.adminIdBadge', {
+                                    number: parseInt((m.userId16 || '').replace(/\D/g, '') || '1').toString().padStart(4, '0'),
+                                  })}
+                                </span>
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-sans">
                                 <Clock className="w-3 h-3 text-indigo-400" />
-                                <span>Timestamp ID</span>
+                                <span>{t('admin.timestampIdBadge')}</span>
                               </span>
                             )}
                           </div>
@@ -1538,7 +1573,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             )}
                             {m.phone2 && (
                               <p className="text-emerald-300/80 font-mono text-[11px] flex items-center gap-1">
-                                <span className="text-[9px] px-1 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-sans font-semibold">WA 2</span>
+                                <span className="text-[9px] px-1 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-sans font-semibold">{t('admin.phone2Chip')}</span>
                                 <span>{m.phone2}</span>
                               </p>
                             )}
@@ -1550,7 +1585,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     key={`${m.id}_wa_${i}`}
                                     className="text-emerald-300/70 font-mono text-[11px] flex items-center gap-1"
                                   >
-                                    <span className="text-[9px] px-1 py-0.2 bg-emerald-500/15 text-emerald-300 rounded font-sans font-semibold">WA+</span>
+                                    <span className="text-[9px] px-1 py-0.2 bg-emerald-500/15 text-emerald-300 rounded font-sans font-semibold">{t('admin.additionalPhoneChip')}</span>
                                     <span>{p}</span>
                                   </p>
                                 ))}
@@ -1589,15 +1624,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
 
                         <td className="py-4 px-4 text-slate-400 text-xs">
-                          {m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '-'}
+                          {m.createdAt ? formatDate(m.createdAt) : '-'}
                         </td>
 
                         <td className="py-4 px-4">
                           <select
                             value={m.status || 'verified'}
-                            onChange={(e) =>
-                              handleStatusChange(m.id, e.target.value as 'pending' | 'verified' | 'active', m.userId16)
-                            }
+                            onChange={(e) => handleStatusChange(m.id, e.target.value as MemberStatus, m.userId16)}
                             className={`px-2 py-1 rounded-lg text-xs font-bold border ${
                               m.status === 'active'
                                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
@@ -1606,15 +1639,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                             }`}
                           >
-                            <option value="verified" className="bg-slate-900 text-white">
-                              Verified
-                            </option>
-                            <option value="active" className="bg-slate-900 text-white">
-                              Active
-                            </option>
-                            <option value="pending" className="bg-slate-900 text-white">
-                              Pending
-                            </option>
+                            {(['verified', 'active', 'pending'] as const).map((status) => (
+                              <option key={status} value={status} className="bg-slate-900 text-white">
+                                {t(STATUS_LABEL_KEYS[status])}
+                              </option>
+                            ))}
                           </select>
                         </td>
 
@@ -1622,7 +1651,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => onSelectMember(m)}
-                              title="View KCC ID"
+                              title={t('admin.viewKccIdTitle')}
                               className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -1630,7 +1659,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                             <button
                               onClick={() => handleDeleteMember(m)}
-                              title="Hapus Member"
+                              title={t('admin.deleteMemberTitle')}
                               className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1648,12 +1677,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </div>
                           <div>
                             <h3 className="text-lg font-bold text-white mb-1">
-                              {members.length === 0 ? 'Database Anggota Kosong' : 'Tidak Ada Hasil'}
+                              {members.length === 0 ? t('admin.emptyDatabaseTitle') : t('admin.noResultsTitle')}
                             </h3>
                             <p className="text-xs text-slate-400 leading-relaxed">
-                              {members.length === 0
-                                ? 'Belum ada data anggota di database. Impor dari spreadsheet Google Form atau tunggu pendaftaran baru.'
-                                : 'Tidak ada data anggota yang cocok dengan kata kunci pencarian atau filter yang dipilih.'}
+                              {members.length === 0 ? t('admin.emptyDatabaseDesc') : t('admin.noResultsDesc')}
                             </p>
                           </div>
                           {members.length === 0 && (
@@ -1663,7 +1690,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center gap-1.5"
                               >
                                 <FileSpreadsheet className="w-4 h-4" />
-                                <span>Buka Google Sheets & Form Sync</span>
+                                <span>{t('admin.openSheetsSync')}</span>
                               </button>
                             </div>
                           )}

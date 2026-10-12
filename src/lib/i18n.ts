@@ -1,54 +1,14 @@
-export type LanguageCode =
-  | 'id'
-  | 'en'
-  | 'ms'
-  | 'zh-Hans'
-  | 'zh-Hant'
-  | 'ja'
-  | 'ko'
-  | 'ar'
-  | 'ta'
-  | 'fr'
-  | 'es'
-  | 'pt'
-  | 'jv'
-  | 'jv-Jawa'
-  | 'su'
-  | 'su-Sund'
-  | 'de'
-  | 'tl'
-  | 'th'
-  | 'vi';
+/**
+ * @deprecated Legacy translation tables. Use `useI18n()` (components) or `translate()` (src/lib) from `src/i18n`.
+ * Every key below has already been migrated into the namespaced dictionaries in
+ * `src/i18n/locales/<lang>/<namespace>.ts`. This file only stays until the last component stops importing it;
+ * do not add keys here. Delete it once nothing imports `lib/i18n` any more.
+ */
+import type { LanguageCode } from '../i18n/languages';
 
-export interface LanguageMeta {
-  code: LanguageCode;
-  label: string;
-  nativeName: string;
-  isRtl?: boolean;
-}
-
-export const LANGUAGES: LanguageMeta[] = [
-  { code: 'en', label: 'English', nativeName: 'English' },
-  { code: 'id', label: 'Indonesian', nativeName: 'Bahasa Indonesia' },
-  { code: 'ms', label: 'Malay', nativeName: 'Bahasa Melayu' },
-  { code: 'zh-Hans', label: 'Chinese (Simplified)', nativeName: '简体中文' },
-  { code: 'zh-Hant', label: 'Chinese (Traditional)', nativeName: '繁體中文' },
-  { code: 'ja', label: 'Japanese', nativeName: '日本語' },
-  { code: 'ko', label: 'Korean', nativeName: '한국어' },
-  { code: 'ar', label: 'Arabic', nativeName: 'العربية', isRtl: true },
-  { code: 'ta', label: 'Tamil', nativeName: 'தமிழ்' },
-  { code: 'fr', label: 'French', nativeName: 'Français' },
-  { code: 'es', label: 'Spanish', nativeName: 'Español' },
-  { code: 'pt', label: 'Portuguese', nativeName: 'Português' },
-  { code: 'jv', label: 'Javanese (Latin)', nativeName: 'Basa Jawa' },
-  { code: 'jv-Jawa', label: 'Javanese (Hanacaraka)', nativeName: 'ꦧꦱꦗꦮ' },
-  { code: 'su', label: 'Sundanese (Latin)', nativeName: 'Basa Sunda' },
-  { code: 'su-Sund', label: 'Sundanese (Aksara)', nativeName: 'ᮘᮞ ᮞᮥᮔ᮪ᮓ' },
-  { code: 'de', label: 'German', nativeName: 'Deutsch' },
-  { code: 'tl', label: 'Tagalog', nativeName: 'Filipino / Tagalog' },
-  { code: 'th', label: 'Thai', nativeName: 'ภาษาไทย' },
-  { code: 'vi', label: 'Vietnamese', nativeName: 'Tiếng Việt' },
-];
+// LanguageCode / LanguageMeta / LANGUAGES moved to src/i18n/languages.ts; re-exported for legacy imports.
+export type { LanguageCode, LanguageMeta } from '../i18n/languages';
+export { LANGUAGES } from '../i18n/languages';
 
 export interface TranslationDictionary {
   appName: string;
@@ -128,6 +88,7 @@ export interface TranslationDictionary {
   inclusiveWelcome: string;
 }
 
+/** @deprecated Migrated to src/i18n (namespaces common, auth, registration, profile, gallery, admin). */
 export const TRANSLATIONS: Record<LanguageCode, TranslationDictionary> = {
   id: {
     appName: 'MyKCC',
@@ -1902,6 +1863,7 @@ const FORM_TRANSLATIONS_DATA: Partial<Record<LanguageCode, FormSpecificTranslati
   },
 };
 
+/** @deprecated Migrated to src/i18n namespace `registration` (siteEditor → `siteEditor.editorTitle`). */
 export function getFormTranslation(lang: LanguageCode): FormSpecificTranslations {
   const current = FORM_TRANSLATIONS_DATA[lang];
   const en = FORM_TRANSLATIONS_DATA.en!;

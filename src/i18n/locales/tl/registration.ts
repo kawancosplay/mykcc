@@ -1,0 +1,160 @@
+import type { LocaleNamespace } from '../../types';
+
+const registration: LocaleNamespace<'registration'> = {
+  formTitle: 'Pagpaparehistro ng Bagong Miyembro sa KawanCosplay',
+  formDesc: 'Maligayang pagdating sa KawanCosplay Community (KCC), ang 100% SFW na pandaigdigang komunidad ng cosplay. Bahagi ito ng KawanCosplay Group, na binubuo ng KawanCosplay Media at KawanCosplay Community. Ang KCC ay isang WhatsApp group at Discord server na ginawa ng KawanCosplay. Sa simula, ginawa ito bilang forum ng pagtitipon para sa mga cosplayer na nakikipag-collab sa KawanCosplay sa Instagram, pero ngayon ay bukas na ito sa sinumang interesado sa mundo ng cosplay, cosplayer ka man o hindi. Itinatag noong 30 Hunyo 2025. Huwag mag-atubiling maging bahagi namin at makipag-ugnayan sa aming mga miyembro sa WhatsApp group at/o Discord server. Malugod na tinatanggap ang mga internasyonal na miyembro, anuman ang iyong relihiyon, lahi at wika. Para matiyak ang seguridad at maiwasan ang maling paggamit, pakisagutan ang form para makasali sa aming komunidad. Makukuha ang link ng WhatsApp group pagkatapos mong i-submit ang form. Kaya pakiusap, huwag isara ang tab na ito kapag tapos ka nang sumagot sa form. Gayunpaman, magiging available lang ang Discord server pagkatapos mong sumali sa WhatsApp group. Kung kailangan mo pa ng tulong, mag-DM sa @kawancosplayers sa Instagram o kontakin ang aming hotline na +62 857-1103-2782 sa WhatsApp.',
+  inclusiveWelcome: 'Bukas sa lahat: mga Cosplayer, Idol Fan, Otaku, at mga kaibigang mahilig sa Pop Culture!',
+  requiredIndicator: '* Nagpapahiwatig ng kinakailangang tanong',
+  officialFormTag: 'Opisyal na Form ng KawanCosplay',
+  safeCommunityTag: '100% SFW at Malusog na Komunidad',
+  nameLabel: 'Pangalan (Cosplay Name / Alyas / Stage Name)',
+  namePrivacyNotice: 'Para igalang ang iyong privacy, HINDI mo kailangang ibigay ang iyong totoong pangalan. Sapat na ang pekeng pangalan, cosplay alias, o stage nickname.',
+  namePlaceholder: 'Ang sagot mo (hal. Ken, AlyaChan, Rian)',
+  stageOrFakeName: 'Cosplay Name / Stage Name / Pekeng Pangalan / Palayaw / Alyas',
+  realNameOptional: 'Legal na Totoong Pangalan (Opsyonal - iwang blangko kung nais ng privacy)',
+  fullNameLabel: 'Legal na Pangalan (Opsyonal)',
+  phoneLabel: 'WhatsApp / Mobile Number (Opsyonal)',
+  whatsappLabel: 'Aktibong WhatsApp Mobile Number (Kailangan)',
+  whatsappNotice: 'Kailangan ito dahil ang KawanCosplay ay isang komunidad na nakabase sa WhatsApp. Iisang KCC ID account lang ang hawak ng bawat miyembro. Agad na mabubuksan ang link ng opisyal na WhatsApp group pagkatapos mag-submit.',
+  whatsappPlaceholder: 'Ang sagot mo (hal. +62 812 3456 7890 o 0812...)',
+  discordLabel: 'Username sa Discord',
+  discordDesc: 'Ilagay ang iyong Discord username para sa pag-sync ng role sa Discord server ng KawanCosplay (hal. alyachan o user#0001).',
+  discordPlaceholder: 'Ang sagot mo (hal. alyachan o user#0001)',
+  emailLabel: 'Aktibong Email Address',
+  emailOptionalNotice: 'Opsyonal. Puwede mo itong iwang blangko dahil hindi kailanman nangailangan ng email ang database ng aming komunidad.',
+  emailRequiredNotice: 'Kailangan ang email para sa pagpaparehistro.',
+  emailPlaceholder: 'Ang sagot mo (hal. pangalan@example.com)',
+  ageCategoryLabel: 'Katayuan sa Edad (Menor de Edad vs. Nasa Hustong Gulang)',
+  legalAge: 'Nasa Hustong Gulang / Adult (18 taong gulang pataas)',
+  minorAge: 'Menor de Edad (wala pang 18 taong gulang)',
+  preferNotToSay: 'Mas gustong hindi sabihin',
+  ageExplanationTitle: 'Ano ang ibig sabihin ng "Menor de Edad" at "Nasa Hustong Gulang"?',
+  ageExplanationDesc: 'Ang Menor de Edad ay tumutukoy sa sinumang wala pang 18 taong gulang (hindi pa legal na adult), para matiyak ng aming komunidad ang kaligtasang angkop sa edad. Ang Nasa Hustong Gulang ay tumutukoy sa sinumang 18 taong gulang pataas.',
+  exactAgeOptional: 'Eksaktong Edad o Kaarawan (Opsyonal - iwang blangko kung gusto mo)',
+  ageDesc: 'Opsyonal. Iwang blangko o ibahagi para sa pagbati ng komunidad sa iyong kaarawan.',
+  agePlaceholder: 'Ang sagot mo (hal. 21 taong gulang o Mayo 15)',
+  locationTitle: 'Lokasyon ng Tirahan (Lahat ng Bansa at Lungsod sa Buong Mundo)',
+  locationNotice: 'Bukas ang KawanCosplay sa mga miyembro mula saanman sa mundo.',
+  countryLabel: 'Bansang Tinitirhan',
+  provinceLabel: 'Probinsya / Estado / Prefecture',
+  cityLabel: 'Lungsod / Munisipyo / Regency',
+  customCityPlaceholder: 'I-type ang lungsod na tinitirhan mo...',
+  roleTitle: 'Pangunahing Role / Interes sa Komunidad',
+  roleDesc: 'Bukas sa mga cosplayer, idol fan (wota), otaku, crafter, at pangkalahatang tagasuporta!',
+  roleOthers: 'Iba pa / Custom na Role',
+  roleOthersPlaceholder: 'Tukuyin ang iyong custom na role o espesyalidad sa komunidad...',
+  fandomTitle: 'Paboritong Fandom / Serye',
+  fandomDesc: 'Pumili o isulat ang paborito mong anime, game, fandom, o idol group.',
+  fandomOther: 'Iba pa / Maraming Genre',
+  experienceTitle: 'Karanasan sa Mundo ng Pop Culture / Cosplay',
+  experienceDesc: 'Gaano ka na katagal sa mundo ng cosplay / pop culture?',
+  socialMediaTitle: 'Mga Social Media Account',
+  socialMediaDesc: 'Instagram, TikTok, X handle, o link ng profile (opsyonal).',
+  socialMediaPlaceholder: 'Ang sagot mo (hal. @cosplay_name)',
+  portfolioTitle: 'Portfolio / Link ng Google Drive',
+  portfolioDesc: 'Link ng Google Drive o website ng portfolio (opsyonal).',
+  portfolioPlaceholder: 'Ang sagot mo (https://drive.google.com/...)',
+  avatarTitle: 'Profile Avatar / Cosplay na Litrato',
+  avatarDesc: 'Mag-upload ng litrato mo sa cosplay o ng karakter para sa iyong Digital Card, o pumili ng preset na avatar sa ibaba.',
+  uploadButton: 'Mag-upload ng Litrato (Max 2MB)',
+  presetAvatarLabel: 'O pumili ng preset na ilustrasyon:',
+  reasonTitle: 'Dahilan ng Pagsali at Mga Inaasahan',
+  reasonDesc: 'Dahilan ng pagsali o mga inaasahan (hal. magkaroon ng mga kaibigan sa convention, matuto ng crafting, mga group shoot).',
+  reasonPlaceholder: 'Ang sagot mo...',
+  codeOfConductTitle: 'Kasunduan sa Code of Conduct ng Komunidad',
+  codeOfConductAgreement: 'Sumasang-ayon ako sa Code of Conduct ng KawanCosplay (100% SFW, paggalang sa isa\'t isa, walang anumang panliligalig, at malugod at ligtas na espasyo)',
+  submitButton: 'I-submit ang Rehistro',
+  submittingText: 'Isinusumite...',
+  clearForm: 'I-clear ang form',
+  responseRecorded: 'Naitala na ang iyong tugon! Maligayang pagdating sa KawanCosplay.',
+  singleAccountIdTitle: 'Ang Iyong Iisang KCC ID Account (16-Digit)',
+  whatsappUnlockedBadge: 'Bukas na ang WhatsApp Community Group',
+  whatsappUnlockedTitle: 'Sumali sa Opisyal na WhatsApp Group ng KawanCosplay',
+  whatsappUnlockedDesc: 'Salamat sa pagpaparehistro! I-click ang button sa ibaba para sumali sa opisyal na WhatsApp community group ng KawanCosplay:',
+  joinWhatsappButton: 'Sumali sa WhatsApp Community Group',
+  viewMyKccId: 'Tingnan at I-download ang Aking Digital Pass',
+  submitAnother: 'Magsumite ng isa pang tugon',
+
+  // Generic form bits
+  optionalTag: '(Opsyonal)',
+  officialHotlineLabel: 'Opisyal na WhatsApp Hotline:',
+  needHelpHotline: 'Kailangan ng tulong? WhatsApp Hotline:',
+  clearFormConfirm: 'I-clear ang lahat ng sagot sa form?',
+
+  // Backup WhatsApp number
+  addBackupPhone: '+ Higit sa isa ang WhatsApp number mo? Magdagdag ng Backup Number (Opsyonal)',
+  backupPhoneLabel: 'Backup / Karagdagang WhatsApp Number',
+  removeBackupPhone: 'Kanselahin / Alisin',
+  backupPhoneNotice:
+    'Sine-save ang numerong ito bilang backup number. Kung sasagutan mo ulit ang form habang naka-sign in sa parehong account, mananatili ang iyong KCC ID; ang mga dobleng rehistrasyon na ginawa nang hindi naka-sign in ay pagsasamahin ng isang admin.',
+  backupPhonePlaceholder: 'hal. 08123456789 o +62 857...',
+
+  // Location (option labels only; the stored values stay 'Kustom / Wilayah Lainnya' / 'Kustom / Kota Lainnya')
+  customProvinceOption: 'Custom / Ibang Rehiyon',
+  customCityOption: 'Custom / Ibang Lungsod',
+  customProvincePlaceholder: 'Ilagay ang iyong estado / probinsya / rehiyon...',
+
+  // Primary role labels (the stored primaryRole values are unchanged)
+  roleCosplayer: 'Cosplayer / Crossplayer',
+  roleIdolFan: 'Fan ng Idol / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
+  roleOtaku: 'Otaku ng Anime, Manga at Gaming (Mahilig sa anime, games at pop culture)',
+  roleGeneralEnthusiast: 'Pangkalahatang Fan / Tagasuporta (Kaibigan, tagasuporta at dumadalo sa meetup)',
+  rolePropMaker: 'Gumagawa ng Props / Crafter (Gumagawa ng armas, armor at accessories)',
+  rolePhotographer: 'Cosplay Photographer / Videographer',
+  roleCostumeMaker: 'Gumagawa ng Costume / Mananahi / Wig Stylist',
+  roleEventCrew: 'Crew ng Event, Stage Staff at Volunteer',
+  roleContentCreator: 'Content Creator / Streamer',
+
+  // Fandom labels (the stored fandom values are unchanged)
+  fandomHoyoverse: 'Mga laro ng HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
+  fandomShonenSeinen: 'Shonen / Seinen na Anime at Manga (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+  fandomIdolMusic: 'Idol at Musika (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
+  fandomIsekaiFantasy: 'Isekai at Pantasya (Frieren, Slime, Re:Zero, DanMachi)',
+  fandomGamingEsports: 'Gaming at Esports (Valorant, League of Legends, MLBB, Elden Ring)',
+  fandomVtuber: 'VTuber (Hololive, Nijisanji, mga Indie VTuber)',
+  fandomTokusatsuMecha: 'Tokusatsu at Mecha (Kamen Rider, Super Sentai, Gundam)',
+  fandomWesternPopCulture: 'Kanluraning Pop Culture (Marvel, DC, Star Wars, Disney)',
+  fandomOriginalCharacter: 'Original Character (OC) at Malikhaing Pantasya',
+
+  // Experience labels (the stored experience values are unchanged)
+  experienceBeginner: 'Baguhan (< 1 taon)',
+  experienceOneToThreeYears: '1 - 3 taon',
+  experienceVeteran: 'Beterano (> 3 taon)',
+  experienceCasual: 'Casual / Mahilig Lang',
+
+  // Avatar
+  avatarTooLarge: 'Ang pinakamalaking laki ng file para sa avatar photo ay {maxMb}MB.',
+  photoProcessFailed: 'Hindi naproseso ang litrato.',
+  avatarPreviewAlt: 'Preview ng avatar',
+  presetAvatarAria: 'Preset na avatar {number}',
+
+  // Validation errors
+  nameRequiredError: 'Pakilagay ang iyong Cosplay Name / Alyas / Stage Name.',
+  emailRequiredError: 'Kailangan ang email address.',
+  whatsappRequiredError:
+    'Kailangan ang wastong WhatsApp mobile number (hindi bababa sa {minDigits} na digit) dahil ang KawanCosplay ay isang komunidad na nakabase sa WhatsApp.',
+  backupPhoneTooShortError: 'Kailangan ng backup na WhatsApp number ng hindi bababa sa {minDigits} na digit (o iwan itong blangko).',
+  customCityRequiredError: 'Pakitype ang iyong lungsod / regency (ang opsyong "{option}").',
+  codeOfConductRequiredError: 'Paki-check ang pagsang-ayon sa Code of Conduct ng KawanCosplay Community.',
+
+  // Demo sandbox (admin only)
+  sandboxActiveNotice: 'Aktibo ang Sandbox Mode: Hiwalay ang demo test na ito at HINDI ito mase-save sa Firestore database.',
+  exitSandbox: 'Lumabas sa Sandbox',
+  sandboxSubmissionNotice: '🧪 Demo Test sa Sandbox: Tumakbo ang test na ito sa lokal na memory at HINDI ito na-save sa database.',
+
+  // Success screen
+  duplicateMergedNotice:
+    '✓ Tugma ang iyong mga detalye sa isang naunang rehistrasyon. Iisang KCC ID lang ang hawak ng bawat miyembro — mananatili ang iyong KCC ID at na-update na ang iyong profile.',
+  verifiedMemberLabel: 'Verified na Miyembro:',
+  discordValue: 'Discord: {username}',
+
+  // Prefilled WhatsApp message to the admins (one line each; optional lines are left out)
+  whatsappMessageIntro: 'Hi KawanCosplay Admin! Nasagutan ko na ang registration form para sa mga miyembro.',
+  whatsappMessageName: 'Pangalan: {name}',
+  whatsappMessageKccId: 'KCC ID: {id}',
+  whatsappMessagePhone: 'WhatsApp No.: {phone}',
+  whatsappMessagePhone2: 'WhatsApp No. 2: {phone}',
+  whatsappMessageRequest: 'Pakipadala po sa akin ang invite link sa WhatsApp Group ng KawanCosplay Community. Salamat!',
+};
+
+export default registration;

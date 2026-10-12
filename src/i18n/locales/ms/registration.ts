@@ -1,0 +1,160 @@
+import type { LocaleNamespace } from '../../types';
+
+const registration: LocaleNamespace<'registration'> = {
+  formTitle: 'Pendaftaran Ahli Baru KawanCosplay',
+  formDesc: 'Selamat datang ke KawanCosplay Community (KCC), komuniti cosplay antarabangsa yang 100% SFW. KCC ialah sebahagian daripada KawanCosplay Group, yang terdiri daripada KawanCosplay Media dan KawanCosplay Community. KCC ialah kumpulan WhatsApp dan pelayan Discord yang diwujudkan oleh KawanCosplay. Pada asalnya ditubuhkan sebagai forum pertemuan sosial untuk cosplayer yang bekerjasama dengan KawanCosplay di Instagram, kini ia terbuka kepada sesiapa sahaja yang berminat dengan dunia cosplay, sama ada anda cosplayer atau bukan. Ditubuhkan pada 30 Jun 2025. Jangan segan untuk menjadi sebahagian daripada kami dan berinteraksi dengan ahli kami di kumpulan WhatsApp dan/atau pelayan Discord. Ahli antarabangsa dialu-alukan, tanpa mengira agama, bangsa dan bahasa anda. Untuk memastikan keselamatan dan mencegah penyalahgunaan, sila isi borang ini untuk menyertai komuniti kami. Pautan kumpulan WhatsApp akan tersedia selepas anda menghantar borang. Oleh itu, jangan tutup tab ini setelah anda selesai mengisi borang. Walau bagaimanapun, pelayan Discord hanya tersedia selepas anda menyertai kumpulan WhatsApp. Jika anda memerlukan sebarang bantuan lanjut, sila DM @kawancosplayers di Instagram atau hubungi hotline kami +62 857-1103-2782 melalui WhatsApp.',
+  inclusiveWelcome: 'Terbuka untuk semua: Cosplayer, Peminat Idol, Otaku & Rakan Umum!',
+  requiredIndicator: '* Menunjukkan soalan yang wajib diisi',
+  officialFormTag: 'Borang Rasmi KawanCosplay',
+  safeCommunityTag: '100% SFW & Komuniti Sihat',
+  nameLabel: 'Nama (Cosname / Nama Pentas / Samaran)',
+  namePrivacyNotice: 'Demi menjaga privasi anda, anda TIDAK perlu memberikan nama sebenar. Nama samaran / cosname sudah memadai.',
+  namePlaceholder: 'Jawapan anda (contoh: Ken, AlyaChan, Rian)',
+  stageOrFakeName: 'Nama Cosplay / Nama Pentas / Nama Samaran (Cosname / Alias)',
+  realNameOptional: 'Nama Penuh Sebenar (Pilihan - boleh dikosongkan)',
+  fullNameLabel: 'Nama Penuh (Pilihan)',
+  phoneLabel: 'Nombor WhatsApp / Telefon (Pilihan)',
+  whatsappLabel: 'Nombor WhatsApp Aktif (Wajib)',
+  whatsappNotice: 'Wajib diisi kerana komuniti KawanCosplay berasaskan kumpulan WhatsApp. Setiap ahli memiliki 1 akaun KCC ID tunggal. Pautan kumpulan WhatsApp rasmi akan dibuka sebaik sahaja borang dihantar.',
+  whatsappPlaceholder: 'Jawapan anda (contoh: 012-3456789 atau +60...)',
+  discordLabel: 'Nama Pengguna Discord',
+  discordDesc: 'Masukkan nama pengguna Discord anda untuk penyelarasan peranan di pelayan Discord KawanCosplay (contoh: alyachan atau user#0001).',
+  discordPlaceholder: 'Jawapan anda (contoh: alyachan atau user#0001)',
+  emailLabel: 'Alamat Emel Aktif',
+  emailOptionalNotice: 'Boleh dikosongkan. Pangkalan data komuniti kami tidak pernah mewajibkan emel.',
+  emailRequiredNotice: 'Emel wajib diisi untuk pendaftaran.',
+  emailPlaceholder: 'Jawapan anda (contoh: nama@example.com)',
+  ageCategoryLabel: 'Status Umur (Minor vs Dewasa / Legal Age)',
+  legalAge: 'Legal Age / Dewasa (18+ tahun)',
+  minorAge: 'Minor / Bawah Umur (<18 tahun)',
+  preferNotToSay: 'Pilih untuk tidak menyatakan',
+  ageExplanationTitle: 'Apakah maksud Minor dan Legal Age?',
+  ageExplanationDesc: 'Minor ialah sesiapa yang berumur di bawah 18 tahun (belum dewasa di sisi undang-undang), bagi membantu komuniti kami memastikan keselamatan yang bersesuaian dengan umur. Legal Age ialah sesiapa yang berumur 18 tahun ke atas.',
+  exactAgeOptional: 'Umur atau Tarikh Lahir (Pilihan - boleh dikosongkan)',
+  ageDesc: 'Pilihan. Biarkan kosong, atau kongsikan untuk ucapan hari jadi daripada komuniti.',
+  agePlaceholder: 'Jawapan anda (contoh: 21 tahun atau 15 Mei)',
+  locationTitle: 'Lokasi Tempat Tinggal (Semua Negara & Bandar di Seluruh Dunia)',
+  locationNotice: 'KawanCosplay terbuka kepada ahli dari seluruh dunia.',
+  countryLabel: 'Negara Tempat Tinggal',
+  provinceLabel: 'Negeri / Wilayah / Prefektur',
+  cityLabel: 'Bandar / Daerah',
+  customCityPlaceholder: 'Taip nama bandar tempat tinggal anda...',
+  roleTitle: 'Peranan / Minat Utama dalam Komuniti',
+  roleDesc: 'Terbuka untuk cosplayer, peminat idol (wota), otaku, pengraf dan rakan penyokong umum!',
+  roleOthers: 'Lain-lain / Peranan Tersuai',
+  roleOthersPlaceholder: 'Nyatakan peranan atau kepakaran anda dalam komuniti...',
+  fandomTitle: 'Fandom / Siri Kegemaran',
+  fandomDesc: 'Pilih atau tulis anime, permainan, fandom atau kumpulan idol kegemaran anda.',
+  fandomOther: 'Lain-lain / Pelbagai Genre',
+  experienceTitle: 'Pengalaman dalam Dunia Pop Culture / Cosplay',
+  experienceDesc: 'Berapa lama anda telah aktif dalam dunia cosplay / pop culture?',
+  socialMediaTitle: 'Akaun Media Sosial',
+  socialMediaDesc: 'Instagram, TikTok, X atau pautan profil (pilihan).',
+  socialMediaPlaceholder: 'Jawapan anda (contoh: @cosplay_name)',
+  portfolioTitle: 'Portfolio / Pautan Google Drive',
+  portfolioDesc: 'Pautan Google Drive atau laman web portfolio (pilihan).',
+  portfolioPlaceholder: 'Jawapan anda (https://drive.google.com/...)',
+  avatarTitle: 'Avatar Profil / Foto Cosplay',
+  avatarDesc: 'Muat naik foto cosplay atau watak anda untuk Pas Digital, atau pilih avatar pratetap di bawah.',
+  uploadButton: 'Muat Naik Foto (Maks 2MB)',
+  presetAvatarLabel: 'Atau pilih ilustrasi pantas:',
+  reasonTitle: 'Sebab Menyertai & Harapan',
+  reasonDesc: 'Sebab menyertai atau harapan anda (cth. mencari rakan konvensyen, belajar membuat kraf, sesi fotografi berkumpulan).',
+  reasonPlaceholder: 'Jawapan anda...',
+  codeOfConductTitle: 'Persetujuan Kod Etika Komuniti',
+  codeOfConductAgreement: 'Saya bersetuju dengan Kod Etika KawanCosplay (100% SFW, saling menghormati, sifar gangguan, ruang selamat yang mesra untuk semua)',
+  submitButton: 'Hantar Pendaftaran',
+  submittingText: 'Menghantar...',
+  clearForm: 'Kosongkan borang',
+  responseRecorded: 'Respons anda telah direkodkan! Selamat datang ke KawanCosplay.',
+  singleAccountIdTitle: 'Akaun Tunggal KCC ID Anda (16 Digit)',
+  whatsappUnlockedBadge: 'Akses Kumpulan WhatsApp Dibuka',
+  whatsappUnlockedTitle: 'Sertai Kumpulan WhatsApp Rasmi KawanCosplay',
+  whatsappUnlockedDesc: 'Terima kasih kerana mendaftar! Sila klik butang di bawah untuk menyertai kumpulan komuniti WhatsApp rasmi KawanCosplay:',
+  joinWhatsappButton: 'Sertai Kumpulan WhatsApp',
+  viewMyKccId: 'Lihat & Muat Turun Pas Digital Saya',
+  submitAnother: 'Hantar respons lain',
+
+  // Generic form bits
+  optionalTag: '(Pilihan)',
+  officialHotlineLabel: 'Hotline WhatsApp Rasmi:',
+  needHelpHotline: 'Perlukan bantuan? Hotline WhatsApp:',
+  clearFormConfirm: 'Kosongkan semua isian borang?',
+
+  // Backup WhatsApp number
+  addBackupPhone: '+ Ada lebih daripada satu nombor WhatsApp? Tambah Nombor Simpanan (Pilihan)',
+  backupPhoneLabel: 'Nombor WhatsApp Simpanan / Tambahan',
+  removeBackupPhone: 'Batal / Buang',
+  backupPhoneNotice:
+    'Nombor ini disimpan sebagai nombor simpanan. Jika anda mengisi borang sekali lagi semasa log masuk dengan akaun yang sama, KCC ID anda kekal sama; pendaftaran berganda yang dibuat tanpa log masuk akan digabungkan oleh admin.',
+  backupPhonePlaceholder: 'cth. 0123456789 atau +60 12...',
+
+  // Location (option labels only; the stored values stay 'Kustom / Wilayah Lainnya' / 'Kustom / Kota Lainnya')
+  customProvinceOption: 'Tersuai / Wilayah Lain',
+  customCityOption: 'Tersuai / Bandar Lain',
+  customProvincePlaceholder: 'Masukkan negeri / wilayah anda...',
+
+  // Primary role labels (the stored primaryRole values are unchanged)
+  roleCosplayer: 'Cosplayer / Crossplayer',
+  roleIdolFan: 'Peminat Idol / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
+  roleOtaku: 'Otaku Anime, Manga & Permainan (Peminat anime, permainan & pop culture)',
+  roleGeneralEnthusiast: 'Peminat Umum / Penyokong (Rakan umum, penyokong & pengunjung perjumpaan)',
+  rolePropMaker: 'Pembuat Prop / Pengraf (Pembuat senjata, perisai & aksesori)',
+  rolePhotographer: 'Jurugambar / Jurukamera Video Cosplay',
+  roleCostumeMaker: 'Pembuat Kostum / Tukang Jahit / Penggaya Rambut Palsu',
+  roleEventCrew: 'Krew Acara, Petugas Pentas & Sukarelawan',
+  roleContentCreator: 'Pencipta Kandungan / Penstrim',
+
+  // Fandom labels (the stored fandom values are unchanged)
+  fandomHoyoverse: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
+  fandomShonenSeinen: 'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+  fandomIdolMusic: 'Idol & Muzik (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
+  fandomIsekaiFantasy: 'Isekai & Fantasi (Frieren, Slime, Re:Zero, DanMachi)',
+  fandomGamingEsports: 'Permainan & Esukan (Valorant, League of Legends, MLBB, Elden Ring)',
+  fandomVtuber: 'VTuber (Hololive, Nijisanji, VTuber Indie)',
+  fandomTokusatsuMecha: 'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)',
+  fandomWesternPopCulture: 'Budaya Pop Barat (Marvel, DC, Star Wars, Disney)',
+  fandomOriginalCharacter: 'Watak Asli (OC) & Fantasi Kreatif',
+
+  // Experience labels (the stored experience values are unchanged)
+  experienceBeginner: 'Pemula (< 1 tahun)',
+  experienceOneToThreeYears: '1 - 3 tahun',
+  experienceVeteran: 'Veteran (> 3 tahun)',
+  experienceCasual: 'Santai / Peminat',
+
+  // Avatar
+  avatarTooLarge: 'Saiz fail maksimum untuk foto avatar ialah {maxMb}MB.',
+  photoProcessFailed: 'Gagal memproses foto.',
+  avatarPreviewAlt: 'Pratonton avatar',
+  presetAvatarAria: 'Avatar pratetap {number}',
+
+  // Validation errors
+  nameRequiredError: 'Sila isi Nama Cosplay / Nama Samaran / Nama Pentas anda.',
+  emailRequiredError: 'Alamat emel wajib diisi.',
+  whatsappRequiredError:
+    'Nombor WhatsApp yang sah wajib diisi (sekurang-kurangnya {minDigits} digit) kerana KawanCosplay ialah komuniti berasaskan WhatsApp.',
+  backupPhoneTooShortError: 'Nombor WhatsApp simpanan memerlukan sekurang-kurangnya {minDigits} digit (atau biarkan kosong).',
+  customCityRequiredError: 'Sila taip nama bandar / daerah anda (pilihan "{option}").',
+  codeOfConductRequiredError: 'Sila tandakan persetujuan terhadap Kod Etika Komuniti KawanCosplay.',
+
+  // Demo sandbox (admin only)
+  sandboxActiveNotice: 'Mod Kotak Pasir Aktif: Ujian demo ini diasingkan dan TIDAK akan disimpan ke pangkalan data Firestore.',
+  exitSandbox: 'Keluar Kotak Pasir',
+  sandboxSubmissionNotice: '🧪 Ujian Demo Kotak Pasir: Ujian ini dijalankan dalam memori setempat dan TIDAK disimpan ke pangkalan data.',
+
+  // Success screen
+  duplicateMergedNotice:
+    '✓ Butiran anda sepadan dengan pendaftaran terdahulu. Setiap ahli memiliki satu KCC ID sahaja — KCC ID anda kekal sama dan profil anda telah dikemas kini.',
+  verifiedMemberLabel: 'Ahli Disahkan:',
+  discordValue: 'Discord: {username}',
+
+  // Prefilled WhatsApp message to the admins (one line each; optional lines are left out)
+  whatsappMessageIntro: 'Hai Admin KawanCosplay! Saya telah mengisi borang pendaftaran ahli.',
+  whatsappMessageName: 'Nama: {name}',
+  whatsappMessageKccId: 'KCC ID: {id}',
+  whatsappMessagePhone: 'No. WhatsApp: {phone}',
+  whatsappMessagePhone2: 'No. WhatsApp 2: {phone}',
+  whatsappMessageRequest: 'Mohon hantarkan pautan jemputan ke Kumpulan WhatsApp Komuniti KawanCosplay. Terima kasih!',
+};
+
+export default registration;

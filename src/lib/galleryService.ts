@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { Photo } from '../types';
+import { translate } from '../i18n';
 
 const PHOTOS_COLLECTION = 'photos';
 
@@ -69,14 +70,14 @@ function clip(value: unknown, maxLength: number): string {
 export async function addPhotoToFirestore(photo: Omit<Photo, 'id'>): Promise<string> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    const authError = new Error('Silakan login terlebih dahulu untuk mengunggah foto.') as Error & { code?: string };
+    const authError = new Error(translate('errors.photoSignInRequired')) as Error & { code?: string };
     authError.code = 'unauthenticated';
     throw authError;
   }
 
   const photoUrl = typeof photo.photoUrl === 'string' ? photo.photoUrl : '';
   if (photoUrl.length > PHOTO_FIELD_LIMITS.photoUrl) {
-    throw new Error('Ukuran foto terlalu besar. Silakan pilih foto lain. / Photo is too large.');
+    throw new Error(translate('errors.photoTooLarge'));
   }
 
   const id = `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;

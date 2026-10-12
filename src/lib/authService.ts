@@ -26,8 +26,11 @@ import {
   updateMemberWithCard,
 } from './firestoreService';
 
-// Plain provider (openid/email/profile). Its access token is NOT used for Google Sheets:
-// the admin Sheets connection goes through googleAuth.googleSignIn (Drive + Sheets scopes).
+// Member login ("Lanjutkan dengan Google"): BASIC scopes only. Firebase requests openid + email and
+// GoogleAuthProvider adds profile. NEVER call addScope here (no Drive / Sheets scopes, no
+// include_granted_scopes): member sign-in must never hit Google's sensitive/restricted-scope screens.
+// Its access token is NOT used for Google Sheets: the admin Sheets connection requests
+// spreadsheets.readonly on demand through googleAuth.googleSignIn (incremental authorization).
 const googleProvider = new GoogleAuthProvider();
 // Always show the account chooser, so a user signed in with another Google account can switch
 // (e.g. to the admin account from the Admin Portal lock screen)

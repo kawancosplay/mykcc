@@ -1,0 +1,160 @@
+import type { LocaleNamespace } from '../../types';
+
+const registration: LocaleNamespace<'registration'> = {
+  formTitle: 'Pendaftaran Anggota Anyar KawanCosplay',
+  formDesc: 'Wilujeng sumping di KawanCosplay Community (KCC), komunitas cosplay internasional anu 100% SFW. Mangrupikeun bagian tina KawanCosplay Group, anu diwangun ku KawanCosplay Media sareng KawanCosplay Community. KCC nyaéta grup WhatsApp sareng server Discord anu didamel ku KawanCosplay. Mimitina didamel minangka forum silaturahmi kanggo para cosplayer anu kolaborasi sareng KawanCosplay di Instagram, ayeuna kabuka kanggo saha waé anu resep kana dunya cosplay, boh cosplayer boh sanés. Diadegkeun dina 30 Juni 2025. Mangga ulah asa-asa janten bagian ti kami sareng gaul sareng anggota kami di grup WhatsApp sareng/atanapi server Discord. Anggota internasional dihaturanan, teu paduli agama, ras, sareng basa anjeun. Pikeun mastikeun kaamanan sareng nyegah panyalahgunaan, mangga eusian formulir ieu pikeun ngagabung sareng komunitas kami. Tumbu grup WhatsApp sayogi saparantos anjeun ngintunkeun formulir. Ku kituna, mangga ulah nutup tab ieu saparantos réngsé ngeusian formulir. Nanging, server Discord ngan ukur sayogi saparantos anjeun ngagabung ka grup WhatsApp. Upami anjeun peryogi bantosan salajengna, mangga DM @kawancosplayers di Instagram atanapi hubungi hotline kami +62 857-1103-2782 ngalangkungan WhatsApp.',
+  inclusiveWelcome: 'Sadaya cosplayer, wota, otaku, sareng baraya umum dihaturanan sumping!',
+  requiredIndicator: '* Patarosan anu kedah dieusian',
+  officialFormTag: 'Formulir Resmi KawanCosplay',
+  safeCommunityTag: 'Komunitas 100% SFW & Séhat',
+  nameLabel: 'Wasta Cosplay / Sandiasma (Wajib)',
+  namePrivacyNotice: 'Pikeun ngajaga privasi, anjeun TEU kedah nyebatkeun wasta asli. Cukup nganggo wasta panggung / cosname / sandiasma.',
+  namePlaceholder: 'Waleran anjeun (conto: Ken, AlyaChan, Rian)',
+  stageOrFakeName: 'Wasta Cosplay / Wasta Panggung / Sandiasma (Wajib)',
+  realNameOptional: 'Wasta Lengkep Asli (Opsional - tiasa dikosongkeun)',
+  fullNameLabel: 'Wasta Lengkep (Opsional)',
+  phoneLabel: 'Nomer WhatsApp (Opsional)',
+  whatsappLabel: 'Nomer WhatsApp Aktif (Wajib)',
+  whatsappNotice: 'Wajib dieusian margi KawanCosplay mangrupikeun komunitas dumasar WhatsApp. Unggal anggota ngan ukur gaduh hiji akun KCC ID. Tumbu grup WhatsApp resmi bakal langsung dibuka saparantos formulir dikintun.',
+  whatsappPlaceholder: 'Waleran anjeun (conto: +62 812 3456 7890 atanapi 0812...)',
+  discordLabel: 'Wasta Pangguna Discord',
+  discordDesc: 'Lebetkeun wasta pangguna Discord anjeun pikeun nyingkronkeun peran di server Discord KawanCosplay (conto: alyachan atanapi user#0001).',
+  discordPlaceholder: 'Waleran anjeun (conto: alyachan atanapi user#0001)',
+  emailLabel: 'Alamat Surélék Aktif',
+  emailOptionalNotice: 'Opsional. Ieu tiasa dikosongkeun margi database komunitas kami teu kantos meryogikeun surélék.',
+  emailRequiredNotice: 'Surélék wajib dieusian kanggo pendaftaran.',
+  emailPlaceholder: 'Waleran anjeun (conto: wasta@example.com)',
+  ageCategoryLabel: 'Kategori Umur (Minor vs Sawawa / Legal)',
+  legalAge: 'Legal Age / Sawawa (18+ taun)',
+  minorAge: 'Minor / Handapeun Umur (<18 taun)',
+  preferNotToSay: 'Milih teu nyebatkeun',
+  ageExplanationTitle: 'Naon hartosna Minor sareng Legal Age?',
+  ageExplanationDesc: 'Minor hartosna saha waé anu yuswana sahandapeun 18 taun (teu acan sawawa sacara hukum), pikeun ngabantos komunitas urang ngajamin kasalametan anu luyu sareng umur. Legal Age hartosna saha waé anu yuswana 18 taun atanapi langkung.',
+  exactAgeOptional: 'Umur Persis atanapi Tanggal Lahir (Opsional - tiasa dikosongkeun)',
+  ageDesc: 'Opsional. Kosongkeun, atanapi bagikeun kanggo ucapan milangkala ti komunitas.',
+  agePlaceholder: 'Waleran anjeun (conto: 21 taun atanapi 15 Méi)',
+  locationTitle: 'Lokasi Dumuk (Sadaya Nagara & Kota di Dunya)',
+  locationNotice: 'KawanCosplay kabuka sacara global kanggo anggota ti mana waé di dunya.',
+  countryLabel: 'Nagara Dumuk',
+  provinceLabel: 'Provinsi / Nagara Bagian / Préféktur',
+  cityLabel: 'Kota / Kabupatén',
+  customCityPlaceholder: 'Serat kota dumuk anjeun...',
+  roleTitle: 'Peran & Minat Utama',
+  roleDesc: 'Kabuka kanggo cosplayer, pangagum idol (wota), otaku, pangrajin, sareng pendukung umum!',
+  roleOthers: 'Sanés / Peran Kustom',
+  roleOthersPlaceholder: 'Sebatkeun peran atanapi kaahlian kustom anjeun di komunitas...',
+  fandomTitle: 'Fandom / Seri Anime & Idol Karesep',
+  fandomDesc: 'Pilih atanapi serat anime, game, fandom, atanapi grup idol karesep anjeun.',
+  fandomOther: 'Sanés / Multi-genre',
+  experienceTitle: 'Pangalaman di Dunya Pop-Culture / Cosplay',
+  experienceDesc: 'Sabaraha lami anjeun parantos aya di dunya cosplay / pop-culture?',
+  socialMediaTitle: 'Média Sosial (Opsional)',
+  socialMediaDesc: 'Instagram, TikTok, X, atanapi tumbu profil (opsional).',
+  socialMediaPlaceholder: 'Waleran anjeun (conto: @wasta_cosplay)',
+  portfolioTitle: 'Tumbu Portopolio (Opsional)',
+  portfolioDesc: 'Tumbu Google Drive atanapi wéb portopolio (opsional).',
+  portfolioPlaceholder: 'Waleran anjeun (https://drive.google.com/...)',
+  avatarTitle: 'Poto Profil (Opsional)',
+  avatarDesc: 'Unggah poto cosplay atanapi karakter anjeun kanggo Kartu Digital, atanapi pilih avatar preset di handap.',
+  uploadButton: 'Unggah Poto (Maks 2MB)',
+  presetAvatarLabel: 'Atanapi pilih ilustrasi preset:',
+  reasonTitle: 'Alesan Ngagabung & Harepan',
+  reasonDesc: 'Alesan ngagabung atanapi harepan (conto: milarian rerencangan konvénsi, diajar ngadamel prop, sési poto rombongan).',
+  reasonPlaceholder: 'Waleran anjeun...',
+  codeOfConductTitle: 'Perjangjian Kode Étik Komunitas',
+  codeOfConductAgreement: 'Abdi sapuk kana Kode Étik KawanCosplay (100% SFW, silih ajénan, tanpa pelecehan naon waé, rohangan anu aman tur ramah)',
+  submitButton: 'Kintun Pendaftaran',
+  submittingText: 'Nuju ngintunkeun...',
+  clearForm: 'Kosongkeun formulir',
+  responseRecorded: 'Pendaftaran anjeun parantos kacatet! Wilujeng sumping di KawanCosplay.',
+  singleAccountIdTitle: 'Akun KCC ID Tunggal Anjeun (16-Digit)',
+  whatsappUnlockedBadge: 'Grup Komunitas WhatsApp Parantos Dibuka',
+  whatsappUnlockedTitle: 'Ngagabung ka Grup WhatsApp Resmi KawanCosplay',
+  whatsappUnlockedDesc: 'Hatur nuhun parantos ngadaptar! Klik tombol di handap pikeun ngagabung ka grup komunitas WhatsApp resmi KawanCosplay:',
+  joinWhatsappButton: 'Ngagabung ka Grup WhatsApp',
+  viewMyKccId: 'Tingali & Unduh KTA Digital Abdi',
+  submitAnother: 'Kintun pendaftaran sanés',
+
+  // Generic form bits
+  optionalTag: '(Opsional)',
+  officialHotlineLabel: 'Hotline WhatsApp Resmi:',
+  needHelpHotline: 'Peryogi bantosan? Hotline WhatsApp:',
+  clearFormConfirm: 'Kosongkeun sadaya eusian formulir?',
+
+  // Backup WhatsApp number
+  addBackupPhone: '+ Gaduh langkung ti hiji nomer WhatsApp? Tambihkeun Nomer Cadangan (Opsional)',
+  backupPhoneLabel: 'Nomer WhatsApp Cadangan / Tambihan',
+  removeBackupPhone: 'Bolaykeun / Hapus',
+  backupPhoneNotice:
+    'Nomer ieu disimpen salaku nomer cadangan. Upami anjeun ngeusian formulir deui bari asup nganggo akun anu sami, KCC ID anjeun tetep sami; pendaftaran ganda anu didamel tanpa asup bakal digabungkeun ku admin.',
+  backupPhonePlaceholder: 'conto: 08123456789 atanapi +62 857...',
+
+  // Location (option labels only; the stored values stay 'Kustom / Wilayah Lainnya' / 'Kustom / Kota Lainnya')
+  customProvinceOption: 'Kustom / Wewengkon Sanés',
+  customCityOption: 'Kustom / Kota Sanés',
+  customProvincePlaceholder: 'Lebetkeun nagara bagian / provinsi / wewengkon anjeun...',
+
+  // Primary role labels (the stored primaryRole values are unchanged)
+  roleCosplayer: 'Cosplayer / Crossplayer',
+  roleIdolFan: 'Pangagum Idol / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
+  roleOtaku: 'Otaku Anime, Manga & Game (Pangresep anime, game & pop-culture)',
+  roleGeneralEnthusiast: 'Baraya Umum / Pendukung (Rerencangan umum, pendukung & pangunjung riungan)',
+  rolePropMaker: 'Pangrajin Prop / Crafter (Ngadamel pakarang, armor & aksésoris)',
+  rolePhotographer: 'Fotografer / Vidéografer Cosplay',
+  roleCostumeMaker: 'Pangrajin Kostum / Tukang Jait / Wig Stylist',
+  roleEventCrew: 'Kru Acara, Staf Panggung & Sukarelawan',
+  roleContentCreator: 'Kreator Eusi / Streamer',
+
+  // Fandom labels (the stored fandom values are unchanged)
+  fandomHoyoverse: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
+  fandomShonenSeinen: 'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+  fandomIdolMusic: 'Idol & Musik (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
+  fandomIsekaiFantasy: 'Isekai & Fantasi (Frieren, Slime, Re:Zero, DanMachi)',
+  fandomGamingEsports: 'Game & Esports (Valorant, League of Legends, MLBB, Elden Ring)',
+  fandomVtuber: 'VTuber (Hololive, Nijisanji, VTuber Indie)',
+  fandomTokusatsuMecha: 'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)',
+  fandomWesternPopCulture: 'Budaya Pop Barat (Marvel, DC, Star Wars, Disney)',
+  fandomOriginalCharacter: 'Karakter Orisinal (OC) & Fantasi Kréatif',
+
+  // Experience labels (the stored experience values are unchanged)
+  experienceBeginner: 'Pamula (< 1 taun)',
+  experienceOneToThreeYears: '1 - 3 taun',
+  experienceVeteran: 'Veteran (> 3 taun)',
+  experienceCasual: 'Santai / Pangresep',
+
+  // Avatar
+  avatarTooLarge: 'Ukuran file pangageungna {maxMb}MB kanggo poto avatar.',
+  photoProcessFailed: 'Gagal ngolah poto.',
+  avatarPreviewAlt: 'Tilikan avatar',
+  presetAvatarAria: 'Avatar preset {number}',
+
+  // Validation errors
+  nameRequiredError: 'Mangga eusian Wasta Cosplay / Sandiasma / Wasta Panggung anjeun.',
+  emailRequiredError: 'Alamat surélék kedah dieusian.',
+  whatsappRequiredError:
+    'Nomer WhatsApp anu sah wajib dieusian (sahenteuna {minDigits} digit) margi KawanCosplay mangrupikeun komunitas dumasar WhatsApp.',
+  backupPhoneTooShortError: 'Nomer WhatsApp cadangan peryogi sahenteuna {minDigits} digit (atanapi kosongkeun waé).',
+  customCityRequiredError: 'Mangga serat kota / kabupatén anjeun (pilihan "{option}").',
+  codeOfConductRequiredError: 'Mangga centang perjangjian Kode Étik Komunitas KawanCosplay.',
+
+  // Demo sandbox (admin only)
+  sandboxActiveNotice: 'Mode Sandbox Aktif: Uji coba démo ieu dipisahkeun sareng MOAL disimpen ka database Firestore.',
+  exitSandbox: 'Kaluar ti Sandbox',
+  sandboxSubmissionNotice: '🧪 Uji Coba Démo Sandbox: Uji coba ieu dijalankeun dina mémori lokal sareng HENTEU disimpen ka database.',
+
+  // Success screen
+  duplicateMergedNotice:
+    '✓ Data anjeun cocog sareng pendaftaran sateuacanna. Unggal anggota ngan ukur gaduh hiji KCC ID — KCC ID anjeun tetep sami sareng profil anjeun parantos diénggalkeun.',
+  verifiedMemberLabel: 'Anggota Kavérifikasi:',
+  discordValue: 'Discord: {username}',
+
+  // Prefilled WhatsApp message to the admins (one line each; optional lines are left out)
+  whatsappMessageIntro: 'Sampurasun Admin KawanCosplay! Abdi parantos ngeusian formulir pendaftaran anggota.',
+  whatsappMessageName: 'Wasta: {name}',
+  whatsappMessageKccId: 'KCC ID: {id}',
+  whatsappMessagePhone: 'No. WhatsApp: {phone}',
+  whatsappMessagePhone2: 'No. WhatsApp 2: {phone}',
+  whatsappMessageRequest: 'Punten kintunkeun tumbu uleman ka Grup WhatsApp KawanCosplay Community. Hatur nuhun!',
+};
+
+export default registration;

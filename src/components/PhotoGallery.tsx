@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import {
   Camera,
   Heart,
@@ -16,9 +19,21 @@ import {
 } from 'lucide-react';
 import { Photo, Member } from '../types';
 import { toggleLikePhoto } from '../lib/galleryService';
-import { LanguageCode, TRANSLATIONS } from '../lib/i18n';
 import { format16DigitUserId } from '../lib/idGenerator';
+import { haptic } from '../lib/haptic';
+import {
+  SPRING,
+  TWEEN,
+  usePresenceMotion,
+  useReducedMotion,
+  useScrollLock,
+  useSheetDrag,
+} from '../lib/motion';
+import type { SpringPreset } from '../lib/motion';
 import { User as FirebaseUser } from 'firebase/auth';
+import { useI18n } from '../i18n';
+import type { LanguageCode } from '../i18n';
+import { OTHER_EVENT_VALUE, PHOTO_EVENT_OPTIONS } from './UploadPhotoModal';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -26,8 +41,62 @@ interface PhotoGalleryProps {
   user: FirebaseUser | null;
   onOpenUpload: () => void;
   onRequireLogin: () => void;
+  /** Kept for existing callers; the language comes from useI18n(). */
   currentLang: LanguageCode;
 }
+
+/** Renders a translated template with its "{placeholder}" replaced by a React node (e.g. a <strong>). */
+function renderWithNode(template: string, placeholder: string, node: React.ReactNode): React.ReactNode {
+  const token = `{${placeholder}}`;
+  const index = template.indexOf(token);
+  if (index === -1) return template;
+  return (
+    <>
+      {template.slice(0, index)}
+      {node}
+      {template.slice(index + token.length)}
+    </>
+  );
+}
+
+/** Fades a gallery image in once it has loaded (or failed), see `.img-reveal` in index.css. */
+const revealImage = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  e.currentTarget.dataset.loaded = 'true';
+};
+
+// First appearance of the grid: the first cards rise in one after another. Cards added later (filters,
+// new uploads) appear without it, and reduced motion skips it entirely. Cards past the limit are below
+// the fold anyway and are not animated at all.
+const GRID_STAGGER_LIMIT = 12;
+const GRID_STAGGER_STEP = 0.04; // s between two cards
+const gridItemVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  shown: (index: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { ...SPRING.page, delay: Math.min(index, GRID_STAGGER_LIMIT) * GRID_STAGGER_STEP },
+  }),
+};
+
+/** Heart "pop" after a like: bouncier than SPRING.press on purpose (damping ratio ~0.34, one ~13% overshoot). */
+const HEART_POP: SpringPreset = { ...SPRING.press, damping: 15 };
+
+/**
+ * Like icon. `pop` changes on every like tap; the new key remounts the icon so it springs in again.
+ * With reduced motion it only fades back in (no scale).
+ */
+const LikeHeart: React.FC<{ pop: number; reduced: boolean; className: string }> = ({ pop, reduced, className }) => (
+  <motion.span
+    key={pop}
+    aria-hidden="true"
+    className="inline-flex shrink-0"
+    initial={pop === 0 ? false : reduced ? { opacity: 0.4 } : { scale: 0.6 }}
+    animate={reduced ? { opacity: 1 } : { scale: 1 }}
+    transition={reduced ? TWEEN.reducedIn : HEART_POP}
+  >
+    <Heart className={className} />
+  </motion.span>
+);
 
 export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   photos,
@@ -35,14 +104,56 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   user,
   onOpenUpload,
   onRequireLogin,
-  currentLang,
 }) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.id;
+  const { t, formatNumber, formatDate, intlLocale } = useI18n();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState('ALL');
   const [selectedEvent, setSelectedEvent] = useState('ALL');
   const [activePhotoModal, setActivePhotoModal] = useState<Photo | null>(null);
+  const photoTitleId = useId();
+  const reducedMotion = useReducedMotion() === true;
+
+  // Photo viewer: page frozen while open, slide-up sheet (phones) / scale-in dialog (>= 640px),
+  // drag the grabber down to close on phones
+  const closePhotoViewer = useCallback(() => setActivePhotoModal(null), []);
+  useScrollLock(activePhotoModal !== null);
+  const overlayMotion = usePresenceMotion('overlay');
+  const sheetMotion = usePresenceMotion('sheet');
+  const viewerDrag = useSheetDrag(closePhotoViewer);
+
+  // Bumped on every like tap (per photo id): re-keys the heart icon so it pops again
+  const [likePops, setLikePops] = useState<Record<string, number>>({});
+
+  // The photo viewer is read-only: Escape closes it
+  useEffect(() => {
+    if (!activePhotoModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActivePhotoModal(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activePhotoModal]);
+
+  const pluralRules = useMemo(() => {
+    try {
+      return new Intl.PluralRules(intlLocale);
+    } catch {
+      return null;
+    }
+  }, [intlLocale]);
+  const isOne = (count: number) => (pluralRules ? pluralRules.select(count) === 'one' : count === 1);
+
+  // Preset events are saved with their English text (or the "Other" value): show the localized label.
+  // Events members typed themselves are shown as they are.
+  const eventLabel = useCallback(
+    (value: string): string => {
+      if (value === OTHER_EVENT_VALUE) return t('gallery.eventOtherShort');
+      const preset = PHOTO_EVENT_OPTIONS.find((option) => option.value === value);
+      return preset?.labelKey ? t(preset.labelKey) : value;
+    },
+    [t]
+  );
 
   // Extract unique characters & events for filter dropdowns
   const availableCharacters = useMemo(() => {
@@ -58,8 +169,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     photos.forEach((p) => {
       if (p.event) set.add(p.event);
     });
-    return Array.from(set).sort();
-  }, [photos]);
+    return Array.from(set).sort((a, b) => eventLabel(a).localeCompare(eventLabel(b), intlLocale));
+  }, [photos, eventLabel, intlLocale]);
 
   // Filtered photos
   const filteredPhotos = useMemo(() => {
@@ -71,17 +182,30 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         p.character.toLowerCase().includes(q) ||
         p.series.toLowerCase().includes(q) ||
         p.authorName.toLowerCase().includes(q) ||
-        p.event.toLowerCase().includes(q);
+        p.event.toLowerCase().includes(q) ||
+        eventLabel(p.event).toLowerCase().includes(q);
 
       const matchChar = selectedCharacter === 'ALL' || p.character === selectedCharacter;
       const matchEvt = selectedEvent === 'ALL' || p.event === selectedEvent;
 
       return matchSearch && matchChar && matchEvt;
     });
-  }, [photos, searchQuery, selectedCharacter, selectedEvent]);
+  }, [photos, searchQuery, selectedCharacter, selectedEvent, eventLabel]);
+
+  // The grid stagger plays once: for the cards on screen when the grid first shows photos. `initial` is
+  // only read when a card mounts, so turning this off right after that commit leaves the running stagger
+  // alone and later cards simply appear.
+  const [gridIntro, setGridIntro] = useState(true);
+  const hasGridItems = filteredPhotos.length > 0;
+  useEffect(() => {
+    if (gridIntro && hasGridItems) setGridIntro(false);
+  }, [gridIntro, hasGridItems]);
+  const staggerGrid = gridIntro && !reducedMotion;
 
   const handleLike = (e: React.MouseEvent, photo: Photo) => {
     e.stopPropagation();
+    haptic('light');
+    setLikePops((prev) => ({ ...prev, [photo.id]: (prev[photo.id] || 0) + 1 }));
     toggleLikePhoto(photo.id).catch((err) => console.warn('Like failed:', err));
   };
 
@@ -134,19 +258,21 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
-            <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30 flex items-center gap-1.5">
+            <span className="glass-chip font-bold bg-pink-500/20 text-pink-300 border-pink-500/30">
               <Camera className="w-3.5 h-3.5 text-pink-400" />
-              <span>{t.galleryTitle}</span>
+              <span>{t('gallery.title')}</span>
             </span>
             <span className="text-xs text-slate-400">
-              {photos.length} Karya Foto Tersedia
+              {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
+                count: formatNumber(photos.length),
+              })}
             </span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-            KawanCosplay Photo Showcase
+            {t('gallery.showcaseHeading')}
           </h1>
           <p className="text-slate-400 text-sm max-w-2xl mt-1">
-            {t.galleryDesc}
+            {t('gallery.description')}
           </p>
         </div>
 
@@ -159,25 +285,26 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               onRequireLogin();
             }
           }}
-          className="px-4 py-2 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md inline-flex items-center justify-center gap-1.5 transition-transform active:scale-95 shrink-0 self-start md:self-auto"
+          className="liquid-glass-button px-4 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shrink-0 self-start md:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>{t.uploadPhoto}</span>
+          <span>{t('gallery.uploadPhoto')}</span>
         </button>
       </div>
 
       {/* Filter and Categorization Controls */}
-      <div className="liquid-glass-card rounded-2xl p-4 mb-8 shadow-xl space-y-3">
+      <div className="glass-card rounded-2xl p-4 mb-8 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search box */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Cari berdasarkan nama karakter, seri, fotografer, atau event..."
+              placeholder={t('gallery.searchPlaceholder')}
+              aria-label={t('gallery.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
+              className="w-full glass-input pl-10 pr-4 text-base sm:text-sm"
             />
           </div>
 
@@ -186,9 +313,15 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <select
               value={selectedCharacter}
               onChange={(e) => setSelectedCharacter(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-rose-500"
+              aria-label={t('gallery.allCharacters')}
+              className="w-full glass-input text-base sm:text-sm text-slate-200"
             >
-              <option value="ALL">Semua Karakter ({availableCharacters.length})</option>
+              <option value="ALL">
+                {t('gallery.filterOptionWithCount', {
+                  label: t('gallery.allCharacters'),
+                  count: formatNumber(availableCharacters.length),
+                })}
+              </option>
               {availableCharacters.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -202,12 +335,18 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             <select
               value={selectedEvent}
               onChange={(e) => setSelectedEvent(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-rose-500"
+              aria-label={t('gallery.allEvents')}
+              className="w-full glass-input text-base sm:text-sm text-slate-200"
             >
-              <option value="ALL">Semua Event ({availableEvents.length})</option>
+              <option value="ALL">
+                {t('gallery.filterOptionWithCount', {
+                  label: t('gallery.allEvents'),
+                  count: formatNumber(availableEvents.length),
+                })}
+              </option>
               {availableEvents.map((evt) => (
                 <option key={evt} value={evt}>
-                  {evt}
+                  {eventLabel(evt)}
                 </option>
               ))}
             </select>
@@ -215,9 +354,13 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         </div>
 
         {/* Filter Summary */}
-        <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-800/60">
+        <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-white/10">
           <span>
-            Menampilkan <strong className="text-white">{filteredPhotos.length}</strong> karya cosplay
+            {renderWithNode(
+              t(isOne(filteredPhotos.length) ? 'gallery.showingCountOne' : 'gallery.showingCountOther'),
+              'count',
+              <strong className="text-white">{formatNumber(filteredPhotos.length)}</strong>
+            )}
           </span>
           {(searchQuery || selectedCharacter !== 'ALL' || selectedEvent !== 'ALL') && (
             <button
@@ -226,9 +369,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 setSelectedCharacter('ALL');
                 setSelectedEvent('ALL');
               }}
-              className="text-rose-400 hover:underline"
+              className="touch-target text-rose-400 hover:underline"
             >
-              Reset Filter
+              {t('admin.resetFilter')}
             </button>
           )}
         </div>
@@ -236,224 +379,280 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
       {/* Gallery Grid */}
       {filteredPhotos.length === 0 ? (
-        <div className="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800">
+        <div className="glass-card text-center py-16 px-4 rounded-3xl">
           <Camera className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">Belum ada foto dalam kategori ini</h3>
+          <h3 className="text-lg font-bold text-white mb-1">{t('gallery.emptyTitle')}</h3>
           <p className="text-sm text-slate-400 max-w-sm mx-auto mb-4">
-            Jadilah yang pertama mengunggah foto cosplay untuk karakter atau event ini!
+            {t('gallery.emptyDesc')}
           </p>
           <button
             onClick={() => {
               if (user) onOpenUpload();
               else onRequireLogin();
             }}
-            className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold"
+            className="btn-primary pressable text-xs"
           >
-            Unggah Foto Sekarang
+            {t('gallery.uploadNow')}
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPhotos.map((photo) => (
-            <div
+          {filteredPhotos.map((photo, index) => (
+            // Motion wrapper = grid item: the stagger (opacity + translate) lives here, not on the card,
+            // so it never fights the card's own `.pressable-soft` scale / opacity transitions.
+            <motion.div
               key={photo.id}
-              onClick={() => setActivePhotoModal(photo)}
-              className="group cursor-pointer liquid-glass-card hover:border-rose-500/50 rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-rose-950/30 transition-all flex flex-col justify-between"
+              className="flex flex-col"
+              custom={index}
+              variants={gridItemVariants}
+              initial={staggerGrid && index < GRID_STAGGER_LIMIT ? 'hidden' : false}
+              animate="shown"
             >
-              <div>
-                {/* Photo Image container */}
-                <div className="relative h-64 sm:h-72 overflow-hidden bg-slate-950">
-                  <img
-                    src={photo.photoUrl}
-                    alt={photo.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700 blur-sm brightness-50"
-                    onLoad={(e) => {
-                      e.currentTarget.classList.remove('blur-sm', 'brightness-50');
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
+              <div
+                onClick={() => setActivePhotoModal(photo)}
+                className="group glass-card glass-card-interactive pressable-soft cv-auto hover:border-rose-500/50 rounded-3xl overflow-hidden flex-1 flex flex-col justify-between"
+              >
+                <div>
+                  {/* Photo Image container */}
+                  <div className="relative h-64 sm:h-72 overflow-hidden bg-slate-950">
+                    <img
+                      src={photo.photoUrl}
+                      alt={photo.title}
+                      loading="lazy"
+                      decoding="async"
+                      onLoad={revealImage}
+                      onError={revealImage}
+                      className="img-reveal w-full h-full object-cover group-hover:scale-105 transition-[opacity,scale] duration-700 ease-out-soft"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity pointer-events-none"></div>
 
-                  {/* Character Badge Top */}
-                  <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-600/90 text-white backdrop-blur-md shadow-md">
-                      {photo.character}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-900/80 text-slate-300 backdrop-blur-md border border-slate-700">
-                      {photo.series}
-                    </span>
+                    {/* Character Badge Top */}
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                      <span className="glass-chip min-h-6 px-2.5 py-1 text-[10px] font-bold bg-rose-600/90 border-rose-400/40 text-white">
+                        {photo.character}
+                      </span>
+                      <span className="glass-chip min-h-6 px-2.5 py-1 text-[10px] text-slate-300">
+                        {photo.series}
+                      </span>
+                    </div>
+
+                    {/* Top right quick actions */}
+                    <div className="absolute top-3 right-3 flex items-center space-x-1.5 z-10">
+                      <button
+                        type="button"
+                        title={t('gallery.downloadPhoto')}
+                        aria-label={t('gallery.downloadPhoto')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(photo);
+                        }}
+                        className="glass-icon-button w-9 h-9"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleLike(e, photo)}
+                        aria-label={t('gallery.likeWithCount', { count: formatNumber(photo.likesCount || 0) })}
+                        className="glass-icon-button w-auto h-9 px-3 gap-1 hover:bg-rose-600 hover:text-white"
+                      >
+                        <LikeHeart
+                          pop={likePops[photo.id] || 0}
+                          reduced={reducedMotion}
+                          className="w-3.5 h-3.5 fill-current text-rose-400"
+                        />
+                        <span className="text-[11px] font-bold">{formatNumber(photo.likesCount || 0)}</span>
+                      </button>
+                    </div>
+
+                    {/* Title & Author at bottom of photo */}
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <h3 className="font-bold text-white text-base leading-snug line-clamp-1 group-hover:text-rose-300 transition-colors">
+                        {photo.title}
+                      </h3>
+                      <div className="flex items-center space-x-2 mt-1 text-xs text-slate-300">
+                        <span>
+                          {renderWithNode(
+                            t('gallery.byAuthor'),
+                            'name',
+                            <strong className="text-rose-400">{photo.authorName}</strong>
+                          )}
+                        </span>
+                        {photo.userId16 && (
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {t('common.idValue', { id: photo.userId16.slice(-4) })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Top right quick actions */}
-                  <div className="absolute top-3 right-3 flex items-center space-x-1.5 z-10">
-                    <button
-                      type="button"
-                      title={currentLang === 'id' ? 'Unduh Foto' : 'Download Photo'}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDownload(photo);
-                      }}
-                      className="p-2 rounded-full bg-slate-900/80 hover:bg-slate-700 text-slate-200 hover:text-white backdrop-blur-md transition-all shadow-md active:scale-95"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => handleLike(e, photo)}
-                      className="p-2 rounded-full bg-slate-900/80 hover:bg-rose-600 text-slate-200 hover:text-white backdrop-blur-md transition-all flex items-center space-x-1 shadow-md"
-                    >
-                      <Heart className="w-3.5 h-3.5 fill-current text-rose-400 group-hover:scale-110" />
-                      <span className="text-[11px] font-bold">{photo.likesCount || 0}</span>
-                    </button>
-                  </div>
-
-                  {/* Title & Author at bottom of photo */}
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="font-bold text-white text-base leading-snug line-clamp-1 group-hover:text-rose-300 transition-colors">
-                      {photo.title}
-                    </h3>
-                    <div className="flex items-center space-x-2 mt-1 text-xs text-slate-300">
-                      <span>Oleh: <strong className="text-rose-400">{photo.authorName}</strong></span>
-                      {photo.userId16 && (
-                        <span className="text-[10px] font-mono text-slate-400">
-                          ID: {photo.userId16.slice(-4)}
+                  {/* Card Meta footer */}
+                  <div className="p-4 text-xs space-y-2 border-t border-white/10">
+                    <div className="flex items-center justify-between text-slate-400">
+                      <span className="flex items-center gap-1 truncate max-w-[200px]">
+                        <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <span className="truncate">{eventLabel(photo.event)}</span>
+                      </span>
+                      {photo.photographer && (
+                        <span className="text-[11px] text-pink-300 font-mono truncate max-w-[120px]">
+                          📸 {photo.photographer}
                         </span>
                       )}
                     </div>
-                  </div>
-                </div>
 
-                {/* Card Meta footer */}
-                <div className="p-4 bg-slate-900 text-xs space-y-2 border-t border-slate-800/60">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span className="flex items-center gap-1 truncate max-w-[200px]">
-                      <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                      <span className="truncate">{photo.event}</span>
-                    </span>
-                    {photo.photographer && (
-                      <span className="text-[11px] text-pink-300 font-mono truncate max-w-[120px]">
-                        📸 {photo.photographer}
-                      </span>
+                    {photo.caption && (
+                      <p className="text-slate-400 text-[11px] line-clamp-2 italic">
+                        "{photo.caption}"
+                      </p>
                     )}
                   </div>
-
-                  {photo.caption && (
-                    <p className="text-slate-400 text-[11px] line-clamp-2 italic">
-                      "{photo.caption}"
-                    </p>
-                  )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
 
-      {/* FULL PHOTO DETAILS MODAL */}
-      {activePhotoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in text-slate-100">
-          <div className="relative w-full max-w-4xl bg-slate-900 border border-rose-500/30 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
-            <button
-              onClick={() => setActivePhotoModal(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white bg-slate-950/80 rounded-full transition-colors z-20"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Photo view */}
-            <div className="md:w-3/5 bg-slate-950 flex items-center justify-center p-2 overflow-hidden">
-              <img
-                src={activePhotoModal.photoUrl}
-                alt={activePhotoModal.title}
-                decoding="async"
-                className="max-h-[70vh] w-full object-contain rounded-2xl"
-              />
-            </div>
-
-            {/* Photo metadata */}
-            <div className="md:w-2/5 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white">
-                    {activePhotoModal.character}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300">
-                    {activePhotoModal.series}
-                  </span>
+      {/* FULL PHOTO DETAILS: bottom sheet on phones, centered dialog from 640px. Portaled to <body> so the
+          animated / z-indexed <main> around the gallery can neither trap nor cover it. AnimatePresence keeps
+          the closing viewer (last rendered photo) mounted until its exit animation has finished. */}
+      {createPortal(
+        <AnimatePresence>
+          {activePhotoModal && (
+            <motion.div
+              key="photo-viewer-overlay"
+              className="glass-overlay touch-none"
+              aria-hidden="true"
+              onClick={closePhotoViewer}
+              {...overlayMotion}
+            />
+          )}
+          {activePhotoModal && (
+            <div key="photo-viewer-sheet" className="sheet-viewport">
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={photoTitleId}
+                className="glass-sheet sm:max-w-4xl"
+                {...sheetMotion}
+                {...viewerDrag.sheetProps}
+              >
+                {/* Grabber: drag down to close (phones only) */}
+                <div className="sheet-handle" {...viewerDrag.handleProps}>
+                  <div className="sheet-grabber" aria-hidden="true" />
                 </div>
 
-                <h2 className="text-xl sm:text-2xl font-black text-white mb-2 leading-tight">
-                  {activePhotoModal.title}
-                </h2>
+                <button
+                  type="button"
+                  onClick={closePhotoViewer}
+                  aria-label={t('common.close')}
+                  title={t('common.close')}
+                  className="glass-icon-button absolute top-3 right-3 z-20"
+                >
+                  <X className="w-5 h-5" />
+                </button>
 
-                <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 mb-4 space-y-1.5 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Cosplayer:</span>
-                    <span className="font-bold text-rose-400">{activePhotoModal.authorName}</span>
+                <div className="glass-scroll md:flex md:flex-row md:overflow-hidden">
+                  {/* Photo view */}
+                  <div className="md:w-3/5 bg-slate-950/70 flex items-center justify-center p-2 md:overflow-hidden">
+                    <img
+                      src={activePhotoModal.photoUrl}
+                      alt={activePhotoModal.title}
+                      decoding="async"
+                      className="max-h-[60vh] md:max-h-[70vh] w-full object-contain rounded-2xl"
+                    />
                   </div>
-                  {activePhotoModal.userId16 && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">16-Digit ID:</span>
-                      <span className="font-mono text-slate-300">
-                        {format16DigitUserId(activePhotoModal.userId16)}
+
+                  {/* Photo metadata */}
+                  <div className="md:w-2/5 p-6 sm:p-8 flex flex-col justify-between md:overflow-y-auto md:overscroll-contain">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-3 pr-10 md:pr-8">
+                        <span className="glass-chip font-bold bg-rose-600 border-rose-400/40 text-white">
+                          {activePhotoModal.character}
+                        </span>
+                        <span className="glass-chip text-slate-300">{activePhotoModal.series}</span>
+                      </div>
+
+                      <h2 id={photoTitleId} className="text-xl sm:text-2xl font-black text-white mb-2 leading-tight">
+                        {activePhotoModal.title}
+                      </h2>
+
+                      <div className="glass-well p-3 rounded-2xl mb-4 space-y-1.5 text-xs">
+                        <div className="flex justify-between gap-3">
+                          <span className="text-slate-400">{t('gallery.detailCosplayer')}</span>
+                          <span className="font-bold text-rose-400 text-right">{activePhotoModal.authorName}</span>
+                        </div>
+                        {activePhotoModal.userId16 && (
+                          <div className="flex justify-between gap-3">
+                            <span className="text-slate-400">{t('gallery.detailKccId')}</span>
+                            <span className="font-mono text-slate-300 text-right">
+                              {format16DigitUserId(activePhotoModal.userId16)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between gap-3">
+                          <span className="text-slate-400">{t('gallery.detailEvent')}</span>
+                          <span className="font-semibold text-slate-200 text-right">
+                            {eventLabel(activePhotoModal.event)}
+                          </span>
+                        </div>
+                        {activePhotoModal.photographer && (
+                          <div className="flex justify-between gap-3">
+                            <span className="text-slate-400">{t('gallery.detailPhotographer')}</span>
+                            <span className="font-mono text-pink-300 text-right">{activePhotoModal.photographer}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {activePhotoModal.caption && (
+                        <div className="mb-6">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                            {t('gallery.shootNotes')}
+                          </h4>
+                          <p className="glass-well text-xs text-slate-300 leading-relaxed p-3 rounded-xl">
+                            {activePhotoModal.caption}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action row */}
+                    <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => handleLike(e, activePhotoModal)}
+                          className="glass-button pressable text-xs font-bold bg-rose-600/20 border-rose-500/30 text-rose-300 hover:bg-rose-600 hover:text-white"
+                        >
+                          <LikeHeart
+                            pop={likePops[activePhotoModal.id] || 0}
+                            reduced={reducedMotion}
+                            className="w-4 h-4 fill-current text-rose-400"
+                          />
+                          <span>
+                            {t('gallery.likeWithCount', { count: formatNumber(activePhotoModal.likesCount || 0) })}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleDownload(activePhotoModal)}
+                          className="glass-button pressable text-xs font-bold"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>{t('gallery.download')}</span>
+                        </button>
+                      </div>
+
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {formatDate(activePhotoModal.createdAt)}
                       </span>
                     </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Event / Lokasi:</span>
-                    <span className="font-semibold text-slate-200">{activePhotoModal.event}</span>
                   </div>
-                  {activePhotoModal.photographer && (
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Fotografer:</span>
-                      <span className="font-mono text-pink-300">{activePhotoModal.photographer}</span>
-                    </div>
-                  )}
                 </div>
-
-                {activePhotoModal.caption && (
-                  <div className="mb-6">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-                      Catatan Pemotretan
-                    </h4>
-                    <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-                      {activePhotoModal.caption}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action row */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                <div className="flex gap-2">
-                  <button
-                    onClick={(e) => handleLike(e, activePhotoModal)}
-                    className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-rose-500/30"
-                  >
-                    <Heart className="w-4 h-4 fill-current text-rose-400" />
-                    <span>Sukai ({activePhotoModal.likesCount || 0})</span>
-                  </button>
-                  <button
-                    onClick={() => handleDownload(activePhotoModal)}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors border border-slate-700"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Unduh</span>
-                  </button>
-                </div>
-
-                <span className="text-[11px] text-slate-500 font-mono">
-                  {new Date(activePhotoModal.createdAt).toLocaleDateString('id-ID', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </span>
-              </div>
+              </motion.div>
             </div>
-          </div>
-        </div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
     </div>
   );

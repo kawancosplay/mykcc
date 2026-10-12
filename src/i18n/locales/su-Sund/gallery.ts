@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
+const gallery: LocaleNamespace<'gallery'> = {
   title: 'ᮌᮜᮨᮛᮤ',
   description: 'ᮕᮧᮒᮧ ᮃᮀᮌᮧᮒ',
   uploadPhoto: 'ᮅᮀᮌᮂ',
   allCharacters: 'ᮞᮓᮚ ᮊᮛᮊ᮪ᮒᮨᮁ',
   allEvents: 'ᮞᮓᮚ ᮃᮎᮛ',
+
+  // PhotoGallery
+  photosAvailableOne: '{count} ᮕᮧᮒᮧ ᮞᮚᮧᮌᮤ',
+  photosAvailableOther: '{count} ᮕᮧᮒᮧ ᮞᮚᮧᮌᮤ',
+  showcaseHeading: 'ᮕᮤᮔ᮪ᮒᮧᮔᮔ᮪ ᮕᮧᮒᮧ KawanCosplay',
+  searchPlaceholder: 'ᮙᮤᮜᮛᮤᮃᮔ᮪ ᮓᮥᮙᮞᮁ ᮊᮛᮊ᮪ᮒᮨᮁ, ᮞᮦᮛᮤ, ᮖᮧᮒᮧᮌᮢᮖᮨᮁ, ᮃᮒᮔᮕᮤ ᮃᮎᮛ...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: 'ᮔᮨᮙ᮪ᮘᮧᮀᮊᮩᮔ᮪ {count} ᮊᮁᮚ ᮎᮧᮞ᮪ᮕᮣᮚ᮪',
+  showingCountOther: 'ᮔᮨᮙ᮪ᮘᮧᮀᮊᮩᮔ᮪ {count} ᮊᮁᮚ ᮎᮧᮞ᮪ᮕᮣᮚ᮪',
+  emptyTitle: 'ᮒᮩ ᮃᮎᮔ᮪ ᮃᮚ ᮕᮧᮒᮧ ᮓᮤᮔ ᮊᮒᮨᮌᮧᮛᮤ ᮄᮉ',
+  emptyDesc: 'ᮏᮔ᮪ᮒᮨᮔ᮪ ᮃᮔᮥ ᮊᮠᮤᮏᮤ ᮍᮥᮀᮌᮂ ᮕᮧᮒᮧ ᮎᮧᮞ᮪ᮕᮣᮚ᮪ ᮊᮀᮌᮧ ᮊᮛᮊ᮪ᮒᮨᮁ ᮃᮒᮔᮕᮤ ᮃᮎᮛ ᮄᮉ!',
+  uploadNow: 'ᮅᮀᮌᮂ ᮕᮧᮒᮧ ᮃᮚᮩᮔ',
+  downloadPhoto: 'ᮅᮔ᮪ᮓᮥᮂ ᮕᮧᮒᮧ',
+  byAuthor: 'ᮊᮥ: {name}',
+  detailCosplayer: 'ᮎᮧᮞ᮪ᮕᮣᮚᮨᮁ:',
+  detailKccId: 'ID 16-ᮓᮤᮌᮤᮒ᮪:',
+  detailEvent: 'ᮃᮎᮛ / ᮜᮧᮊᮞᮤ:',
+  detailPhotographer: 'ᮖᮧᮒᮧᮌᮢᮖᮨᮁ:',
+  shootNotes: 'ᮎᮒᮨᮒᮔ᮪ ᮞᮦᮞᮤ ᮕᮧᮒᮧ',
+  likeWithCount: 'ᮛᮨᮞᮨᮕ᮪ ({count})',
+  download: 'ᮅᮔ᮪ᮓᮥᮂ',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'ᮞᮔᮦᮞ᮪',
+
+  // UploadPhotoModal
+  photoTooLarge: 'ᮅᮊᮥᮛᮔ᮪ ᮕᮧᮒᮧ ᮕᮍᮌᮩᮀᮔ {maxMb} MB.',
+  imageProcessFailed: 'ᮌᮙ᮪ᮘᮁ ᮒᮩ ᮒᮤᮃᮞ ᮓᮤᮇᮜᮂ. ᮙᮀᮌ ᮎᮧᮘᮤᮃᮔ᮪ ᮖᮄᮜ᮪ ᮞᮔᮦᮞ᮪.',
+  photoRequired: 'ᮙᮀᮌ ᮅᮀᮌᮂ ᮖᮄᮜ᮪ ᮕᮧᮒᮧ ᮎᮧᮞ᮪ᮕᮣᮚ᮪ ᮃᮒᮔᮕᮤ ᮜᮨᮘᮨᮒ᮪ᮊᮩᮔ᮪ URL ᮌᮙ᮪ᮘᮁ.',
+  requiredFieldsMissing: 'ᮝᮞ᮪ᮒ ᮊᮛᮊ᮪ᮒᮨᮁ, ᮞᮦᮛᮤ ᮃᮔᮤᮙᮦ/ᮌᮦᮙ᮪, ᮞᮛᮨᮀ ᮏᮥᮓᮥᮜ᮪ ᮕᮧᮒᮧ ᮊᮨᮓᮂ ᮓᮤᮉᮞᮤᮃᮔ᮪.',
+  uploadBadge: 'ᮌᮜᮨᮛᮤ ᮊᮧᮙᮥᮔᮤᮒᮞ᮪ MyKCC',
+  uploadTitle: 'ᮅᮀᮌᮂ ᮕᮧᮒᮧ ᮎᮧᮞ᮪ᮕᮣᮚ᮪',
+  uploadDesc: 'ᮕᮧᮒᮧ ᮃᮔ᮪ᮏᮩᮔ᮪ ᮘᮊᮜ᮪ ᮙᮥᮔ᮪ᮎᮥᮜ᮪ ᮓᮤ ᮌᮜᮨᮛᮤ ᮅᮙᮥᮙ᮪ ᮞᮛᮨᮀ ᮒᮤᮃᮞ ᮓᮤᮕᮤᮜᮛᮤᮃᮔ᮪ ᮓᮥᮙᮞᮁ ᮊᮛᮊ᮪ᮒᮨᮁ ᮞᮛᮨᮀ ᮃᮎᮛ.',
+  photoFileLabel: 'ᮖᮄᮜ᮪ ᮕᮧᮒᮧ ᮎᮧᮞ᮪ᮕᮣᮚ᮪',
+  previewAlt: 'ᮒᮤᮜᮤᮊᮔ᮪ ᮕᮧᮒᮧ',
+  changePhoto: 'ᮌᮨᮔ᮪ᮒᮧᮞ᮪ ᮕᮧᮒᮧ',
+  chooseFileHint: 'ᮕᮤᮜᮤᮂ ᮌᮙ᮪ᮘᮁ ᮒᮤᮔ ᮃᮜᮒ᮪ ᮃᮔ᮪ᮏᮩᮔ᮪ (JPG, PNG, WebP)',
+  chooseFileButton: 'ᮕᮤᮜᮤᮂ ᮖᮄᮜ᮪ ᮌᮙ᮪ᮘᮁ',
+  photoTitleLabel: 'ᮏᮥᮓᮥᮜ᮪ ᮕᮧᮒᮧ / ᮊᮧᮔ᮪ᮞᮦᮕ᮪',
+  photoTitlePlaceholder: 'ᮎᮧᮔ᮪ᮒᮧ: Raiden Shogun - Inazuma Castle',
+  characterLabel: 'ᮊᮛᮊ᮪ᮒᮨᮁ ᮃᮔᮥ ᮓᮤ-ᮎᮧᮞ᮪ᮕᮣᮚ᮪-ᮊᮩᮔ᮪',
+  characterPlaceholder: 'ᮎᮧᮔ᮪ᮒᮧ: Frieren, Furina, Gojo Satoru',
+  seriesLabel: 'ᮞᮦᮛᮤ ᮃᮔᮤᮙᮦ / ᮌᮦᮙ᮪ / ᮖᮔ᮪ᮓᮧᮙ᮪',
+  seriesPlaceholder: 'ᮎᮧᮔ᮪ᮒᮧ: Genshin Impact, Sousou no Frieren',
+  eventLabel: 'ᮃᮎᮛ / ᮜᮧᮊᮞᮤ ᮞᮦᮞᮤ ᮕᮧᮒᮧ',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'ᮛᮤᮅᮍᮔ᮪ ᮘᮥᮜᮔᮔ᮪ KawanCosplay',
+  eventOutdoorShoot: 'ᮞᮦᮞᮤ ᮕᮧᮒᮧ ᮓᮤ ᮃᮜᮙ᮪ ᮒᮨᮁᮘᮥᮊ',
+  eventIndoorStudio: 'ᮞᮦᮞᮤ ᮞ᮪ᮒᮥᮓᮤᮇ ᮄᮔ᮪ᮓᮧᮁ',
+  eventMatsuri: 'ᮙᮒ᮪ᮞᮥᮛᮤ ᮏᮨᮕᮀ / ᮖᮦᮞ᮪ᮒᮤᮗᮜ᮪ ᮘᮥᮓᮚ',
+  eventOther: 'ᮞᮔᮦᮞ᮪ (ᮞᮨᮛᮒ᮪ ᮑᮜᮤᮛ)',
+  customEventPlaceholder: 'ᮞᮨᮛᮒ᮪ ᮝᮞ᮪ᮒ ᮃᮎᮛ / ᮜᮧᮊᮞᮤ',
+  photographerLabel: 'ᮊᮢᮨᮓᮤᮒ᮪ ᮖᮧᮒᮧᮌᮢᮖᮨᮁ / ᮊᮢᮥ',
+  photographerPlaceholder: '@wasta_fotografer ᮃᮒᮔᮕᮤ ᮝᮞ᮪ᮒ ᮞ᮪ᮒᮥᮓᮤᮇ',
+  captionLabel: 'ᮊᮒᮨᮛᮍᮔ᮪ / ᮎᮛᮤᮒ ᮓᮤ ᮘᮜᮤᮊ᮪ ᮊᮧᮞ᮪ᮒᮥᮙ᮪',
+  captionPlaceholder: 'ᮎᮛᮤᮒᮊᮩᮔ᮪ ᮊᮥᮙᮠ ᮃᮔ᮪ᮏᮩᮔ᮪ ᮍᮓᮙᮨᮜ᮪ ᮊᮧᮞ᮪ᮒᮥᮙ᮪ ᮞᮛᮨᮀ ᮕᮢᮧᮕ᮪-ᮔ, ᮃᮒᮔᮕᮤ ᮔᮇᮔ᮪ ᮃᮔᮥ ᮍᮏᮔ᮪ᮒᮨᮔ᮪ᮊᮩᮔ᮪ ᮃᮎᮛᮔ ᮞᮨᮛᮥ...',
+  cancel: 'ᮘᮧᮜᮚ᮪ᮊᮩᮔ᮪',
+  submitUpload: 'ᮅᮀᮌᮂ ᮊ ᮌᮜᮨᮛᮤ',
 };
 
 export default gallery;

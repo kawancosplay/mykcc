@@ -1,40 +1,170 @@
 import type { LocaleNamespace } from '../../types';
 
-const registration: Partial<LocaleNamespace<'registration'>> = {
+const registration: LocaleNamespace<'registration'> = {
   formTitle: 'ꦥꦼꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀ꦲꦁꦒꦺꦴꦠꦲꦚꦂ',
-  formDesc: 'ꦱꦸꦒꦼꦁꦫꦮꦸꦃꦲꦶꦁꦏꦮꦤ꧀ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀! ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ꦥꦿꦼꦭꦸꦗꦼꦤꦼꦁꦲꦱ꧀ꦭꦶ꧈ꦕꦸꦏꦸꦥ꧀ꦗꦼꦤꦼꦁꦱꦩꦫꦤ꧀꧉',
+  formDesc:
+    'ꦱꦸꦒꦼꦁ ꦫꦮꦸꦃ ꦲꦶꦁ KawanCosplay Community (KCC), ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀ ꦲꦶꦤ꧀ꦠꦼꦂꦤꦱꦶꦪꦺꦴꦤꦭ꧀ ꦲꦶꦁꦏꦁ 100% SFW. KCC ꦥꦸꦤꦶꦏ ꦥꦼꦫꦔꦤ꧀ ꦱꦏꦶꦁ KawanCosplay Group, ꦲꦶꦁꦏꦁ ꦏꦢꦢꦺꦴꦱꦤ꧀ ꦱꦏꦶꦁ KawanCosplay Media ꦭꦤ꧀ KawanCosplay Community. KCC ꦲꦶꦁꦒꦶꦃ ꦥꦸꦤꦶꦏ ꦒꦿꦸꦥ꧀ WhatsApp ꦭꦤ꧀ ꦱꦼꦂꦮ꦳ꦼꦂ Discord ꦲꦶꦁꦏꦁ ꦢꦶꦥꦸꦤ꧀ꦢꦩꦼꦭ꧀ ꦢꦺꦤꦶꦁ KawanCosplay. ꦮꦶꦮꦶꦠꦤꦶꦥꦸꦤ꧀ ꦢꦶꦥꦸꦤ꧀ꦢꦩꦼꦭ꧀ ꦩꦶꦤꦁꦏ ꦥ꦳ꦺꦴꦫꦸꦩ꧀ ꦱꦿꦮꦸꦁ ꦏꦁꦒꦺ ꦥꦫ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪꦼꦂ ꦲꦶꦁꦏꦁ ꦏꦺꦴꦭꦧꦺꦴꦫꦱꦶ ꦏꦭꦶꦪꦤ꧀ KawanCosplay ꦲꦶꦁ Instagram, ꦱꦥꦸꦤꦶꦏ ꦱꦩ꧀ꦥꦸꦤ꧀ ꦏꦧꦸꦏ ꦏꦁꦒꦺ ꦱꦶꦤ꧀ꦠꦼꦤ꧀ ꦏꦼꦩꦮꦺꦴꦤ꧀ ꦲꦶꦁꦏꦁ ꦉꦩꦼꦤ꧀ ꦝꦠꦼꦁ ꦢꦺꦴꦚ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀꧈ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪꦼꦂ ꦲꦸꦠꦮꦶ ꦱꦤꦺꦱ꧀꧉ ꦢꦶꦥꦸꦤꦢꦼꦒꦏꦼꦤ꧀ ꦠꦁꦒꦭ꧀ 30 ꦗꦸꦤꦶ 2025. ꦩꦁꦒ ꦲꦩ꧀ꦥꦸꦤ꧀ ꦩꦔꦸꦩꦔꦸ ꦢꦢꦺꦴꦱ꧀ ꦥꦼꦫꦔꦤ꧀ ꦱꦏꦶꦁ ꦏꦶꦠ ꦭꦤ꧀ ꦱꦿꦮꦸꦁ ꦏꦭꦶꦪꦤ꧀ ꦲꦁꦒꦺꦴꦠ ꦏꦶꦠ ꦲꦶꦁ ꦒꦿꦸꦥ꧀ WhatsApp ꦭꦤ꧀/ꦲꦸꦠꦮꦶ ꦱꦼꦂꦮ꦳ꦼꦂ Discord. ꦲꦁꦒꦺꦴꦠ ꦲꦶꦤ꧀ꦠꦼꦂꦤꦱꦶꦪꦺꦴꦤꦭ꧀ ꦢꦶꦥꦸꦤ꧀ꦧꦒꦺꦏꦏꦼꦤ꧀꧈ ꦠꦤ꧀ꦥ ꦩ꧀ꦧꦺꦢꦏꦏꦼꦤ꧀ ꦲꦒꦩꦶ꧈ ꦫꦱ꧀ ꦭꦤ꧀ ꦧꦱ꧉ ꦏꦁꦒꦺ ꦚ꧀ꦗꦒꦶ ꦏꦼꦲꦩꦤꦤ꧀ ꦭꦤ꧀ ꦚꦼꦒꦃ ꦥꦼꦚꦭꦃꦒꦸꦤꦲꦤ꧀꧈ ꦩꦁꦒ ꦲꦶꦱꦶ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ ꦥꦸꦤꦶꦏ ꦏꦁꦒꦺ ꦒꦧꦸꦁ ꦲꦶꦁ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦏꦶꦠ꧉ ꦭꦶꦤ꧀ꦏ꧀ ꦒꦿꦸꦥ꧀ WhatsApp ꦏꦱꦼꦝꦶꦪ ꦱꦱꦩ꧀ꦥꦸꦤꦶꦥꦸꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦔꦶꦫꦶꦩ꧀ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ꧉ ꦥꦿꦩꦶꦭ꧈ ꦲꦩ꧀ꦥꦸꦤ꧀ ꦤꦸꦠꦸꦥ꧀ ꦠꦧ꧀ ꦥꦸꦤꦶꦏ ꦱꦱꦩ꧀ꦥꦸꦤꦶꦥꦸꦤ꧀ ꦫꦩ꧀ꦥꦸꦁ ꦔꦶꦱꦶ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ꧉ ꦤꦔꦶꦁ꧈ ꦱꦼꦂꦮ꦳ꦼꦂ Discord ꦤꦩꦸꦁ ꦏꦱꦼꦝꦶꦪ ꦱꦱꦩ꧀ꦥꦸꦤꦶꦥꦸꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦒꦧꦸꦁ ꦲꦶꦁ ꦒꦿꦸꦥ꧀ WhatsApp. ꦩꦼꦤꦮꦶ ꦩ꧀ꦧꦼꦠꦲꦏꦼꦤ꧀ ꦥꦶꦠꦸꦭꦸꦔꦤ꧀ ꦩꦭꦶꦃ꧈ ꦩꦁꦒ DM @kawancosplayers ꦲꦶꦁ Instagram ꦲꦸꦠꦮꦶ ꦲꦸꦧꦸꦔꦶ ꦲꦺꦴꦠ꧀ꦭꦻꦤ꧀ ꦏꦶꦠ +62 857-1103-2782 ꦭꦸꦩꦤ꧀ꦠꦂ WhatsApp.',
   inclusiveWelcome: 'ꦱꦢꦪꦢꦶꦥꦸꦤ꧀ꦠꦩ꧀ꦥ!',
   requiredIndicator: '* ꦮꦗꦶꦧ꧀ꦢꦶꦥꦸꦤꦶꦱꦶ',
+  officialFormTag: 'ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ ꦉꦱ꧀ꦩꦶ KawanCosplay',
+  safeCommunityTag: '100% SFW & ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦱꦺꦲꦠ꧀',
   nameLabel: 'ꦗꦼꦤꦼꦁꦱꦩꦫꦤ꧀',
-  namePrivacyNotice: 'ꦏꦁꦒꦺꦴꦚ꧀ꦗꦒꦥꦿꦶꦮ꦳ꦱꦶ꧈ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ꦥꦿꦼꦭꦸꦗꦼꦤꦼꦁꦲꦱ꧀ꦭꦶ꧉',
+  namePrivacyNotice:
+    'ꦏꦁꦒꦺꦴ ꦚ꧀ꦗꦒ ꦥꦿꦶꦮ꦳ꦱꦶ꧈ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦲꦺꦴꦫ ꦥꦽꦭꦸ ꦔꦶꦱꦶ ꦗꦼꦤꦼꦁ ꦲꦱ꧀ꦭꦶ꧉ ꦕꦸꦏꦸꦥ꧀ ꦔꦁꦒꦺꦴ ꦗꦼꦤꦼꦁ ꦥꦁꦒꦸꦁ / ꦕꦺꦴꦱ꧀ꦤꦩꦺ / ꦗꦼꦤꦼꦁ ꦱꦩꦫꦤ꧀꧉',
+  namePlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦠꦸꦭꦝ: Ken, AlyaChan, Rian)',
   stageOrFakeName: 'ꦗꦼꦤꦼꦁꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀/ꦱꦩꦫꦤ꧀(ꦮꦗꦶꦧ꧀)',
   realNameOptional: 'ꦗꦼꦤꦼꦁꦲꦱ꧀ꦭꦶ(ꦎꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)',
   fullNameLabel: 'ꦗꦼꦤꦼꦁꦲꦱ꧀ꦭꦶ',
-  phoneLabel: 'ꦤꦺꦴꦩꦼꦂꦮ꦳ꦠ꧀ꦱꦥ꧀',
+  phoneLabel: 'ꦤꦺꦴꦩꦼꦂ WhatsApp (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)',
+  whatsappLabel: 'ꦤꦺꦴꦩꦼꦂ WhatsApp ꦲꦏ꧀ꦠꦶꦥ꦳꧀ (ꦮꦗꦶꦧ꧀)',
+  whatsappNotice:
+    'ꦮꦗꦶꦧ꧀ ꦢꦶꦥꦸꦤꦶꦱꦶ ꦲꦩꦂꦒꦶ KawanCosplay ꦥꦸꦤꦶꦏ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦲꦝꦼꦝꦱꦂ WhatsApp. ꦱꦧꦼꦤ꧀ ꦲꦁꦒꦺꦴꦠ ꦤꦩꦸꦁ ꦒꦝꦃ ꦱꦼꦠꦸꦁꦒꦭ꧀ ꦲꦏꦸꦤ꧀ KCC ID. ꦭꦶꦤ꧀ꦏ꧀ ꦒꦿꦸꦥ꧀ WhatsApp ꦉꦱ꧀ꦩꦶ ꦧꦝꦺ ꦭꦁꦱꦸꦁ ꦏꦧꦶꦏꦏ꧀ ꦱꦱꦩ꧀ꦥꦸꦤꦶꦥꦸꦤ꧀ ꦔꦶꦫꦶꦩ꧀ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ꧉',
+  whatsappPlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦠꦸꦭꦝ: +62 812 3456 7890 ꦲꦸꦠꦮꦶ 0812...)',
+  discordLabel: 'ꦪꦸꦱꦼꦂꦤꦺꦩ꧀ Discord',
+  discordDesc:
+    'ꦊꦧꦼꦠꦏꦼꦤ꧀ ꦪꦸꦱꦼꦂꦤꦺꦩ꧀ Discord ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦏꦁꦒꦺ ꦱꦶꦤ꧀ꦏꦿꦺꦴꦤ꧀ ꦫꦺꦴꦭ꧀ ꦲꦶꦁ ꦱꦼꦂꦮ꦳ꦼꦂ Discord KawanCosplay (ꦠꦸꦭꦝ: alyachan ꦲꦸꦠꦮꦶ user#0001).',
+  discordPlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦠꦸꦭꦝ: alyachan ꦲꦸꦠꦮꦶ user#0001)',
   emailLabel: 'ꦲꦼꦩꦻꦭ꧀',
+  emailOptionalNotice: 'ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀꧉ ꦱꦒꦼꦢ꧀ ꦢꦶꦥꦸꦤ꧀ꦏꦺꦴꦱꦺꦴꦔꦏꦼꦤ꧀ ꦲꦩꦂꦒꦶ ꦢꦠꦧꦺꦱ꧀ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦏꦶꦠ ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ ꦤꦠꦺ ꦩ꧀ꦧꦼꦠꦲꦏꦼꦤ꧀ ꦲꦼꦩꦻꦭ꧀꧉',
+  emailRequiredNotice: 'ꦲꦼꦩꦻꦭ꧀ ꦮꦗꦶꦧ꧀ ꦢꦶꦥꦸꦤꦶꦱꦶ ꦏꦁꦒꦺ ꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀꧉',
+  emailPlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦠꦸꦭꦝ: jeneng@example.com)',
   ageCategoryLabel: 'ꦲꦸꦩꦸꦂ(ꦩꦶꦤꦺꦴꦂ/ꦢꦺꦮꦱ)',
-  legalAge: 'ꦢꦺꦮꦱ(꧇꧑꧘꧇+ꦠꦲꦸꦤ꧀)',
-  minorAge: 'ꦩꦶꦤꦺꦴꦂ(<꧇꧑꧘꧇ꦠꦲꦸꦤ꧀)',
+  legalAge: 'ꦲꦸꦩꦸꦂ ꦭꦺꦒꦭ꧀ / ꦢꦺꦮꦱ (18+ ꦠꦲꦸꦤ꧀)',
+  minorAge: 'ꦩꦶꦤꦺꦴꦂ / ꦧꦺꦴꦕꦃ (<18 ꦠꦲꦸꦤ꧀)',
   preferNotToSay: 'ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ꦚꦼꦧꦸꦠꦏꦺ',
   ageExplanationTitle: 'ꦠꦼꦒꦼꦱꦺꦩꦶꦤꦺꦴꦂꦭꦤ꧀ꦢꦺꦮꦱ',
-  ageExplanationDesc: 'ꦩꦶꦤꦺꦴꦂꦱꦔꦶꦱꦺꦴꦫꦺ꧇꧑꧘꧇ꦠꦲꦸꦤ꧀꧈ꦢꦺꦮꦱ꧇꧑꧘꧇ꦠꦲꦸꦤ꧀ꦩꦸꦁꦒꦃ꧉',
-  exactAgeOptional: 'ꦲꦸꦩꦸꦂꦥꦱ꧀(ꦎꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)',
+  ageExplanationDesc:
+    'ꦩꦶꦤꦺꦴꦂ ꦠꦼꦒꦼꦱꦺ ꦱꦶꦤ꧀ꦠꦼꦤ꧀ ꦏꦼꦩꦮꦺꦴꦤ꧀ ꦲꦶꦁꦏꦁ ꦲꦸꦩꦸꦫꦶꦥꦸꦤ꧀ ꦱꦔꦶꦱꦺꦴꦫꦺ 18 ꦠꦲꦸꦤ꧀ (ꦢꦺꦫꦺꦁ ꦢꦶꦮꦱ ꦩꦶꦠꦸꦫꦸꦠ꧀ ꦲꦸꦏꦸꦩ꧀)꧈ ꦱꦸꦥꦪ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦱꦒꦼꦢ꧀ ꦚ꧀ꦗꦒ ꦏꦱ꧀ꦭꦩꦼꦠꦤ꧀ ꦲꦶꦁꦏꦁ ꦠꦽꦥ꧀ ꦏꦭꦶꦪꦤ꧀ ꦲꦸꦩꦸꦂ꧉ ꦲꦸꦩꦸꦂ ꦭꦺꦒꦭ꧀ ꦠꦼꦒꦼꦱꦺ ꦲꦸꦩꦸꦂ 18 ꦠꦲꦸꦤ꧀ ꦩꦸꦁꦒꦃ꧉',
+  exactAgeOptional: 'ꦲꦸꦩꦸꦂ ꦥꦱ꧀ ꦲꦸꦠꦮ ꦠꦁꦒꦭ꧀ ꦭꦲꦶꦂ (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)',
+  ageDesc: 'ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀꧉ ꦱꦒꦼꦢ꧀ ꦢꦶꦥꦸꦤ꧀ꦏꦺꦴꦱꦺꦴꦔꦏꦼꦤ꧀ ꦲꦸꦠꦮꦶ ꦢꦶꦥꦸꦤ꧀ꦧꦒꦺꦏꦏꦼꦤ꧀ ꦏꦁꦒꦺ ꦲꦸꦕꦥꦤ꧀ ꦲꦩ꧀ꦧꦭ꧀ ꦮꦂꦱ ꦱꦏꦶꦁ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀꧉',
+  agePlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦠꦸꦭꦝ: 21 ꦠꦲꦸꦤ꧀ ꦲꦸꦠꦮꦶ 15 ꦩꦺꦲꦶ)',
+  locationTitle: 'ꦥꦁꦒꦺꦴꦤꦤ꧀ ꦢꦺꦴꦩꦶꦱꦶꦭꦶ (ꦱꦼꦢꦪ ꦤꦼꦒꦫꦶ & ꦏꦸꦛ ꦲꦶꦁ ꦢꦺꦴꦚ)',
+  locationNotice: 'KawanCosplay ꦏꦧꦸꦏ ꦏꦁꦒꦺ ꦲꦁꦒꦺꦴꦠ ꦱꦏꦶꦁ ꦥꦸꦤ꧀ꦢꦶ ꦏꦼꦩꦮꦺꦴꦤ꧀ ꦲꦶꦁ ꦢꦺꦴꦚ꧉',
   countryLabel: 'ꦤꦼꦒꦫ',
   provinceLabel: 'ꦥꦿꦺꦴꦮ꦳ꦶꦤ꧀ꦱꦶ',
   cityLabel: 'ꦏꦸꦛ/ꦏꦧꦸꦥꦠꦺꦤ꧀',
+  customCityPlaceholder: 'ꦱꦼꦫꦠ꧀ ꦏꦸꦛ ꦥꦁꦒꦺꦴꦤꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀...',
   roleTitle: 'ꦥꦼꦫꦤ꧀ꦲꦸꦠꦩ',
-  fandomTitle: 'ꦏꦫꦏ꧀ꦠꦼꦂꦥ꦳ꦮ꦳ꦺꦴꦫꦶꦠ꧀',
+  roleDesc: 'ꦏꦧꦸꦏ ꦏꦁꦒꦺ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪꦼꦂ꧈ ꦥꦼꦁꦒꦼꦩꦂ ꦲꦶꦢꦺꦴꦭ꧀ (ꦮꦺꦴꦠ)꧈ ꦲꦺꦴꦠꦏꦸ꧈ ꦥꦔꦿꦗꦶꦤ꧀꧈ ꦭꦤ꧀ ꦥꦚꦼꦁꦏꦸꦪꦸꦁ ꦲꦸꦩꦸꦩ꧀!',
+  roleOthers: 'ꦱꦤꦺꦱꦶꦥꦸꦤ꧀ / ꦥꦼꦫꦤ꧀ ꦏꦸꦱ꧀ꦠꦺꦴꦩ꧀',
+  roleOthersPlaceholder: 'ꦱꦼꦧꦸꦠꦏꦼꦤ꧀ ꦥꦼꦫꦤ꧀ ꦲꦸꦠꦮꦶ ꦏꦼꦲꦃꦭꦶꦪꦤ꧀ ꦏꦸꦱ꧀ꦠꦺꦴꦩ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦲꦶꦁ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀...',
+  fandomTitle: 'ꦥ꦳ꦤ꧀ꦢꦺꦴꦩ꧀ / ꦱꦺꦫꦶ ꦲꦤꦶꦩꦺ & ꦲꦶꦢꦺꦴꦭ꧀ ꦥ꦳ꦮ꦳ꦺꦴꦫꦶꦠ꧀',
+  fandomDesc: 'ꦥꦶꦭꦶꦃ ꦲꦸꦠꦮꦶ ꦱꦼꦫꦠ꧀ ꦲꦤꦶꦩꦺ꧈ ꦒꦺꦩ꧀꧈ ꦥ꦳ꦤ꧀ꦢꦺꦴꦩ꧀꧈ ꦲꦸꦠꦮꦶ ꦒꦿꦸꦥ꧀ ꦲꦶꦢꦺꦴꦭ꧀ ꦥ꦳ꦮ꦳ꦺꦴꦫꦶꦠ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀꧉',
+  fandomOther: 'ꦱꦤꦺꦱꦶꦥꦸꦤ꧀ / ꦩꦸꦭ꧀ꦠꦶꦒꦺꦤ꧀ꦫꦼ',
   experienceTitle: 'ꦥꦔꦭꦩꦤ꧀',
-  socialMediaTitle: 'ꦩꦺꦣꦶꦪꦱꦺꦴꦱꦶꦪꦭ꧀',
+  experienceDesc: 'ꦱꦩ꧀ꦥꦸꦤ꧀ ꦥꦶꦤ꧀ꦠꦼꦤ꧀ ꦢꦔꦸ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀ ꦲꦶꦁ ꦢꦺꦴꦚ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀ / ꦥꦺꦴꦥ꧀ ꦏꦸꦭ꧀ꦠꦸꦂ?',
+  socialMediaTitle: 'ꦩꦺꦢꦶꦪ ꦱꦺꦴꦱꦶꦪꦭ꧀ (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)',
+  socialMediaDesc: 'Instagram, TikTok, X, ꦲꦸꦠꦮꦶ ꦭꦶꦤ꧀ꦏ꧀ ꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀ (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)꧉',
+  socialMediaPlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦠꦸꦭꦝ: @cosplay_name)',
   portfolioTitle: 'ꦥꦺꦴꦂꦠꦺꦴꦥ꦳ꦺꦴꦭꦶꦪꦺꦴ',
+  portfolioDesc: 'ꦭꦶꦤ꧀ꦏ꧀ Google Drive ꦲꦸꦠꦮꦶ ꦱꦶꦠꦸꦱ꧀ ꦥꦺꦴꦂꦠꦺꦴꦥ꦳ꦺꦴꦭꦶꦪꦺꦴ (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)꧉',
+  portfolioPlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (https://drive.google.com/...)',
   avatarTitle: 'ꦥ꦳ꦺꦴꦠꦺꦴꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀',
+  avatarDesc:
+    'ꦲꦸꦁꦒꦃ ꦥ꦳ꦺꦴꦠꦺꦴ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀ ꦲꦸꦠꦮꦶ ꦏꦫꦏ꧀ꦠꦼꦂ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦏꦁꦒꦺ ꦏꦼꦂꦠꦸ ꦢꦶꦒꦶꦠꦭ꧀꧈ ꦲꦸꦠꦮꦶ ꦥꦶꦭꦶꦃ ꦲꦮ꦳ꦠꦂ ꦥꦿꦺꦱꦺꦠ꧀ ꦲꦶꦁ ꦔꦤ꧀ꦝꦥ꧀꧉',
+  uploadButton: 'ꦲꦸꦁꦒꦃ ꦥ꦳ꦺꦴꦠꦺꦴ (ꦩꦏ꧀ꦱ꧀ 2MB)',
+  presetAvatarLabel: 'ꦲꦸꦠꦮꦶ ꦥꦶꦭꦶꦃ ꦲꦶꦭꦸꦱ꧀ꦠꦿꦱꦶ ꦥꦿꦺꦱꦺꦠ꧀:',
   reasonTitle: 'ꦲꦭꦼꦱꦤ꧀ꦒꦧꦸꦁ',
-  codeOfConductAgreement: 'ꦱꦫꦸꦗꦸꦏ꧀ꦥꦲꦸꦒꦼꦫꦤ꧀(꧇꧑꧐꧐꧇%SFW)',
+  reasonDesc:
+    'ꦲꦊꦱꦤ꧀ ꦒꦧꦸꦁ ꦲꦸꦠꦮꦶ ꦥꦔꦗꦼꦁꦲꦗꦼꦁ (ꦠꦸꦭꦝ: ꦥꦢꦺꦴꦱ꧀ ꦏꦚ꧀ꦕ ꦏꦺꦴꦤ꧀ꦮ꦳ꦺꦤ꧀ꦱꦶ꧈ ꦱꦶꦤꦲꦸ ꦏꦿꦥ꦳꧀ꦠꦶꦁ꧈ ꦥ꦳ꦺꦴꦠꦺꦴꦱꦾꦸꦠ꧀ ꦧꦉꦁ)꧉',
+  reasonPlaceholder: 'ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀...',
+  codeOfConductTitle: 'ꦥꦼꦂꦱꦼꦠꦸꦗꦸꦮꦤ꧀ ꦥꦲꦸꦒꦼꦫꦤ꧀ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀',
+  codeOfConductAgreement:
+    'ꦏꦸꦭ ꦱꦫꦸꦗꦸꦏ꧀ ꦏꦭꦶꦪꦤ꧀ ꦥꦲꦸꦒꦼꦫꦤ꧀ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ KawanCosplay (100% SFW, ꦱꦩꦶ ꦔꦗꦺꦤꦶ꧈ ꦠꦤ꧀ꦥ ꦥꦼꦭꦺꦕꦺꦲꦤ꧀꧈ ꦥꦥꦤ꧀ ꦲꦶꦁꦏꦁ ꦲꦩꦤ꧀ ꦭꦤ꧀ ꦤꦩ꧀ꦥꦶ ꦱꦼꦢꦪ)',
   submitButton: 'ꦏꦶꦫꦶꦩ꧀ꦥꦼꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀',
+  submittingText: 'ꦱꦮꦼꦒ꧀ ꦔꦶꦫꦶꦩ꧀...',
   clearForm: 'ꦏꦺꦴꦱꦺꦴꦁꦲꦏꦺ',
   responseRecorded: 'ꦱꦩ꧀ꦥꦸꦤ꧀ꦏꦕꦛꦼꦠ꧀!',
-  viewMyKccId: 'ꦣꦼꦊꦁꦏꦂꦠꦸ',
+  singleAccountIdTitle: 'ꦲꦏꦸꦤ꧀ KCC ID ꦠꦸꦁꦒꦭ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (16 ꦢꦶꦒꦶꦠ꧀)',
+  whatsappUnlockedBadge: 'ꦒꦿꦸꦥ꧀ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ WhatsApp ꦏꦧꦶꦏꦏ꧀',
+  whatsappUnlockedTitle: 'ꦒꦧꦸꦁ ꦒꦿꦸꦥ꧀ WhatsApp ꦉꦱ꧀ꦩꦶ KawanCosplay',
+  whatsappUnlockedDesc:
+    'ꦩꦠꦸꦂ ꦤꦸꦮꦸꦤ꧀ ꦱꦩ꧀ꦥꦸꦤ꧀ ꦤ꧀ꦝꦥ꦳꧀ꦠꦂ! ꦏ꧀ꦭꦶꦏ꧀ ꦠꦺꦴꦩ꧀ꦧꦺꦴꦭ꧀ ꦲꦶꦁ ꦔꦤ꧀ꦝꦥ꧀ ꦏꦁꦒꦺ ꦒꦧꦸꦁ ꦲꦶꦁ ꦒꦿꦸꦥ꧀ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ WhatsApp ꦉꦱ꧀ꦩꦶ KawanCosplay:',
+  joinWhatsappButton: 'ꦒꦧꦸꦁ ꦒꦿꦸꦥ꧀ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ WhatsApp',
+  viewMyKccId: 'ꦠꦶꦔꦭꦶ & ꦲꦸꦤ꧀ꦝꦸꦃ KTA ꦢꦶꦒꦶꦠꦭ꧀ ꦏꦸꦭ',
   submitAnother: 'ꦏꦶꦫꦶꦩ꧀ꦩꦤꦺꦃ',
+
+  // Generic form bits
+  optionalTag: '(ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)',
+  officialHotlineLabel: 'ꦲꦺꦴꦠ꧀ꦭꦻꦤ꧀ WhatsApp ꦉꦱ꧀ꦩꦶ:',
+  needHelpHotline: 'ꦩ꧀ꦧꦼꦠꦲꦏꦼꦤ꧀ ꦥꦶꦠꦸꦭꦸꦔꦤ꧀? ꦲꦺꦴꦠ꧀ꦭꦻꦤ꧀ WhatsApp:',
+  clearFormConfirm: 'ꦏꦺꦴꦱꦺꦴꦔꦏꦼꦤ꧀ ꦱꦼꦢꦪ ꦲꦶꦱꦶꦪꦤ꧀ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ?',
+
+  // Backup WhatsApp number
+  addBackupPhone: '+ ꦒꦝꦃ ꦤꦺꦴꦩꦼꦂ WhatsApp ꦭꦁꦏꦸꦁ ꦱꦏꦶꦁ ꦱꦼꦠꦸꦁꦒꦭ꧀? ꦠꦩ꧀ꦧꦲꦏꦼꦤ꧀ ꦤꦺꦴꦩꦼꦂ ꦕꦝꦔꦤ꧀ (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)',
+  backupPhoneLabel: 'ꦤꦺꦴꦩꦼꦂ WhatsApp ꦕꦝꦔꦤ꧀ / ꦠꦩ꧀ꦧꦲꦤ꧀',
+  removeBackupPhone: 'ꦧꦠꦭ꧀ / ꦧꦸꦱꦏ꧀',
+  backupPhoneNotice:
+    'ꦤꦺꦴꦩꦼꦂ ꦥꦸꦤꦶꦏ ꦏꦱꦶꦩ꧀ꦥꦼꦤ꧀ ꦩꦶꦤꦁꦏ ꦤꦺꦴꦩꦼꦂ ꦕꦝꦔꦤ꧀꧉ ꦩꦼꦤꦮꦶ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦔꦶꦱꦶ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ ꦩꦭꦶꦃ ꦤꦭꦶꦏ ꦩ꧀ꦭꦼꦧꦼꦠ꧀ ꦔꦁꦒꦺꦴ ꦲꦏꦸꦤ꧀ ꦲꦶꦁꦏꦁ ꦱꦩꦶ꧈ KCC ID ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦠꦼꦠꦼꦥ꧀ ꦱꦩꦶ; ꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀ ꦢꦺꦴꦧꦺꦭ꧀ ꦲꦶꦁꦏꦁ ꦢꦶꦥꦸꦤ꧀ꦢꦩꦼꦭ꧀ ꦠꦤ꧀ꦥ ꦩ꧀ꦭꦼꦧꦼꦠ꧀ ꦧꦝꦺ ꦢꦶꦥꦸꦔꦧꦸꦔꦏꦼꦤ꧀ ꦢꦺꦤꦶꦁ ꦲꦢ꧀ꦩꦶꦤ꧀꧉',
+  backupPhonePlaceholder: 'ꦠꦸꦭꦝ: 08123456789 ꦲꦸꦠꦮꦶ +62 857...',
+
+  // Location (option labels only; the stored values stay 'Kustom / Wilayah Lainnya' / 'Kustom / Kota Lainnya')
+  customProvinceOption: 'ꦏꦸꦱ꧀ꦠꦺꦴꦩ꧀ / ꦮꦶꦭꦪꦃ ꦱꦤꦺꦱꦶꦥꦸꦤ꧀',
+  customCityOption: 'ꦏꦸꦱ꧀ꦠꦺꦴꦩ꧀ / ꦏꦸꦛ ꦱꦤꦺꦱꦶꦥꦸꦤ꧀',
+  customProvincePlaceholder: 'ꦱꦼꦫꦠ꧀ ꦤꦼꦒꦫ ꦧꦒꦶꦪꦤ꧀ / ꦥꦿꦺꦴꦮ꦳ꦶꦤ꧀ꦱꦶ / ꦮꦶꦭꦪꦃ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀...',
+
+  // Primary role labels (the stored primaryRole values are unchanged)
+  roleCosplayer: 'ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪꦼꦂ / ꦕꦿꦺꦴꦱ꧀ꦥ꧀ꦭꦪꦼꦂ',
+  roleIdolFan: 'ꦥꦼꦁꦒꦼꦩꦂ ꦲꦶꦢꦺꦴꦭ꧀ / ꦮꦺꦴꦠ (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
+  roleOtaku: 'ꦲꦺꦴꦠꦏꦸ ꦲꦤꦶꦩꦺ꧈ ꦩꦔ & ꦒꦺꦩ꧀ (ꦥꦼꦁꦒꦼꦩꦂ ꦲꦤꦶꦩꦺ꧈ ꦒꦺꦩ꧀ & ꦥꦺꦴꦥ꧀ ꦏꦸꦭ꧀ꦠꦸꦂ)',
+  roleGeneralEnthusiast: 'ꦥꦼꦁꦒꦼꦩꦂ ꦲꦸꦩꦸꦩ꧀ / ꦥꦚꦼꦁꦏꦸꦪꦸꦁ (ꦏꦚ꧀ꦕ ꦲꦸꦩꦸꦩ꧀꧈ ꦥꦚꦼꦁꦏꦸꦪꦸꦁ & ꦥꦼꦔꦸꦚ꧀ꦗꦸꦁ ꦏꦺꦴꦥ꧀ꦢꦂ)',
+  rolePropMaker: 'ꦥꦿꦺꦴꦥ꧀ ꦩꦏꦼꦂ / ꦥꦔꦿꦗꦶꦤ꧀ (ꦥꦤ꧀ꦢꦩꦼꦭ꧀ ꦱꦼꦚ꧀ꦗꦠ꧈ ꦲꦂꦩꦺꦴꦂ & ꦲꦏ꧀ꦱꦺꦱꦺꦴꦫꦶꦱ꧀)',
+  rolePhotographer: 'ꦥ꦳ꦺꦴꦠꦺꦴꦒꦿꦥ꦳ꦼꦂ / ꦮ꦳ꦶꦢꦺꦲꦺꦴꦒꦿꦥ꦳ꦼꦂ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀',
+  roleCostumeMaker: 'ꦥꦤ꧀ꦢꦩꦼꦭ꧀ ꦏꦺꦴꦱ꧀ꦠꦸꦩ꧀ / ꦠꦸꦏꦁ ꦗꦲꦶꦠ꧀ / ꦥꦼꦤꦠ ꦮꦶꦒ꧀',
+  roleEventCrew: 'ꦏꦿꦸ ꦲꦕꦫ꧈ ꦱ꧀ꦠꦥ꦳꧀ ꦥꦁꦒꦸꦁ & ꦱꦸꦏꦫꦺꦭꦮꦤ꧀',
+  roleContentCreator: 'ꦏꦿꦺꦲꦠꦺꦴꦂ ꦏꦺꦴꦤ꧀ꦠꦺꦤ꧀ / ꦱ꧀ꦠꦿꦶꦩꦼꦂ',
+
+  // Fandom labels (the stored fandom values are unchanged)
+  fandomHoyoverse: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
+  fandomShonenSeinen: 'ꦲꦤꦶꦩꦺ & ꦩꦔ ꦱꦾꦺꦴꦤꦺꦤ꧀ / ꦱꦺꦲꦶꦤꦺꦤ꧀ (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+  fandomIdolMusic: 'ꦲꦶꦢꦺꦴꦭ꧀ & ꦩꦸꦱꦶꦏ꧀ (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
+  fandomIsekaiFantasy: 'ꦲꦶꦱꦺꦏꦻ & ꦥ꦳ꦤ꧀ꦠꦱꦶ (Frieren, Slime, Re:Zero, DanMachi)',
+  fandomGamingEsports: 'ꦒꦺꦩ꧀ & ꦲꦺꦱ꧀ꦥꦺꦴꦂꦠ꧀ꦱ꧀ (Valorant, League of Legends, MLBB, Elden Ring)',
+  fandomVtuber: 'VTuber (Hololive, Nijisanji, VTuber ꦲꦶꦤ꧀ꦢꦶ)',
+  fandomTokusatsuMecha: 'ꦠꦺꦴꦏꦸꦱꦠ꧀ꦱꦸ & ꦩꦺꦕ (Kamen Rider, Super Sentai, Gundam)',
+  fandomWesternPopCulture: 'ꦥꦺꦴꦥ꧀ ꦏꦸꦭ꧀ꦠꦸꦂ ꦏꦸꦭꦺꦴꦤ꧀ (Marvel, DC, Star Wars, Disney)',
+  fandomOriginalCharacter: 'ꦏꦫꦏ꧀ꦠꦼꦂ ꦲꦺꦴꦫꦶꦱꦶꦤꦭ꧀ (OC) & ꦥ꦳ꦤ꧀ꦠꦱꦶ ꦏꦿꦺꦲꦠꦶꦥ꦳꧀',
+
+  // Experience labels (the stored experience values are unchanged)
+  experienceBeginner: 'ꦥꦩꦸꦭ (< 1 ꦠꦲꦸꦤ꧀)',
+  experienceOneToThreeYears: '1 - 3 ꦠꦲꦸꦤ꧀',
+  experienceVeteran: 'ꦮ꦳ꦺꦠꦼꦫꦤ꧀ (> 3 ꦠꦲꦸꦤ꧀)',
+  experienceCasual: 'ꦱꦤ꧀ꦠꦻ / ꦥꦼꦁꦒꦼꦩꦂ',
+
+  // Avatar
+  avatarTooLarge: 'ꦲꦸꦏꦸꦫꦤ꧀ ꦥ꦳ꦻꦭ꧀ ꦥꦭꦶꦁ ꦲꦒꦼꦁ {maxMb}MB ꦏꦁꦒꦺ ꦥ꦳ꦺꦴꦠꦺꦴ ꦲꦮ꦳ꦠꦂ꧉',
+  photoProcessFailed: 'ꦥ꦳ꦺꦴꦠꦺꦴ ꦒꦒꦭ꧀ ꦢꦶꦥꦸꦤ꧀ꦥꦿꦺꦴꦱꦺꦱ꧀꧉',
+  avatarPreviewAlt: 'ꦠꦶꦭꦶꦏꦤ꧀ ꦲꦮ꦳ꦠꦂ',
+  presetAvatarAria: 'ꦲꦮ꦳ꦠꦂ ꦥꦿꦺꦱꦺꦠ꧀ {number}',
+
+  // Validation errors
+  nameRequiredError: 'ꦩꦁꦒ ꦲꦶꦱꦶ ꦗꦼꦤꦼꦁ ꦕꦺꦴꦱ꧀ꦥ꧀ꦭꦪ꧀ / ꦱꦩꦫꦤ꧀ / ꦗꦼꦤꦼꦁ ꦥꦁꦒꦸꦁ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀꧉',
+  emailRequiredError: 'ꦲꦭꦩꦠ꧀ ꦲꦼꦩꦻꦭ꧀ ꦮꦗꦶꦧ꧀ ꦢꦶꦥꦸꦤꦶꦱꦶ꧉',
+  whatsappRequiredError:
+    'ꦤꦺꦴꦩꦼꦂ WhatsApp ꦲꦶꦁꦏꦁ ꦮ꦳ꦭꦶꦢ꧀ ꦮꦗꦶꦧ꧀ ꦢꦶꦥꦸꦤꦶꦱꦶ (ꦥꦭꦶꦁ ꦱꦼꦏꦼꦝꦶꦏ꧀ {minDigits} ꦢꦶꦒꦶꦠ꧀) ꦲꦩꦂꦒꦶ KawanCosplay ꦥꦸꦤꦶꦏ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦲꦝꦼꦝꦱꦂ WhatsApp.',
+  backupPhoneTooShortError: 'ꦤꦺꦴꦩꦼꦂ WhatsApp ꦕꦝꦔꦤ꧀ ꦥꦭꦶꦁ ꦱꦼꦏꦼꦝꦶꦏ꧀ {minDigits} ꦢꦶꦒꦶꦠ꧀ (ꦲꦸꦠꦮꦶ ꦏꦺꦴꦱꦺꦴꦔꦏꦼꦤ꧀ ꦏꦼꦩꦮꦺꦴꦤ꧀)꧉',
+  customCityRequiredError: 'ꦩꦁꦒ ꦱꦼꦫꦠ꧀ ꦏꦸꦛ / ꦏꦧꦸꦥꦠꦺꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦥꦶꦭꦶꦲꦤ꧀ "{option}").',
+  codeOfConductRequiredError: 'ꦩꦁꦒ ꦕꦼꦤ꧀ꦛꦁ ꦥꦼꦂꦱꦼꦠꦸꦗꦸꦮꦤ꧀ ꦥꦲꦸꦒꦼꦫꦤ꧀ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ KawanCosplay.',
+
+  // Demo sandbox (admin only)
+  sandboxActiveNotice: 'ꦩꦺꦴꦢꦺ ꦱꦤ꧀ꦢ꧀ꦧꦺꦴꦏ꧀ꦱ꧀ ꦲꦏ꧀ꦠꦶꦥ꦳꧀: ꦲꦸꦗꦶ ꦢꦺꦩꦺꦴ ꦥꦸꦤꦶꦏ ꦏꦥꦶꦱꦃ ꦭꦤ꧀ ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ ꦧꦝꦺ ꦏꦱꦶꦩ꧀ꦥꦼꦤ꧀ ꦲꦶꦁ ꦢꦠꦧꦺꦱ꧀ Firestore.',
+  exitSandbox: 'ꦩꦼꦢꦭ꧀ ꦱꦏꦶꦁ ꦱꦤ꧀ꦢ꧀ꦧꦺꦴꦏ꧀ꦱ꧀',
+  sandboxSubmissionNotice:
+    '🧪 ꦲꦸꦗꦶ ꦢꦺꦩꦺꦴ ꦱꦤ꧀ꦢ꧀ꦧꦺꦴꦏ꧀ꦱ꧀: ꦲꦸꦗꦶ ꦥꦸꦤꦶꦏ ꦢꦶꦥꦸꦤ꧀ꦭꦩ꧀ꦥꦲꦏꦼꦤ꧀ ꦲꦶꦁ ꦩꦺꦩꦺꦴꦫꦶ ꦭꦺꦴꦏꦭ꧀ ꦭꦤ꧀ ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ ꦏꦱꦶꦩ꧀ꦥꦼꦤ꧀ ꦲꦶꦁ ꦢꦠꦧꦺꦱ꧀꧉',
+
+  // Success screen
+  duplicateMergedNotice:
+    '✓ ꦢꦠ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦕꦺꦴꦕꦺꦴꦒ꧀ ꦏꦭꦶꦪꦤ꧀ ꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀ ꦱꦢꦺꦫꦺꦔꦶꦥꦸꦤ꧀꧉ ꦱꦧꦼꦤ꧀ ꦲꦁꦒꦺꦴꦠ ꦤꦩꦸꦁ ꦒꦝꦃ ꦱꦼꦠꦸꦁꦒꦭ꧀ KCC ID — KCC ID ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦠꦼꦠꦼꦥ꧀ ꦱꦩꦶ ꦭꦤ꧀ ꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦱꦩ꧀ꦥꦸꦤ꧀ ꦢꦶꦥꦸꦤꦚꦫꦶ꧉',
+  verifiedMemberLabel: 'ꦲꦁꦒꦺꦴꦠ ꦏꦮ꦳ꦺꦫꦶꦥ꦳ꦶꦏꦱꦶ:',
+  discordValue: 'Discord: {username}',
+
+  // Prefilled WhatsApp message to the admins (one line each; optional lines are left out)
+  whatsappMessageIntro: 'ꦲꦭꦺꦴ ꦲꦢ꧀ꦩꦶꦤ꧀ KawanCosplay! ꦏꦸꦭ ꦱꦩ꧀ꦥꦸꦤ꧀ ꦔꦶꦱꦶ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ ꦥꦤ꧀ꦝꦥ꦳꧀ꦠꦫꦤ꧀ ꦲꦁꦒꦺꦴꦠ꧉',
+  whatsappMessageName: 'ꦗꦼꦤꦼꦁ: {name}',
+  whatsappMessageKccId: 'KCC ID: {id}',
+  whatsappMessagePhone: 'ꦤꦺꦴꦩꦼꦂ WhatsApp: {phone}',
+  whatsappMessagePhone2: 'ꦤꦺꦴꦩꦼꦂ WhatsApp 2: {phone}',
+  whatsappMessageRequest: 'ꦚꦸꦮꦸꦤ꧀ ꦭꦶꦤ꧀ꦏ꧀ ꦲꦸꦤ꧀ꦝꦔꦤ꧀ ꦝꦠꦼꦁ ꦒꦿꦸꦥ꧀ WhatsApp KawanCosplay Community. ꦩꦠꦸꦂ ꦤꦸꦮꦸꦤ꧀!',
 };
 
 export default registration;

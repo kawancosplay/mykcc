@@ -142,13 +142,17 @@
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
-    /* No rubber-band / pull-to-refresh behind the fixed nav; scroll areas use `contain` */
-    overscroll-behavior-y: none;
     scroll-padding-top: calc(var(--nav-h) + var(--safe-top));
   }
 
-  body {
-    overscroll-behavior-y: none;
+  /* Installed app only: no rubber-band / pull-to-refresh behind the sticky nav. In a browser tab the
+     default stays, because pull-to-refresh is how phone users reload (e.g. to pick up a new build
+     after a deploy). Scroll areas inside sheets use `overscroll-behavior: contain` themselves. */
+  @media (display-mode: standalone), (display-mode: fullscreen) {
+    html,
+    body {
+      overscroll-behavior-y: none;
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -242,13 +246,13 @@ body::before {
   }
 }
 
-/* Modal / sheet open: freeze the page behind (toggled by useScrollLock in src/lib/motion.ts) */
-html.scroll-locked,
-html.scroll-locked body {
-  overflow: hidden;
-}
-
+/* Modal / sheet open: freeze the page behind (toggled by useSheetScrollLock in
+   src/components/UploadPhotoModal.tsx; move to src/lib/motion.ts when that module exists).
+   Lock the ROOT only. If body also gets `overflow: hidden` it becomes a scroll container, and the
+   sticky header then sticks to body (scrollTop 0) instead of the viewport: it jumps off screen
+   while a sheet is open on a scrolled page. */
 html.scroll-locked {
+  overflow: hidden;
   scrollbar-gutter: stable;
 }
 

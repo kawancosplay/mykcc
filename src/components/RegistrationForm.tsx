@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Sparkles,
   User,
@@ -39,6 +40,8 @@ import {
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
 import type { LanguageCode, TranslationKey } from '../i18n';
+import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
+import { haptic } from '../lib/haptic';
 import { DemoFormTester } from './DemoFormTester';
 
 interface RegistrationFormProps {
@@ -117,6 +120,37 @@ const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
 const CUSTOM_CITY_OPTION = 'Kustom / Kota Lainnya';
 const LEGACY_CUSTOM_CITY_OPTION = 'Other City / County';
 const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city === LEGACY_CUSTOM_CITY_OPTION;
+
+// Field a validation error points at: it gets aria-invalid (the red .glass-input border) until the next submit
+type ErrorField = 'name' | 'email' | 'phone' | 'phone2' | 'customCity' | 'codeOfConduct';
+
+// Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
+// control where it was while giving the tint some room.
+const CHOICE_ROW_CLASS =
+  'pressable-soft flex gap-3 -mx-2 px-2 rounded-xl cursor-pointer active:bg-white/[0.06]';
+
+// The file input is visually hidden (sr-only, still focusable), so its label shows the focus ring
+const FILE_PICKER_FOCUS_RING =
+  'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[rgba(83,255,192,0.85)]';
+
+/**
+ * One-shot highlight behind an error message: a rose tint that fades out (no shake, no movement). `pulse`
+ * changes on every failed attempt, which remounts the flash so it plays again. The parent needs
+ * `relative isolate` and a border radius.
+ */
+const ErrorFlash: React.FC<{ pulse: number }> = ({ pulse }) => {
+  const reduced = useReducedMotion() === true;
+  return (
+    <motion.span
+      key={pulse}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-rose-500/30"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: reduced ? DURATION.base : 0.7, ease: EASE.outSoft }}
+    />
+  );
+};
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   memberCount,

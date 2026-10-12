@@ -172,7 +172,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
                   </div>
                   <div className="w-full glass-well rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-rose-500 to-pink-500 h-2.5 rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-rose-500 to-pink-500 h-2.5 rounded-full transition-[width] duration-500 ease-out-soft"
                       style={{ width: `${pct}%` }}
                     ></div>
                   </div>
@@ -205,7 +205,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
                   </div>
                   <div className="w-full glass-well rounded-full h-2.5 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2.5 rounded-full transition-[width] duration-500 ease-out-soft"
                       style={{ width: `${pct}%` }}
                     ></div>
                   </div>

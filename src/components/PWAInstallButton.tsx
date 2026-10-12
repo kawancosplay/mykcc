@@ -51,7 +51,7 @@ export const PWAInstallButton: React.FC = () => {
       <button
         type="button"
         onClick={install}
-        className="flex items-center justify-center gap-2 min-h-11 w-full rounded-xl bg-gradient-to-r from-purple-600 to-rose-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-purple-500 hover:to-rose-500 pressable"
+        className="glass-button min-h-11 w-full rounded-xl border-purple-500/30 px-4 py-2 text-xs font-bold text-slate-200 pressable"
       >
         <Download className="w-4 h-4" aria-hidden="true" />
         {t('common.pwaInstall')}

@@ -332,10 +332,12 @@ export const SiteEditorModal: React.FC = () => {
                   {backgroundPresets.map((bg) => {
                     const isSelected = theme.background === bg.id;
                     return (
-                      <div
+                      <button
                         key={bg.id}
+                        type="button"
+                        aria-pressed={isSelected}
                         onClick={() => updateTheme({ background: bg.id })}
-                        className={`pressable-soft p-4 rounded-3xl border cursor-pointer flex flex-col justify-between ${
+                        className={`pressable-soft w-full p-4 rounded-3xl border text-left whitespace-normal flex flex-col justify-between ${
                           isSelected
                             ? 'bg-purple-950/40 border-purple-400 shadow-xl ring-2 ring-purple-400'
                             : 'glass-well hover:border-purple-500/40'
@@ -354,7 +356,7 @@ export const SiteEditorModal: React.FC = () => {
                           className="h-14 rounded-2xl border border-white/20 shadow-inner"
                           style={{ background: bg.previewGrad }}
                         ></div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -463,10 +465,12 @@ export const SiteEditorModal: React.FC = () => {
                   {fontOptions.map((f) => {
                     const isSelected = theme.font === f.id;
                     return (
-                      <div
+                      <button
                         key={f.id}
+                        type="button"
+                        aria-pressed={isSelected}
                         onClick={() => updateTheme({ font: f.id })}
-                        className={`pressable-soft p-4 rounded-2xl border cursor-pointer flex items-center justify-between ${
+                        className={`pressable-soft w-full p-4 rounded-2xl border text-left whitespace-normal flex items-center justify-between ${
                           isSelected
                             ? 'bg-purple-950/60 border-purple-400 shadow-md ring-2 ring-purple-400'
                             : 'glass-well hover:border-purple-500/30'
@@ -496,7 +500,7 @@ export const SiteEditorModal: React.FC = () => {
                         </div>
 
                         {isSelected && <Check className="w-5 h-5 text-purple-400 shrink-0 ml-3" />}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

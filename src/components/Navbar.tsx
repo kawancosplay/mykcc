@@ -187,10 +187,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center justify-end gap-1 md:gap-2 shrink-0 h-full flex-1">
             <button
               type="button"
-              className={`lg:hidden min-touch p-2.5 rounded-2xl border shadow-md pressable flex items-center justify-center ${
-                isMobileMenuOpen
-                  ? 'bg-rose-500/25 text-rose-300 border-rose-500/50 shadow-rose-900/40'
-                  : 'liquid-glass-menu-item text-white border-white/20'
+              className={`glass-button lg:hidden min-touch p-2.5 rounded-2xl pressable ${
+                isMobileMenuOpen ? 'bg-rose-500/25 text-rose-300 border-rose-500/50' : 'text-white'
               }`}
               onClick={handleToggleMobileMenu}
               aria-label={isMobileMenuOpen ? t('common.closeMenu') : t('common.openMenu')}
@@ -481,7 +479,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     type="button"
                     onClick={() => { onLogout(); handleCloseMobileMenu(); }}
-                    className="flex items-center justify-center gap-2 p-3 min-h-11 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 hover:bg-rose-500/30 font-bold pressable mt-1"
+                    className="glass-button w-full p-3 min-h-11 rounded-2xl bg-rose-500/20 border-rose-500/40 text-rose-200 hover:bg-rose-500/30 font-bold pressable mt-1"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>{t('common.navLogout')}</span>
@@ -490,7 +488,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     type="button"
                     onClick={() => { onOpenAuth(); handleCloseMobileMenu(); }}
-                    className="flex items-center justify-center gap-2 p-3.5 min-h-11 rounded-2xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-bold pressable shadow-lg border border-white/20 mt-1"
+                    className="btn-primary w-full p-3.5 min-h-11 rounded-2xl pressable mt-1"
                   >
                     <UserIcon className="w-4 h-4" />
                     <span>{t('common.navLogin')}</span>

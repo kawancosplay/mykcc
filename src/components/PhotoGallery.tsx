@@ -21,7 +21,7 @@ import { format16DigitUserId } from '../lib/idGenerator';
 import { User as FirebaseUser } from 'firebase/auth';
 import { useI18n } from '../i18n';
 import type { LanguageCode } from '../i18n';
-import { OTHER_EVENT_VALUE, PHOTO_EVENT_OPTIONS } from './UploadPhotoModal';
+import { OTHER_EVENT_VALUE, PHOTO_EVENT_OPTIONS, useSheetScrollLock } from './UploadPhotoModal';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -66,6 +66,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   const [selectedEvent, setSelectedEvent] = useState('ALL');
   const [activePhotoModal, setActivePhotoModal] = useState<Photo | null>(null);
   const photoTitleId = useId();
+  useSheetScrollLock(activePhotoModal !== null);
 
   // The photo viewer is read-only: Escape closes it
   useEffect(() => {

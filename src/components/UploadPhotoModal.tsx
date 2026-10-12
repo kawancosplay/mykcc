@@ -1,4 +1,4 @@
-import React, { useId, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { X, Upload, Camera, Sparkles, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Member, Photo } from '../types';
 import { addPhotoToFirestore, PHOTO_FIELD_LIMITS } from '../lib/galleryService';
@@ -32,6 +32,30 @@ export const PHOTO_EVENT_OPTIONS: ReadonlyArray<{ value: string; labelKey?: Tran
   { value: OTHER_EVENT_VALUE, labelKey: 'gallery.eventOther' },
 ];
 
+/**
+ * Freezes the page behind an open sheet (`html.scroll-locked` in index.css), so a drag on a non-scrolling
+ * part of the sheet cannot scroll the gallery underneath. Counted on <html data-scroll-locks> so stacked
+ * sheets unlock only when the last one closes. Replace with `useScrollLock` from src/lib/motion.ts once
+ * that module exists.
+ */
+export function useSheetScrollLock(active: boolean): void {
+  useEffect(() => {
+    if (!active) return;
+    const root = document.documentElement;
+    root.dataset.scrollLocks = String(Number(root.dataset.scrollLocks || 0) + 1);
+    root.classList.add('scroll-locked');
+    return () => {
+      const remaining = Math.max(0, Number(root.dataset.scrollLocks || 1) - 1);
+      if (remaining === 0) {
+        delete root.dataset.scrollLocks;
+        root.classList.remove('scroll-locked');
+      } else {
+        root.dataset.scrollLocks = String(remaining);
+      }
+    };
+  }, [active]);
+}
+
 interface UploadPhotoModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -57,6 +81,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleId = useId();
+  useSheetScrollLock(isOpen);
 
   if (!isOpen) return null;
 

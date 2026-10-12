@@ -14,6 +14,7 @@ import {
   Upload,
   Globe,
   ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import { Member } from '../types';
 import { format16DigitUserId } from '../lib/idGenerator';
@@ -144,6 +145,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       .map((c) => ({ ...c, label: countryName(c.isoCode, c.name) }))
       .sort((a, b) => (a.isoCode === 'ID' ? -1 : b.isoCode === 'ID' ? 1 : collator.compare(a.label, b.label)));
   }, [allCountries, countryName, intlLocale]);
+  // ~250 <option> elements: built once per language / list change, so React skips them on every keystroke
+  const countryOptionElements = useMemo(
+    () =>
+      countryOptions.map((c) => (
+        <option key={c.isoCode} value={c.name}>
+          {c.flag} {c.label} ({c.isoCode})
+        </option>
+      )),
+    [countryOptions]
+  );
   const availableProvinces = useMemo(
     () => getStatesOfCountryByName(formData.country),
     [formData.country, geoVersion]
@@ -512,11 +523,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 }}
                 className="glass-input w-full text-base sm:text-sm"
               >
-                {countryOptions.map((c) => (
-                  <option key={c.isoCode} value={c.name}>
-                    {c.flag} {c.label} ({c.isoCode})
-                  </option>
-                ))}
+                {countryOptionElements}
               </select>
             </div>
 
@@ -676,8 +683,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           <div className="sticky bottom-0 z-20 mt-6 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none sm:flex sm:justify-end">
             <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2 sm:max-w-md">
               {errorMsg && (
-                <div className="px-2 pt-1 text-sm text-rose-200">
-                  {errorMsg}
+                <div role="alert" className="flex items-start gap-2 px-2 pt-1 text-sm text-rose-200">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
                 </div>
               )}
 

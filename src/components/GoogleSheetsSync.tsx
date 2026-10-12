@@ -869,7 +869,7 @@ function onFormSubmit(e) {
                     {t('sheets.previewTitle')}
                   </p>
                   <table className="w-full text-left text-xs">
-                    <thead className="text-slate-400 border-b border-slate-800 font-mono text-[10px] uppercase">
+                    <thead className="text-slate-400 border-b border-white/10 font-mono text-[10px] uppercase">
                       <tr>
                         <th className="py-1.5 pr-3">{t('sheets.previewColName')}</th>
                         <th className="py-1.5 px-3">WhatsApp</th>
@@ -877,7 +877,7 @@ function onFormSubmit(e) {
                         <th className="py-1.5 pl-3">{t('sheets.previewColCity')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                    <tbody className="divide-y divide-white/[0.06] text-slate-200">
                       {previewRows.slice(0, 4).map((r, idx) => {
                         const cosIdx = columnMapping.name >= 0 ? columnMapping.name : (columnMapping.cosplayName ?? -1);
                         const nameVal =
@@ -969,7 +969,7 @@ function onFormSubmit(e) {
                 type="button"
                 onClick={handleAuthorizeGoogle}
                 disabled={isLoadingSheets}
-                className="pressable px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shrink-0 flex items-center space-x-2 shadow-md disabled:opacity-50"
+                className="pressable px-4 py-2.5 pointer-coarse:min-h-11 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shrink-0 flex items-center space-x-2 shadow-md disabled:opacity-50"
               >
                 <Key className="w-4 h-4 text-emerald-600" />
                 <span>{t('sheets.grantAccessButton')}</span>
@@ -982,14 +982,19 @@ function onFormSubmit(e) {
         <div className="lg:col-span-5 space-y-6">
           {/* REAL-TIME LIVE POLLER */}
           <div className="glass-card border-emerald-500/30 rounded-3xl p-6 sm:p-7 relative overflow-hidden">
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            {/* Soft glow: a radial gradient instead of `filter: blur()` (no offscreen blur layer) */}
+            <div
+              aria-hidden="true"
+              className="absolute top-0 right-0 -mr-24 -mt-24 w-64 h-64 rounded-full pointer-events-none bg-[radial-gradient(closest-side,rgba(16,185,129,0.14),rgba(16,185,129,0))]"
+            ></div>
 
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <span className="flex h-3 w-3 relative">
+                  {/* Only pulse while the poller is running */}
                   <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
-                      isAutoSyncActive ? 'bg-emerald-400 opacity-75' : 'bg-slate-600'
+                    className={`absolute inline-flex h-full w-full rounded-full ${
+                      isAutoSyncActive ? 'animate-ping bg-emerald-400 opacity-75' : 'bg-slate-600'
                     }`}
                   ></span>
                   <span
@@ -1005,7 +1010,7 @@ function onFormSubmit(e) {
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                   isAutoSyncActive
                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                    : 'bg-slate-800 text-slate-400'
+                    : 'bg-white/[0.07] text-slate-400 border border-white/10'
                 }`}
               >
                 {isAutoSyncActive ? t('sheets.pollerActive') : t('sheets.pollerInactive')}
@@ -1052,7 +1057,7 @@ function onFormSubmit(e) {
               }}
               className={`pressable w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 ${
                 isAutoSyncActive
-                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                  ? 'glass-button text-slate-200'
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30'
               }`}
             >

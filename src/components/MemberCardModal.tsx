@@ -128,9 +128,18 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               ref={cardRef}
               className="relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-gradient-to-br from-white/[0.10] via-slate-900/95 to-purple-950/80 shadow-2xl shadow-rose-950/50 mb-6 text-white"
             >
-              {/* Hologram sheen effects */}
-              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-48 h-48 bg-gradient-to-br from-rose-500/30 to-pink-500/20 rounded-full blur-2xl pointer-events-none"></div>
-              <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-48 h-48 bg-gradient-to-tr from-indigo-500/30 to-rose-500/20 rounded-full blur-2xl pointer-events-none"></div>
+              {/* Hologram sheen effects: soft radial glows (same centres as the old blurred circles) instead of
+                  `filter: blur()`, which re-rasterises on every frame of the sheet's slide-up animation */}
+              <div
+                aria-hidden="true"
+                className="absolute top-0 right-0 -mr-28 -mt-28 w-64 h-64 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(closest-side, rgba(244, 63, 94, 0.32) 0%, rgba(236, 72, 153, 0.14) 60%, rgba(236, 72, 153, 0) 100%)' }}
+              ></div>
+              <div
+                aria-hidden="true"
+                className="absolute bottom-0 left-0 -ml-28 -mb-28 w-64 h-64 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(closest-side, rgba(99, 102, 241, 0.32) 0%, rgba(244, 63, 94, 0.14) 60%, rgba(244, 63, 94, 0) 100%)' }}
+              ></div>
 
               {/* Card Top Brand */}
               <div className="flex justify-between items-start gap-3 mb-5 border-b border-rose-500/20 pb-4 relative z-10">

@@ -1234,7 +1234,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </p>
                     <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
                       <div
-                        className="h-full bg-indigo-400 transition-all"
+                        className="h-full bg-indigo-400 transition-[width]"
                         style={{
                           width: `${
                             bulkMergeProgress.total > 0
@@ -1410,7 +1410,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onClick={handlePurgeAll}
                   disabled={isPurging}
                   title={t('admin.purgeButtonTitle')}
-                  className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-md"
+                  className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Trash2 className={`w-3.5 h-3.5 ${isPurging ? 'animate-spin' : ''}`} />
                   <span>{isPurging ? t('admin.purging') : t('admin.purgeButton')}</span>
@@ -1419,7 +1419,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* Filter Summary */}
-            <div className="mt-4 flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/60">
+            <div className="mt-4 flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-white/10">
               <span>
                 {renderRich(t('admin.showingMembers', { total: formatNumber(members.length) }), {
                   shown: <strong>{formatNumber(filteredMembers.length)}</strong>,
@@ -1445,7 +1445,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="liquid-glass-card rounded-3xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
+                <thead className="bg-[color:var(--glass-fill-well)] text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
                   <tr>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('name')}>
                       <div className="inline-flex items-center gap-1.5">
@@ -1511,13 +1511,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <th className="py-4 px-4 text-right">{t('admin.colActions')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/80">
+                <tbody className="divide-y divide-white/[0.06]">
                   {filteredMembers.length > 0 ? (
                     filteredMembers.map((m) => (
-                      <tr key={m.id} className="hover:bg-slate-800/40 transition-colors">
+                      <tr key={m.id} className="hover:bg-white/[0.04] transition-colors">
                         <td className="py-4 px-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0">
+                            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-950 border border-white/10 shrink-0">
                               {m.avatarUrl ? (
                                 <img src={m.avatarUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                               ) : (
@@ -1652,7 +1652,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onClick={() => onSelectMember(m)}
                               title={t('admin.viewKccIdTitle')}
                               aria-label={t('admin.viewKccIdTitle')}
-                              className="touch-target pressable p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                              className="touch-target pressable p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </button>
@@ -1661,7 +1661,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onClick={() => handleDeleteMember(m)}
                               title={t('admin.deleteMemberTitle')}
                               aria-label={t('admin.deleteMemberTitle')}
-                              className="touch-target pressable p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300"
+                              className="touch-target pressable p-1.5 rounded-lg bg-rose-950/60 border border-rose-500/30 hover:bg-rose-900 text-rose-300"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

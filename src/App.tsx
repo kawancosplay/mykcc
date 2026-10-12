@@ -43,7 +43,7 @@ import {
 import { format16DigitUserId, MAIN_ACCOUNT_UID } from './lib/idGenerator';
 import { useI18n } from './i18n';
 import { useSiteTheme } from './lib/themeContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { triggerHaptic } from './lib/haptic';
 import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-react';
 

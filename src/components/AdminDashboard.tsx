@@ -676,7 +676,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     return (
       <div className="max-w-md mx-auto py-16 px-4 animate-fade-in text-slate-100">
-        <div className="bg-slate-900/90 border border-amber-500/30 rounded-3xl p-8 shadow-2xl text-center">
+        <div className="glass-card glass-raised border-amber-500/30 rounded-3xl p-8 text-center">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-5 text-amber-400">
             <Lock className="w-8 h-8" />
           </div>
@@ -712,7 +712,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <button
                 onClick={onOpenAuth}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 text-white font-bold text-sm shadow-lg hover:brightness-110 transition-all flex items-center justify-center space-x-2"
+                className="btn-primary pressable w-full py-3 px-4 text-sm whitespace-normal"
               >
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>{t('admin.signInWithAdminGoogleEmail', { email: OFFICIAL_ADMIN_EMAIL })}</span>
@@ -721,7 +721,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {user && (
                 <button
                   onClick={onLogout}
-                  className="w-full mt-3 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center justify-center space-x-2"
+                  className="glass-button pressable w-full mt-3 px-4 text-xs"
                 >
                   <LogOut className="w-4 h-4 text-rose-400" />
                   <span>{t('admin.signOutThisAccount')}</span>
@@ -730,7 +730,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </>
           )}
 
-          <div className="mt-6 pt-4 border-t border-slate-800 space-y-3">
+          <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
             <a
               href="https://wa.me/6285711032782"
               target="_blank"
@@ -750,15 +750,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <div className="w-full mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8 animate-fade-in text-slate-100">
       {/* Top Admin Banner */}
-      <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 mb-8 shadow-2xl relative overflow-hidden">
+      <div className="liquid-glass-card glass-raised rounded-3xl p-6 sm:p-8 mb-8 relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1.5">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
                 <ShieldCheck className="w-3.5 h-3.5 text-rose-400" />
                 <span>{t('admin.managementPortalBadge')}</span>
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="glass-chip font-mono font-normal bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                 {t('admin.verifiedAccessBadge')}
               </span>
             </div>
@@ -774,7 +774,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               href="https://wa.me/6285711032782"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 rounded-xl bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold hover:bg-emerald-600/30 transition-all inline-flex items-center gap-1.5"
+              className="glass-button pressable px-3.5 text-xs font-bold bg-emerald-600/20 border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30"
             >
               <Phone className="w-3.5 h-3.5" />
               <span>{t('admin.whatsappHotlineShort', { phone: ADMIN_WHATSAPP_DISPLAY })}</span>
@@ -782,7 +782,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <button
               onClick={onLogout}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+              className="glass-button pressable px-3.5 text-xs"
             >
               <LogOut className="w-3.5 h-3.5 text-amber-400" />
               <span>{t('admin.signOutAdmin')}</span>
@@ -792,11 +792,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Quick Stats Summary ('—' until the first successful members snapshot) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/10">
-           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+           <div className="glass-well p-4 rounded-2xl">
               <p className="text-xs text-slate-400">{t('admin.totalMembers')}</p>
               <p className="text-2xl font-black text-white">{membersLoaded ? formatNumber(members.length) : '—'}</p>
            </div>
-           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+           <div className="glass-well p-4 rounded-2xl">
               <p className="text-xs text-slate-400">
                 {t('admin.statusStat', { status: t(STATUS_LABEL_KEYS.verified) })}
               </p>
@@ -804,7 +804,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {membersLoaded ? formatNumber(members.filter((m) => m.status === 'verified').length) : '—'}
               </p>
            </div>
-           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+           <div className="glass-well p-4 rounded-2xl">
               <p className="text-xs text-slate-400">
                 {t('admin.statusStat', { status: t(STATUS_LABEL_KEYS.active) })}
               </p>
@@ -812,7 +812,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {membersLoaded ? formatNumber(members.filter((m) => m.status === 'active').length) : '—'}
               </p>
            </div>
-           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+           <div className="glass-well p-4 rounded-2xl">
               <p className="text-xs text-slate-400">
                 {t('admin.statusStat', { status: t(STATUS_LABEL_KEYS.pending) })}
               </p>
@@ -822,50 +822,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
            </div>
         </div>
 
-        {/* Sub-nav tabs */}
-        <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-white/10">
-          <button
-            onClick={() => setAdminTab('members')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
-              adminTab === 'members'
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>{t('admin.tabMembers', { count: membersLoaded ? formatNumber(members.length) : '—' })}</span>
-          </button>
+        {/* Sub-nav tabs (segmented control; scrolls sideways on narrow screens) */}
+        <div className="mt-6 pt-4 border-t border-white/10">
+          <div role="tablist" aria-label={t('admin.dashboardTitle')} className="glass-segmented glass-segmented-scroll">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={adminTab === 'members'}
+              onClick={() => setAdminTab('members')}
+              className={`glass-segment shrink-0 ${adminTab === 'members' ? 'is-active' : ''}`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>{t('admin.tabMembers', { count: membersLoaded ? formatNumber(members.length) : '—' })}</span>
+            </button>
 
-          <button
-            onClick={() => setAdminTab('sync')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
-              adminTab === 'sync'
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>{t('admin.tabSync')}</span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={adminTab === 'sync'}
+              onClick={() => setAdminTab('sync')}
+              className={`glass-segment shrink-0 ${adminTab === 'sync' ? 'is-active' : ''}`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>{t('admin.tabSync')}</span>
+            </button>
 
-          <button
-            onClick={() => setAdminTab('analytics')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shrink-0 ${
-              adminTab === 'analytics'
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>{t('admin.tabStats')}</span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={adminTab === 'analytics'}
+              onClick={() => setAdminTab('analytics')}
+              className={`glass-segment shrink-0 ${adminTab === 'analytics' ? 'is-active' : ''}`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>{t('admin.tabStats')}</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* TAB CONTENT 1: MEMBER LIST & ROSTER */}
       {/* (a) Members subscription rejected by Firestore rules */}
       {adminTab === 'members' && membersError === 'permission-denied' && (
-        <div className="liquid-glass-card rounded-3xl p-8 shadow-xl text-center max-w-2xl mx-auto">
+        <div className="liquid-glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto">
           <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
             <Lock className="w-8 h-8" />
           </div>
@@ -878,14 +877,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               onClick={onOpenAuth}
-              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center gap-1.5"
             >
               <ShieldCheck className="w-4 h-4" />
               <span>{t('admin.signInWithAdminGoogle')}</span>
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+              className="glass-button pressable px-4 text-xs"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>{t('admin.reloadPage')}</span>
@@ -896,7 +895,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* (b) Any other subscription error (offline, unavailable, ...) */}
       {adminTab === 'members' && membersError && membersError !== 'permission-denied' && (
-        <div className="liquid-glass-card rounded-3xl p-8 shadow-xl text-center max-w-2xl mx-auto">
+        <div className="liquid-glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
             <AlertTriangle className="w-8 h-8" />
           </div>
@@ -906,7 +905,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+            className="glass-button pressable px-4 text-xs"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>{t('admin.reloadPage')}</span>
@@ -916,7 +915,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* (c) Waiting for the first members snapshot */}
       {adminTab === 'members' && !membersError && !membersLoaded && (
-        <div className="liquid-glass-card rounded-3xl p-10 shadow-xl flex flex-col items-center justify-center gap-3 text-center">
+        <div className="liquid-glass-card rounded-3xl p-10 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-xs sm:text-sm text-slate-300">{t('admin.loadingMembers')}</p>
         </div>
@@ -926,7 +925,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {adminTab === 'members' && !membersError && membersLoaded && (
         <div className="space-y-6">
           {/* KCC ID & PUBLIC CARD REPAIR (admin only, idempotent) */}
-          <div className="liquid-glass-card rounded-3xl p-6 shadow-xl">
+          <div className="liquid-glass-card rounded-3xl p-6">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
@@ -959,7 +958,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 onClick={handleRunRepair}
                 disabled={isRepairing}
-                className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
                 <span>
@@ -995,7 +994,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { id: 'written', label: t('admin.repairStatCardsWritten'), value: repairReport.cardsWritten },
                     { id: 'deleted', label: t('admin.repairStatCardsDeleted'), value: repairReport.cardsDeleted },
                   ].map((s) => (
-                    <div key={s.id} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <div key={s.id} className="glass-well rounded-xl p-2.5">
                       <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
                       <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
                     </div>
@@ -1058,7 +1057,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   {reservedHolders.map((m) => (
                     <div
                       key={m.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-slate-950/70 border border-slate-800"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl glass-well"
                     >
                       <div className="min-w-0">
                         <p className="font-bold text-white text-sm truncate">{m.name || m.cosplayName}</p>
@@ -1072,7 +1071,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <button
                         onClick={() => handleReassignReservedId(m)}
                         disabled={reassigningId !== null}
-                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${reassigningId === m.id ? 'animate-spin' : ''}`} />
                         <span>{reassigningId === m.id ? t('admin.processing') : t('admin.assignNewId')}</span>
@@ -1097,7 +1096,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* DUPLICATE REGISTRATIONS: same person filled the form more than once (admin merge, on demand) */}
-          <div className="liquid-glass-card rounded-3xl p-6 shadow-xl">
+          <div className="liquid-glass-card rounded-3xl p-6">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
@@ -1114,7 +1113,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <button
                 onClick={handleScanDuplicateRegistrations}
                 disabled={isAnyMergeRunning}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span>{t('admin.scanDuplicates')}</span>
@@ -1163,7 +1162,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { id: 'mergedRecords', label: t('admin.bulkStatMergedRecords'), value: bulkMergeReport.mergedRecords },
                     { id: 'failedGroups', label: t('admin.bulkStatFailedGroups'), value: bulkMergeReport.failedGroups },
                   ].map((s) => (
-                    <div key={s.id} className="bg-white/5 rounded-xl p-2.5 border border-white/5">
+                    <div key={s.id} className="glass-well rounded-xl p-2.5">
                       <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
                       <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
                     </div>
@@ -1207,7 +1206,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <button
                     onClick={() => handleBulkMergeDuplicates('identical')}
                     disabled={isAnyMergeRunning || exactDuplicateGroups.length === 0}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <CheckCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>{t('admin.mergeAllIdentical', { count: formatNumber(exactDuplicateGroups.length) })}</span>
@@ -1215,7 +1214,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <button
                     onClick={() => handleBulkMergeDuplicates('all')}
                     disabled={isAnyMergeRunning}
-                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <Layers className="w-3.5 h-3.5 shrink-0" />
                     <span>{t('admin.mergeAllScanned', { count: formatNumber(duplicateGroups.length) })}</span>
@@ -1264,7 +1263,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     return (
                       <div
                         key={keeper.id}
-                        className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5"
+                        className="glass-well p-3.5 rounded-2xl space-y-2.5"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                           <div className="min-w-0 space-y-0.5">
@@ -1295,7 +1294,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           return (
                             <div
                               key={dup.id}
-                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-slate-800"
+                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-white/10"
                             >
                               <div className="min-w-0 space-y-0.5">
                                 <p className="font-semibold text-slate-200 text-sm truncate">
@@ -1315,7 +1314,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               <button
                                 onClick={() => handleMergeDuplicate(group, dup)}
                                 disabled={isAnyMergeRunning}
-                                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
                               >
                                 <RefreshCw className={`w-3.5 h-3.5 ${mergingId === dup.id ? 'animate-spin' : ''}`} />
                                 <span>
@@ -1335,7 +1334,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Filters and Controls */}
-          <div className="liquid-glass-card rounded-3xl p-6 shadow-xl">
+          <div className="liquid-glass-card rounded-3xl p-6">
             <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
               {/* Search Bar */}
               <div className="relative flex-1">
@@ -1345,7 +1344,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   placeholder={t('admin.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-6 py-4 liquid-glass-input rounded-2xl text-white text-sm sm:text-base"
+                  className="w-full pl-12 pr-6 py-4 liquid-glass-input rounded-2xl text-white text-base"
                 />
               </div>
 
@@ -1354,7 +1353,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
+                  className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
                 >
                   <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
                   {availableRoles.map((r) => (
@@ -1366,7 +1365,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <select
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
-                  className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
+                  className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
                 >
                   <option value="ALL">{t('admin.filterAllCities')}</option>
                   {availableCities.map((c) => (
@@ -1378,7 +1377,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <select
                   value={selectedAgeCategory}
                   onChange={(e) => setSelectedAgeCategory(e.target.value)}
-                  className="px-3 py-2 liquid-glass-input rounded-xl text-xs text-slate-300"
+                  className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
                 >
                   <option value="ALL">{t('admin.filterAllAges')}</option>
                   {/* Values are the stored ageCategory strings; only the labels are translated */}
@@ -1393,7 +1392,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <select
                     value={sortMode}
                     onChange={(e) => setSortMode(e.target.value as any)}
-                    className="bg-transparent text-xs text-slate-200 focus:outline-none pr-1 cursor-pointer"
+                    className="bg-transparent text-base sm:text-sm text-slate-200 focus:outline-none pr-1 cursor-pointer"
                   >
                     <option value="timestamp_desc">{t('admin.sortNewest')}</option>
                     <option value="name_asc">{t('admin.sortNameAsc')}</option>
@@ -1434,7 +1433,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     setSelectedAgeCategory('ALL');
                     setSearchQuery('');
                   }}
-                  className="text-rose-400 hover:underline"
+                  className="touch-target text-rose-400 hover:underline"
                 >
                   {t('admin.resetFilter')}
                 </button>
@@ -1443,10 +1442,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           {/* Members Table */}
-          <div className="liquid-glass-card rounded-3xl overflow-hidden shadow-2xl">
+          <div className="liquid-glass-card rounded-3xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-mono border-b border-slate-800">
+                <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
                   <tr>
                     <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('name')}>
                       <div className="inline-flex items-center gap-1.5">
@@ -1520,7 +1519,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <div className="flex items-center space-x-3">
                             <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shrink-0">
                               {m.avatarUrl ? (
-                                <img src={m.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                <img src={m.avatarUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold">
                                   {(m.name || m.cosplayName || 'KC').slice(0, 2).toUpperCase()}
@@ -1648,11 +1647,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </td>
 
                         <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end space-x-2">
+                          <div className="flex items-center justify-end space-x-3">
                             <button
                               onClick={() => onSelectMember(m)}
                               title={t('admin.viewKccIdTitle')}
-                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
+                              aria-label={t('admin.viewKccIdTitle')}
+                              className="touch-target pressable p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </button>
@@ -1660,7 +1660,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <button
                               onClick={() => handleDeleteMember(m)}
                               title={t('admin.deleteMemberTitle')}
-                              className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 transition-colors"
+                              aria-label={t('admin.deleteMemberTitle')}
+                              className="touch-target pressable p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -1687,7 +1688,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                               <button
                                 onClick={() => setAdminTab('sync')}
-                                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md inline-flex items-center gap-1.5"
+                                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center gap-1.5"
                               >
                                 <FileSpreadsheet className="w-4 h-4" />
                                 <span>{t('admin.openSheetsSync')}</span>

@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, lazy, Suspense } from 'react';
 import { User } from 'firebase/auth';
-const Navbar = lazy(() => import('./components/Navbar').then(m => ({ default: m.Navbar })));
-const RegistrationForm = lazy(() => import('./components/RegistrationForm').then(m => ({ default: m.RegistrationForm })));
-const MemberCardModal = lazy(() => import('./components/MemberCardModal').then(m => ({ default: m.MemberCardModal })));
-const PhotoGallery = lazy(() => import('./components/PhotoGallery').then(m => ({ default: m.PhotoGallery })));
+// App shell + landing page (registration form) stay in the main bundle: they are the first paint.
+import { Navbar } from './components/Navbar';
+import { OfficialGovBanner } from './components/OfficialGovBanner';
+import { RegistrationForm } from './components/RegistrationForm';
+
+// Heavy screens and modals load on demand. The loaders are kept separately so idle prefetch can warm them.
+const loadMemberCardModal = () => import('./components/MemberCardModal');
+const loadAuthModal = () => import('./components/AuthModal');
+const loadPhotoGallery = () => import('./components/PhotoGallery');
+const MemberCardModal = lazy(() => loadMemberCardModal().then(m => ({ default: m.MemberCardModal })));
+const PhotoGallery = lazy(() => loadPhotoGallery().then(m => ({ default: m.PhotoGallery })));
 const UploadPhotoModal = lazy(() => import('./components/UploadPhotoModal').then(m => ({ default: m.UploadPhotoModal })));
-const AuthModal = lazy(() => import('./components/AuthModal').then(m => ({ default: m.AuthModal })));
+const AuthModal = lazy(() => loadAuthModal().then(m => ({ default: m.AuthModal })));
 const UserProfile = lazy(() => import('./components/UserProfile').then(m => ({ default: m.UserProfile })));
-const OfficialGovBanner = lazy(() => import('./components/OfficialGovBanner').then(m => ({ default: m.OfficialGovBanner })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const SiteEditorModal = lazy(() => import('./components/SiteEditorModal').then(m => ({ default: m.SiteEditorModal })));
 
@@ -40,6 +46,73 @@ import { useSiteTheme } from './lib/themeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { triggerHaptic } from './lib/haptic';
 import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-react';
+
+// Mounts a lazy modal on its first open and then keeps it mounted, so its internal state (typed form
+// fields, current mode) survives close/reopen exactly like before (the modals return null while closed).
+function useOpenedOnce(open: boolean): boolean {
+  const [opened, setOpened] = useState(open);
+  if (open && !opened) setOpened(true);
+  return opened || open;
+}
+
+// Cheap ambient light: radial gradients from index.css instead of huge `blur()` filters.
+const AmbientBackground: React.FC<{ blobs?: 2 | 3 }> = ({ blobs = 3 }) => (
+  <div className="ambient-layer" aria-hidden="true">
+    <div className="ambient-blob ambient-blob--1"></div>
+    <div className="ambient-blob ambient-blob--2"></div>
+    {blobs === 3 && <div className="ambient-blob ambient-blob--3"></div>}
+  </div>
+);
+
+// Suspense fallback for a lazy screen: a glass card with shimmering placeholder rows.
+const ScreenSkeleton: React.FC<{ label: string; wide?: boolean }> = ({ label, wide = false }) => (
+  <div
+    className={`${wide ? 'max-w-7xl' : 'max-w-3xl'} mx-auto py-10 px-4 sm:px-6 animate-fade-in`}
+    role="status"
+    aria-busy="true"
+  >
+    <span className="sr-only">{label}</span>
+    <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-4" aria-hidden="true">
+      <div className="glass-skeleton h-6 w-1/3"></div>
+      <div className="glass-skeleton h-4 w-2/3"></div>
+      <div className="glass-skeleton h-40 w-full rounded-2xl"></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="glass-skeleton h-24 rounded-2xl"></div>
+        <div className="glass-skeleton h-24 rounded-2xl"></div>
+      </div>
+      <div className="glass-skeleton h-4 w-1/2"></div>
+    </div>
+  </div>
+);
+
+// Suspense fallback for a lazy modal. Shown only if the chunk takes longer than ~150 ms (modals are
+// prefetched on idle), so a fast load never flashes a placeholder before the real sheet slides in.
+const SheetSkeleton: React.FC<{ label: string }> = ({ label }) => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setShow(true), 150);
+    return () => window.clearTimeout(id);
+  }, []);
+  if (!show) return null;
+  return (
+    <>
+      <div className="glass-overlay animate-fade-in" aria-hidden="true"></div>
+      <div className="sheet-viewport">
+        <div className="glass-sheet sm:max-w-md animate-sheet-up sm:animate-scale-in" role="status" aria-busy="true">
+          <span className="sr-only">{label}</span>
+          <div className="sheet-grabber" aria-hidden="true"></div>
+          <div className="space-y-4 px-6 pt-4 pb-8 sm:p-8" aria-hidden="true">
+            <div className="glass-skeleton mx-auto h-12 w-12 rounded-2xl"></div>
+            <div className="glass-skeleton mx-auto h-5 w-1/2"></div>
+            <div className="glass-skeleton h-11 w-full"></div>
+            <div className="glass-skeleton h-11 w-full"></div>
+            <div className="glass-skeleton h-11 w-full rounded-2xl"></div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'form' | 'card' | 'gallery' | 'profile' | 'admin'>('form');
@@ -110,7 +183,7 @@ export default function App() {
     setActiveTab(tab);
   };
   
-  const { theme, setIsEditorOpen } = useSiteTheme();
+  const { theme, isEditorOpen, setIsEditorOpen } = useSiteTheme();
 
   const getBgStyle = () => {
     if (theme.background === 'custom' && theme.customBgGradient) {
@@ -131,10 +204,36 @@ export default function App() {
     return { background: 'linear-gradient(135deg, #2a1258 0%, #1b1442 45%, #11082a 100%)' };
   };
 
+  // The theme background is painted by the fixed `body::before` layer (index.css reads --app-bg), so it
+  // stays still while scrolling and never repaints the page. Layout effect: no flash of the default.
+  const appBackground = getBgStyle().background;
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty('--app-bg', appBackground);
+  }, [appBackground]);
+
   // Modals
   const [selectedMemberForCard, setSelectedMemberForCard] = useState<Member | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUploadPhotoModalOpen, setIsUploadPhotoModalOpen] = useState(false);
+  const authModalMounted = useOpenedOnce(isAuthModalOpen);
+  const uploadModalMounted = useOpenedOnce(isUploadPhotoModalOpen);
+  const siteEditorMounted = useOpenedOnce(isEditorOpen);
+
+  // Warm the chunks people usually open next once the landing page is idle, so the first tap on
+  // "Sign in", a pass or the gallery opens instantly instead of waiting for the network.
+  useEffect(() => {
+    const warm = () => {
+      loadAuthModal().catch(() => {});
+      loadMemberCardModal().catch(() => {});
+      loadPhotoGallery().catch(() => {});
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      const idleId = window.requestIdleCallback(warm, { timeout: 4000 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timeoutId = window.setTimeout(warm, 2500);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   // KTA Lookup by 16-digit KCC ID only (public memberCards projection, privacy-safe)
   const [lookupQuery, setLookupQuery] = useState('');
@@ -444,49 +543,47 @@ export default function App() {
   // DEDICATED SEPARATE PAGE: ADMIN DASHBOARD (RESTRICTED: GOOGLE SIGN-IN AS A FIREBASE ADMIN)
   if (activeTab === 'admin') {
     return (
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">{t('common.loadingAdmin')}</div>}>
       <div
         dir={dir}
-        style={getBgStyle()}
         className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
       >
         {/* Liquid Glass Background Caustics */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-purple-500/25 via-fuchsia-500/20 to-transparent blur-[140px]"></div>
-          <div className="absolute top-1/3 -right-32 w-[650px] h-[650px] rounded-full bg-gradient-to-bl from-violet-500/25 via-indigo-500/20 to-transparent blur-[160px]"></div>
-        </div>
+        <AmbientBackground blobs={2} />
 
         {/* Dedicated Admin Page Top Bar */}
-        <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-amber-500/30 px-4 sm:px-8 py-3 flex items-center justify-between shadow-xl">
-          <div className="flex items-center space-x-3">
+        <header className="sticky top-0 z-50 glass-bar border-amber-500/30 px-4 sm:px-8 pt-[calc(0.75rem+var(--safe-top))] pb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <button
+              type="button"
               onClick={() => {
                 setActiveTab('form');
                 if (window.location.hash === '#admin') window.location.hash = '';
               }}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700/80 hover:border-slate-600 text-slate-200 hover:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+              className="glass-button px-3 py-1.5 rounded-xl text-xs shrink-0"
             >
-              <span>&larr;</span>
+              <span aria-hidden="true">&larr;</span>
               <span>{t('common.backToPublicSite')}</span>
             </button>
 
-            <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-              <span className="font-extrabold text-white text-sm sm:text-base tracking-tight">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+              <span className="font-extrabold text-white text-sm sm:text-base tracking-tight truncate">
                 {t('common.adminPortalTitle')}
               </span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span className="hidden sm:inline-flex glass-chip text-[10px] text-amber-300 bg-amber-500/20 border-amber-500/30">
                 {t('common.googleSignInBadge')}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center gap-2.5 shrink-0">
             {isAdmin && (
               <button
+                type="button"
                 onClick={() => setIsEditorOpen(true)}
-                className="px-3 py-1.5 rounded-lg bg-purple-950/70 hover:bg-purple-900/70 border border-purple-500/30 text-purple-200 hover:text-white text-xs font-semibold transition-all inline-flex items-center gap-1.5"
+                className="glass-button px-3 py-1.5 rounded-xl text-xs text-purple-200 bg-purple-950/50 border-purple-500/30"
                 title={t('siteEditor.editorTitle')}
+                aria-label={t('siteEditor.editorTitle')}
               >
                 <Palette className="w-3.5 h-3.5 text-pink-300" />
                 <span className="hidden sm:inline">{t('common.siteEditorShort')}</span>
@@ -496,11 +593,12 @@ export default function App() {
               {user?.email || t('common.adminRestricted')}
             </span>
             <button
+              type="button"
               onClick={() => {
                 setActiveTab('form');
                 if (window.location.hash === '#admin') window.location.hash = '';
               }}
-              className="px-3 py-1.5 rounded-lg bg-rose-950/70 hover:bg-rose-900/70 border border-rose-500/30 text-rose-300 hover:text-rose-200 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+              className="glass-button px-3 py-1.5 rounded-xl text-xs text-rose-300 bg-rose-950/50 border-rose-500/30"
               title={t('common.lockAndExitAdminTitle')}
             >
               <Lock className="w-3.5 h-3.5" />
@@ -509,59 +607,72 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 pb-16 relative z-10">
-          <AdminDashboard
-            user={user}
-            isAdmin={isAdmin}
-            isAdminChecking={isAdminChecking}
-            accessToken={accessToken}
-            members={members}
-            membersLoaded={membersLoaded}
-            membersError={membersError}
-            syncLogs={syncLogs}
-            syncLogsError={syncLogsError}
-            currentLang={currentLang}
-            onSelectMember={handleOpenCard}
-            onOpenAuth={() => setIsAuthModalOpen(true)}
-            onConnectSheets={handleConnectSheets}
-            sheetsConnectError={sheetsConnectError}
-            onLogout={handleLogout}
-          />
+        <main className="flex-1 pb-[calc(4rem+var(--safe-bottom))] relative">
+          <Suspense fallback={<ScreenSkeleton label={t('common.loadingAdmin')} wide />}>
+            <AdminDashboard
+              user={user}
+              isAdmin={isAdmin}
+              isAdminChecking={isAdminChecking}
+              accessToken={accessToken}
+              members={members}
+              membersLoaded={membersLoaded}
+              membersError={membersError}
+              syncLogs={syncLogs}
+              syncLogsError={syncLogsError}
+              currentLang={currentLang}
+              onSelectMember={handleOpenCard}
+              onOpenAuth={() => setIsAuthModalOpen(true)}
+              onConnectSheets={handleConnectSheets}
+              sheetsConnectError={sheetsConnectError}
+              onLogout={handleLogout}
+            />
+          </Suspense>
         </main>
 
-        <MemberCardModal
-          member={selectedMemberForCard}
-          onClose={() => setSelectedMemberForCard(null)}
-        />
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          onAuthSuccess={handleAuthSuccess}
-          currentLang={currentLang}
-        />
-        <SiteEditorModal />
+        {selectedMemberForCard && (
+          <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+            <MemberCardModal
+              member={selectedMemberForCard}
+              onClose={() => setSelectedMemberForCard(null)}
+            />
+          </Suspense>
+        )}
+        {authModalMounted && (
+          <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+            <AuthModal
+              isOpen={isAuthModalOpen}
+              onClose={() => setIsAuthModalOpen(false)}
+              onAuthSuccess={handleAuthSuccess}
+              currentLang={currentLang}
+            />
+          </Suspense>
+        )}
+        {siteEditorMounted && (
+          <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+            <SiteEditorModal />
+          </Suspense>
+        )}
       </div>
-      </Suspense>
     );
   }
 
   // PUBLIC SITE LAYOUT (ZERO ACCESS TO MEMBER LIST FOR ALL MEMBERS)
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-400">{t('common.loadingApp')}</div>}>
     <div
       dir={dir}
-      style={getBgStyle()}
       className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
     >
       {/* Liquid Glass Background Caustics & Bright Purple-ish Fluent Ambient Light */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-purple-500/30 via-fuchsia-500/25 to-transparent blur-[140px] animate-fluid-1"></div>
-        <div className="absolute top-1/3 -right-32 w-[650px] h-[650px] rounded-full bg-gradient-to-bl from-violet-500/30 via-indigo-500/25 to-transparent blur-[160px] animate-fluid-2"></div>
-        <div className="absolute -bottom-32 left-1/4 w-[700px] h-[700px] rounded-full bg-gradient-to-tr from-fuchsia-500/20 via-purple-600/20 to-transparent blur-[160px] animate-fluid-3"></div>
-      </div>
+      <AmbientBackground />
 
-      {/* Sticky Header Container */}
-      <div className={`sticky top-0 z-50 transition-transform duration-500 ease-in-out ${!isMobileMenuOpen && !isVisible ? '-translate-y-full' : ''}`}>
+      {/* Sticky Header Container: ONE glass surface (painted on ::before, so the mobile menu's fixed
+          overlay inside is not trapped) for gov banner + navbar, extended under the notch / status bar.
+          Hidden by translating it up; it is only translated while the mobile menu is closed. */}
+      <div
+        className={`sticky top-0 z-50 glass-bar pt-safe px-safe transition-[translate] duration-500 ease-ios ${
+          !isMobileMenuOpen && !isVisible ? '-translate-y-full' : ''
+        }`}
+      >
         {/* Official Government-Style Verification Header */}
         <OfficialGovBanner currentLang={currentLang} />
 
@@ -583,15 +694,19 @@ export default function App() {
         />
       </div>
 
-      {/* Main Content Area */}
-      <motion.main 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.3 }}
+      {/* Main Content Area. Opacity-only cross-fade: a transform here would trap the `position: fixed`
+          lightboxes / sheets that the tab screens render inside it. No z-index either: as its own
+          stacking context it would keep those sheets (z-60) underneath the sticky header (z-50). It still
+          paints above the ambient layer (positioned, later in the DOM). */}
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         key={activeTab}
-        className="flex-1 pb-16 relative z-10"
+        className="flex-1 pb-[calc(4rem+var(--safe-bottom))] relative"
       >
+        <Suspense fallback={<ScreenSkeleton label={t('common.loadingApp')} />}>
         {/* TAB 1: FORMULIR PENDAFTARAN (LEGACY GOOGLE FORM STYLE) */}
         {activeTab === 'form' && (
           <RegistrationForm
@@ -612,8 +727,8 @@ export default function App() {
         {/* TAB 2: DIGITAL PASS GENERATOR & PRIVACY-SAFE LOOKUP */}
         {activeTab === 'card' && (
           <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 text-center animate-fade-in">
-            <div className="liquid-glass-elevated rounded-3xl p-8 sm:p-12 shadow-2xl">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 mb-3 inline-block">
+            <div className="glass-card glass-raised rounded-3xl p-8 sm:p-12">
+              <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-3">
                 {t('common.cardPageBadge')}
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
@@ -625,19 +740,20 @@ export default function App() {
 
               {/* If user has a current active profile */}
               {currentMember && (
-                <div className="mb-8 p-5 liquid-glass rounded-2xl max-w-md mx-auto text-left flex items-center justify-between">
-                  <div>
+                <div className="mb-8 p-5 glass-well rounded-2xl max-w-md mx-auto text-start flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <span className="text-[10px] text-purple-300 uppercase font-mono tracking-wider block">
                       {t('common.connectedProfile')}
                     </span>
-                    <h4 className="font-bold text-white text-base">{currentMember.cosplayName}</h4>
+                    <h4 className="font-bold text-white text-base truncate">{currentMember.cosplayName}</h4>
                     <p className="text-xs font-mono text-purple-300">
                       {t('common.kccIdValue', { id: format16DigitUserId(currentMember.userId16, currentMember.email) })}
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleOpenCard(currentMember)}
-                    className="px-3.5 py-2 liquid-glass-button text-white rounded-xl text-xs font-bold shadow-md transition-all inline-flex items-center gap-1.5"
+                    className="px-3.5 py-2 min-h-11 liquid-glass-button text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shrink-0"
                   >
                     <IdCard className="w-3.5 h-3.5" />
                     <span>{t('common.openPass')}</span>
@@ -648,26 +764,30 @@ export default function App() {
               {/* Lookup Card Form */}
               <form onSubmit={handleLookupCard} className="max-w-md mx-auto space-y-3 mb-6">
                 <div className="relative">
-                  <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden="true" />
                   <input
                     type="text"
                     inputMode="numeric"
+                    autoComplete="off"
+                    enterKeyHint="search"
                     maxLength={24}
                     placeholder={t('common.lookupPlaceholder')}
+                    aria-label={t('common.lookupPlaceholder')}
+                    aria-invalid={lookupError ? true : undefined}
                     value={lookupQuery}
                     onChange={(e) => setLookupQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-xl text-white text-xs sm:text-sm focus:outline-none"
+                    className="w-full ps-10 pe-4 py-2.5 glass-input rounded-xl text-white text-base sm:text-sm"
                   />
                 </div>
 
                 {lookupError && (
-                  <p className="text-xs text-rose-400 text-left px-1">{lookupError}</p>
+                  <p className="text-xs text-rose-400 text-start px-1" role="alert">{lookupError}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={isLookingUp}
-                  className="w-full py-2.5 px-5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-2.5 px-5 min-h-11 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Search className="w-4 h-4" />
                   <span>{isLookingUp ? t('common.searching') : t('common.lookupSubmit')}</span>
@@ -676,31 +796,33 @@ export default function App() {
 
               {/* Lookup result display */}
               {lookupResult && (
-                <div className="mt-6 p-4 rounded-2xl bg-slate-950 border border-emerald-500/40 text-left max-w-md mx-auto flex items-center justify-between animate-fade-in">
-                  <div>
+                <div className="mt-6 p-4 rounded-2xl glass-well border-emerald-500/40 text-start max-w-md mx-auto flex items-center justify-between gap-3 animate-fade-in">
+                  <div className="min-w-0">
                     <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
                       {t('common.passFound')}
                     </span>
-                    <h4 className="font-bold text-white text-sm">{lookupResult.cosplayName}</h4>
+                    <h4 className="font-bold text-white text-sm truncate">{lookupResult.cosplayName}</h4>
                     <p className="text-xs font-mono text-slate-400">
                       {t('common.idValue', { id: format16DigitUserId(lookupResult.userId16, lookupResult.email) })}
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleOpenCard(lookupResult)}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+                    className="px-4 py-2 min-h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md pressable shrink-0"
                   >
                     {t('common.openPass')}
                   </button>
                 </div>
               )}
 
-              <div className="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-center space-x-2">
+              <div className="mt-8 pt-6 border-t border-white/10 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-rose-400" />
                 <span>{t('common.notRegisteredYet')}</span>
                 <button
+                  type="button"
                   onClick={() => setActiveTab('form')}
-                  className="text-rose-400 font-bold hover:underline"
+                  className="touch-target text-rose-400 font-bold hover:underline"
                 >
                   {t('common.fillRegistrationForm')}
                 </button>
@@ -746,7 +868,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => loadMemberForUser(user)}
-                className="px-4 py-2 rounded-xl liquid-glass-button text-white font-bold text-xs shadow-md transition-all"
+                className="px-4 py-2 min-h-11 rounded-xl liquid-glass-button text-white font-bold text-xs"
               >
                 {t('common.tryAgain')}
               </button>
@@ -764,48 +886,63 @@ export default function App() {
           ) : (
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400">
                <p className="text-lg font-bold text-white mb-2">{t('common.pleaseSignIn')}</p>
-               <button onClick={() => setIsAuthModalOpen(true)} className="text-rose-400 font-bold hover:underline">
+               <button type="button" onClick={() => setIsAuthModalOpen(true)} className="touch-target text-rose-400 font-bold hover:underline">
                  {t('common.clickToSignIn')}
                </button>
             </div>
           )
         )}
+        </Suspense>
       </motion.main>
 
-      {/* Member Card Modal */}
-      <MemberCardModal
-        member={selectedMemberForCard}
-        onClose={() => setSelectedMemberForCard(null)}
-      />
-
-      {/* Authentication Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
-        currentLang={currentLang}
-      />
-
-      {/* Upload Photo Modal (photo create requires a signed-in Firebase user) */}
-      {user && uploadMember && (
-        <UploadPhotoModal
-          isOpen={isUploadPhotoModalOpen}
-          onClose={() => setIsUploadPhotoModalOpen(false)}
-          currentMember={uploadMember}
-          onPhotoAdded={(newPhoto) => {
-            setPhotos((prev) => [newPhoto, ...prev]);
-            setActiveTab('gallery');
-          }}
-        />
+      {/* Member Card Modal (lazy: mounted while a member is selected) */}
+      {selectedMemberForCard && (
+        <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+          <MemberCardModal
+            member={selectedMemberForCard}
+            onClose={() => setSelectedMemberForCard(null)}
+          />
+        </Suspense>
       )}
 
-      {/* Site Editor Modal */}
-      <SiteEditorModal />
+      {/* Authentication Modal (lazy: mounted on first open, then kept) */}
+      {authModalMounted && (
+        <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            onAuthSuccess={handleAuthSuccess}
+            currentLang={currentLang}
+          />
+        </Suspense>
+      )}
+
+      {/* Upload Photo Modal (photo create requires a signed-in Firebase user) */}
+      {user && uploadMember && uploadModalMounted && (
+        <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+          <UploadPhotoModal
+            isOpen={isUploadPhotoModalOpen}
+            onClose={() => setIsUploadPhotoModalOpen(false)}
+            currentMember={uploadMember}
+            onPhotoAdded={(newPhoto) => {
+              setPhotos((prev) => [newPhoto, ...prev]);
+              setActiveTab('gallery');
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Site Editor Modal (lazy: mounted on first open, then kept) */}
+      {siteEditorMounted && (
+        <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+          <SiteEditorModal />
+        </Suspense>
+      )}
 
       {/* Global Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-10 px-4 sm:px-6 lg:px-8 text-slate-400 text-xs">
+      <footer className="relative z-10 border-t border-white/10 bg-[var(--glass-fill-bar)] pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 lg:px-8 text-slate-400 text-xs">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center font-bold text-white text-sm shadow-md">
               KC
             </div>
@@ -818,22 +955,23 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
-            <button onClick={() => setActiveTab('form')} className="hover:text-white transition-colors">
+            <button type="button" onClick={() => setActiveTab('form')} className="touch-target pressable hover:text-white">
               {t('common.navForm')}
             </button>
-            <button onClick={() => setActiveTab('card')} className="hover:text-white transition-colors">
+            <button type="button" onClick={() => setActiveTab('card')} className="touch-target pressable hover:text-white">
               {t('common.navCard')}
             </button>
-            <button onClick={() => setActiveTab('gallery')} className="hover:text-pink-400 transition-colors">
+            <button type="button" onClick={() => setActiveTab('gallery')} className="touch-target pressable hover:text-pink-400">
               {t('common.navGallery')}
             </button>
             {/* Discreet Admin Portal Link for Managers */}
             <button
+              type="button"
               onClick={() => {
                 setActiveTab('admin');
                 window.location.hash = 'admin';
               }}
-              className="text-slate-500 hover:text-amber-400 transition-colors flex items-center space-x-1"
+              className="touch-target pressable text-slate-500 hover:text-amber-400 flex items-center gap-1"
               title={t('common.adminPortalLinkTitle')}
             >
               <Lock className="w-3 h-3 text-amber-500/80" />
@@ -843,19 +981,19 @@ export default function App() {
               href="https://wa.me/6285711032782"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center space-x-1"
+              className="touch-target text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center gap-1"
             >
               <span>{t('common.whatsappContact')}</span>
             </a>
             <a
               href="mailto:cosplaysehat@gmail.com"
-              className="hover:text-rose-400 transition-colors"
+              className="touch-target hover:text-rose-400 transition-colors"
             >
               cosplaysehat@gmail.com
             </a>
           </div>
 
-          <div className="text-center md:text-right text-slate-500">
+          <div className="text-center md:text-end text-slate-500">
             <p>{t('common.copyright')}</p>
             <p className="text-[10px] text-emerald-400/80 mt-0.5">
               ● {t('common.privacyShieldActive')}
@@ -864,6 +1002,5 @@ export default function App() {
         </div>
       </footer>
     </div>
-    </Suspense>
   );
 }

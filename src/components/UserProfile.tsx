@@ -244,10 +244,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   return (
     <div className="max-w-5xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8 animate-fade-in text-slate-100">
       {/* Top Profile Hero */}
-      <div className="liquid-glass-elevated rounded-3xl p-6 sm:p-8 shadow-2xl mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="glass-card glass-raised rounded-3xl p-5 sm:p-8 mb-8 relative overflow-hidden">
+        {/* Soft rose glow: a radial gradient instead of a blur filter (no offscreen blur pass) */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-[radial-gradient(closest-side,rgba(244,63,94,0.14),rgba(244,63,94,0))] pointer-events-none"></div>
 
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+        <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-6">
           {/* Avatar with edit badge */}
           <div className="relative group shrink-0">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden bg-slate-950 border-2 border-rose-500/50 shadow-xl">
@@ -255,6 +256,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 <img
                   src={formData.avatarUrl}
                   alt={formData.cosplayName}
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -266,7 +268,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             <label
               title={t('profile.changeAvatar')}
-              className="absolute -bottom-2 -right-2 p-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl shadow-lg cursor-pointer transition-transform hover:scale-110"
+              className="glass-icon-button pressable absolute -bottom-2 -right-2 bg-rose-600 hover:bg-rose-500 border-rose-300/40 text-white"
             >
               <Camera className="w-4 h-4" />
               <input
@@ -282,10 +284,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           {/* Member Identity & 16-Digit Card */}
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+              <span className="glass-chip max-w-full whitespace-normal leading-tight font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
                 {roleBadge}
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <span className="glass-chip bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>{t('profile.verifiedActive')}</span>
               </span>
@@ -297,7 +299,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {member.email && <p className="text-xs text-slate-500 mt-0.5">{member.email}</p>}
 
             {/* KCC ID (16 DIGIT) BOX */}
-            <div className="mt-4 inline-flex items-center space-x-3 bg-slate-950/90 border border-rose-500/30 rounded-2xl px-4 py-2.5 shadow-inner">
+            <div className="glass-well mt-4 inline-flex items-center gap-3 border-rose-500/30 rounded-2xl ps-4 pe-2 py-2">
               <div className="text-left">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
                   {t('profile.kccIdLabel')}
@@ -310,7 +312,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <button
                 type="button"
                 onClick={handleCopyUserId}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+                className="glass-icon-button pressable text-slate-300"
                 title={t('profile.copyKccId')}
                 aria-label={t('profile.copyKccId')}
               >
@@ -322,21 +324,26 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           {/* Quick action button to view KTA */}
           <div className="shrink-0 flex flex-col gap-2">
             <button
+              type="button"
               onClick={() => onOpenCardModal(member)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-bold text-xs shadow-md shadow-rose-600/30 inline-flex items-center justify-center gap-1.5 transition-transform active:scale-95"
+              className="btn-primary pressable px-4"
             >
-              <IdCard className="w-3.5 h-3.5" />
+              <IdCard className="w-4 h-4" />
               <span>{t('profile.viewIdCard')}</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Profile Form (Real-Time Editable) */}
-      <form onSubmit={handleSave} className="space-y-6">
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
-            <div>
+      {/* Profile Form (Real-Time Editable). Fields keep a bottom scroll margin so a field scrolled into
+          view on focus is not hidden behind the sticky save bar. */}
+      <form
+        onSubmit={handleSave}
+        className="space-y-6 [&_input]:scroll-mb-28 [&_select]:scroll-mb-28 [&_textarea]:scroll-mb-28"
+      >
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
+          <div className="flex items-center justify-between gap-3 pb-4 border-b border-white/10 mb-6">
+            <div className="min-w-0">
               <h2 className="text-lg font-bold text-white">{t('profile.infoTitle')}</h2>
               <p className="text-xs text-slate-400">
                 {t('profile.infoDesc')}
@@ -344,7 +351,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             </div>
 
             {saveSuccess && (
-              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-lg border border-emerald-500/40 flex items-center gap-1.5 animate-fade-in">
+              <span className="glass-chip shrink-0 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-fade-in">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>{t('profile.savedRealtime')}</span>
               </span>
@@ -363,7 +370,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.cosplayName}
                 value={formData.cosplayName}
                 onChange={(e) => setFormData({ ...formData, cosplayName: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-semibold focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm font-semibold"
               />
             </div>
 
@@ -375,7 +382,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <select
                 value={formData.ageCategory}
                 onChange={(e) => setFormData({ ...formData, ageCategory: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {AGE_CATEGORY_OPTIONS.map((opt) => (
                   <option key={opt.val} value={opt.val}>
@@ -396,7 +403,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.age}
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm"
               />
             </div>
 
@@ -412,7 +419,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.phone}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
+                className="glass-input w-full text-base sm:text-sm font-mono"
               />
             </div>
 
@@ -428,7 +435,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.phone2}
                 value={formData.phone2}
                 onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
+                className="glass-input w-full text-base sm:text-sm font-mono"
               />
             </div>
 
@@ -443,7 +450,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.discordUsername}
                 value={formData.discordUsername}
                 onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm font-mono focus:outline-none focus:border-indigo-500"
+                className="glass-input w-full text-base sm:text-sm font-mono"
               />
             </div>
 
@@ -455,7 +462,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <select
                 value={formData.primaryRole}
                 onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {ROLE_OPTIONS.map((role) => (
                   <option key={role.val} value={role.val}>
@@ -477,7 +484,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                         : OTHER_ROLE,
                     })
                   }
-                  className="mt-2 w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                  className="glass-input mt-2 w-full text-base sm:text-sm"
                 />
               )}
             </div>
@@ -503,7 +510,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     city: cities[0] || '',
                   });
                 }}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {countryOptions.map((c) => (
                   <option key={c.isoCode} value={c.name}>
@@ -539,7 +546,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                       city: cities[0] || '',
                     });
                   }}
-                  className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                  className="glass-input w-full text-base sm:text-sm"
                 >
                   {availableProvinces.map((p) => (
                     <option key={p.isoCode || p.name} value={p.name}>
@@ -556,7 +563,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     maxLength={MEMBER_FIELD_LIMITS.province}
                     value={formData.province}
                     onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-base sm:text-xs"
+                    className="glass-input w-full text-base sm:text-sm"
                   />
                 )}
               </div>
@@ -580,7 +587,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                       setIsCustomCity(false);
                       setFormData({ ...formData, city: e.target.value });
                     }}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                    className="glass-input w-full text-base sm:text-sm"
                   >
                     {availableCities.map((city) => (
                       <option key={city} value={city}>
@@ -598,7 +605,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     maxLength={MEMBER_FIELD_LIMITS.city}
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-base sm:text-xs"
+                    className="glass-input w-full text-base sm:text-sm"
                   />
                 )}
               </div>
@@ -614,7 +621,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.fandom}
                 value={formData.fandom}
                 onChange={(e) => setFormData({ ...formData, fandom: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm"
               />
             </div>
 
@@ -629,7 +636,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.socialMedia}
                 value={formData.socialMedia}
                 onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm"
               />
             </div>
 
@@ -644,7 +651,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 maxLength={MEMBER_FIELD_LIMITS.portfolioUrl}
                 value={formData.portfolioUrl}
                 onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500"
+                className="glass-input w-full text-base sm:text-sm"
               />
             </div>
           </div>
@@ -659,32 +666,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               maxLength={MEMBER_FIELD_LIMITS.reason}
               value={formData.reason}
               onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-              className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm focus:outline-none focus:border-rose-500 resize-none"
+              className="glass-input w-full text-base sm:text-sm resize-none"
             ></textarea>
           </div>
 
-          {errorMsg && (
-            <div className="mt-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs">
-              {errorMsg}
-            </div>
-          )}
-
-          {/* Save Button */}
-          <div className="mt-6 pt-4 border-t border-slate-800/80 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 inline-flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-            >
-              {isSaving ? (
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{t('profile.updateProfile')}</span>
-                </>
+          {/* Save bar: floats above the bottom edge (and the iPhone home indicator) while the card is on
+              screen, so the profile can be saved from any field. Sticky, not fixed: it settles under the
+              last field. The wrapper ignores taps so only the glass bar itself is interactive. */}
+          <div className="sticky bottom-0 z-20 mt-6 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none sm:flex sm:justify-end">
+            <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2 sm:max-w-md">
+              {errorMsg && (
+                <div className="px-2 pt-1 text-sm text-rose-200">
+                  {errorMsg}
+                </div>
               )}
-            </button>
+
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="btn-primary pressable w-full min-h-12 px-6 text-base sm:min-h-11 sm:w-auto sm:self-end sm:text-sm"
+              >
+                {/* The label stays while saving (only the icon swaps), so the button never changes width */}
+                {isSaving ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                ) : saveSuccess ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{t('profile.updateProfile')}</span>
+              </button>
+            </div>
           </div>
         </div>
       </form>

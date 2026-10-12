@@ -89,7 +89,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
     <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
         <div className="flex items-center space-x-2 mb-2">
-          <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5">
+          <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
             <BarChart3 className="w-3.5 h-3.5 text-rose-400" />
             <span>{t('stats.badge')}</span>
           </span>
@@ -105,7 +105,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
 
       {/* Top 4 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
           <div className="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400 mb-4">
             <Users className="w-6 h-6" />
           </div>
@@ -116,7 +116,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
           </p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
             <Sparkles className="w-6 h-6" />
           </div>
@@ -127,7 +127,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
           <p className="text-[11px] text-indigo-300 mt-2">{t('stats.webFormDesc')}</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
           <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
             <Layers className="w-6 h-6" />
           </div>
@@ -138,7 +138,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
           <p className="text-[11px] text-emerald-300 mt-2">{t('stats.googleFormDesc')}</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
           <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
             <MapPin className="w-6 h-6" />
           </div>
@@ -153,7 +153,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
       {/* Grid: Role Distribution & City Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Roles Breakdown */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-6 sm:p-8">
           <h3 className="text-lg font-bold text-white mb-2">{t('stats.rolesTitle')}</h3>
           <p className="text-xs text-slate-400 mb-6">
             {t('stats.rolesDesc')}
@@ -170,7 +170,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
                       {countWithPercent(count, pct)}
                     </span>
                   </div>
-                  <div className="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                  <div className="w-full glass-well rounded-full h-2.5 overflow-hidden">
                     <div
                       className="bg-gradient-to-r from-rose-500 to-pink-500 h-2.5 rounded-full transition-all duration-500"
                       style={{ width: `${pct}%` }}
@@ -183,7 +183,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
         </div>
 
         {/* Cities Breakdown */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-6 sm:p-8">
           <h3 className="text-lg font-bold text-white mb-2">{t('stats.regionsTitle')}</h3>
           <p className="text-xs text-slate-400 mb-6">
             {t('stats.regionsDesc')}
@@ -203,7 +203,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
                       {countWithPercent(count, pct)}
                     </span>
                   </div>
-                  <div className="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                  <div className="w-full glass-well rounded-full h-2.5 overflow-hidden">
                     <div
                       className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500"
                       style={{ width: `${pct}%` }}
@@ -217,7 +217,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
       </div>
 
       {/* Fandom Interests */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+      <div className="glass-card rounded-3xl p-6 sm:p-8">
         <h3 className="text-lg font-bold text-white mb-2">{t('stats.fandomsTitle')}</h3>
         <p className="text-xs text-slate-400 mb-6">
           {t('stats.fandomsDesc')}
@@ -227,13 +227,13 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
           {stats.sortedFandoms.map(([fandom, count]) => (
             <div
               key={fandom}
-              className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between"
+              className="glass-well p-4 rounded-2xl flex items-center justify-between"
             >
               <div className="min-w-0 pr-3">
                 <h4 className="text-xs font-bold text-white truncate">{bucketLabel(fandom)}</h4>
                 <p className="text-[11px] text-slate-400 mt-0.5">{t('stats.fandomInterest')}</p>
               </div>
-              <span className="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 font-mono font-bold text-xs shrink-0 border border-rose-500/30">
+              <span className="glass-chip font-mono font-bold bg-rose-500/20 text-rose-300 border-rose-500/30 shrink-0">
                 {t(isOne(count) ? 'stats.memberCountOne' : 'stats.memberCountOther', { count: formatNumber(count) })}
               </span>
             </div>

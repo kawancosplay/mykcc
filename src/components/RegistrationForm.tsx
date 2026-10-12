@@ -454,17 +454,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
     return (
       <div className="max-w-2xl mx-auto py-12 px-4 animate-fade-in text-slate-100">
-        <div className="liquid-glass-elevated border-emerald-500/30 rounded-3xl overflow-hidden shadow-2xl">
+        <div className="glass-card glass-raised border-emerald-500/30 rounded-3xl overflow-hidden">
           {/* Top Google Form Purple/Accent bar */}
           <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
 
-          <div className="p-8 sm:p-10 text-center">
+          <div className="p-6 sm:p-10 text-center">
             <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
             </div>
 
             {isDemoSubmission && (
-              <div className="mb-4 p-3 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-center gap-2">
+              <div className="glass-well mb-4 p-3 rounded-2xl border-amber-500/40 bg-amber-950/60 text-amber-200 text-xs flex items-center justify-center gap-2">
                 <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
                 <span className="font-semibold">{t('registration.sandboxSubmissionNotice')}</span>
               </div>
@@ -478,7 +478,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </p>
 
             {/* 16-Digit Single KCC ID Account highlight */}
-            <div className="liquid-glass border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
+            <div className="glass-well border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
                 {t('registration.singleAccountIdTitle')}
               </span>
@@ -502,8 +502,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
 
             {/* UNLOCKED WHATSAPP COMMUNITY GROUP INVITE LINK */}
-            <div className="bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center shadow-lg">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+            <div className="glass-well border-emerald-500/40 bg-emerald-950/60 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center">
+              <div className="glass-chip mb-2 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
                 <span>{t('registration.whatsappUnlockedBadge')}</span>
               </div>
@@ -519,7 +519,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   href={`https://wa.me/6285711032782?text=${encodeURIComponent(whatsappMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 inline-flex items-center justify-center gap-2 transition-all"
+                  className="pressable w-full sm:w-auto min-h-11 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/30 inline-flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>{t('registration.joinWhatsappButton')}</span>
@@ -530,8 +530,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             {/* Action buttons */}
             <div className="flex flex-wrap items-center justify-center gap-2.5">
               <button
+                type="button"
                 onClick={() => onOpenCardModal(submittedMember)}
-                className="px-5 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all inline-flex items-center justify-center gap-2"
+                className="btn-primary pressable px-5"
               >
                 <Eye className="w-4 h-4" />
                 <span>{t('registration.viewMyKccId')}</span>
@@ -561,14 +562,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     acceptedCodeOfConduct: false,
                   }));
                 }}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition-colors"
+                className="glass-button pressable px-5"
               >
                 {t('registration.submitAnother')}
               </button>
             </div>
 
             {/* Hotline footer */}
-            <div className="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-center space-x-2">
+            <div className="mt-8 pt-6 border-t border-white/10 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-2">
               <MessageCircle className="w-4 h-4 text-emerald-400" />
               <span>{t('registration.needHelpHotline')}</span>
               <a
@@ -589,17 +590,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   return (
     <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
       {/* GOOGLE FORM HEADER CARD */}
-      <div className="liquid-glass-elevated rounded-3xl overflow-hidden shadow-2xl mb-6">
+      <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
         {/* Top Google Form Purple/Accent Header Band */}
         <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
 
-        <div className="p-6 sm:p-10">
+        <div className="p-5 sm:p-10">
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1.5">
+            <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
               <Sparkles className="w-3.5 h-3.5 text-rose-400" />
               <span>{t('registration.officialFormTag')}</span>
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <span className="glass-chip bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
               {t('registration.safeCommunityTag')}
             </span>
           </div>
@@ -613,7 +614,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </p>
 
           {/* Inclusive Notice */}
-          <div className="p-3.5 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl flex items-start space-x-3 text-xs text-indigo-200 mb-4">
+          <div className="glass-well p-3.5 border-indigo-500/30 bg-indigo-950/40 rounded-2xl flex items-start gap-3 text-xs text-indigo-200 mb-4">
             <Heart className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
             <div>
               <strong>{t('registration.inclusiveWelcome')}</strong>
@@ -621,8 +622,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
 
           {/* WhatsApp Hotline Callout */}
-          <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-white/10 text-xs text-slate-400">
+            <div className="flex flex-wrap items-center gap-2">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{t('registration.officialHotlineLabel')}</span>
               <a
@@ -641,7 +642,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       </div>
 
       {errorMsg && (
-        <div className="mb-6 p-4 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex items-center space-x-2">
+        <div className="glass-well mb-6 p-4 rounded-2xl border-rose-500/50 bg-rose-950/60 text-rose-200 text-sm flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-rose-400 shrink-0"></div>
           <span>{errorMsg}</span>
         </div>
@@ -658,7 +659,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
       {/* Sandbox Active Banner when filling demo */}
       {isDemoMode && (
-        <div className="mb-5 p-3.5 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between gap-3 shadow-md animate-fade-in">
+        <div className="glass-well mb-5 p-3.5 rounded-2xl border-amber-500/40 bg-amber-950/60 text-amber-200 text-xs flex items-center justify-between gap-3 animate-fade-in">
           <div className="flex items-center gap-2.5">
             <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
             <span>{t('registration.sandboxActiveNotice')}</span>
@@ -669,17 +670,21 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               setIsDemoMode(false);
               handleClearForm();
             }}
-            className="px-2.5 py-1 rounded-lg bg-amber-800/80 hover:bg-amber-700 text-white font-bold text-[10px] shrink-0 transition-colors"
+            className="glass-button pressable shrink-0 min-h-11 px-3 bg-amber-800/80 hover:bg-amber-700 border-amber-500/40 text-white font-bold text-xs"
           >
             {t('registration.exitSandbox')}
           </button>
         </div>
       )}
 
-      {/* FORM BODY - GOOGLE FORM STYLE QUESTION CARDS */}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      {/* FORM BODY - GOOGLE FORM STYLE QUESTION CARDS. Fields keep a bottom scroll margin so a field
+          scrolled into view on focus is not hidden behind the sticky submit bar. */}
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5 [&_input]:scroll-mb-28 [&_select]:scroll-mb-28 [&_textarea]:scroll-mb-28"
+      >
         {/* QUESTION 1: NAME (JUST ASK NAME) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.nameLabel')} <span className="text-rose-500">*</span>
           </label>
@@ -695,12 +700,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             maxLength={MEMBER_FIELD_LIMITS.name}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-medium"
+            className="glass-input w-full text-base sm:text-sm font-medium"
           />
         </div>
 
         {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED) & OPTIONAL SECONDARY NUMBER */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-500/25 space-y-4">
+        <div className="glass-card rounded-3xl p-5 sm:p-8 border border-emerald-500/25 space-y-4">
           <div>
             <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
               {t('registration.whatsappLabel')}{' '}
@@ -718,24 +723,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               maxLength={MEMBER_FIELD_LIMITS.phone}
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
+              className="glass-input w-full text-base sm:text-sm font-mono"
             />
           </div>
 
           {/* Opsi memiliki lebih dari 1 nomor WhatsApp */}
-          <div className="pt-2 border-t border-slate-800/80">
+          <div className="pt-2 border-t border-white/10">
             {!showPhone2 && !formData.phone2 ? (
               <button
                 type="button"
                 onClick={() => setShowPhone2(true)}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 transition-colors py-1 cursor-pointer"
+                className="pressable min-h-11 text-sm text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <span>{t('registration.addBackupPhone')}</span>
               </button>
             ) : (
               <div className="space-y-1.5 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs sm:text-sm font-bold text-slate-200">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="block text-sm font-bold text-slate-200">
                     {t('registration.backupPhoneLabel')}{' '}
                     <span className="text-slate-400 font-normal">{t('registration.optionalTag')}</span>
                   </label>
@@ -745,7 +750,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                       setFormData({ ...formData, phone2: '' });
                       setShowPhone2(false);
                     }}
-                    className="text-[11px] text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                    className="touch-target pressable shrink-0 text-xs text-slate-400 hover:text-rose-400 cursor-pointer"
                   >
                     {t('registration.removeBackupPhone')}
                   </button>
@@ -759,7 +764,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   maxLength={MEMBER_FIELD_LIMITS.phone2}
                   value={formData.phone2}
                   onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                  className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
+                  className="glass-input w-full text-base sm:text-sm font-mono"
                 />
               </div>
             )}
@@ -767,7 +772,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 3: DISCORD USERNAME COLUMN */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.discordLabel')}{' '}
             <span className="text-xs text-slate-400 font-normal">{t('registration.optionalTag')}</span>
@@ -782,12 +787,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             maxLength={MEMBER_FIELD_LIMITS.discordUsername}
             value={formData.discordUsername}
             onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
+            className="glass-input w-full text-base sm:text-sm font-mono"
           />
         </div>
 
         {/* QUESTION 4: EMAIL (REQUIRED) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.emailLabel')} <span className="text-rose-500">*</span>
           </label>
@@ -802,13 +807,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             maxLength={MEMBER_FIELD_LIMITS.email}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 4: AGE CATEGORY (MINOR VS LEGAL AGE) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
-          <div className="flex items-center justify-between mb-1.5">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
+          <div className="flex items-center justify-between gap-3 mb-1.5">
             <label className="block text-sm sm:text-base font-bold text-white">
               {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
             </label>
@@ -816,7 +821,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <button
               type="button"
               onClick={() => setShowAgeExplainer(!showAgeExplainer)}
-              className="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1 underline"
+              aria-expanded={showAgeExplainer}
+              className="touch-target pressable shrink-0 text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 underline"
             >
               <Info className="w-3.5 h-3.5" />
               <span>{t('registration.ageExplanationTitle')}</span>
@@ -824,24 +830,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </div>
 
           {showAgeExplainer && (
-            <div className="p-3.5 bg-slate-950 border border-rose-500/30 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
+            <div className="glass-well p-3.5 border-rose-500/30 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
               <strong className="text-rose-300 block mb-1">{t('registration.ageExplanationTitle')}</strong>
               <p>{t('registration.ageExplanationDesc')}</p>
             </div>
           )}
 
-          <div className="space-y-3 mt-3">
+          <div className="space-y-1 mt-2">
             {AGE_CATEGORIES.map((opt) => (
-              <label key={opt.val} className="flex items-center space-x-3 cursor-pointer group">
+              <label key={opt.val} className="flex items-center gap-3 min-h-11 py-1 cursor-pointer group">
                 <input
                   type="radio"
                   name="ageCategory"
                   value={opt.val}
                   checked={formData.ageCategory === opt.val}
                   onChange={(e) => setFormData({ ...formData, ageCategory: e.target.value })}
-                  className="w-4 h-4 text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
+                  className="w-5 h-5 shrink-0 cursor-pointer"
                 />
-                <span className="text-xs sm:text-sm text-slate-200 group-hover:text-white">
+                <span className="text-sm text-slate-200 group-hover:text-white">
                   {t(opt.labelKey)}
                 </span>
               </label>
@@ -850,7 +856,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.exactAgeOptional')}
           </label>
@@ -864,12 +870,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             maxLength={MEMBER_FIELD_LIMITS.age}
             value={formData.age}
             onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 6: LOCATION / DOMICILE (COUNTRY, PROVINCE, CITY) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.locationTitle')} <span className="text-rose-500">*</span>
           </label>
@@ -898,7 +904,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     customProvince: '',
                   });
                 }}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {countryOptions.map((c) => (
                   <option key={c.isoCode} value={c.name}>
@@ -924,7 +930,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     customCity: '',
                   });
                 }}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {availableProvinces.map((p) => (
                   <option key={p.isoCode || p.name} value={p.name}>
@@ -942,7 +948,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <select
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {availableCities.map((city) => (
                   <option key={city} value={city}>
@@ -961,7 +967,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               maxLength={MEMBER_FIELD_LIMITS.province}
               value={formData.customProvince}
               onChange={(e) => setFormData({ ...formData, customProvince: e.target.value })}
-              className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
+              className="glass-input mt-3 w-full text-base sm:text-sm"
             />
           )}
 
@@ -972,13 +978,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               maxLength={MEMBER_FIELD_LIMITS.city}
               value={formData.customCity}
               onChange={(e) => setFormData({ ...formData, customCity: e.target.value })}
-              className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
+              className="glass-input mt-3 w-full text-base sm:text-sm"
             />
           )}
         </div>
 
         {/* QUESTION 7: PRIMARY ROLE / INTEREST (INCLUSIVE) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.roleTitle')} <span className="text-rose-500">*</span>
           </label>
@@ -986,32 +992,32 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             {t('registration.roleDesc')}
           </p>
 
-          <div className="space-y-3">
+          <div className="space-y-1">
             {COMMUNITY_ROLES.map((role) => (
               <div key={role.val}>
-                <label className="flex items-center space-x-3 cursor-pointer group">
+                <label className="flex items-center gap-3 min-h-11 py-1 cursor-pointer group">
                   <input
                     type="radio"
                     name="primaryRole"
                     value={role.val}
                     checked={formData.primaryRole === role.val}
                     onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })}
-                    className="w-4 h-4 text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
+                    className="w-5 h-5 shrink-0 cursor-pointer"
                   />
-                  <span className="text-xs sm:text-sm text-slate-200 group-hover:text-white">
+                  <span className="text-sm text-slate-200 group-hover:text-white">
                     {t(role.labelKey)}
                   </span>
                 </label>
 
                 {role.val === 'Lainnya / Others' && formData.primaryRole === 'Lainnya / Others' && (
-                  <div className="mt-2.5 ml-7">
+                  <div className="mt-1.5 mb-2 ms-8">
                     <input
                       type="text"
                       placeholder={t('registration.roleOthersPlaceholder')}
                       maxLength={MEMBER_FIELD_LIMITS.customRole}
                       value={formData.customRole}
                       onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
-                      className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
+                      className="glass-input w-full text-base sm:text-sm"
                     />
                   </div>
                 )}
@@ -1021,7 +1027,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 8: FAVORITE FANDOM / IDOL GROUP / SERIES */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.fandomTitle')} <span className="text-rose-500">*</span>
           </label>
@@ -1032,7 +1038,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <select
             value={formData.fandom}
             onChange={(e) => setFormData({ ...formData, fandom: e.target.value })}
-            className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-purple-500"
+            className="glass-input w-full text-base sm:text-sm"
           >
             {FANDOMS.map((f) => (
               <option key={f.val} value={f.val}>
@@ -1044,7 +1050,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 9: EXPERIENCE (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.experienceTitle')}
           </label>
@@ -1057,12 +1063,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <button
                 type="button"
                 key={exp.val}
+                aria-pressed={formData.experience === exp.val}
                 onClick={() => setFormData({ ...formData, experience: exp.val })}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center ${
-                  formData.experience === exp.val
-                    ? 'bg-purple-600 text-white border-purple-500 shadow-md'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
-                }`}
+                className="glass-chip pressable justify-center text-center whitespace-normal leading-tight rounded-xl min-h-11 px-3 py-2 text-xs sm:text-sm"
               >
                 {t(exp.labelKey)}
               </button>
@@ -1071,7 +1074,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 10: SOCIAL MEDIA (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.socialMediaTitle')}
           </label>
@@ -1085,12 +1088,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             maxLength={MEMBER_FIELD_LIMITS.socialMedia}
             value={formData.socialMedia}
             onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 11: PORTFOLIO / DRIVE LINK (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.portfolioTitle')}
           </label>
@@ -1104,12 +1107,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             maxLength={MEMBER_FIELD_LIMITS.portfolioUrl}
             value={formData.portfolioUrl}
             onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 12: AVATAR / PROFILE PHOTO (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.avatarTitle')}
           </label>
@@ -1117,12 +1120,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             {t('registration.avatarDesc')}
           </p>
 
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="glass-well w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
               {formData.avatarUrl ? (
                 <img
                   src={formData.avatarUrl}
                   alt={t('registration.avatarPreviewAlt')}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -1130,7 +1135,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               )}
             </div>
 
-            <label className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700">
+            <label className="glass-button pressable cursor-pointer min-h-11 px-4 text-sm">
               <Upload className="w-4 h-4 text-purple-400" />
               <span>{t('registration.uploadButton')}</span>
               <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
@@ -1139,18 +1144,27 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
           <div>
             <p className="text-xs text-slate-400 mb-2">{t('registration.presetAvatarLabel')}</p>
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
               {PRESET_AVATARS.map((url, i) => (
                 <button
                   key={i}
                   type="button"
                   aria-label={t('registration.presetAvatarAria', { number: i + 1 })}
+                  aria-pressed={formData.avatarUrl === url}
                   onClick={() => setFormData({ ...formData, avatarUrl: url })}
-                  className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-all ${
-                    formData.avatarUrl === url ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60'
+                  className={`pressable w-11 h-11 shrink-0 rounded-xl overflow-hidden border-2 bg-black/30 ${
+                    formData.avatarUrl === url ? 'border-purple-500' : 'border-white/10 opacity-60'
                   }`}
                 >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={url}
+                    alt=""
+                    width={44}
+                    height={44}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -1158,7 +1172,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 13: REASON & EXPECTATIONS (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.reasonTitle')}
           </label>
@@ -1172,67 +1186,72 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             maxLength={MEMBER_FIELD_LIMITS.reason}
             value={formData.reason}
             onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-xs sm:text-sm resize-none"
+            className="glass-input w-full text-base sm:text-sm resize-none"
           />
         </div>
 
         {/* QUESTION 14: CODE OF CONDUCT (REQUIRED CHECKBOX) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-3">
             {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
           </label>
 
-          <label className="flex items-start space-x-3 cursor-pointer">
+          <label className="flex items-start gap-3 py-1 cursor-pointer">
             <input
               type="checkbox"
               required
               checked={formData.acceptedCodeOfConduct}
               onChange={(e) => setFormData({ ...formData, acceptedCodeOfConduct: e.target.checked })}
-              className="mt-1 w-4 h-4 rounded text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
+              className="mt-0.5 w-5 h-5 shrink-0 rounded cursor-pointer"
             />
-            <span className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+            <span className="text-sm text-slate-200 leading-relaxed">
               {t('registration.codeOfConductAgreement')}
             </span>
           </label>
         </div>
 
-        {/* ACTION BUTTONS (GOOGLE FORM STYLE) */}
-        <div className="flex flex-col gap-3 pt-2">
-          {errorMsg && (
-            <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-lg transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>{t('registration.submittingText')}</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-3.5 h-3.5" />
-                <span>{t('registration.submitButton')}</span>
-              </>
+        {/* ACTION BUTTONS: a floating glass bar that stays above the bottom edge (and the iPhone home
+            indicator) while the form is on screen. Sticky, not fixed: it settles into place after the
+            last question. The wrapper ignores taps so only the glass bar itself is interactive. */}
+        <div className="sticky bottom-0 z-20 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none">
+          <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2">
+            {errorMsg && (
+              <div className="flex items-start gap-2 px-2 pt-1 text-sm text-rose-200">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
             )}
-          </button>
 
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary pressable w-full min-h-12 px-6 text-base sm:text-sm"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>{t('registration.submittingText')}</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>{t('registration.submitButton')}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
           <button
             type="button"
             onClick={handleClearForm}
-            className="px-3 py-1.5 rounded-lg text-xs text-rose-300 hover:text-white hover:bg-rose-500/15 transition-colors inline-flex items-center justify-center gap-1.5 font-semibold"
+            className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-300 hover:text-white hover:bg-rose-500/15 inline-flex items-center justify-center gap-1.5 font-semibold"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4" />
             <span>{t('registration.clearForm')}</span>
           </button>
         </div>
-
       </form>
     </div>
   );

@@ -493,7 +493,7 @@ function onFormSubmit(e) {
       {/* Title & Introduction */}
       <div className="mb-8">
         <div className="flex items-center space-x-2 mb-2">
-          <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+          <span className="glass-chip font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
             <Zap className="w-3.5 h-3.5 text-emerald-400" />
             <span>{t('sheets.bridgeBadge')}</span>
           </span>
@@ -509,7 +509,7 @@ function onFormSubmit(e) {
               type="button"
               onClick={handleAuthorizeGoogle}
               disabled={isLoadingSheets}
-              className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 hover:border-emerald-500/50 text-xs font-bold flex items-center space-x-2 transition-all shadow-md active:scale-95 disabled:opacity-50"
+              className="glass-button pressable rounded-2xl px-4 text-xs font-bold hover:border-emerald-500/50"
             >
               <Key className="w-4 h-4 text-emerald-400" />
               <span>{accessToken ? t('sheets.renewAccess') : t('sheets.connectSheets')}</span>
@@ -520,7 +520,7 @@ function onFormSubmit(e) {
 
       {/* Auth Alert if token is not ready */}
       {!accessToken && (
-        <div className="bg-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 mb-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="glass-card border-amber-500/30 rounded-3xl p-6 sm:p-8 mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-start space-x-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-400">
               <AlertCircle className="w-6 h-6" />
@@ -546,7 +546,7 @@ function onFormSubmit(e) {
             type="button"
             onClick={handleAuthorizeGoogle}
             disabled={isLoadingSheets}
-            className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 transition-transform active:scale-95 disabled:opacity-50"
+            className="pressable px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 disabled:opacity-50"
           >
             <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
             <span>{t('sheets.connectSheets')}</span>
@@ -559,8 +559,8 @@ function onFormSubmit(e) {
         {/* LEFT COLUMN: SPREADSHEET PICKER & COLUMN MAPPER (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* STEP 1: PILIH SPREADSHEET */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
+          <div className="glass-card rounded-3xl p-6 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-white/10">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
                   1
@@ -600,13 +600,13 @@ function onFormSubmit(e) {
                         handleInspectSpreadsheet();
                       }
                     }}
-                    className="flex-1 min-w-0 px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-base sm:text-sm focus:outline-none focus:border-emerald-500"
+                    className="flex-1 min-w-0 glass-input px-4 py-3 text-base sm:text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => handleInspectSpreadsheet()}
                     disabled={isLoadingSheets || !sheetInput.trim()}
-                    className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors shrink-0 disabled:opacity-50"
+                    className="pressable px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center space-x-1.5 shrink-0 disabled:opacity-50"
                   >
                     <span>{t('sheets.inspectButton')}</span>
                     <ArrowRight className="w-4 h-4" />
@@ -635,7 +635,7 @@ function onFormSubmit(e) {
                       setSelectedTab(e.target.value);
                       handleInspectSpreadsheet(selectedSpreadsheetId, e.target.value);
                     }}
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-sm"
+                    className="w-full glass-input text-base sm:text-sm"
                   >
                     {sheetTabs.map((tab) => (
                       <option key={tab} value={tab}>
@@ -650,8 +650,8 @@ function onFormSubmit(e) {
 
           {/* STEP 2: AUTO COLUMN MAPPING PREVIEW */}
           {headers.length > 0 && (
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl animate-fade-in">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+            <div className="glass-card rounded-3xl p-6 sm:p-8 animate-fade-in">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/10">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400 font-bold">
                     2
@@ -664,7 +664,7 @@ function onFormSubmit(e) {
                   </div>
                 </div>
 
-                <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 text-xs font-bold rounded-lg border border-emerald-500/30">
+                <span className="glass-chip font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                   {t('sheets.autoDetectedBadge')}
                 </span>
               </div>
@@ -678,7 +678,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.fullName}
                     onChange={(e) => setColumnMapping({ ...columnMapping, fullName: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionChooseColumn')}</option>
                     {headers.map((h, i) => (
@@ -697,7 +697,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.cosplayName}
                     onChange={(e) => setColumnMapping({ ...columnMapping, cosplayName: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionChooseColumn')}</option>
                     {headers.map((h, i) => (
@@ -716,7 +716,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.email}
                     onChange={(e) => setColumnMapping({ ...columnMapping, email: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionChooseColumn')}</option>
                     {headers.map((h, i) => (
@@ -735,7 +735,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.phone}
                     onChange={(e) => setColumnMapping({ ...columnMapping, phone: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionNone')}</option>
                     {headers.map((h, i) => (
@@ -755,7 +755,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.phone2 ?? -1}
                     onChange={(e) => setColumnMapping({ ...columnMapping, phone2: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionNone')}</option>
                     {headers.map((h, i) => (
@@ -774,7 +774,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.discordUsername}
                     onChange={(e) => setColumnMapping({ ...columnMapping, discordUsername: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionNone')}</option>
                     {headers.map((h, i) => (
@@ -793,7 +793,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.city}
                     onChange={(e) => setColumnMapping({ ...columnMapping, city: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionDefaultIndonesia')}</option>
                     {headers.map((h, i) => (
@@ -812,7 +812,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.primaryRole}
                     onChange={(e) => setColumnMapping({ ...columnMapping, primaryRole: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionDefaultCosplayer')}</option>
                     {headers.map((h, i) => (
@@ -831,7 +831,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.fandom}
                     onChange={(e) => setColumnMapping({ ...columnMapping, fandom: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionDefaultAnimeGames')}</option>
                     {headers.map((h, i) => (
@@ -850,7 +850,7 @@ function onFormSubmit(e) {
                   <select
                     value={columnMapping.timestamp}
                     onChange={(e) => setColumnMapping({ ...columnMapping, timestamp: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white"
+                    className="w-full glass-input px-3 py-2 text-base sm:text-sm"
                   >
                     <option value={-1}>{t('sheets.optionCurrentTime')}</option>
                     {headers.map((h, i) => (
@@ -864,7 +864,7 @@ function onFormSubmit(e) {
 
               {/* Preview of first 3 rows including Discord Username & WhatsApp */}
               {previewRows.length > 0 && (
-                <div className="mb-6 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 overflow-x-auto">
+                <div className="mb-6 glass-well rounded-2xl p-4 overflow-x-auto">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2">
                     {t('sheets.previewTitle')}
                   </p>
@@ -915,7 +915,7 @@ function onFormSubmit(e) {
                 type="button"
                 onClick={handleImportToFirebase}
                 disabled={isImporting}
-                className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:via-teal-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50"
+                className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:via-teal-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 pressable-soft disabled:opacity-50"
               >
                 {isImporting ? (
                   <>
@@ -969,7 +969,7 @@ function onFormSubmit(e) {
                 type="button"
                 onClick={handleAuthorizeGoogle}
                 disabled={isLoadingSheets}
-                className="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shrink-0 flex items-center space-x-2 shadow-md transition-transform active:scale-95 disabled:opacity-50"
+                className="pressable px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shrink-0 flex items-center space-x-2 shadow-md disabled:opacity-50"
               >
                 <Key className="w-4 h-4 text-emerald-600" />
                 <span>{t('sheets.grantAccessButton')}</span>
@@ -981,7 +981,7 @@ function onFormSubmit(e) {
         {/* RIGHT COLUMN: REAL-TIME TRANSITION ENGINE & APPS SCRIPT (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           {/* REAL-TIME LIVE POLLER */}
-          <div className="bg-slate-900/90 border border-emerald-500/30 rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden">
+          <div className="glass-card border-emerald-500/30 rounded-3xl p-6 sm:p-7 relative overflow-hidden">
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="flex items-center justify-between mb-4">
@@ -1016,14 +1016,14 @@ function onFormSubmit(e) {
               {t('sheets.pollerDesc', { seconds: formatNumber(pollIntervalSeconds) })}
             </p>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 mb-5">
+            <div className="glass-well p-4 rounded-2xl space-y-3 mb-5">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400">{t('sheets.pollIntervalLabel')}</span>
                 <select
                   value={pollIntervalSeconds}
                   onChange={(e) => setPollIntervalSeconds(Number(e.target.value))}
                   aria-label={t('sheets.pollIntervalLabel')}
-                  className="bg-slate-900 border border-slate-700 text-white rounded-lg px-2 py-1 text-xs"
+                  className="glass-input px-3 py-1.5 text-base sm:text-sm"
                 >
                   <option value={15}>{t('sheets.pollEverySeconds', { seconds: formatNumber(15) })}</option>
                   <option value={30}>{t('sheets.pollEverySecondsOptimal', { seconds: formatNumber(30) })}</option>
@@ -1050,7 +1050,7 @@ function onFormSubmit(e) {
                 }
                 setIsAutoSyncActive(!isAutoSyncActive);
               }}
-              className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 transition-all ${
+              className={`pressable w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center space-x-2 ${
                 isAutoSyncActive
                   ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30'
@@ -1068,7 +1068,7 @@ function onFormSubmit(e) {
           </div>
 
           {/* GOOGLE APPS SCRIPT WEBHOOK TRIGGER OPTION */}
-          <div className="bg-slate-900/90 border border-indigo-500/30 rounded-3xl p-6 sm:p-7 shadow-xl">
+          <div className="glass-card border-indigo-500/30 rounded-3xl p-6 sm:p-7">
             <div className="flex items-center space-x-2 mb-3">
               <Code2 className="w-5 h-5 text-indigo-400" />
               <h3 className="font-bold text-white text-base">{t('sheets.webhookTitle')}</h3>
@@ -1076,10 +1076,10 @@ function onFormSubmit(e) {
             <p className="text-xs text-slate-300 leading-relaxed mb-4">{renderMarkedText(t('sheets.webhookDesc'))}</p>
 
             {/* Code Box */}
-            <div className="relative bg-slate-950 border border-slate-800 rounded-2xl p-4 font-mono text-[11px] text-slate-300 overflow-x-auto max-h-48 mb-4">
+            <div className="relative glass-well rounded-2xl p-4 font-mono text-[11px] text-slate-300 overflow-x-auto max-h-48 mb-4">
               <button
                 onClick={copyScriptToClipboard}
-                className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-sans flex items-center space-x-1 border border-slate-700 transition-colors"
+                className="glass-button pressable touch-target absolute top-2.5 right-2.5 min-h-0 px-2.5 py-1 gap-1 rounded-lg text-xs font-sans"
               >
                 {copiedCode ? (
                   <>
@@ -1105,7 +1105,7 @@ function onFormSubmit(e) {
           </div>
 
           {/* RECENT SYNC LOGS */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl">
+          <div className="glass-card rounded-3xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-slate-400" />
@@ -1127,7 +1127,7 @@ function onFormSubmit(e) {
                 {syncLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-xs space-y-1"
+                    className="glass-well p-3 rounded-xl text-xs space-y-1"
                   >
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-emerald-400">{describeLogSource(log.source)}</span>

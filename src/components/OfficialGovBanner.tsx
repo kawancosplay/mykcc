@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import {
   Lock,
   ChevronDown,
@@ -8,11 +10,36 @@ import {
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import type { LanguageCode } from '../i18n';
+import { SPRING, TWEEN, fadeVariants, useReducedMotion } from '../lib/motion';
+import type { PresenceMotionProps } from '../lib/motion';
 
 interface OfficialGovBannerProps {
   /** Kept for existing callers; the text follows the I18nProvider language. */
   currentLang: LanguageCode;
 }
+
+// Disclosure: the guide's height opens with the sheet spring and closes with the iOS curve, so the
+// navbar below glides instead of jumping. Height + opacity only (no transform inside the sticky header).
+const disclosureVariants: Variants = {
+  initial: { opacity: 0, height: 0 },
+  animate: { opacity: 1, height: 'auto', transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
+  exit: { opacity: 0, height: 0, transition: TWEEN.sheetExit },
+};
+
+const DISCLOSURE_MOTION: PresenceMotionProps = {
+  variants: disclosureVariants,
+  initial: 'initial',
+  animate: 'animate',
+  exit: 'exit',
+};
+
+// Reduced motion: quick cross-fade, no height animation.
+const FADE_MOTION: PresenceMotionProps = {
+  variants: fadeVariants,
+  initial: 'initial',
+  animate: 'animate',
+  exit: 'exit',
+};
 
 /*
  * Top strip of the sticky header. App renders it inside the `.glass-bar` container together with the
@@ -21,6 +48,7 @@ interface OfficialGovBannerProps {
 export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useI18n();
+  const disclosureMotion = useReducedMotion() === true ? FADE_MOTION : DISCLOSURE_MOTION;
 
   return (
     <div className="relative border-b border-white/[0.06] text-slate-300 text-xs">
@@ -59,9 +87,11 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
       </div>
 
       {/* Expandable Verification Guide Drawer (scrolls on short phone screens instead of pushing the
-          whole sticky header past the viewport) */}
+          whole sticky header past the viewport). The outer wrapper clips the height animation. */}
+      <AnimatePresence initial={false}>
       {isOpen && (
-        <div className="border-t border-white/[0.06] px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain animate-fade-in">
+        <motion.div key="gov-banner-guide" {...disclosureMotion} className="overflow-hidden">
+        <div className="border-t border-white/[0.06] px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Pillar 1: Official International Community Identity */}
             <div className="flex items-start gap-3.5">
@@ -126,7 +156,9 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
             </div>
           </div>
         </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 };

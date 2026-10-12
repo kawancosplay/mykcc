@@ -43,8 +43,9 @@ import {
 import { format16DigitUserId, MAIN_ACCOUNT_UID } from './lib/idGenerator';
 import { useI18n } from './i18n';
 import { useSiteTheme } from './lib/themeContext';
-import { motion } from 'framer-motion';
-import { triggerHaptic } from './lib/haptic';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { haptic } from './lib/haptic';
+import { MOTION_CONFIG, usePresenceMotion } from './lib/motion';
 import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-react';
 
 // Mounts a lazy modal on its first open and then keeps it mounted, so its internal state (typed form
@@ -178,11 +179,16 @@ export default function App() {
   }, [isMobileMenuOpen]);
 
 
+  // Every user-initiated screen change (navbar, mobile menu, footer links) goes through here: a light
+  // tick only when the screen actually changes.
   const handleTabChange = (tab: 'form' | 'card' | 'gallery' | 'profile' | 'admin') => {
-    triggerHaptic(15);
+    if (tab !== activeTab) haptic('light');
     setActiveTab(tab);
   };
-  
+
+  // Screen change: fade + small rise with the page spring (opacity-only with reduced motion).
+  const pageMotion = usePresenceMotion('page');
+
   const { theme, isEditorOpen, setIsEditorOpen } = useSiteTheme();
 
   const getBgStyle = () => {
@@ -543,6 +549,7 @@ export default function App() {
   // DEDICATED SEPARATE PAGE: ADMIN DASHBOARD (RESTRICTED: GOOGLE SIGN-IN AS A FIREBASE ADMIN)
   if (activeTab === 'admin') {
     return (
+      <MotionConfig {...MOTION_CONFIG}>
       <div
         dir={dir}
         className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
@@ -629,14 +636,17 @@ export default function App() {
           </Suspense>
         </main>
 
-        {selectedMemberForCard && (
-          <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
-            <MemberCardModal
-              member={selectedMemberForCard}
-              onClose={() => setSelectedMemberForCard(null)}
-            />
-          </Suspense>
-        )}
+        {/* AnimatePresence keeps the closed card mounted until its sheet has slid out */}
+        <AnimatePresence>
+          {selectedMemberForCard && (
+            <Suspense key="member-card" fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+              <MemberCardModal
+                member={selectedMemberForCard}
+                onClose={() => setSelectedMemberForCard(null)}
+              />
+            </Suspense>
+          )}
+        </AnimatePresence>
         {authModalMounted && (
           <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
             <AuthModal
@@ -653,11 +663,13 @@ export default function App() {
           </Suspense>
         )}
       </div>
+      </MotionConfig>
     );
   }
 
   // PUBLIC SITE LAYOUT (ZERO ACCESS TO MEMBER LIST FOR ALL MEMBERS)
   return (
+    <MotionConfig {...MOTION_CONFIG}>
     <div
       dir={dir}
       className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
@@ -679,7 +691,7 @@ export default function App() {
         {/* Main Navbar */}
         <Navbar
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           user={user}
           currentMember={currentMember}
           onOpenAuth={() => setIsAuthModalOpen(true)}
@@ -694,16 +706,17 @@ export default function App() {
         />
       </div>
 
-      {/* Main Content Area. Opacity-only cross-fade: a transform here would trap the `position: fixed`
-          lightboxes / sheets that the tab screens render inside it. No z-index either: as its own
-          stacking context it would keep those sheets (z-60) underneath the sticky header (z-50). It still
-          paints above the ambient layer (positioned, later in the DOM). */}
+      {/* Main Content Area. mode="wait": the old screen fades out (opacity only), then the new one
+          rises in with the page spring. The 8px rise is the only transform and ends at y = 0, where
+          framer-motion writes `transform: none`, so at rest nothing traps the `position: fixed`
+          lightboxes / sheets the tab screens render inside it (they only open on a later tap).
+          With reduced motion it is a plain cross-fade. No z-index: as its own stacking context it
+          would keep those sheets (z-60) underneath the sticky header (z-50). It still paints above
+          the ambient layer (positioned, later in the DOM). */}
+      <AnimatePresence mode="wait">
       <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         key={activeTab}
+        {...pageMotion}
         className="flex-1 pb-[calc(4rem+var(--safe-bottom))] relative"
       >
         <Suspense fallback={<ScreenSkeleton label={t('common.loadingApp')} />}>
@@ -726,7 +739,7 @@ export default function App() {
 
         {/* TAB 2: DIGITAL PASS GENERATOR & PRIVACY-SAFE LOOKUP */}
         {activeTab === 'card' && (
-          <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 text-center animate-fade-in">
+          <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 text-center">
             <div className="glass-card glass-raised rounded-3xl p-8 sm:p-12">
               <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-3">
                 {t('common.cardPageBadge')}
@@ -821,7 +834,7 @@ export default function App() {
                 <span>{t('common.notRegisteredYet')}</span>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('form')}
+                  onClick={() => handleTabChange('form')}
                   className="touch-target text-rose-400 font-bold hover:underline"
                 >
                   {t('common.fillRegistrationForm')}
@@ -894,16 +907,20 @@ export default function App() {
         )}
         </Suspense>
       </motion.main>
+      </AnimatePresence>
 
-      {/* Member Card Modal (lazy: mounted while a member is selected) */}
-      {selectedMemberForCard && (
-        <Suspense fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
-          <MemberCardModal
-            member={selectedMemberForCard}
-            onClose={() => setSelectedMemberForCard(null)}
-          />
-        </Suspense>
-      )}
+      {/* Member Card Modal (lazy: mounted while a member is selected; AnimatePresence keeps it mounted
+          until its sheet has slid out after closing) */}
+      <AnimatePresence>
+        {selectedMemberForCard && (
+          <Suspense key="member-card" fallback={<SheetSkeleton label={t('common.loadingApp')} />}>
+            <MemberCardModal
+              member={selectedMemberForCard}
+              onClose={() => setSelectedMemberForCard(null)}
+            />
+          </Suspense>
+        )}
+      </AnimatePresence>
 
       {/* Authentication Modal (lazy: mounted on first open, then kept) */}
       {authModalMounted && (
@@ -955,13 +972,13 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
-            <button type="button" onClick={() => setActiveTab('form')} className="touch-target pressable hover:text-white">
+            <button type="button" onClick={() => handleTabChange('form')} className="touch-target pressable hover:text-white">
               {t('common.navForm')}
             </button>
-            <button type="button" onClick={() => setActiveTab('card')} className="touch-target pressable hover:text-white">
+            <button type="button" onClick={() => handleTabChange('card')} className="touch-target pressable hover:text-white">
               {t('common.navCard')}
             </button>
-            <button type="button" onClick={() => setActiveTab('gallery')} className="touch-target pressable hover:text-pink-400">
+            <button type="button" onClick={() => handleTabChange('gallery')} className="touch-target pressable hover:text-pink-400">
               {t('common.navGallery')}
             </button>
             {/* Discreet Admin Portal Link for Managers */}
@@ -1002,5 +1019,6 @@ export default function App() {
         </div>
       </footer>
     </div>
+    </MotionConfig>
   );
 }

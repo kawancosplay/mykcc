@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Sparkles,
@@ -136,9 +136,9 @@ const FILE_PICKER_FOCUS_RING =
 /**
  * One-shot highlight behind an error message: a rose tint that fades out (no shake, no movement). `pulse`
  * changes on every failed attempt, which remounts the flash so it plays again. The parent needs
- * `relative isolate` and a border radius.
+ * `relative isolate` and a border radius. Also used by UserProfile's save bar.
  */
-const ErrorFlash: React.FC<{ pulse: number }> = ({ pulse }) => {
+export const ErrorFlash: React.FC<{ pulse: number }> = ({ pulse }) => {
   const reduced = useReducedMotion() === true;
   return (
     <motion.span
@@ -194,9 +194,41 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [isDuplicateShared, setIsDuplicateShared] = useState(false);
   const [showPhone2, setShowPhone2] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<ErrorField | null>(null);
+  const [errorPulse, setErrorPulse] = useState(0);
   const [showAgeExplainer, setShowAgeExplainer] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [isDemoSubmission, setIsDemoSubmission] = useState(false);
+
+  // Form <-> success card cross-transition, plain fades for the error messages (both turn into quick
+  // opacity-only fades with reduced motion)
+  const pageMotion = usePresenceMotion('page');
+  const fadeMotion = usePresenceMotion('overlay');
+  const reducedMotion = useReducedMotion() === true;
+
+  // A failed submit: the message, the field it points at (red border through aria-invalid), a one-shot
+  // highlight behind the message (no shake) and an error haptic
+  const showError = (message: string, field: ErrorField | null = null) => {
+    setErrorMsg(message);
+    setErrorField(field);
+    setErrorPulse((n) => n + 1);
+    haptic('error');
+  };
+
+  // Native `required` validation stops the submit before handleSubmit runs: give it the same error haptic.
+  // The browser fires `invalid` once per invalid field (it does not bubble, hence the capture listener),
+  // so only the first one of an attempt vibrates. React 19 calls the returned cleanup on unmount.
+  const attachInvalidHaptic = useCallback((form: HTMLFormElement | null) => {
+    if (!form) return undefined;
+    let lastAt = 0;
+    const onInvalid = () => {
+      const now = Date.now();
+      if (now - lastAt > 500) haptic('error');
+      lastAt = now;
+    };
+    form.addEventListener('invalid', onInvalid, true);
+    return () => form.removeEventListener('invalid', onInvalid, true);
+  }, []);
 
   // All 250 countries worldwide (Indonesia prioritized at top); locations load on demand per country
   const geoVersion = useWorldLocations(formData.country);
@@ -294,43 +326,48 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       setIsDemoMode(false);
       setIsDemoSubmission(false);
       setErrorMsg(null);
+      setErrorField(null);
     }
   };
 
   const submitData = async (dataToSubmit: typeof formData, isSandbox: boolean = isDemoMode) => {
     setErrorMsg(null);
+    setErrorField(null);
     setIsDuplicateShared(false);
 
     // PRIVACY ENFORCEMENT: Name, Email, and WhatsApp Mobile Number are required (community is WhatsApp-based)
     if (!dataToSubmit.name.trim()) {
-      setErrorMsg(t('registration.nameRequiredError'));
+      showError(t('registration.nameRequiredError'), 'name');
       return;
     }
 
     if (!dataToSubmit.email.trim()) {
-      setErrorMsg(t('registration.emailRequiredError'));
+      showError(t('registration.emailRequiredError'), 'email');
       return;
     }
 
     const phoneDigits = dataToSubmit.phone.replace(/\D/g, '');
     if (!dataToSubmit.phone.trim() || phoneDigits.length < MIN_PHONE_DIGITS) {
-      setErrorMsg(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }));
+      showError(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }), 'phone');
       return;
     }
 
     const phone2Raw = (dataToSubmit.phone2 || '').trim();
     if (phone2Raw && phone2Raw.replace(/\D/g, '').length < MIN_PHONE_DIGITS) {
-      setErrorMsg(t('registration.backupPhoneTooShortError', { minDigits: MIN_PHONE_DIGITS }));
+      showError(t('registration.backupPhoneTooShortError', { minDigits: MIN_PHONE_DIGITS }), 'phone2');
       return;
     }
 
     if (isCustomCityValue(dataToSubmit.city) && !(dataToSubmit.customCity || '').trim()) {
-      setErrorMsg(t('registration.customCityRequiredError', { option: t('registration.customCityOption') }));
+      showError(
+        t('registration.customCityRequiredError', { option: t('registration.customCityOption') }),
+        'customCity'
+      );
       return;
     }
 
     if (!dataToSubmit.acceptedCodeOfConduct) {
-      setErrorMsg(t('registration.codeOfConductRequiredError'));
+      showError(t('registration.codeOfConductRequiredError'), 'codeOfConduct');
       return;
     }
 
@@ -434,6 +471,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         setIsDuplicateShared(!!matched);
         setIsDemoSubmission(true);
         setSubmittedMember(createdMember);
+        haptic('success');
         onRegistered(createdMember);
         return;
       }
@@ -448,10 +486,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       setIsDuplicateShared(reusedExisting);
       setIsDemoSubmission(false);
       setSubmittedMember(createdMember);
+      haptic('success');
       onRegistered(createdMember);
     } catch (err: unknown) {
       console.error('Submit error:', err);
-      setErrorMsg(describeFirestoreError(err, isId));
+      showError(describeFirestoreError(err, isId));
     } finally {
       setIsSubmitting(false);
     }
@@ -478,7 +517,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
   };
 
-  // SUCCESS SCREEN: Google Form style response confirmation
+  // SUCCESS SCREEN: Google Form style response confirmation. Form and success card are swapped inside
+  // <AnimatePresence mode="wait"> (see the return below): the form fades out, then the card rises in.
+  let successView: React.ReactNode = null;
   if (submittedMember) {
     const memberName = submittedMember.name || submittedMember.cosplayName || '';
     // Prefilled WhatsApp message to the admins; the backup number / Discord lines are left out when empty
@@ -496,16 +537,22 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       .filter(Boolean)
       .join('\n');
 
-    return (
-      <div className="max-w-2xl mx-auto py-12 px-4 animate-fade-in text-slate-100">
+    successView = (
+      <motion.div key="success" {...pageMotion} className="max-w-2xl mx-auto py-12 px-4 text-slate-100">
         <div className="glass-card glass-raised border-emerald-500/30 rounded-3xl overflow-hidden">
           {/* Top Google Form Purple/Accent bar */}
           <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
 
           <div className="p-6 sm:p-10 text-center">
-            <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto mb-4">
+            {/* The check pops in on a spring just after the card (reduced motion: fade only) */}
+            <motion.div
+              initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={reducedMotion ? TWEEN.reducedIn : { ...SPRING.press, delay: 0.08 }}
+              className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-            </div>
+            </motion.div>
 
             {isDemoSubmission && (
               <div className="glass-well mb-4 p-3 rounded-2xl border-amber-500/40 bg-amber-950/60 text-amber-200 text-xs flex items-center justify-center gap-2">
@@ -589,6 +636,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   setShowPhone2(false);
                   setIsDuplicateShared(false);
                   setErrorMsg(null);
+                  setErrorField(null);
                   setFormData((prev) => ({
                     ...prev,
                     name: '',
@@ -627,12 +675,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  return (
-    <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
+  const formView = (
+    <motion.div key="form" {...pageMotion} className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
       {/* GOOGLE FORM HEADER CARD */}
       <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
         {/* Top Google Form Purple/Accent Header Band */}
@@ -685,12 +733,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
       </div>
 
-      {errorMsg && (
-        <div className="glass-well mb-6 p-4 rounded-2xl border-rose-500/50 bg-rose-950/60 text-rose-200 text-sm flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-rose-400 shrink-0"></div>
-          <span>{errorMsg}</span>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {errorMsg && (
+          <motion.div
+            key="error"
+            {...fadeMotion}
+            className="glass-well relative isolate mb-6 p-4 rounded-2xl border-rose-500/50 bg-rose-950/60 text-rose-200 text-sm flex items-center gap-2"
+          >
+            <ErrorFlash pulse={errorPulse} />
+            <div className="w-2 h-2 rounded-full bg-rose-400 shrink-0"></div>
+            <span>{errorMsg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* DEMO FORM TESTING SANDBOX (RESTRICTED TO ADMINS) */}
       {isAdmin && (
@@ -724,6 +779,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       {/* FORM BODY - GOOGLE FORM STYLE QUESTION CARDS. Fields keep a bottom scroll margin so a field
           scrolled into view on focus is not hidden behind the sticky submit bar. */}
       <form
+        ref={attachInvalidHaptic}
         onSubmit={handleSubmit}
         className="space-y-5 [&_input]:scroll-mb-28 [&_select]:scroll-mb-28 [&_textarea]:scroll-mb-28"
       >
@@ -740,6 +796,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="text"
             required
+            aria-invalid={errorField === 'name' || undefined}
             placeholder={t('registration.namePlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.name}
             value={formData.name}
@@ -763,6 +820,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="tel"
               required
+              aria-invalid={errorField === 'phone' || undefined}
               placeholder={t('registration.whatsappPlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.phone}
               value={formData.phone}
@@ -804,6 +862,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 </p>
                 <input
                   type="tel"
+                  aria-invalid={errorField === 'phone2' || undefined}
                   placeholder={t('registration.backupPhonePlaceholder')}
                   maxLength={MEMBER_FIELD_LIMITS.phone2}
                   value={formData.phone2}
@@ -847,6 +906,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="email"
             required
+            aria-invalid={errorField === 'email' || undefined}
             placeholder={t('registration.emailPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.email}
             value={formData.email}
@@ -882,13 +942,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
           <div className="space-y-1 mt-2">
             {AGE_CATEGORIES.map((opt) => (
-              <label key={opt.val} className="flex items-center gap-3 min-h-11 py-1 cursor-pointer group">
+              <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                 <input
                   type="radio"
                   name="ageCategory"
                   value={opt.val}
                   checked={formData.ageCategory === opt.val}
-                  onChange={(e) => setFormData({ ...formData, ageCategory: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, ageCategory: e.target.value });
+                    haptic('selection');
+                  }}
                   className="w-5 h-5 shrink-0 cursor-pointer"
                 />
                 <span className="text-sm text-slate-200 group-hover:text-white">
@@ -1014,6 +1077,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           {isCustomCityValue(formData.city) && (
             <input
               type="text"
+              aria-invalid={errorField === 'customCity' || undefined}
               placeholder={t('registration.customCityPlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.city}
               value={formData.customCity}
@@ -1035,13 +1099,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <div className="space-y-1">
             {COMMUNITY_ROLES.map((role) => (
               <div key={role.val}>
-                <label className="flex items-center gap-3 min-h-11 py-1 cursor-pointer group">
+                <label className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                   <input
                     type="radio"
                     name="primaryRole"
                     value={role.val}
                     checked={formData.primaryRole === role.val}
-                    onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, primaryRole: e.target.value });
+                      haptic('selection');
+                    }}
                     className="w-5 h-5 shrink-0 cursor-pointer"
                   />
                   <span className="text-sm text-slate-200 group-hover:text-white">
@@ -1104,7 +1171,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 type="button"
                 key={exp.val}
                 aria-pressed={formData.experience === exp.val}
-                onClick={() => setFormData({ ...formData, experience: exp.val })}
+                onClick={() => {
+                  setFormData({ ...formData, experience: exp.val });
+                  haptic('selection');
+                }}
                 className="glass-chip pressable justify-center text-center whitespace-normal leading-tight rounded-xl min-h-11 px-3 py-2 text-xs sm:text-sm"
               >
                 {t(exp.labelKey)}
@@ -1175,10 +1245,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               )}
             </div>
 
-            <label className="glass-button pressable cursor-pointer min-h-11 px-4 text-sm">
+            <label className={`glass-button pressable relative cursor-pointer min-h-11 px-4 text-sm ${FILE_PICKER_FOCUS_RING}`}>
               <Upload className="w-4 h-4 text-purple-400" />
               <span>{t('registration.uploadButton')}</span>
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="sr-only" />
             </label>
           </div>
 
@@ -1191,7 +1261,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                   type="button"
                   aria-label={t('registration.presetAvatarAria', { number: i + 1 })}
                   aria-pressed={formData.avatarUrl === url}
-                  onClick={() => setFormData({ ...formData, avatarUrl: url })}
+                  onClick={() => {
+                    setFormData({ ...formData, avatarUrl: url });
+                    haptic('selection');
+                  }}
                   className={`pressable w-11 h-11 shrink-0 rounded-xl overflow-hidden border-2 bg-black/30 ${
                     formData.avatarUrl === url ? 'border-purple-500' : 'border-white/10 opacity-60'
                   }`}
@@ -1236,12 +1309,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
           </label>
 
-          <label className="flex items-start gap-3 py-1 cursor-pointer">
+          <label className={`${CHOICE_ROW_CLASS} items-start py-1`}>
             <input
               type="checkbox"
               required
+              aria-invalid={errorField === 'codeOfConduct' || undefined}
               checked={formData.acceptedCodeOfConduct}
-              onChange={(e) => setFormData({ ...formData, acceptedCodeOfConduct: e.target.checked })}
+              onChange={(e) => {
+                setFormData({ ...formData, acceptedCodeOfConduct: e.target.checked });
+                haptic('selection');
+              }}
               className="mt-0.5 w-5 h-5 shrink-0 rounded cursor-pointer"
             />
             <span className="text-sm text-slate-200 leading-relaxed">
@@ -1255,12 +1332,20 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             last question. The wrapper ignores taps so only the glass bar itself is interactive. */}
         <div className="sticky bottom-0 z-20 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none">
           <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2">
-            {errorMsg && (
-              <div role="alert" className="flex items-start gap-2 px-2 pt-1 text-sm text-rose-200">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {errorMsg && (
+                <motion.div
+                  key="error"
+                  role="alert"
+                  {...fadeMotion}
+                  className="relative isolate flex items-start gap-2 rounded-xl px-2 py-1 text-sm text-rose-200"
+                >
+                  <ErrorFlash pulse={errorPulse} />
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <button
               type="submit"
@@ -1293,6 +1378,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           </button>
         </div>
       </form>
-    </div>
+    </motion.div>
+  );
+
+  // Both wrappers end at transform: none (opacity 1, y 0), and neither contains position: fixed children
+  // (the sticky submit bar is sticky, the card modal lives in App)
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {submittedMember ? successView : formView}
+    </AnimatePresence>
   );
 };

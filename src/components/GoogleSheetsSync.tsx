@@ -37,6 +37,7 @@ import {
 } from '../lib/sheetsService';
 import { bulkImportMembers, recordSyncLog } from '../lib/firestoreService';
 import { describeFirestoreError } from '../lib/firebase';
+import { haptic } from '../lib/haptic';
 import { useI18n } from '../i18n';
 import type { LanguageCode, TranslateFn, TranslationKey } from '../i18n';
 
@@ -367,6 +368,8 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       });
 
       setImportResult(result);
+      // Completion feedback: rows that failed (skipped) make it an error buzz
+      haptic(result.skipped > 0 ? 'error' : 'success');
 
       // Record sync log in Firestore (a failed log write must not hide a successful import)
       try {
@@ -382,6 +385,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       }
     } catch (err: unknown) {
       console.error('Import error:', err);
+      haptic('error');
       setErrorMsg(classifySheetsError(err) ? describeSheetsError(err, t, user?.email) : describeFirestoreError(err));
     } finally {
       setIsImporting(false);

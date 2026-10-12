@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   User,
   Sparkles,
@@ -32,6 +33,13 @@ import {
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
 import type { LanguageCode, TranslationKey } from '../i18n';
+import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
+import { haptic } from '../lib/haptic';
+import { ErrorFlash } from './RegistrationForm';
+
+// The avatar file input is visually hidden (sr-only, still focusable), so its label shows the focus ring
+const FILE_PICKER_FOCUS_RING =
+  'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[rgba(83,255,192,0.85)]';
 
 // Select values that switch to a free-text province / city input (same values as RegistrationForm)
 const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
@@ -108,6 +116,27 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Bumped on every failed save so the highlight behind the error replays (no shake)
+  const [errorPulse, setErrorPulse] = useState(0);
+
+  // "Saved" chip: scale + fade pop; error line: plain fade (both opacity-only with reduced motion)
+  const popMotion = usePresenceMotion('dialog');
+  const fadeMotion = usePresenceMotion('overlay');
+  const reducedMotion = useReducedMotion() === true;
+
+  // Native `required` validation (name, WhatsApp) stops the save before handleSave runs: same error haptic
+  // as a failed save, once per attempt (`invalid` fires per field and does not bubble, hence capture)
+  const attachInvalidHaptic = useCallback((form: HTMLFormElement | null) => {
+    if (!form) return undefined;
+    let lastAt = 0;
+    const onInvalid = () => {
+      const now = Date.now();
+      if (now - lastAt > 500) haptic('error');
+      lastAt = now;
+    };
+    form.addEventListener('invalid', onInvalid, true);
+    return () => form.removeEventListener('invalid', onInvalid, true);
+  }, []);
 
   // Sync state if member changes externally
   useEffect(() => {
@@ -243,10 +272,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       const updated = await updateMemberProfileData(member, dataToSave);
       onUpdateMember(updated);
       setSaveSuccess(true);
+      haptic('success');
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: unknown) {
       console.error('Update profile error:', err);
       setErrorMsg(describeFirestoreError(err, lang === 'id'));
+      setErrorPulse((n) => n + 1);
+      haptic('error');
     } finally {
       setIsSaving(false);
     }
@@ -279,7 +311,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             <label
               title={t('profile.changeAvatar')}
-              className="glass-icon-button pressable absolute -bottom-2 -right-2 bg-rose-600 hover:bg-rose-500 border-rose-300/40 text-white"
+              className={`glass-icon-button pressable absolute -bottom-2 -right-2 bg-rose-600 hover:bg-rose-500 border-rose-300/40 text-white ${FILE_PICKER_FOCUS_RING}`}
             >
               <Camera className="w-4 h-4" />
               <input
@@ -287,7 +319,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 accept="image/*"
                 aria-label={t('profile.changeAvatar')}
                 onChange={handleAvatarChange}
-                className="hidden"
+                className="sr-only"
               />
             </label>
           </div>
@@ -349,6 +381,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       {/* Profile Form (Real-Time Editable). Fields keep a bottom scroll margin so a field scrolled into
           view on focus is not hidden behind the sticky save bar. */}
       <form
+        ref={attachInvalidHaptic}
         onSubmit={handleSave}
         className="space-y-6 [&_input]:scroll-mb-28 [&_select]:scroll-mb-28 [&_textarea]:scroll-mb-28"
       >
@@ -361,12 +394,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               </p>
             </div>
 
-            {saveSuccess && (
-              <span className="glass-chip shrink-0 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>{t('profile.savedRealtime')}</span>
-              </span>
-            )}
+            <AnimatePresence initial={false}>
+              {saveSuccess && (
+                <motion.span
+                  key="saved"
+                  {...popMotion}
+                  className="glass-chip shrink-0 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>{t('profile.savedRealtime')}</span>
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -682,26 +721,44 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               last field. The wrapper ignores taps so only the glass bar itself is interactive. */}
           <div className="sticky bottom-0 z-20 mt-6 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none sm:flex sm:justify-end">
             <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2 sm:max-w-md">
-              {errorMsg && (
-                <div role="alert" className="flex items-start gap-2 px-2 pt-1 text-sm text-rose-200">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
+              <AnimatePresence initial={false}>
+                {errorMsg && (
+                  <motion.div
+                    key="error"
+                    role="alert"
+                    {...fadeMotion}
+                    className="relative isolate flex items-start gap-2 rounded-xl px-2 py-1 text-sm text-rose-200"
+                  >
+                    <ErrorFlash pulse={errorPulse} />
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <span>{errorMsg}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <button
                 type="submit"
                 disabled={isSaving}
                 className="btn-primary pressable w-full min-h-12 px-6 text-base sm:min-h-11 sm:w-auto sm:self-end sm:text-sm"
               >
-                {/* The label stays while saving (only the icon swaps), so the button never changes width */}
-                {isSaving ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                ) : saveSuccess ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
+                {/* The label stays while saving (only the icon swaps), so the button never changes width.
+                    Each swap remounts the 16px icon box: the spinner / check pop in, the idle icon fades
+                    back (reduced motion: fades only). */}
+                <motion.span
+                  key={isSaving ? 'saving' : saveSuccess ? 'saved' : 'idle'}
+                  className="inline-flex shrink-0"
+                  initial={reducedMotion || (!isSaving && !saveSuccess) ? { opacity: 0 } : { opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={reducedMotion ? TWEEN.reducedIn : SPRING.press}
+                >
+                  {isSaving ? (
+                    <span className="block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                  ) : saveSuccess ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                </motion.span>
                 <span>{t('profile.updateProfile')}</span>
               </button>
             </div>

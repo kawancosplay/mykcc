@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   X,
   Mail,
@@ -17,6 +18,12 @@ import {
 } from '../lib/authService';
 import { useI18n } from '../i18n';
 import type { LanguageCode } from '../i18n';
+import {
+  usePresenceMotion,
+  useScrollLock,
+  useSheetDrag,
+  useThumbTransition,
+} from '../lib/motion';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -72,7 +79,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  // Motion: bottom sheet below 640px (drag the grabber down to dismiss), scale-fade dialog from 640px,
+  // quick fades with reduced motion. The page behind is frozen while open.
+  const sheetMotion = usePresenceMotion('sheet');
+  const overlayMotion = usePresenceMotion('overlay');
+  const thumbTransition = useThumbTransition();
+  const drag = useSheetDrag(onClose);
+  useScrollLock(isOpen);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,19 +141,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // Overlay and sheet are siblings (index.css: a dimmed/blurred parent would cut the sheet's own blur).
   // Phones: bottom sheet with grabber + safe-area padding; >= 640px: centered dialog (.glass-sheet).
+  // AnimatePresence keeps both mounted after closing until they have animated out.
   return (
-    <>
-      <div className="glass-overlay animate-fade-in" aria-hidden="true" />
-      <div className="sheet-viewport">
-        <div
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div key="auth-overlay" {...overlayMotion} className="glass-overlay" aria-hidden="true" />
+      )}
+      {isOpen && (
+      <div key="auth-sheet" className="sheet-viewport">
+        <motion.div
           ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className="glass-sheet sm:max-w-md animate-sheet-up sm:animate-scale-in text-slate-100 outline-none"
+          className="glass-sheet sm:max-w-md text-slate-100 outline-none"
+          {...sheetMotion}
+          {...drag.sheetProps}
         >
-          <div className="sheet-grabber" aria-hidden="true" />
+          {/* Drag handle: the grabber row (pb-3 replaces the scroll area's top padding on phones, so
+              the layout is unchanged and the whole strip above the content starts the drag) */}
+          <div className="sheet-handle pb-3 sm:pb-0" {...drag.handleProps}>
+            <div className="sheet-grabber" aria-hidden="true" />
+          </div>
 
           <button
             type="button"
@@ -151,7 +174,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <X className="w-5 h-5" />
           </button>
 
-          <div className="glass-scroll px-6 pt-3 pb-6 sm:p-8">
+          <div className="glass-scroll px-6 pt-0 pb-6 sm:p-8">
             <div className="text-center mb-6">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-lg shadow-rose-500/25">
                 KC
@@ -169,7 +192,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
 
             {mode !== 'forgot' && (
-              <div className="glass-segmented glass-segmented-block mb-6">
+              // Segmented control. Switching the mode also changes the sheet's height, which moves this
+              // control up or down in the same frame, so a shared-layoutId thumb would fly diagonally.
+              // Instead ONE thumb stays mounted and is placed in the active grid cell; the control is a
+              // layout root (its own move is applied instantly), so the thumb springs sideways relative
+              // to it. Grid columns follow the writing direction, so RTL works unchanged.
+              <motion.div
+                layout
+                layoutRoot
+                layoutDependency={mode}
+                className="glass-segmented glass-segmented-block isolate grid grid-cols-2 mb-6"
+              >
+                <motion.span
+                  aria-hidden="true"
+                  layout
+                  layoutDependency={mode}
+                  className={`glass-segment-thumb row-start-1 ${mode === 'signup' ? 'col-start-2' : 'col-start-1'}`}
+                  transition={thumbTransition}
+                />
                 <button
                   type="button"
                   onClick={() => {
@@ -177,7 +217,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setErrorMsg(null);
                   }}
                   aria-pressed={mode === 'login'}
-                  className={`glass-segment ${mode === 'login' ? 'is-active' : ''}`}
+                  className="glass-segment"
                 >
                   {t('auth.loginTab')}
                 </button>
@@ -188,11 +228,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setErrorMsg(null);
                   }}
                   aria-pressed={mode === 'signup'}
-                  className={`glass-segment ${mode === 'signup' ? 'is-active' : ''}`}
+                  className="glass-segment"
                 >
                   {t('auth.signUpTab')}
                 </button>
-              </div>
+              </motion.div>
             )}
 
             {errorMsg && (
@@ -337,8 +377,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
-    </>
+      )}
+    </AnimatePresence>
   );
 };

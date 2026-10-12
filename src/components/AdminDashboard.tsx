@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import {
   ShieldCheck,
   Lock,
@@ -51,6 +52,9 @@ import {
   EXACT_DUPLICATE_WINDOW_MS,
 } from '../lib/firestoreService';
 import { isMainAdminUser, describeFirestoreError } from '../lib/firebase';
+import { haptic } from '../lib/haptic';
+import { LAYOUT_IDS, usePresenceMotion, useThumbTransition } from '../lib/motion';
+import type { MotionTransition } from '../lib/motion';
 import { GoogleSheetsSync } from './GoogleSheetsSync';
 import { StatsOverview } from './StatsOverview';
 import { useI18n } from '../i18n';
@@ -120,6 +124,25 @@ const renderRich = (template: string, nodes: Record<string, React.ReactNode>): R
       )
     );
 
+// Admin sub-tabs, in display order (LTR left to right): used for the direction of the content slide
+type AdminTab = 'members' | 'sync' | 'analytics';
+const ADMIN_TAB_ORDER: readonly AdminTab[] = ['members', 'sync', 'analytics'];
+
+/**
+ * Active indicator of the admin sub-tabs. Only the active tab renders it; the shared layoutId makes it
+ * slide from the previous tab. borderRadius is set inline (same value as the CSS) so framer-motion keeps
+ * the pill round while it scales between tabs of different widths.
+ */
+const AdminTabThumb: React.FC<{ transition: MotionTransition }> = ({ transition }) => (
+  <motion.span
+    layoutId={LAYOUT_IDS.adminTabs}
+    className="glass-segment-thumb"
+    style={{ borderRadius: 9999 }}
+    transition={transition}
+    aria-hidden="true"
+  />
+);
+
 // Bulk duplicate merge: 'identical' = only exact copies (isExactDuplicateGroup), 'all' = every scanned group
 type BulkMergeMode = 'identical' | 'all';
 
@@ -152,12 +175,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   sheetsConnectError,
   onLogout,
 }) => {
-  const { t, lang, formatNumber, formatDate } = useI18n();
+  const { t, lang, isRtl, formatNumber, formatDate } = useI18n();
   // Only for describeFirestoreError's legacy (error, isId) signature
   const isId = lang === 'id';
 
   // Sub-tabs in Admin Dashboard
-  const [adminTab, setAdminTab] = useState<'members' | 'sync' | 'analytics'>('members');
+  const [adminTab, setAdminTab] = useState<AdminTab>('members');
+  // Direction of the last sub-tab change: 1 = new content slides in from the right, -1 = from the left,
+  // 0 = no slide yet (first render)
+  const [adminTabDirection, setAdminTabDirection] = useState(0);
+  const tabMotion = usePresenceMotion('tab');
+  const thumbTransition = useThumbTransition();
+
+  const selectAdminTab = (tab: AdminTab) => {
+    if (tab === adminTab) return;
+    // A later tab sits to the right in LTR (to the left in RTL): its content slides in from that side
+    const step = Math.sign(ADMIN_TAB_ORDER.indexOf(tab) - ADMIN_TAB_ORDER.indexOf(adminTab));
+    setAdminTabDirection(isRtl ? -step : step);
+    setAdminTab(tab);
+    haptic('selection');
+  };
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -297,8 +334,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const report = await repairMemberIdsAndCards((done, total) => setRepairProgress({ done, total }));
       setRepairReport(report);
+      haptic(report.errors.length > 0 ? 'error' : 'success');
     } catch (e) {
       console.error('Repair error:', e);
+      haptic('error');
       setRepairError(describeFirestoreError(e, isId));
     } finally {
       setIsRepairing(false);
@@ -453,6 +492,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setBulkMergeProgress({ done: i + 1, total: groups.length });
       }
     } finally {
+      // Completion feedback: success only when every group merged cleanly
+      haptic(report.failedGroups > 0 || report.mergedGroups < report.groups ? 'error' : 'success');
       setBulkMergeReport(report);
       setBulkMergeProgress(null);
       // Re-scan on the latest snapshot; merged duplicates are dropped explicitly in case their deletion
@@ -481,8 +522,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsPurging(true);
     try {
       const deletedCount = await purgeAllMembersFromFirestore();
+      haptic('success');
       alert(t('admin.purgeSuccess', { count: formatNumber(deletedCount) }));
     } catch (e) {
+      haptic('error');
       alert(t('admin.purgeFailed', { error: describeFirestoreError(e, isId) }));
     } finally {
       setIsPurging(false);
@@ -822,16 +865,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
            </div>
         </div>
 
-        {/* Sub-nav tabs (segmented control; scrolls sideways on narrow screens) */}
+        {/* Sub-nav tabs (segmented control; scrolls sideways on narrow screens). The active thumb slides
+            between tabs (shared layoutId); layoutScroll keeps it right while the control is scrolled. */}
         <div className="mt-6 pt-4 border-t border-white/10">
-          <div role="tablist" aria-label={t('admin.dashboardTitle')} className="glass-segmented glass-segmented-scroll">
+          <motion.div
+            role="tablist"
+            aria-label={t('admin.dashboardTitle')}
+            className="glass-segmented glass-segmented-scroll"
+            layoutScroll
+          >
             <button
               type="button"
               role="tab"
               aria-selected={adminTab === 'members'}
-              onClick={() => setAdminTab('members')}
-              className={`glass-segment shrink-0 ${adminTab === 'members' ? 'is-active' : ''}`}
+              onClick={() => selectAdminTab('members')}
+              className="glass-segment shrink-0"
             >
+              {adminTab === 'members' && <AdminTabThumb transition={thumbTransition} />}
               <Users className="w-3.5 h-3.5" />
               <span>{t('admin.tabMembers', { count: membersLoaded ? formatNumber(members.length) : '—' })}</span>
             </button>
@@ -840,9 +890,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               type="button"
               role="tab"
               aria-selected={adminTab === 'sync'}
-              onClick={() => setAdminTab('sync')}
-              className={`glass-segment shrink-0 ${adminTab === 'sync' ? 'is-active' : ''}`}
+              onClick={() => selectAdminTab('sync')}
+              className="glass-segment shrink-0"
             >
+              {adminTab === 'sync' && <AdminTabThumb transition={thumbTransition} />}
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>{t('admin.tabSync')}</span>
             </button>
@@ -851,37 +902,68 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               type="button"
               role="tab"
               aria-selected={adminTab === 'analytics'}
-              onClick={() => setAdminTab('analytics')}
-              className={`glass-segment shrink-0 ${adminTab === 'analytics' ? 'is-active' : ''}`}
+              onClick={() => selectAdminTab('analytics')}
+              className="glass-segment shrink-0"
             >
+              {adminTab === 'analytics' && <AdminTabThumb transition={thumbTransition} />}
               <BarChart3 className="w-3.5 h-3.5" />
               <span>{t('admin.tabStats')}</span>
             </button>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* TAB CONTENT 1: MEMBER LIST & ROSTER */}
-      {/* (a) Members subscription rejected by Firestore rules */}
-      {adminTab === 'members' && membersError === 'permission-denied' && (
-        <div className="liquid-glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
-            <Lock className="w-8 h-8" />
+      {/* Sub-tab content. The keyed wrapper re-mounts per tab and slides the new content in from the side
+          of the chosen tab (opacity + 16px translate, inside this container's >= 16px side padding, so no
+          horizontal overflow). Nothing in the tabs is position: fixed, so the brief transform is safe. */}
+      <motion.div
+        key={adminTab}
+        custom={adminTabDirection}
+        {...tabMotion}
+        initial={adminTabDirection === 0 ? false : tabMotion.initial}
+      >
+        {/* TAB CONTENT 1: MEMBER LIST & ROSTER */}
+        {/* (a) Members subscription rejected by Firestore rules */}
+        {adminTab === 'members' && membersError === 'permission-denied' && (
+          <div className="liquid-glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
+              <Lock className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">{t('admin.permissionDeniedTitle')}</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+              {renderRich(t('admin.permissionDeniedDesc', { email: OFFICIAL_ADMIN_EMAIL }), {
+                database: <span className="font-mono text-amber-300 break-all">{NAMED_DATABASE_ID}</span>,
+              })}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={onOpenAuth}
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>{t('admin.signInWithAdminGoogle')}</span>
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="glass-button pressable px-4 text-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{t('admin.reloadPage')}</span>
+              </button>
+            </div>
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">{t('admin.permissionDeniedTitle')}</h3>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
-            {renderRich(t('admin.permissionDeniedDesc', { email: OFFICIAL_ADMIN_EMAIL }), {
-              database: <span className="font-mono text-amber-300 break-all">{NAMED_DATABASE_ID}</span>,
-            })}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              onClick={onOpenAuth}
-              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center gap-1.5"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>{t('admin.signInWithAdminGoogle')}</span>
-            </button>
+        )}
+
+        {/* (b) Any other subscription error (offline, unavailable, ...) */}
+        {adminTab === 'members' && membersError && membersError !== 'permission-denied' && (
+          <div className="liquid-glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">{t('admin.loadMembersFailedTitle')}</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+              {t('admin.loadMembersFailedDesc')}
+            </p>
             <button
               onClick={() => window.location.reload()}
               className="glass-button pressable px-4 text-xs"
@@ -890,837 +972,817 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <span>{t('admin.reloadPage')}</span>
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* (b) Any other subscription error (offline, unavailable, ...) */}
-      {adminTab === 'members' && membersError && membersError !== 'permission-denied' && (
-        <div className="liquid-glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
-            <AlertTriangle className="w-8 h-8" />
+        {/* (c) Waiting for the first members snapshot */}
+        {adminTab === 'members' && !membersError && !membersLoaded && (
+          <div className="liquid-glass-card rounded-3xl p-10 flex flex-col items-center justify-center gap-3 text-center">
+            <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-xs sm:text-sm text-slate-300">{t('admin.loadingMembers')}</p>
           </div>
-          <h3 className="text-lg font-bold text-white mb-2">{t('admin.loadMembersFailedTitle')}</h3>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
-            {t('admin.loadMembersFailedDesc')}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="glass-button pressable px-4 text-xs"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>{t('admin.reloadPage')}</span>
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* (c) Waiting for the first members snapshot */}
-      {adminTab === 'members' && !membersError && !membersLoaded && (
-        <div className="liquid-glass-card rounded-3xl p-10 flex flex-col items-center justify-center gap-3 text-center">
-          <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-xs sm:text-sm text-slate-300">{t('admin.loadingMembers')}</p>
-        </div>
-      )}
-
-      {/* (d) Members loaded */}
-      {adminTab === 'members' && !membersError && membersLoaded && (
-        <div className="space-y-6">
-          {/* KCC ID & PUBLIC CARD REPAIR (admin only, idempotent) */}
-          <div className="liquid-glass-card rounded-3xl p-6">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                  <Wrench className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">{t('admin.repairTitle')}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
-                    {t('admin.repairDesc')}
-                  </p>
-                  {duplicateIdCount > 0 ? (
-                    <p className="text-xs font-semibold text-amber-300 mt-2 flex items-start gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span>
-                        {t('admin.repairDuplicatesDetected', {
-                          count: formatNumber(duplicateIdCount),
-                          action: t('admin.runRepair'),
-                        })}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-xs font-semibold text-emerald-300 mt-2 flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{t('admin.allIdsUnique')}</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <button
-                onClick={handleRunRepair}
-                disabled={isRepairing}
-                className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
-                <span>
-                  {isRepairing
-                    ? repairProgress && repairProgress.total > 0
-                      ? t('admin.repairRunningProgress', {
-                          done: formatNumber(repairProgress.done),
-                          total: formatNumber(repairProgress.total),
-                        })
-                      : t('admin.repairRunning')
-                    : t('admin.runRepair')}
-                </span>
-              </button>
-            </div>
-
-            {repairError && (
-              <div className="mt-4 p-3.5 rounded-2xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>{t('admin.repairFailed', { error: repairError })}</span>
-              </div>
-            )}
-
-            {repairReport && (
-              <div className="mt-4 p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/30 text-xs text-slate-200 space-y-3">
-                <p className="font-bold text-emerald-300 flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{t('admin.repairDone')}</span>
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { id: 'scanned', label: t('admin.repairStatScanned'), value: repairReport.scanned },
-                    { id: 'groups', label: t('admin.repairStatDuplicateGroups'), value: repairReport.duplicateGroups },
-                    { id: 'written', label: t('admin.repairStatCardsWritten'), value: repairReport.cardsWritten },
-                    { id: 'deleted', label: t('admin.repairStatCardsDeleted'), value: repairReport.cardsDeleted },
-                  ].map((s) => (
-                    <div key={s.id} className="glass-well rounded-xl p-2.5">
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
-                      <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {repairReport.reassigned.length > 0 ? (
-                  <div>
-                    <p className="font-semibold text-white mb-1.5">
-                      {t('admin.reassignedListTitle', { count: formatNumber(repairReport.reassigned.length) })}
-                    </p>
-                    <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                      {repairReport.reassigned.map((r) => (
-                        <li key={`${r.memberId}_${r.toUserId16}`} className="font-mono text-[11px] text-slate-300">
-                          <span className="font-sans font-semibold text-white">{r.name}</span>:{' '}
-                          {format16DigitUserId(r.fromUserId16 || undefined)} → {format16DigitUserId(r.toUserId16)}{' '}
-                          <span className="font-sans text-slate-400">
-                            ({REPAIR_REASON_KEYS[r.reason] ? t(REPAIR_REASON_KEYS[r.reason]) : r.reason})
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+        {/* (d) Members loaded */}
+        {adminTab === 'members' && !membersError && membersLoaded && (
+          <div className="space-y-6">
+            {/* KCC ID & PUBLIC CARD REPAIR (admin only, idempotent) */}
+            <div className="liquid-glass-card rounded-3xl p-6">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                    <Wrench className="w-5 h-5" />
                   </div>
-                ) : (
-                  <p className="text-slate-400">{t('admin.noIdsChanged')}</p>
-                )}
-
-                {repairReport.errors.length > 0 && (
                   <div>
-                    <p className="font-semibold text-rose-300 mb-1">
-                      {t('admin.issuesCount', { count: formatNumber(repairReport.errors.length) })}
+                    <h3 className="text-base font-bold text-white">{t('admin.repairTitle')}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
+                      {t('admin.repairDesc')}
                     </p>
-                    <ul className="list-disc pl-5 space-y-0.5 text-rose-200 max-h-32 overflow-y-auto">
-                      {repairReport.errors.map((errText, i) => (
-                        <li key={i}>{errText}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Members holding reserved admin / main-account IDs */}
-            <div className="mt-6 pt-5 border-t border-white/10">
-              <h4 className="text-sm font-bold text-white flex items-start gap-2">
-                <Shield className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span>{t('admin.reservedIdsTitle', { range: RESERVED_ID_RANGE_LABEL })}</span>
-              </h4>
-              <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
-                {t('admin.reservedIdsDesc', { action: t('admin.assignNewId') })}
-              </p>
-
-              {reservedHolders.length === 0 ? (
-                <p className="mt-3 text-xs text-emerald-300 flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>{t('admin.noReservedHolders')}</span>
-                </p>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  {reservedHolders.map((m) => (
-                    <div
-                      key={m.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl glass-well"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-bold text-white text-sm truncate">{m.name || m.cosplayName}</p>
-                        <p className="text-[11px] font-mono font-bold text-amber-300">
-                          {format16DigitUserId(m.userId16)}
-                        </p>
-                        <p className="text-[11px] text-slate-400 truncate">
-                          {t('admin.reservedHolderMeta', { source: m.source || '', role: m.primaryRole || '' })}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleReassignReservedId(m)}
-                        disabled={reassigningId !== null}
-                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${reassigningId === m.id ? 'animate-spin' : ''}`} />
-                        <span>{reassigningId === m.id ? t('admin.processing') : t('admin.assignNewId')}</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {reassignResult && (
-                <p
-                  className={`mt-3 text-xs font-mono ${
-                    reassignResult.isError ? 'text-rose-300' : 'text-emerald-300'
-                  }`}
-                >
-                  {t(reassignResult.isError ? 'admin.resultFailed' : 'admin.resultSuccess', {
-                    message: reassignResult.message,
-                  })}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* DUPLICATE REGISTRATIONS: same person filled the form more than once (admin merge, on demand) */}
-          <div className="liquid-glass-card rounded-3xl p-6">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
-                  <Layers className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">{t('admin.duplicatesTitle')}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
-                    {t('admin.duplicatesDesc')}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleScanDuplicateRegistrations}
-                disabled={isAnyMergeRunning}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span>{t('admin.scanDuplicates')}</span>
-              </button>
-            </div>
-
-            {mergeResult && (
-              <p
-                className={`mt-4 text-xs font-mono ${mergeResult.isError ? 'text-rose-300' : 'text-emerald-300'}`}
-              >
-                {t(mergeResult.isError ? 'admin.resultFailed' : 'admin.resultSuccess', {
-                  message: mergeResult.message,
-                })}
-              </p>
-            )}
-
-            {/* Report of the last bulk merge */}
-            {bulkMergeReport && (
-              <div
-                className={`mt-4 p-4 rounded-2xl border text-xs text-slate-200 space-y-3 ${
-                  bulkMergeReport.failedGroups > 0
-                    ? 'bg-amber-950/50 border-amber-500/30'
-                    : 'bg-emerald-950/50 border-emerald-500/30'
-                }`}
-              >
-                <p
-                  className={`font-bold flex items-center gap-1.5 ${
-                    bulkMergeReport.failedGroups > 0 ? 'text-amber-300' : 'text-emerald-300'
-                  }`}
-                >
-                  {bulkMergeReport.failedGroups > 0 ? (
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                  ) : (
-                    <CheckCircle className="w-4 h-4 shrink-0" />
-                  )}
-                  <span>
-                    {t('admin.bulkMergeDone', {
-                      mode: t(bulkMergeReport.mode === 'identical' ? 'admin.bulkModeIdentical' : 'admin.bulkModeAll'),
-                    })}
-                  </span>
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { id: 'groups', label: t('admin.bulkStatGroups'), value: bulkMergeReport.groups },
-                    { id: 'mergedGroups', label: t('admin.bulkStatMergedGroups'), value: bulkMergeReport.mergedGroups },
-                    { id: 'mergedRecords', label: t('admin.bulkStatMergedRecords'), value: bulkMergeReport.mergedRecords },
-                    { id: 'failedGroups', label: t('admin.bulkStatFailedGroups'), value: bulkMergeReport.failedGroups },
-                  ].map((s) => (
-                    <div key={s.id} className="glass-well rounded-xl p-2.5">
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
-                      <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {bulkMergeReport.errors.length > 0 && (
-                  <div>
-                    <p className="font-semibold text-rose-300 mb-1">
-                      {t('admin.issuesCount', { count: formatNumber(bulkMergeReport.errors.length) })}
-                    </p>
-                    <ul className="list-disc pl-5 space-y-0.5 text-rose-200 break-words">
-                      {bulkMergeReport.errors.slice(0, BULK_MERGE_ERRORS_SHOWN).map((errText, i) => (
-                        <li key={i}>{errText}</li>
-                      ))}
-                    </ul>
-                    {bulkMergeReport.errors.length > BULK_MERGE_ERRORS_SHOWN && (
-                      <p className="mt-1 text-slate-400">
-                        {t('admin.bulkMoreErrors', {
-                          count: formatNumber(bulkMergeReport.errors.length - BULK_MERGE_ERRORS_SHOWN),
-                        })}
+                    {duplicateIdCount > 0 ? (
+                      <p className="text-xs font-semibold text-amber-300 mt-2 flex items-start gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span>
+                          {t('admin.repairDuplicatesDetected', {
+                            count: formatNumber(duplicateIdCount),
+                            action: t('admin.runRepair'),
+                          })}
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="text-xs font-semibold text-emerald-300 mt-2 flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{t('admin.allIdsUnique')}</span>
                       </p>
                     )}
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Scan summary + bulk merge (one confirm per action) */}
-            {duplicateGroups !== null && duplicateGroups.length > 0 && (
-              <div className="mt-4 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-3">
-                <p className="text-xs text-slate-200 leading-relaxed">
-                  {renderRich(t('admin.scanSummary', { seconds: formatNumber(EXACT_DUPLICATE_WINDOW_SECONDS) }), {
-                    groups: <strong className="text-white">{formatNumber(duplicateGroups.length)}</strong>,
-                    records: <strong className="text-white">{formatNumber(duplicateRecordCount)}</strong>,
-                    identical: <strong className="text-emerald-300">{formatNumber(exactDuplicateGroups.length)}</strong>,
-                  })}
-                </p>
-
-                <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-                  <button
-                    onClick={() => handleBulkMergeDuplicates('identical')}
-                    disabled={isAnyMergeRunning || exactDuplicateGroups.length === 0}
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-                  >
-                    <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{t('admin.mergeAllIdentical', { count: formatNumber(exactDuplicateGroups.length) })}</span>
-                  </button>
-                  <button
-                    onClick={() => handleBulkMergeDuplicates('all')}
-                    disabled={isAnyMergeRunning}
-                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
-                  >
-                    <Layers className="w-3.5 h-3.5 shrink-0" />
-                    <span>{t('admin.mergeAllScanned', { count: formatNumber(duplicateGroups.length) })}</span>
-                  </button>
                 </div>
 
-                {bulkMergeProgress && (
-                  <div className="space-y-1.5" role="status" aria-live="polite">
-                    <p className="text-xs font-semibold text-indigo-200 flex items-center gap-1.5">
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
-                      <span>
-                        {t('admin.bulkMergeProgress', {
-                          done: formatNumber(bulkMergeProgress.done),
-                          total: formatNumber(bulkMergeProgress.total),
-                        })}
-                      </span>
-                    </p>
-                    <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                      <div
-                        className="h-full bg-indigo-400 transition-[width]"
-                        style={{
-                          width: `${
-                            bulkMergeProgress.total > 0
-                              ? Math.round((bulkMergeProgress.done / bulkMergeProgress.total) * 100)
-                              : 0
-                          }%`,
-                        }}
-                      />
+                <button
+                  onClick={handleRunRepair}
+                  disabled={isRepairing}
+                  className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
+                  <span>
+                    {isRepairing
+                      ? repairProgress && repairProgress.total > 0
+                        ? t('admin.repairRunningProgress', {
+                            done: formatNumber(repairProgress.done),
+                            total: formatNumber(repairProgress.total),
+                          })
+                        : t('admin.repairRunning')
+                      : t('admin.runRepair')}
+                  </span>
+                </button>
+              </div>
+
+              {repairError && (
+                <div className="mt-4 p-3.5 rounded-2xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{t('admin.repairFailed', { error: repairError })}</span>
+                </div>
+              )}
+
+              {repairReport && (
+                <div className="mt-4 p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/30 text-xs text-slate-200 space-y-3">
+                  <p className="font-bold text-emerald-300 flex items-center gap-1.5">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>{t('admin.repairDone')}</span>
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'scanned', label: t('admin.repairStatScanned'), value: repairReport.scanned },
+                      { id: 'groups', label: t('admin.repairStatDuplicateGroups'), value: repairReport.duplicateGroups },
+                      { id: 'written', label: t('admin.repairStatCardsWritten'), value: repairReport.cardsWritten },
+                      { id: 'deleted', label: t('admin.repairStatCardsDeleted'), value: repairReport.cardsDeleted },
+                    ].map((s) => (
+                      <div key={s.id} className="glass-well rounded-xl p-2.5">
+                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
+                        <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {repairReport.reassigned.length > 0 ? (
+                    <div>
+                      <p className="font-semibold text-white mb-1.5">
+                        {t('admin.reassignedListTitle', { count: formatNumber(repairReport.reassigned.length) })}
+                      </p>
+                      <ul className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                        {repairReport.reassigned.map((r) => (
+                          <li key={`${r.memberId}_${r.toUserId16}`} className="font-mono text-[11px] text-slate-300">
+                            <span className="font-sans font-semibold text-white">{r.name}</span>:{' '}
+                            {format16DigitUserId(r.fromUserId16 || undefined)} → {format16DigitUserId(r.toUserId16)}{' '}
+                            <span className="font-sans text-slate-400">
+                              ({REPAIR_REASON_KEYS[r.reason] ? t(REPAIR_REASON_KEYS[r.reason]) : r.reason})
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
+                  ) : (
+                    <p className="text-slate-400">{t('admin.noIdsChanged')}</p>
+                  )}
+
+                  {repairReport.errors.length > 0 && (
+                    <div>
+                      <p className="font-semibold text-rose-300 mb-1">
+                        {t('admin.issuesCount', { count: formatNumber(repairReport.errors.length) })}
+                      </p>
+                      <ul className="list-disc pl-5 space-y-0.5 text-rose-200 max-h-32 overflow-y-auto">
+                        {repairReport.errors.map((errText, i) => (
+                          <li key={i}>{errText}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Members holding reserved admin / main-account IDs */}
+              <div className="mt-6 pt-5 border-t border-white/10">
+                <h4 className="text-sm font-bold text-white flex items-start gap-2">
+                  <Shield className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{t('admin.reservedIdsTitle', { range: RESERVED_ID_RANGE_LABEL })}</span>
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
+                  {t('admin.reservedIdsDesc', { action: t('admin.assignNewId') })}
+                </p>
+
+                {reservedHolders.length === 0 ? (
+                  <p className="mt-3 text-xs text-emerald-300 flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>{t('admin.noReservedHolders')}</span>
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {reservedHolders.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl glass-well"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-bold text-white text-sm truncate">{m.name || m.cosplayName}</p>
+                          <p className="text-[11px] font-mono font-bold text-amber-300">
+                            {format16DigitUserId(m.userId16)}
+                          </p>
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {t('admin.reservedHolderMeta', { source: m.source || '', role: m.primaryRole || '' })}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleReassignReservedId(m)}
+                          disabled={reassigningId !== null}
+                          className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${reassigningId === m.id ? 'animate-spin' : ''}`} />
+                          <span>{reassigningId === m.id ? t('admin.processing') : t('admin.assignNewId')}</span>
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
+
+                {reassignResult && (
+                  <p
+                    className={`mt-3 text-xs font-mono ${
+                      reassignResult.isError ? 'text-rose-300' : 'text-emerald-300'
+                    }`}
+                  >
+                    {t(reassignResult.isError ? 'admin.resultFailed' : 'admin.resultSuccess', {
+                      message: reassignResult.message,
+                    })}
+                  </p>
+                )}
               </div>
-            )}
+            </div>
 
-            {duplicateGroups !== null &&
-              (duplicateGroups.length === 0 ? (
-                <p className="mt-4 text-xs text-emerald-300 flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  <span>{t('admin.noDuplicatesFound')}</span>
+            {/* DUPLICATE REGISTRATIONS: same person filled the form more than once (admin merge, on demand) */}
+            <div className="liquid-glass-card rounded-3xl p-6">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">{t('admin.duplicatesTitle')}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
+                      {t('admin.duplicatesDesc')}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleScanDuplicateRegistrations}
+                  disabled={isAnyMergeRunning}
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>{t('admin.scanDuplicates')}</span>
+                </button>
+              </div>
+
+              {mergeResult && (
+                <p
+                  className={`mt-4 text-xs font-mono ${mergeResult.isError ? 'text-rose-300' : 'text-emerald-300'}`}
+                >
+                  {t(mergeResult.isError ? 'admin.resultFailed' : 'admin.resultSuccess', {
+                    message: mergeResult.message,
+                  })}
                 </p>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  {duplicateGroups.map((group) => {
-                    const keeper = group.keeper;
-                    const keeperPhones = getMemberPhones(keeper);
-                    return (
-                      <div
-                        key={keeper.id}
-                        className="glass-well p-3.5 rounded-2xl space-y-2.5"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                          <div className="min-w-0 space-y-0.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                              <CheckCircle className="w-3 h-3" />
-                              <span>{t('admin.keeperBadge')}</span>
-                            </span>
-                            <p className="font-bold text-white text-sm truncate">
-                              {keeper.name || keeper.cosplayName || keeper.id}
-                            </p>
-                            <p className="text-[11px] font-mono font-bold text-amber-300">
-                              {format16DigitUserId(keeper.userId16)}
-                            </p>
-                            <p className="text-[11px] text-emerald-300/90 font-mono break-all">
-                              {keeperPhones.length > 0 ? keeperPhones.join(' / ') : '—'}
-                            </p>
-                            {keeper.email && (
-                              <p className="text-[11px] text-slate-400 break-all">{keeper.email}</p>
-                            )}
-                            <p className="text-[11px] text-slate-500">
-                              {keeper.createdAt ? formatDate(keeper.createdAt, DATE_TIME_OPTIONS) : '-'}
-                            </p>
-                          </div>
-                        </div>
+              )}
 
-                        {group.duplicates.map((dup) => {
-                          const dupPhones = getMemberPhones(dup);
-                          return (
-                            <div
-                              key={dup.id}
-                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-white/10"
-                            >
-                              <div className="min-w-0 space-y-0.5">
-                                <p className="font-semibold text-slate-200 text-sm truncate">
-                                  {dup.name || dup.cosplayName || dup.id}
-                                </p>
-                                <p className="text-[11px] font-mono text-slate-300">
-                                  {format16DigitUserId(dup.userId16)}
-                                </p>
-                                <p className="text-[11px] text-emerald-300/80 font-mono break-all">
-                                  {dupPhones.length > 0 ? dupPhones.join(' / ') : '—'}
-                                </p>
-                                {dup.email && <p className="text-[11px] text-slate-400 break-all">{dup.email}</p>}
-                                <p className="text-[11px] text-slate-500">
-                                  {dup.createdAt ? formatDate(dup.createdAt, DATE_TIME_OPTIONS) : '-'}
-                                </p>
-                              </div>
-                              <button
-                                onClick={() => handleMergeDuplicate(group, dup)}
-                                disabled={isAnyMergeRunning}
-                                className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+              {/* Report of the last bulk merge */}
+              {bulkMergeReport && (
+                <div
+                  className={`mt-4 p-4 rounded-2xl border text-xs text-slate-200 space-y-3 ${
+                    bulkMergeReport.failedGroups > 0
+                      ? 'bg-amber-950/50 border-amber-500/30'
+                      : 'bg-emerald-950/50 border-emerald-500/30'
+                  }`}
+                >
+                  <p
+                    className={`font-bold flex items-center gap-1.5 ${
+                      bulkMergeReport.failedGroups > 0 ? 'text-amber-300' : 'text-emerald-300'
+                    }`}
+                  >
+                    {bulkMergeReport.failedGroups > 0 ? (
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 shrink-0" />
+                    )}
+                    <span>
+                      {t('admin.bulkMergeDone', {
+                        mode: t(bulkMergeReport.mode === 'identical' ? 'admin.bulkModeIdentical' : 'admin.bulkModeAll'),
+                      })}
+                    </span>
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'groups', label: t('admin.bulkStatGroups'), value: bulkMergeReport.groups },
+                      { id: 'mergedGroups', label: t('admin.bulkStatMergedGroups'), value: bulkMergeReport.mergedGroups },
+                      { id: 'mergedRecords', label: t('admin.bulkStatMergedRecords'), value: bulkMergeReport.mergedRecords },
+                      { id: 'failedGroups', label: t('admin.bulkStatFailedGroups'), value: bulkMergeReport.failedGroups },
+                    ].map((s) => (
+                      <div key={s.id} className="glass-well rounded-xl p-2.5">
+                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{s.label}</p>
+                        <p className="text-lg font-black text-white">{formatNumber(s.value)}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {bulkMergeReport.errors.length > 0 && (
+                    <div>
+                      <p className="font-semibold text-rose-300 mb-1">
+                        {t('admin.issuesCount', { count: formatNumber(bulkMergeReport.errors.length) })}
+                      </p>
+                      <ul className="list-disc pl-5 space-y-0.5 text-rose-200 break-words">
+                        {bulkMergeReport.errors.slice(0, BULK_MERGE_ERRORS_SHOWN).map((errText, i) => (
+                          <li key={i}>{errText}</li>
+                        ))}
+                      </ul>
+                      {bulkMergeReport.errors.length > BULK_MERGE_ERRORS_SHOWN && (
+                        <p className="mt-1 text-slate-400">
+                          {t('admin.bulkMoreErrors', {
+                            count: formatNumber(bulkMergeReport.errors.length - BULK_MERGE_ERRORS_SHOWN),
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Scan summary + bulk merge (one confirm per action) */}
+              {duplicateGroups !== null && duplicateGroups.length > 0 && (
+                <div className="mt-4 p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-3">
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    {renderRich(t('admin.scanSummary', { seconds: formatNumber(EXACT_DUPLICATE_WINDOW_SECONDS) }), {
+                      groups: <strong className="text-white">{formatNumber(duplicateGroups.length)}</strong>,
+                      records: <strong className="text-white">{formatNumber(duplicateRecordCount)}</strong>,
+                      identical: <strong className="text-emerald-300">{formatNumber(exactDuplicateGroups.length)}</strong>,
+                    })}
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                    <button
+                      onClick={() => handleBulkMergeDuplicates('identical')}
+                      disabled={isAnyMergeRunning || exactDuplicateGroups.length === 0}
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('admin.mergeAllIdentical', { count: formatNumber(exactDuplicateGroups.length) })}</span>
+                    </button>
+                    <button
+                      onClick={() => handleBulkMergeDuplicates('all')}
+                      disabled={isAnyMergeRunning}
+                      className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Layers className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('admin.mergeAllScanned', { count: formatNumber(duplicateGroups.length) })}</span>
+                    </button>
+                  </div>
+
+                  {bulkMergeProgress && (
+                    <div className="space-y-1.5" role="status" aria-live="polite">
+                      <p className="text-xs font-semibold text-indigo-200 flex items-center gap-1.5">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin shrink-0" />
+                        <span>
+                          {t('admin.bulkMergeProgress', {
+                            done: formatNumber(bulkMergeProgress.done),
+                            total: formatNumber(bulkMergeProgress.total),
+                          })}
+                        </span>
+                      </p>
+                      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full bg-indigo-400 transition-[width]"
+                          style={{
+                            width: `${
+                              bulkMergeProgress.total > 0
+                                ? Math.round((bulkMergeProgress.done / bulkMergeProgress.total) * 100)
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {duplicateGroups !== null &&
+                (duplicateGroups.length === 0 ? (
+                  <p className="mt-4 text-xs text-emerald-300 flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>{t('admin.noDuplicatesFound')}</span>
+                  </p>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    {duplicateGroups.map((group) => {
+                      const keeper = group.keeper;
+                      const keeperPhones = getMemberPhones(keeper);
+                      return (
+                        <div
+                          key={keeper.id}
+                          className="glass-well p-3.5 rounded-2xl space-y-2.5"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                            <div className="min-w-0 space-y-0.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                <CheckCircle className="w-3 h-3" />
+                                <span>{t('admin.keeperBadge')}</span>
+                              </span>
+                              <p className="font-bold text-white text-sm truncate">
+                                {keeper.name || keeper.cosplayName || keeper.id}
+                              </p>
+                              <p className="text-[11px] font-mono font-bold text-amber-300">
+                                {format16DigitUserId(keeper.userId16)}
+                              </p>
+                              <p className="text-[11px] text-emerald-300/90 font-mono break-all">
+                                {keeperPhones.length > 0 ? keeperPhones.join(' / ') : '—'}
+                              </p>
+                              {keeper.email && (
+                                <p className="text-[11px] text-slate-400 break-all">{keeper.email}</p>
+                              )}
+                              <p className="text-[11px] text-slate-500">
+                                {keeper.createdAt ? formatDate(keeper.createdAt, DATE_TIME_OPTIONS) : '-'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {group.duplicates.map((dup) => {
+                            const dupPhones = getMemberPhones(dup);
+                            return (
+                              <div
+                                key={dup.id}
+                                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2.5 border-t border-white/10"
                               >
-                                <RefreshCw className={`w-3.5 h-3.5 ${mergingId === dup.id ? 'animate-spin' : ''}`} />
-                                <span>
-                                  {mergingId === dup.id
-                                    ? t('admin.merging')
-                                    : t('admin.mergeInto', { id: format16DigitUserId(keeper.userId16) })}
+                                <div className="min-w-0 space-y-0.5">
+                                  <p className="font-semibold text-slate-200 text-sm truncate">
+                                    {dup.name || dup.cosplayName || dup.id}
+                                  </p>
+                                  <p className="text-[11px] font-mono text-slate-300">
+                                    {format16DigitUserId(dup.userId16)}
+                                  </p>
+                                  <p className="text-[11px] text-emerald-300/80 font-mono break-all">
+                                    {dupPhones.length > 0 ? dupPhones.join(' / ') : '—'}
+                                  </p>
+                                  {dup.email && <p className="text-[11px] text-slate-400 break-all">{dup.email}</p>}
+                                  <p className="text-[11px] text-slate-500">
+                                    {dup.createdAt ? formatDate(dup.createdAt, DATE_TIME_OPTIONS) : '-'}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => handleMergeDuplicate(group, dup)}
+                                  disabled={isAnyMergeRunning}
+                                  className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                                >
+                                  <RefreshCw className={`w-3.5 h-3.5 ${mergingId === dup.id ? 'animate-spin' : ''}`} />
+                                  <span>
+                                    {mergingId === dup.id
+                                      ? t('admin.merging')
+                                      : t('admin.mergeInto', { id: format16DigitUserId(keeper.userId16) })}
+                                  </span>
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+            </div>
+
+            {/* Filters and Controls */}
+            <div className="liquid-glass-card rounded-3xl p-6">
+              <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-4.5 w-5 h-5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder={t('admin.searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-6 py-4 liquid-glass-input rounded-2xl text-white text-base"
+                  />
+                </div>
+
+                {/* Filter Dropdowns */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
+                  >
+                    <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
+                    {availableRoles.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
+                  >
+                    <option value="ALL">{t('admin.filterAllCities')}</option>
+                    {availableCities.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedAgeCategory}
+                    onChange={(e) => setSelectedAgeCategory(e.target.value)}
+                    className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
+                  >
+                    <option value="ALL">{t('admin.filterAllAges')}</option>
+                    {/* Values are the stored ageCategory strings; only the labels are translated */}
+                    <option value="Legal Age / Dewasa (18+)">{t('admin.filterLegalAge')}</option>
+                    <option value="Minor / Di Bawah Umur (<18)">{t('admin.filterMinor')}</option>
+                    <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
+                  </select>
+                  
+                  {/* Sort Order Selector (Simplified) */}
+                  <div className="flex items-center gap-1.5 liquid-glass-input rounded-xl px-2.5 py-2">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    <select
+                      value={sortMode}
+                      onChange={(e) => setSortMode(e.target.value as any)}
+                      className="bg-transparent text-base sm:text-sm text-slate-200 focus:outline-none pr-1 cursor-pointer"
+                    >
+                      <option value="timestamp_desc">{t('admin.sortNewest')}</option>
+                      <option value="name_asc">{t('admin.sortNameAsc')}</option>
+                    </select>
+                  </div>
+                  
+                  <button
+                    onClick={exportToCsv}
+                    className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-slate-900 inline-flex items-center gap-1.5 shadow-md"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{t('admin.exportCsv')}</span>
+                  </button>
+                  <button
+                    onClick={handlePurgeAll}
+                    disabled={isPurging}
+                    title={t('admin.purgeButtonTitle')}
+                    className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className={`w-3.5 h-3.5 ${isPurging ? 'animate-spin' : ''}`} />
+                    <span>{isPurging ? t('admin.purging') : t('admin.purgeButton')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Summary */}
+              <div className="mt-4 flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-white/10">
+                <span>
+                  {renderRich(t('admin.showingMembers', { total: formatNumber(members.length) }), {
+                    shown: <strong>{formatNumber(filteredMembers.length)}</strong>,
+                  })}
+                </span>
+                {(selectedRole !== 'ALL' || selectedCity !== 'ALL' || selectedAgeCategory !== 'ALL' || searchQuery) && (
+                  <button
+                    onClick={() => {
+                      setSelectedRole('ALL');
+                      setSelectedCity('ALL');
+                      setSelectedAgeCategory('ALL');
+                      setSearchQuery('');
+                    }}
+                    className="touch-target text-rose-400 hover:underline"
+                  >
+                    {t('admin.resetFilter')}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Members Table */}
+            <div className="liquid-glass-card rounded-3xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[color:var(--glass-fill-well)] text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
+                    <tr>
+                      <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('name')}>
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>{t('admin.colMember')}</span>
+                          {sortMode.startsWith('name') && (
+                            <span className="text-rose-400 font-bold">
+                              {sortMode === 'name_asc' ? t('admin.sortAz') : t('admin.sortZa')}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('uid')}>
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>{t('admin.colKccId')}</span>
+                          {sortMode === 'uid_asc' && (
+                            <span className="text-rose-400 font-bold">{t('admin.sortIdAsc')}</span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-4 px-4">{t('admin.colContact')}</th>
+                      <th className="py-4 px-4">{t('admin.colDiscord')}</th>
+                      <th className="py-4 px-4">{t('admin.colRole')}</th>
+                      <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('age')}>
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>{t('admin.colAge')}</span>
+                          {sortMode.startsWith('age') && (
+                            <span className="text-rose-400 font-bold">
+                              {sortMode === 'age_asc' ? t('admin.sortAgeYoungest') : t('admin.sortAgeOldest')}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('location')}>
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>{t('admin.colLocation')}</span>
+                          {sortMode.startsWith('location') && (
+                            <span className="text-rose-400 font-bold">
+                              {sortMode === 'location_asc' ? t('admin.sortAz') : t('admin.sortZa')}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('status')}>
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>{t('admin.colStatus')}</span>
+                          {sortMode.startsWith('status') && (
+                            <span className="text-rose-400 font-bold">
+                              {sortMode === 'status_asc' ? t('admin.sortStatusAsc') : t('admin.sortStatusDesc')}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('timestamp')}>
+                        <div className="inline-flex items-center gap-1.5">
+                          <span>{t('admin.colRegistered')}</span>
+                          {sortMode.startsWith('timestamp') && (
+                            <span className="text-rose-400 font-bold">
+                              {sortMode === 'timestamp_desc' ? t('admin.sortTimeNewest') : t('admin.sortTimeOldest')}
+                            </span>
+                          )}
+                        </div>
+                      </th>
+                      <th className="py-4 px-4 text-right">{t('admin.colActions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.06]">
+                    {filteredMembers.length > 0 ? (
+                      filteredMembers.map((m) => (
+                        <tr key={m.id} className="hover:bg-white/[0.04] transition-colors">
+                          <td className="py-4 px-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-950 border border-white/10 shrink-0">
+                                {m.avatarUrl ? (
+                                  <img src={m.avatarUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold">
+                                    {(m.name || m.cosplayName || 'KC').slice(0, 2).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-bold text-white text-sm">{m.name || m.cosplayName}</p>
+                                {m.fullName && m.fullName !== (m.name || m.cosplayName) && (
+                                  <p className="text-[11px] text-slate-400">{t('admin.legalNameValue', { name: m.fullName })}</p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className="text-white tracking-wider text-xs font-mono font-bold">
+                                {format16DigitUserId(m.userId16)}
+                              </span>
+                              {isMainAccountUserId(m.userId16) ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans">
+                                  <Crown className="w-3 h-3 text-amber-400" />
+                                  <span>{t('admin.mainAccountBadge')}</span>
                                 </span>
+                              ) : isAdminUserId(m.userId16) ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 font-sans">
+                                  <Shield className="w-3 h-3 text-rose-400" />
+                                  <span>
+                                    {t('admin.adminIdBadge', {
+                                      number: parseInt((m.userId16 || '').replace(/\D/g, '') || '1').toString().padStart(4, '0'),
+                                    })}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-sans">
+                                  <Clock className="w-3 h-3 text-indigo-400" />
+                                  <span>{t('admin.timestampIdBadge')}</span>
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <div className="space-y-0.5">
+                              {m.phone ? (
+                                <p className="text-emerald-400 font-mono font-bold text-xs">{m.phone}</p>
+                              ) : (
+                                <p className="text-slate-500 italic text-xs">—</p>
+                              )}
+                              {m.phone2 && (
+                                <p className="text-emerald-300/80 font-mono text-[11px] flex items-center gap-1">
+                                  <span className="text-[9px] px-1 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-sans font-semibold">{t('admin.phone2Chip')}</span>
+                                  <span>{m.phone2}</span>
+                                </p>
+                              )}
+                              {Array.isArray(m.additionalPhones) &&
+                                m.additionalPhones
+                                  .filter((p): p is string => typeof p === 'string' && p.trim() !== '')
+                                  .map((p, i) => (
+                                    <p
+                                      key={`${m.id}_wa_${i}`}
+                                      className="text-emerald-300/70 font-mono text-[11px] flex items-center gap-1"
+                                    >
+                                      <span className="text-[9px] px-1 py-0.2 bg-emerald-500/15 text-emerald-300 rounded font-sans font-semibold">{t('admin.additionalPhoneChip')}</span>
+                                      <span>{p}</span>
+                                    </p>
+                                  ))}
+                              {m.email && <p className="text-[11px] text-slate-400">{m.email}</p>}
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            {m.discordUsername ? (
+                              <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-mono text-xs font-semibold">
+                                {m.discordUsername}
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 italic text-xs">—</span>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className="inline-block px-2 py-0.5 rounded-lg bg-pink-500/10 text-pink-300 border border-pink-500/20 font-semibold mb-1">
+                              {m.primaryRole}
+                            </span>
+                            <p className="text-[11px] text-slate-400 truncate max-w-[150px]">{m.fandom}</p>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className="text-slate-300 font-medium">
+                              {m.ageCategory || (m.age ? `${m.age}` : '-')}
+                            </span>
+                            {m.age && m.ageCategory && (
+                              <p className="text-[10px] text-slate-400">{m.age}</p>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4 text-slate-300">
+                            {m.city}, {m.country}
+                          </td>
+
+                          <td className="py-4 px-4 text-slate-400 text-xs">
+                            {m.createdAt ? formatDate(m.createdAt) : '-'}
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <select
+                              value={m.status || 'verified'}
+                              onChange={(e) => handleStatusChange(m.id, e.target.value as MemberStatus, m.userId16)}
+                              className={`px-2 py-1 rounded-lg text-xs font-bold border ${
+                                m.status === 'active'
+                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                  : m.status === 'verified'
+                                  ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
+                                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              }`}
+                            >
+                              {(['verified', 'active', 'pending'] as const).map((status) => (
+                                <option key={status} value={status} className="bg-slate-900 text-white">
+                                  {t(STATUS_LABEL_KEYS[status])}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex items-center justify-end space-x-3">
+                              <button
+                                onClick={() => onSelectMember(m)}
+                                title={t('admin.viewKccIdTitle')}
+                                aria-label={t('admin.viewKccIdTitle')}
+                                className="touch-target pressable p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteMember(m)}
+                                title={t('admin.deleteMemberTitle')}
+                                aria-label={t('admin.deleteMemberTitle')}
+                                className="touch-target pressable p-1.5 rounded-lg bg-rose-950/60 border border-rose-500/30 hover:bg-rose-900 text-rose-300"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-          </div>
-
-          {/* Filters and Controls */}
-          <div className="liquid-glass-card rounded-3xl p-6">
-            <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-              {/* Search Bar */}
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-4.5 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder={t('admin.searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-6 py-4 liquid-glass-input rounded-2xl text-white text-base"
-                />
-              </div>
-
-              {/* Filter Dropdowns */}
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
-                >
-                  <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
-                  {availableRoles.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
-                >
-                  <option value="ALL">{t('admin.filterAllCities')}</option>
-                  {availableCities.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={selectedAgeCategory}
-                  onChange={(e) => setSelectedAgeCategory(e.target.value)}
-                  className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300"
-                >
-                  <option value="ALL">{t('admin.filterAllAges')}</option>
-                  {/* Values are the stored ageCategory strings; only the labels are translated */}
-                  <option value="Legal Age / Dewasa (18+)">{t('admin.filterLegalAge')}</option>
-                  <option value="Minor / Di Bawah Umur (<18)">{t('admin.filterMinor')}</option>
-                  <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
-                </select>
-                
-                {/* Sort Order Selector (Simplified) */}
-                <div className="flex items-center gap-1.5 liquid-glass-input rounded-xl px-2.5 py-2">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                  <select
-                    value={sortMode}
-                    onChange={(e) => setSortMode(e.target.value as any)}
-                    className="bg-transparent text-base sm:text-sm text-slate-200 focus:outline-none pr-1 cursor-pointer"
-                  >
-                    <option value="timestamp_desc">{t('admin.sortNewest')}</option>
-                    <option value="name_asc">{t('admin.sortNameAsc')}</option>
-                  </select>
-                </div>
-                
-                <button
-                  onClick={exportToCsv}
-                  className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-slate-900 inline-flex items-center gap-1.5 shadow-md"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{t('admin.exportCsv')}</span>
-                </button>
-                <button
-                  onClick={handlePurgeAll}
-                  disabled={isPurging}
-                  title={t('admin.purgeButtonTitle')}
-                  className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Trash2 className={`w-3.5 h-3.5 ${isPurging ? 'animate-spin' : ''}`} />
-                  <span>{isPurging ? t('admin.purging') : t('admin.purgeButton')}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Filter Summary */}
-            <div className="mt-4 flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-white/10">
-              <span>
-                {renderRich(t('admin.showingMembers', { total: formatNumber(members.length) }), {
-                  shown: <strong>{formatNumber(filteredMembers.length)}</strong>,
-                })}
-              </span>
-              {(selectedRole !== 'ALL' || selectedCity !== 'ALL' || selectedAgeCategory !== 'ALL' || searchQuery) && (
-                <button
-                  onClick={() => {
-                    setSelectedRole('ALL');
-                    setSelectedCity('ALL');
-                    setSelectedAgeCategory('ALL');
-                    setSearchQuery('');
-                  }}
-                  className="touch-target text-rose-400 hover:underline"
-                >
-                  {t('admin.resetFilter')}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Members Table */}
-          <div className="liquid-glass-card rounded-3xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[color:var(--glass-fill-well)] text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
-                  <tr>
-                    <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('name')}>
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>{t('admin.colMember')}</span>
-                        {sortMode.startsWith('name') && (
-                          <span className="text-rose-400 font-bold">
-                            {sortMode === 'name_asc' ? t('admin.sortAz') : t('admin.sortZa')}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('uid')}>
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>{t('admin.colKccId')}</span>
-                        {sortMode === 'uid_asc' && (
-                          <span className="text-rose-400 font-bold">{t('admin.sortIdAsc')}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th className="py-4 px-4">{t('admin.colContact')}</th>
-                    <th className="py-4 px-4">{t('admin.colDiscord')}</th>
-                    <th className="py-4 px-4">{t('admin.colRole')}</th>
-                    <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('age')}>
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>{t('admin.colAge')}</span>
-                        {sortMode.startsWith('age') && (
-                          <span className="text-rose-400 font-bold">
-                            {sortMode === 'age_asc' ? t('admin.sortAgeYoungest') : t('admin.sortAgeOldest')}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('location')}>
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>{t('admin.colLocation')}</span>
-                        {sortMode.startsWith('location') && (
-                          <span className="text-rose-400 font-bold">
-                            {sortMode === 'location_asc' ? t('admin.sortAz') : t('admin.sortZa')}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('status')}>
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>{t('admin.colStatus')}</span>
-                        {sortMode.startsWith('status') && (
-                          <span className="text-rose-400 font-bold">
-                            {sortMode === 'status_asc' ? t('admin.sortStatusAsc') : t('admin.sortStatusDesc')}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors" onClick={() => handleToggleSort('timestamp')}>
-                      <div className="inline-flex items-center gap-1.5">
-                        <span>{t('admin.colRegistered')}</span>
-                        {sortMode.startsWith('timestamp') && (
-                          <span className="text-rose-400 font-bold">
-                            {sortMode === 'timestamp_desc' ? t('admin.sortTimeNewest') : t('admin.sortTimeOldest')}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                    <th className="py-4 px-4 text-right">{t('admin.colActions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.06]">
-                  {filteredMembers.length > 0 ? (
-                    filteredMembers.map((m) => (
-                      <tr key={m.id} className="hover:bg-white/[0.04] transition-colors">
-                        <td className="py-4 px-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-950 border border-white/10 shrink-0">
-                              {m.avatarUrl ? (
-                                <img src={m.avatarUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold">
-                                  {(m.name || m.cosplayName || 'KC').slice(0, 2).toUpperCase()}
-                                </div>
-                              )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={10} className="py-16 text-center">
+                          <div className="max-w-md mx-auto space-y-4 px-4">
+                            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+                              <ShieldCheck className="w-8 h-8" />
                             </div>
                             <div>
-                              <p className="font-bold text-white text-sm">{m.name || m.cosplayName}</p>
-                              {m.fullName && m.fullName !== (m.name || m.cosplayName) && (
-                                <p className="text-[11px] text-slate-400">{t('admin.legalNameValue', { name: m.fullName })}</p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <div className="flex flex-col gap-1 items-start">
-                            <span className="text-white tracking-wider text-xs font-mono font-bold">
-                              {format16DigitUserId(m.userId16)}
-                            </span>
-                            {isMainAccountUserId(m.userId16) ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans">
-                                <Crown className="w-3 h-3 text-amber-400" />
-                                <span>{t('admin.mainAccountBadge')}</span>
-                              </span>
-                            ) : isAdminUserId(m.userId16) ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 font-sans">
-                                <Shield className="w-3 h-3 text-rose-400" />
-                                <span>
-                                  {t('admin.adminIdBadge', {
-                                    number: parseInt((m.userId16 || '').replace(/\D/g, '') || '1').toString().padStart(4, '0'),
-                                  })}
-                                </span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-sans">
-                                <Clock className="w-3 h-3 text-indigo-400" />
-                                <span>{t('admin.timestampIdBadge')}</span>
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <div className="space-y-0.5">
-                            {m.phone ? (
-                              <p className="text-emerald-400 font-mono font-bold text-xs">{m.phone}</p>
-                            ) : (
-                              <p className="text-slate-500 italic text-xs">—</p>
-                            )}
-                            {m.phone2 && (
-                              <p className="text-emerald-300/80 font-mono text-[11px] flex items-center gap-1">
-                                <span className="text-[9px] px-1 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-sans font-semibold">{t('admin.phone2Chip')}</span>
-                                <span>{m.phone2}</span>
+                              <h3 className="text-lg font-bold text-white mb-1">
+                                {members.length === 0 ? t('admin.emptyDatabaseTitle') : t('admin.noResultsTitle')}
+                              </h3>
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                {members.length === 0 ? t('admin.emptyDatabaseDesc') : t('admin.noResultsDesc')}
                               </p>
+                            </div>
+                            {members.length === 0 && (
+                              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                                <button
+                                  onClick={() => selectAdminTab('sync')}
+                                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center gap-1.5"
+                                >
+                                  <FileSpreadsheet className="w-4 h-4" />
+                                  <span>{t('admin.openSheetsSync')}</span>
+                                </button>
+                              </div>
                             )}
-                            {Array.isArray(m.additionalPhones) &&
-                              m.additionalPhones
-                                .filter((p): p is string => typeof p === 'string' && p.trim() !== '')
-                                .map((p, i) => (
-                                  <p
-                                    key={`${m.id}_wa_${i}`}
-                                    className="text-emerald-300/70 font-mono text-[11px] flex items-center gap-1"
-                                  >
-                                    <span className="text-[9px] px-1 py-0.2 bg-emerald-500/15 text-emerald-300 rounded font-sans font-semibold">{t('admin.additionalPhoneChip')}</span>
-                                    <span>{p}</span>
-                                  </p>
-                                ))}
-                            {m.email && <p className="text-[11px] text-slate-400">{m.email}</p>}
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          {m.discordUsername ? (
-                            <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-mono text-xs font-semibold">
-                              {m.discordUsername}
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 italic text-xs">—</span>
-                          )}
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <span className="inline-block px-2 py-0.5 rounded-lg bg-pink-500/10 text-pink-300 border border-pink-500/20 font-semibold mb-1">
-                            {m.primaryRole}
-                          </span>
-                          <p className="text-[11px] text-slate-400 truncate max-w-[150px]">{m.fandom}</p>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <span className="text-slate-300 font-medium">
-                            {m.ageCategory || (m.age ? `${m.age}` : '-')}
-                          </span>
-                          {m.age && m.ageCategory && (
-                            <p className="text-[10px] text-slate-400">{m.age}</p>
-                          )}
-                        </td>
-
-                        <td className="py-4 px-4 text-slate-300">
-                          {m.city}, {m.country}
-                        </td>
-
-                        <td className="py-4 px-4 text-slate-400 text-xs">
-                          {m.createdAt ? formatDate(m.createdAt) : '-'}
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <select
-                            value={m.status || 'verified'}
-                            onChange={(e) => handleStatusChange(m.id, e.target.value as MemberStatus, m.userId16)}
-                            className={`px-2 py-1 rounded-lg text-xs font-bold border ${
-                              m.status === 'active'
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                : m.status === 'verified'
-                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
-                                : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                            }`}
-                          >
-                            {(['verified', 'active', 'pending'] as const).map((status) => (
-                              <option key={status} value={status} className="bg-slate-900 text-white">
-                                {t(STATUS_LABEL_KEYS[status])}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-
-                        <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end space-x-3">
-                            <button
-                              onClick={() => onSelectMember(m)}
-                              title={t('admin.viewKccIdTitle')}
-                              aria-label={t('admin.viewKccIdTitle')}
-                              className="touch-target pressable p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteMember(m)}
-                              title={t('admin.deleteMemberTitle')}
-                              aria-label={t('admin.deleteMemberTitle')}
-                              className="touch-target pressable p-1.5 rounded-lg bg-rose-950/60 border border-rose-500/30 hover:bg-rose-900 text-rose-300"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={10} className="py-16 text-center">
-                        <div className="max-w-md mx-auto space-y-4 px-4">
-                          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
-                            <ShieldCheck className="w-8 h-8" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-white mb-1">
-                              {members.length === 0 ? t('admin.emptyDatabaseTitle') : t('admin.noResultsTitle')}
-                            </h3>
-                            <p className="text-xs text-slate-400 leading-relaxed">
-                              {members.length === 0 ? t('admin.emptyDatabaseDesc') : t('admin.noResultsDesc')}
-                            </p>
-                          </div>
-                          {members.length === 0 && (
-                            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                              <button
-                                onClick={() => setAdminTab('sync')}
-                                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold pressable pointer-coarse:min-h-11 shadow-md inline-flex items-center gap-1.5"
-                              >
-                                <FileSpreadsheet className="w-4 h-4" />
-                                <span>{t('admin.openSheetsSync')}</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* TAB CONTENT 2: GOOGLE SHEETS SYNC */}
-      {adminTab === 'sync' && (
-        <GoogleSheetsSync
-          user={user}
-          accessToken={accessToken}
-          onLogin={onConnectSheets}
-          connectError={sheetsConnectError}
-          syncLogs={syncLogs}
-          syncLogsError={syncLogsError}
-          totalMembersInFirestore={members.length}
-        />
-      )}
+        {/* TAB CONTENT 2: GOOGLE SHEETS SYNC */}
+        {adminTab === 'sync' && (
+          <GoogleSheetsSync
+            user={user}
+            accessToken={accessToken}
+            onLogin={onConnectSheets}
+            connectError={sheetsConnectError}
+            syncLogs={syncLogs}
+            syncLogsError={syncLogsError}
+            totalMembersInFirestore={members.length}
+          />
+        )}
 
-      {/* TAB CONTENT 3: STATS OVERVIEW */}
-      {adminTab === 'analytics' && <StatsOverview members={members} />}
+        {/* TAB CONTENT 3: STATS OVERVIEW */}
+        {adminTab === 'analytics' && <StatsOverview members={members} />}
+      </motion.div>
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Users, Sparkles, MapPin, Layers, Heart, BarChart3, PieChart, ShieldCheck } from 'lucide-react';
 import { Member } from '../types';
+import { SPRING, useReducedMotion } from '../lib/motion';
 import { useI18n } from '../i18n';
 import type { TranslationKey } from '../i18n';
 
@@ -18,8 +20,30 @@ const BUCKET_LABEL_KEYS = new Map<string, TranslationKey>([
   [DEFAULT_FANDOM_BUCKET, 'stats.fandomAnimeGames'],
 ]);
 
+// Distribution bars grow from their start edge when the stats appear (one after another), then follow
+// member updates with their CSS width transition. Reduced motion: drawn at full size at once.
+const BAR_STAGGER_STEP = 0.03; // s between two bars
+const BAR_STAGGER_LIMIT = 8;
+
+/** Bar fill: grows via scaleX (transform only; the bar holds no children) from the inline-start edge. */
+const DistributionBar: React.FC<{ pct: number; index: number; reduced: boolean; className: string }> = ({
+  pct,
+  index,
+  reduced,
+  className,
+}) => (
+  <motion.div
+    className={`${className} h-2.5 rounded-full origin-left rtl:origin-right transition-[width] duration-500 ease-out-soft`}
+    style={{ width: `${pct}%` }}
+    initial={reduced ? false : { scaleX: 0 }}
+    animate={{ scaleX: 1 }}
+    transition={{ ...SPRING.page, delay: Math.min(index, BAR_STAGGER_LIMIT) * BAR_STAGGER_STEP }}
+  />
+);
+
 export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
   const { t, formatNumber, intlLocale } = useI18n();
+  const reducedMotion = useReducedMotion() === true;
 
   const pluralRules = useMemo(() => {
     try {
@@ -160,7 +184,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
           </p>
 
           <div className="space-y-4">
-            {stats.sortedRoles.map(([role, count]) => {
+            {stats.sortedRoles.map(([role, count], index) => {
               const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
               return (
                 <div key={role} className="space-y-1.5">
@@ -171,10 +195,12 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
                     </span>
                   </div>
                   <div className="w-full glass-well rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-rose-500 to-pink-500 h-2.5 rounded-full transition-[width] duration-500 ease-out-soft"
-                      style={{ width: `${pct}%` }}
-                    ></div>
+                    <DistributionBar
+                      pct={pct}
+                      index={index}
+                      reduced={reducedMotion}
+                      className="bg-gradient-to-r from-rose-500 to-pink-500"
+                    />
                   </div>
                 </div>
               );
@@ -190,7 +216,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
           </p>
 
           <div className="space-y-4">
-            {stats.sortedCities.slice(0, 8).map(([city, count]) => {
+            {stats.sortedCities.slice(0, 8).map(([city, count], index) => {
               const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
               return (
                 <div key={city} className="space-y-1.5">
@@ -204,10 +230,12 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
                     </span>
                   </div>
                   <div className="w-full glass-well rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2.5 rounded-full transition-[width] duration-500 ease-out-soft"
-                      style={{ width: `${pct}%` }}
-                    ></div>
+                    <DistributionBar
+                      pct={pct}
+                      index={index}
+                      reduced={reducedMotion}
+                      className="bg-gradient-to-r from-indigo-500 to-emerald-500"
+                    />
                   </div>
                 </div>
               );

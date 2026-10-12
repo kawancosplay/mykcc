@@ -1,8 +1,10 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { Download } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { usePresenceMotion, useScrollLock, useSheetDrag } from '../lib/motion';
 
 // Renders a translated sentence with its "{placeholder}" shown in bold (e.g. the Safari button name).
 const withBold = (template: string, placeholder: string, value: string): React.ReactNode => {
@@ -24,6 +26,15 @@ export const PWAInstallButton: React.FC = () => {
   const { t } = useI18n();
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const closeGuide = useCallback(() => setShowIOSGuide(false), []);
+
+  // iOS guide sheet motion: bottom sheet below 640px (drag the grabber down to dismiss), scale-fade
+  // dialog from 640px, quick fades with reduced motion. The page behind is frozen while it is shown
+  // (only when the iOS branch below actually renders it).
+  const sheetMotion = usePresenceMotion('sheet');
+  const overlayMotion = usePresenceMotion('overlay');
+  const drag = useSheetDrag(closeGuide);
+  useScrollLock(showIOSGuide && isIOS && !isInstalled && !isInstallable);
 
   // Guide open: focus the sheet (no keyboard pops up on iOS), Escape closes, focus returns afterwards.
   useEffect(() => {
@@ -73,26 +84,37 @@ export const PWAInstallButton: React.FC = () => {
         </button>
 
         {/* Portaled to <body>: this button also lives inside the navbar's glass menu, whose
-            backdrop-filter would otherwise trap a `position: fixed` sheet inside the menu. */}
-        {showIOSGuide &&
-          createPortal(
-            <>
-              <div
-                className="glass-overlay animate-fade-in"
-                onClick={() => setShowIOSGuide(false)}
+            backdrop-filter (and open/close transform) would otherwise trap a `position: fixed` sheet
+            inside the menu. AnimatePresence keeps the guide mounted until it has animated out. */}
+        {createPortal(
+          <AnimatePresence>
+            {showIOSGuide && (
+              <motion.div
+                key="pwa-guide-overlay"
+                {...overlayMotion}
+                className="glass-overlay"
+                onClick={closeGuide}
                 aria-hidden="true"
               />
-              <div className="sheet-viewport">
-                <div
+            )}
+            {showIOSGuide && (
+              <div key="pwa-guide-sheet" className="sheet-viewport">
+                <motion.div
                   ref={dialogRef}
                   role="dialog"
                   aria-modal="true"
                   aria-labelledby={titleId}
                   tabIndex={-1}
-                  className="glass-sheet sm:max-w-sm animate-sheet-up sm:animate-scale-in outline-none"
+                  className="glass-sheet sm:max-w-sm outline-none"
+                  {...sheetMotion}
+                  {...drag.sheetProps}
                 >
-                  <div className="sheet-grabber" aria-hidden="true" />
-                  <div className="glass-scroll px-6 pt-3 pb-6 sm:p-6">
+                  {/* Drag handle: the grabber row (pb-3 replaces the scroll area's top padding on
+                      phones, so the layout is unchanged) */}
+                  <div className="sheet-handle pb-3 sm:pb-0" {...drag.handleProps}>
+                    <div className="sheet-grabber" aria-hidden="true" />
+                  </div>
+                  <div className="glass-scroll px-6 pt-0 pb-6 sm:p-6">
                     <h3 id={titleId} className="text-lg font-semibold text-white">{t('common.pwaIosTitle')}</h3>
                     <p className="mt-2 text-sm text-slate-300">
                       {withBold(t('common.pwaIosStep1'), 'share', t('common.pwaIosShare'))}<br />
@@ -100,17 +122,18 @@ export const PWAInstallButton: React.FC = () => {
                     </p>
                     <button
                       type="button"
-                      onClick={() => setShowIOSGuide(false)}
+                      onClick={closeGuide}
                       className="btn-primary mt-6 w-full min-h-11 text-sm"
                     >
                       {t('common.close')}
                     </button>
                   </div>
-                </div>
+                </motion.div>
               </div>
-            </>,
-            document.body
-          )}
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
       </>
     );
   }

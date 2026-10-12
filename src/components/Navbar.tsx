@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from 'firebase/auth';
+import { AnimatePresence, motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import {
   Sparkles,
   IdCard,
@@ -19,7 +21,19 @@ import type { LanguageCode } from '../i18n';
 import { KawanCosplayLogo } from './KawanCosplayLogo';
 import { useSiteTheme } from '../lib/themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
-import { triggerHaptic } from '../lib/haptic';
+import { haptic } from '../lib/haptic';
+import {
+  LAYOUT_IDS,
+  SPRING,
+  TWEEN,
+  fadeVariants,
+  useMediaQuery,
+  usePresenceMotion,
+  useReducedMotion,
+  useScrollLock,
+  useThumbTransition,
+} from '../lib/motion';
+import type { PresenceMotionProps } from '../lib/motion';
 
 type NavTab = 'form' | 'card' | 'gallery' | 'profile' | 'admin';
 
@@ -39,10 +53,43 @@ interface NavbarProps {
   onMobileMenuToggle?: (isOpen: boolean) => void;
 }
 
+// Panels that drop down from the navbar (mobile menu, desktop language popover): they settle in from
+// just above their anchor with the sheet spring and fade out. They end on y = 0 / scale = 1, where
+// framer-motion writes `transform: none`, and contain no `position: fixed` children (the PWA guide
+// sheet is portaled to <body>).
+const dropdownVariants: Variants = {
+  initial: { opacity: 0, y: -6, scale: 0.97 },
+  animate: { opacity: 1, y: 0, scale: 1, transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
+  exit: { opacity: 0, scale: 0.98, transition: TWEEN.fadeOut },
+};
+
+// Inline disclosure (language list inside the mobile menu): the height opens with the sheet spring.
+const disclosureVariants: Variants = {
+  initial: { opacity: 0, height: 0 },
+  animate: { opacity: 1, height: 'auto', transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
+  exit: { opacity: 0, height: 0, transition: TWEEN.sheetExit },
+};
+
+const presence = (variants: Variants): PresenceMotionProps => ({
+  variants,
+  initial: 'initial',
+  animate: 'animate',
+  exit: 'exit',
+});
+
+const DROPDOWN_MOTION = presence(dropdownVariants);
+const DISCLOSURE_MOTION = presence(disclosureVariants);
+// Reduced motion: quick cross-fade only (no movement, no height animation).
+const FADE_MOTION = presence(fadeVariants);
+
+// Tailwind `lg`: the desktop navbar replaces the mobile menu.
+const DESKTOP_NAV_QUERY = '(min-width: 64rem)';
+
 /*
  * Rendered inside App's sticky `.glass-bar` container (one glass surface for gov banner + navbar, with the
- * safe-area top padding), so the header itself is transparent. Nothing here may get a transform or
- * will-change: the mobile menu overlay below is `position: fixed`.
+ * safe-area top padding), so the header itself is transparent. The header and its rows never get a
+ * transform or will-change: the mobile menu overlay below is `position: fixed`. Only leaf panels without
+ * fixed children animate transforms (segment thumb, menu drawer, language popover).
  */
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
@@ -64,7 +111,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     const next = !isMobileMenuOpen;
     setInternalMobileMenuOpen(next);
     onMobileMenuToggle?.(next);
-    triggerHaptic(10);
+    haptic('light');
   };
 
   const handleCloseMobileMenu = () => {
@@ -72,14 +119,28 @@ export const Navbar: React.FC<NavbarProps> = ({
     onMobileMenuToggle?.(false);
   };
 
+  // Desktop language popover and the language list inside the mobile menu open independently, so a
+  // tap in one never closes the other.
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isMobileLangOpen, setIsMobileLangOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
   const navbarRef = useRef<HTMLElement>(null);
-  const segmentedRef = useRef<HTMLElement>(null);
   const { setIsEditorOpen } = useSiteTheme();
   const { t } = useI18n();
   const currentLangMeta = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
   const userFallbackName = t('common.userFallbackName');
   const showProfileTab = Boolean(user || currentMember);
+
+  // Motion
+  const reducedMotion = useReducedMotion() === true;
+  const overlayMotion = usePresenceMotion('overlay');
+  const dropdownMotion = reducedMotion ? FADE_MOTION : DROPDOWN_MOTION;
+  const disclosureMotion = reducedMotion ? FADE_MOTION : DISCLOSURE_MOTION;
+  const thumbTransition = useThumbTransition();
+
+  // The open mobile menu freezes the page behind it (only while it can be seen: it is hidden from lg).
+  const isDesktopNav = useMediaQuery(DESKTOP_NAV_QUERY);
+  useScrollLock(isMobileMenuOpen && !isDesktopNav);
 
   const desktopTabs: Array<{ id: NavTab; label: string }> = [
     { id: 'form', label: t('common.navFormShort') },
@@ -88,31 +149,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     ...(showProfileTab ? [{ id: 'profile' as NavTab, label: t('common.navProfile') }] : []),
   ];
 
-  // Sliding thumb of the desktop segmented control: measured from the active segment and moved with
-  // `translate` + the spring easing from index.css. Re-measured whenever the control resizes
-  // (language switch, web font load, the control becoming visible at the lg breakpoint).
-  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
-  useLayoutEffect(() => {
-    const nav = segmentedRef.current;
-    if (!nav) return;
-    const measure = () => {
-      const active = nav.querySelector<HTMLElement>('[aria-current="page"]');
-      if (!active || active.offsetWidth === 0) {
-        setThumb(null);
-        return;
-      }
-      setThumb((prev) =>
-        prev && prev.left === active.offsetLeft && prev.width === active.offsetWidth
-          ? prev
-          : { left: active.offsetLeft, width: active.offsetWidth }
-      );
-    };
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, [activeTab, showProfileTab, currentLang]);
+  const selectLang = (code: LanguageCode) => {
+    if (code !== currentLang) haptic('selection');
+    onSelectLang(code);
+  };
 
   // Escape closes the mobile menu (keyboard / iPad hardware keyboard)
   useEffect(() => {
@@ -124,6 +164,24 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('keydown', onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobileMenuOpen]);
+
+  // Desktop language popover: a tap outside it or Escape dismisses it, like a native menu.
+  useEffect(() => {
+    if (!isLangMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const root = langMenuRef.current;
+      if (root && e.target instanceof Node && !root.contains(e.target)) setIsLangMenuOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsLangMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isLangMenuOpen]);
 
   const avatarUrl = currentMember?.avatarUrl || user?.photoURL || '';
   const avatarAlt = currentMember?.name || currentMember?.cosplayName || user?.displayName || userFallbackName;
@@ -152,19 +210,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <div className="hidden lg:flex items-center justify-center h-full flex-none px-4">
-            {/* Desktop tabs: iOS segmented control */}
-            <nav ref={segmentedRef} className="glass-segmented isolate">
-              {thumb && (
-                <span
-                  aria-hidden="true"
-                  className="glass-segment-thumb top-1 bottom-1 left-0 right-auto"
-                  style={{
-                    width: thumb.width,
-                    translate: `${thumb.left}px 0`,
-                    transition: 'translate var(--dur-release) var(--ease-spring), width var(--dur-release) var(--ease-spring)',
-                  }}
-                />
-              )}
+            {/* Desktop tabs: iOS segmented control. The active segment holds the thumb; framer-motion's
+                shared layout (`layoutId`) slides it to the next segment with the thumb spring. */}
+            <nav className="glass-segmented isolate">
               {desktopTabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -173,10 +221,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`glass-segment px-4 text-sm ${isActive ? 'font-bold' : 'font-medium'} ${
-                      isActive && !thumb ? 'is-active' : ''
-                    }`}
+                    className={`glass-segment px-4 text-sm ${isActive ? 'font-bold' : 'font-medium'}`}
                   >
+                    {isActive && (
+                      <motion.span
+                        aria-hidden="true"
+                        layoutId={LAYOUT_IDS.navTabs}
+                        className="glass-segment-thumb"
+                        transition={thumbTransition}
+                      />
+                    )}
                     {tab.label}
                   </button>
                 );
@@ -201,7 +255,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 href="https://wa.me/6285711032782"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => triggerHaptic(10)}
+                onClick={() => haptic('light')}
                 className="min-touch inline-flex items-center justify-center rounded-full text-slate-300 hover:text-white pressable"
                 title={t('common.whatsappHotline')}
                 aria-label={t('common.whatsappHotline')}
@@ -209,10 +263,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <MessageCircle className="w-5 h-5" />
               </a>
 
-              <div className="relative">
+              <div className="relative" ref={langMenuRef}>
                 <button
                   type="button"
-                  onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                  onClick={() => setIsLangMenuOpen((open) => !open)}
                   className="min-touch px-3 inline-flex items-center justify-center rounded-full text-sm font-medium text-slate-300 hover:text-white uppercase pressable"
                   title={t('common.chooseLanguage', { language: currentLangMeta.nativeName })}
                   aria-label={t('common.chooseLanguage', { language: currentLangMeta.nativeName })}
@@ -220,24 +274,30 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   {currentLang}
                 </button>
-                {isLangMenuOpen && (
-                  <div className="glass-menu absolute end-0 mt-4 w-52 max-h-[min(70vh,28rem)] overflow-y-auto z-50 animate-scale-in origin-top text-sm">
-                    {LANGUAGES.map((lang) => (
-                      <button
-                        type="button"
-                        key={lang.code}
-                        onClick={() => {
-                          onSelectLang(lang.code);
-                          setIsLangMenuOpen(false);
-                        }}
-                        aria-current={currentLang === lang.code ? 'true' : undefined}
-                        className="glass-menu-item px-4"
-                      >
-                        <span className="truncate">{lang.nativeName}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <AnimatePresence>
+                  {isLangMenuOpen && (
+                    <motion.div
+                      key="lang-menu"
+                      {...dropdownMotion}
+                      className="glass-menu absolute end-0 mt-4 w-52 max-h-[min(70vh,28rem)] overflow-y-auto z-50 origin-top text-sm"
+                    >
+                      {LANGUAGES.map((lang) => (
+                        <button
+                          type="button"
+                          key={lang.code}
+                          onClick={() => {
+                            selectLang(lang.code);
+                            setIsLangMenuOpen(false);
+                          }}
+                          aria-current={currentLang === lang.code ? 'true' : undefined}
+                          className="glass-menu-item px-4"
+                        >
+                          <span className="truncate">{lang.nativeName}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {isAdmin && (
@@ -304,18 +364,27 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Floating Mobile Dropdown Menu Overlay - LIQUID GLASS */}
-      {isMobileMenuOpen && (
-        <>
-          {/* Dim backdrop: covers the page and the gov banner, stays under the navbar row (z-50) */}
-          <div
-            className="glass-overlay z-40 lg:hidden animate-fade-in touch-none"
+      {/* Floating Mobile Dropdown Menu Overlay - LIQUID GLASS. AnimatePresence keeps both pieces mounted
+          until they have animated out. */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          // Dim backdrop: covers the page and the gov banner, stays under the navbar row (z-50)
+          <motion.div
+            key="mobile-menu-overlay"
+            {...overlayMotion}
+            className="glass-overlay z-40 lg:hidden touch-none"
             onClick={handleCloseMobileMenu}
             aria-hidden="true"
           />
+        )}
 
-          {/* Liquid Glass Floating Menu Drawer */}
-          <div className="lg:hidden absolute top-full left-0 right-0 w-full liquid-glass-menu p-4 sm:p-5 flex flex-col gap-2.5 max-h-[calc(100dvh-75px-var(--safe-top))] overflow-y-auto overscroll-contain z-50 rounded-b-3xl border-t-0 pb-[calc(1rem+var(--safe-bottom))] animate-fade-in">
+        {isMobileMenuOpen && (
+          // Liquid Glass Floating Menu Drawer
+          <motion.div
+            key="mobile-menu"
+            {...dropdownMotion}
+            className="lg:hidden absolute top-full left-0 right-0 w-full liquid-glass-menu p-4 sm:p-5 flex flex-col gap-2.5 max-h-[calc(100dvh-75px-var(--safe-top))] overflow-y-auto overscroll-contain z-50 rounded-b-3xl border-t-0 pb-[calc(1rem+var(--safe-bottom))] origin-top"
+          >
              {/* User Profile Info Card */}
              {currentMember && (
                 <div className="flex items-center gap-3 p-3 rounded-2xl glass-well border-purple-400/30 mb-1">
@@ -410,12 +479,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
              {/* Secondary Utilities Container */}
              <div className="border-t border-white/10 my-1 pt-2.5 flex flex-col gap-2">
-                {/* Language Selection */}
-                <div className="flex flex-col gap-1.5">
+                {/* Language Selection: inline disclosure list (the gap above the list lives inside the
+                    animated wrapper, so the height animation starts and ends flush) */}
+                <div className="flex flex-col">
                     <button
                         type="button"
-                        onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                        aria-expanded={isLangMenuOpen}
+                        onClick={() => setIsMobileLangOpen((open) => !open)}
+                        aria-expanded={isMobileLangOpen}
                         className="w-full flex items-center justify-between p-3.5 rounded-2xl liquid-glass-menu-item text-slate-100 hover:text-white pressable-soft"
                     >
                         <div className="flex items-center gap-3">
@@ -424,26 +494,32 @@ export const Navbar: React.FC<NavbarProps> = ({
                           </div>
                           <span className="text-sm font-medium">{currentLangMeta.nativeName} ({currentLang.toUpperCase()})</span>
                         </div>
-                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ease-ios ${isLangMenuOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ease-ios ${isMobileLangOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    {isLangMenuOpen && (
-                        <div className="w-full grid grid-cols-2 gap-1 p-1.5 rounded-2xl glass-well border-purple-500/30 text-sm text-slate-100 max-h-56 overflow-y-auto overscroll-contain animate-fade-in">
-                        {LANGUAGES.map((lang) => (
-                            <button
-                            type="button"
-                            key={lang.code}
-                            onClick={() => {
-                                onSelectLang(lang.code);
-                                setIsLangMenuOpen(false);
-                            }}
-                            aria-current={currentLang === lang.code ? 'true' : undefined}
-                            className="glass-menu-item min-w-0 px-3"
-                            >
-                            <span className="truncate">{lang.nativeName}</span>
-                            </button>
-                        ))}
-                        </div>
-                    )}
+                    <AnimatePresence initial={false}>
+                      {isMobileLangOpen && (
+                        <motion.div key="mobile-lang-list" {...disclosureMotion} className="overflow-hidden">
+                          <div className="pt-1.5">
+                            <div className="w-full grid grid-cols-2 gap-1 p-1.5 rounded-2xl glass-well border-purple-500/30 text-sm text-slate-100 max-h-56 overflow-y-auto overscroll-contain">
+                            {LANGUAGES.map((lang) => (
+                                <button
+                                type="button"
+                                key={lang.code}
+                                onClick={() => {
+                                    selectLang(lang.code);
+                                    setIsMobileLangOpen(false);
+                                }}
+                                aria-current={currentLang === lang.code ? 'true' : undefined}
+                                className="glass-menu-item min-w-0 px-3"
+                                >
+                                <span className="truncate">{lang.nativeName}</span>
+                                </button>
+                            ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                 </div>
 
                 <a
@@ -495,9 +571,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </button>
                 )}
              </div>
-          </div>
-        </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };

@@ -1,9 +1,12 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useId, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { X, Upload, Camera, Sparkles, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Member, Photo } from '../types';
 import { addPhotoToFirestore, PHOTO_FIELD_LIMITS } from '../lib/galleryService';
 import { describeFirestoreError } from '../lib/firebase';
 import { compressImage } from '../lib/imageUtils';
+import { haptic } from '../lib/haptic';
+import { usePresenceMotion, useScrollLock, useSheetDrag } from '../lib/motion';
 import { useI18n } from '../i18n';
 import type { TranslationKey } from '../i18n';
 
@@ -33,27 +36,11 @@ export const PHOTO_EVENT_OPTIONS: ReadonlyArray<{ value: string; labelKey?: Tran
 ];
 
 /**
- * Freezes the page behind an open sheet (`html.scroll-locked` in index.css), so a drag on a non-scrolling
- * part of the sheet cannot scroll the gallery underneath. Counted on <html data-scroll-locks> so stacked
- * sheets unlock only when the last one closes. Replace with `useScrollLock` from src/lib/motion.ts once
- * that module exists.
+ * @deprecated Use `useScrollLock` from src/lib/motion.ts (same signature, same `<html data-scroll-locks>`
+ * counter, plus scroll restore and the iOS touch guard). Kept so older imports keep working.
  */
 export function useSheetScrollLock(active: boolean): void {
-  useEffect(() => {
-    if (!active) return;
-    const root = document.documentElement;
-    root.dataset.scrollLocks = String(Number(root.dataset.scrollLocks || 0) + 1);
-    root.classList.add('scroll-locked');
-    return () => {
-      const remaining = Math.max(0, Number(root.dataset.scrollLocks || 1) - 1);
-      if (remaining === 0) {
-        delete root.dataset.scrollLocks;
-        root.classList.remove('scroll-locked');
-      } else {
-        root.dataset.scrollLocks = String(remaining);
-      }
-    };
-  }, [active]);
+  useScrollLock(active);
 }
 
 interface UploadPhotoModalProps {
@@ -81,9 +68,21 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const titleId = useId();
-  useSheetScrollLock(isOpen);
-
-  if (!isOpen) return null;
+  useScrollLock(isOpen);
+  const overlayMotion = usePresenceMotion('overlay');
+  const sheetMotion = usePresenceMotion('sheet');
+  // Swipe-down closes the sheet only while the form is still empty: like the overlay (which does not close
+  // it), a stray gesture must never throw away a half-filled form. Close / Cancel always work.
+  const isPristine =
+    !photoUrl &&
+    !title.trim() &&
+    !character.trim() &&
+    !series.trim() &&
+    event === PHOTO_EVENT_OPTIONS[0].value &&
+    !customEvent.trim() &&
+    !photographer.trim() &&
+    !caption.trim();
+  const drag = useSheetDrag(onClose, { disabled: isSubmitting || !isPristine });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -165,10 +164,12 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
         ...newPhotoPayload,
       };
 
+      haptic('success');
       onPhotoAdded(created);
       onClose();
     } catch (err: unknown) {
       console.error('Upload photo error:', err);
+      haptic('error');
       setErrorMsg(describeFirestoreError(err, true));
     } finally {
       setIsSubmitting(false);
@@ -177,206 +178,223 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
 
   // Bottom sheet on phones, centered dialog from 640px (.sheet-viewport / .glass-sheet). The overlay is a
   // sibling of the panel and does not close it (a stray tap must not throw away a half-filled form).
+  // AnimatePresence keeps both mounted until their exit animation (slide down / fade) has finished.
   return (
-    <>
-      <div className="glass-overlay animate-fade-in touch-none" aria-hidden="true" />
-      <div className="sheet-viewport">
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="glass-sheet sm:max-w-2xl animate-sheet-up sm:animate-scale-in"
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('common.close')}
-            title={t('common.close')}
-            className="glass-icon-button absolute top-4 right-4 z-10"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="upload-overlay"
+          className="glass-overlay touch-none"
+          aria-hidden="true"
+          {...overlayMotion}
+        />
+      )}
+      {isOpen && (
+        <div key="upload-sheet" className="sheet-viewport">
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            className="glass-sheet sm:max-w-2xl"
+            {...sheetMotion}
+            {...drag.sheetProps}
           >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="glass-scroll p-6 sm:p-8">
-            <div className="mb-6 pr-12">
-              <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30 mb-2">
-                {t('gallery.uploadBadge')}
-              </span>
-              <h3 id={titleId} className="text-xl sm:text-2xl font-black text-white">
-                {t('gallery.uploadTitle')}
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">{t('gallery.uploadDesc')}</p>
+            {/* Grabber: drag down to close (phones only, while the form is empty) */}
+            <div className="sheet-handle" {...drag.handleProps}>
+              <div className="sheet-grabber" aria-hidden="true" />
             </div>
 
-            {errorMsg && (
-              <div
-                role="alert"
-                className="mb-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs flex items-center space-x-2"
-              >
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                <span>{errorMsg}</span>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t('common.close')}
+              title={t('common.close')}
+              className="glass-icon-button absolute top-4 right-4 z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="glass-scroll p-6 sm:p-8">
+              <div className="mb-6 pr-12">
+                <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30 mb-2">
+                  {t('gallery.uploadBadge')}
+                </span>
+                <h3 id={titleId} className="text-xl sm:text-2xl font-black text-white">
+                  {t('gallery.uploadTitle')}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">{t('gallery.uploadDesc')}</p>
               </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Photo Preview & File Input */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                  {t('gallery.photoFileLabel')} <span className="text-rose-400">*</span>
-                </label>
+              {errorMsg && (
+                <div
+                  role="alert"
+                  className="mb-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs flex items-center space-x-2"
+                >
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
-                {photoUrl ? (
-                  <div className="relative w-full h-56 rounded-2xl overflow-hidden glass-well border-rose-500/40 mb-2">
-                    <img
-                      src={photoUrl}
-                      alt={t('gallery.previewAlt')}
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setPhotoUrl('')}
-                      className="glass-chip absolute top-3 right-3 hover:bg-rose-600 hover:text-white"
-                    >
-                      {t('gallery.changePhoto')}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="glass-well rounded-2xl border-2 border-dashed border-white/15 hover:border-rose-500/60 p-6 text-center transition-colors">
-                    <Camera className="w-10 h-10 text-slate-500 mx-auto mb-2" />
-                    <p className="text-xs text-slate-300 font-semibold mb-2">{t('gallery.chooseFileHint')}</p>
-                    <label className="glass-button pressable text-xs font-bold">
-                      <Upload className="w-4 h-4 text-rose-400" />
-                      <span>{t('gallery.chooseFileButton')}</span>
-                      <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Photo Preview & File Input */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                    {t('gallery.photoFileLabel')} <span className="text-rose-400">*</span>
+                  </label>
+
+                  {photoUrl ? (
+                    <div className="relative w-full h-56 rounded-2xl overflow-hidden glass-well border-rose-500/40 mb-2">
+                      <img
+                        src={photoUrl}
+                        alt={t('gallery.previewAlt')}
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPhotoUrl('')}
+                        className="glass-chip absolute top-3 right-3 hover:bg-rose-600 hover:text-white"
+                      >
+                        {t('gallery.changePhoto')}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="glass-well rounded-2xl border-2 border-dashed border-white/15 hover:border-rose-500/60 p-6 text-center transition-colors">
+                      <Camera className="w-10 h-10 text-slate-500 mx-auto mb-2" />
+                      <p className="text-xs text-slate-300 font-semibold mb-2">{t('gallery.chooseFileHint')}</p>
+                      <label className="glass-button pressable text-xs font-bold">
+                        <Upload className="w-4 h-4 text-rose-400" />
+                        <span>{t('gallery.chooseFileButton')}</span>
+                        <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Judul Foto */}
+                  <div>
+                    <label className={LABEL_CLASS}>
+                      {t('gallery.photoTitleLabel')} <span className="text-rose-400">*</span>
                     </label>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Judul Foto */}
-                <div>
-                  <label className={LABEL_CLASS}>
-                    {t('gallery.photoTitleLabel')} <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t('gallery.photoTitlePlaceholder')}
-                    maxLength={PHOTO_FIELD_LIMITS.title}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className={FIELD_CLASS}
-                  />
-                </div>
-
-                {/* Nama Karakter */}
-                <div>
-                  <label className={LABEL_CLASS}>
-                    {t('gallery.characterLabel')} <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t('gallery.characterPlaceholder')}
-                    maxLength={PHOTO_FIELD_LIMITS.character}
-                    value={character}
-                    onChange={(e) => setCharacter(e.target.value)}
-                    className={FIELD_CLASS}
-                  />
-                </div>
-
-                {/* Serial / Series */}
-                <div>
-                  <label className={LABEL_CLASS}>
-                    {t('gallery.seriesLabel')} <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder={t('gallery.seriesPlaceholder')}
-                    maxLength={PHOTO_FIELD_LIMITS.series}
-                    value={series}
-                    onChange={(e) => setSeries(e.target.value)}
-                    className={FIELD_CLASS}
-                  />
-                </div>
-
-                {/* Event */}
-                <div>
-                  <label className={LABEL_CLASS}>{t('gallery.eventLabel')}</label>
-                  <select value={event} onChange={(e) => setEvent(e.target.value)} className={FIELD_CLASS}>
-                    {PHOTO_EVENT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.labelKey ? t(option.labelKey) : option.value}
-                      </option>
-                    ))}
-                  </select>
-
-                  {event === OTHER_EVENT_VALUE && (
                     <input
                       type="text"
-                      placeholder={t('gallery.customEventPlaceholder')}
-                      maxLength={PHOTO_FIELD_LIMITS.event}
-                      value={customEvent}
-                      onChange={(e) => setCustomEvent(e.target.value)}
-                      className={`mt-2 ${FIELD_CLASS}`}
+                      required
+                      placeholder={t('gallery.photoTitlePlaceholder')}
+                      maxLength={PHOTO_FIELD_LIMITS.title}
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className={FIELD_CLASS}
                     />
-                  )}
+                  </div>
+
+                  {/* Nama Karakter */}
+                  <div>
+                    <label className={LABEL_CLASS}>
+                      {t('gallery.characterLabel')} <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t('gallery.characterPlaceholder')}
+                      maxLength={PHOTO_FIELD_LIMITS.character}
+                      value={character}
+                      onChange={(e) => setCharacter(e.target.value)}
+                      className={FIELD_CLASS}
+                    />
+                  </div>
+
+                  {/* Serial / Series */}
+                  <div>
+                    <label className={LABEL_CLASS}>
+                      {t('gallery.seriesLabel')} <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t('gallery.seriesPlaceholder')}
+                      maxLength={PHOTO_FIELD_LIMITS.series}
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value)}
+                      className={FIELD_CLASS}
+                    />
+                  </div>
+
+                  {/* Event */}
+                  <div>
+                    <label className={LABEL_CLASS}>{t('gallery.eventLabel')}</label>
+                    <select value={event} onChange={(e) => setEvent(e.target.value)} className={FIELD_CLASS}>
+                      {PHOTO_EVENT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.labelKey ? t(option.labelKey) : option.value}
+                        </option>
+                      ))}
+                    </select>
+
+                    {event === OTHER_EVENT_VALUE && (
+                      <input
+                        type="text"
+                        placeholder={t('gallery.customEventPlaceholder')}
+                        maxLength={PHOTO_FIELD_LIMITS.event}
+                        value={customEvent}
+                        onChange={(e) => setCustomEvent(e.target.value)}
+                        className={`mt-2 ${FIELD_CLASS}`}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Fotografer Credit */}
-              <div>
-                <label className={LABEL_CLASS}>{t('gallery.photographerLabel')}</label>
-                <input
-                  type="text"
-                  placeholder={t('gallery.photographerPlaceholder')}
-                  maxLength={PHOTO_FIELD_LIMITS.photographer}
-                  value={photographer}
-                  onChange={(e) => setPhotographer(e.target.value)}
-                  className={FIELD_CLASS}
-                />
-              </div>
+                {/* Fotografer Credit */}
+                <div>
+                  <label className={LABEL_CLASS}>{t('gallery.photographerLabel')}</label>
+                  <input
+                    type="text"
+                    placeholder={t('gallery.photographerPlaceholder')}
+                    maxLength={PHOTO_FIELD_LIMITS.photographer}
+                    value={photographer}
+                    onChange={(e) => setPhotographer(e.target.value)}
+                    className={FIELD_CLASS}
+                  />
+                </div>
 
-              {/* Keterangan / Caption */}
-              <div>
-                <label className={LABEL_CLASS}>{t('gallery.captionLabel')}</label>
-                <textarea
-                  rows={2}
-                  placeholder={t('gallery.captionPlaceholder')}
-                  maxLength={PHOTO_FIELD_LIMITS.caption}
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  className={`${FIELD_CLASS} resize-none`}
-                ></textarea>
-              </div>
+                {/* Keterangan / Caption */}
+                <div>
+                  <label className={LABEL_CLASS}>{t('gallery.captionLabel')}</label>
+                  <textarea
+                    rows={2}
+                    placeholder={t('gallery.captionPlaceholder')}
+                    maxLength={PHOTO_FIELD_LIMITS.caption}
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    className={`${FIELD_CLASS} resize-none`}
+                  ></textarea>
+                </div>
 
-              <div className="pt-2 flex justify-end gap-3">
-                <button type="button" onClick={onClose} className="glass-button pressable text-xs">
-                  {t('gallery.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  aria-label={t('gallery.submitUpload')}
-                  className="btn-primary pressable px-6 text-xs"
-                >
-                  {isSubmitting ? (
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>{t('gallery.submitUpload')}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+                <div className="pt-2 flex justify-end gap-3">
+                  <button type="button" onClick={onClose} className="glass-button pressable text-xs">
+                    {t('gallery.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    aria-label={t('gallery.submitUpload')}
+                    className="btn-primary pressable px-6 text-xs"
+                  >
+                    {isSubmitting ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>{t('gallery.submitUpload')}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </>
+      )}
+    </AnimatePresence>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from 'react';
+import { motion, useIsPresent } from 'framer-motion';
 import {
   Download,
   Share2,
@@ -12,18 +13,38 @@ import { Member } from '../types';
 import { format16DigitUserId } from '../lib/idGenerator';
 import { KawanCosplayLogo } from './KawanCosplayLogo';
 import { useI18n } from '../i18n';
+import { haptic } from '../lib/haptic';
+import { usePresenceMotion, useScrollLock, useSheetDrag } from '../lib/motion';
 
 interface MemberCardModalProps {
   member: Member | null;
   onClose: () => void;
 }
 
+/*
+ * App mounts this inside <AnimatePresence> while a member is selected. After closing it stays mounted
+ * until the overlay and sheet have animated out; `isPresent` is already false then, so the scroll lock,
+ * Escape handler and focus trap end as soon as the close starts.
+ */
 export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClose }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const { t, formatDate } = useI18n();
-  const isOpen = Boolean(member);
+  const isPresent = useIsPresent();
+  const isOpen = Boolean(member) && isPresent;
+
+  // Motion: bottom sheet below 640px (drag the grabber down to dismiss), scale-fade dialog from 640px,
+  // quick fades with reduced motion. The page behind is frozen while open.
+  const sheetMotion = usePresenceMotion('sheet');
+  const overlayMotion = usePresenceMotion('overlay');
+  const drag = useSheetDrag(onClose);
+  useScrollLock(isOpen);
+
+  // The pass appearing is a small success moment (also right after a registration).
+  useEffect(() => {
+    if (isOpen) haptic('success');
+  }, [isOpen]);
 
   // Latest onClose without re-running the open effect on every parent render.
   const onCloseRef = useRef(onClose);
@@ -85,17 +106,23 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
   // Phones: bottom sheet with grabber + safe-area padding; >= 640px: centered dialog (.glass-sheet).
   return (
     <>
-      <div className="glass-overlay animate-fade-in" onClick={onClose} aria-hidden="true" />
+      <motion.div className="glass-overlay" onClick={onClose} aria-hidden="true" {...overlayMotion} />
       <div className="sheet-viewport">
-        <div
+        <motion.div
           ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className="glass-sheet sm:max-w-lg animate-sheet-up sm:animate-scale-in text-slate-100 outline-none"
+          className="glass-sheet sm:max-w-lg text-slate-100 outline-none"
+          {...sheetMotion}
+          {...drag.sheetProps}
         >
-          <div className="sheet-grabber" aria-hidden="true" />
+          {/* Drag handle: the grabber row (pb-3 replaces the scroll area's top padding on phones, so
+              the layout is unchanged and the whole strip above the content starts the drag) */}
+          <div className="sheet-handle pb-3 sm:pb-0" {...drag.handleProps}>
+            <div className="sheet-grabber" aria-hidden="true" />
+          </div>
 
           {/* Close Button */}
           <button
@@ -108,7 +135,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
             <X className="w-5 h-5" />
           </button>
 
-          <div className="glass-scroll px-5 pt-3 pb-6 sm:p-8">
+          <div className="glass-scroll px-5 pt-0 pb-6 sm:p-8">
             <div className="text-center mb-6">
               <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-2">
                 <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
@@ -262,7 +289,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               </a>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </>
   );

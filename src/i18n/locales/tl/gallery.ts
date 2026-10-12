@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: 'Gallery ng Cosplay',
-  description: 'Koleksyon ng litrato ng mga miyembro',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: 'Gallery ng Cosplay at Pop Culture ng Komunidad',
+  description: 'Opisyal na koleksyon ng mga litrato ng mga miyembro ng KawanCosplay mula sa mga convention, meetup, at photoshoot',
   uploadPhoto: 'Mag-upload ng Litrato',
   allCharacters: 'Lahat ng Karakter',
-  allEvents: 'Lahat ng Kaganapan',
+  allEvents: 'Lahat ng Event at Shoot',
+
+  // PhotoGallery
+  photosAvailableOne: '{count} litrato ang available',
+  photosAvailableOther: '{count} na litrato ang available',
+  showcaseHeading: 'Photo Showcase ng KawanCosplay',
+  searchPlaceholder: 'Maghanap ayon sa karakter, serye, photographer, o event...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: 'Ipinapakita ang {count} cosplay na gawa',
+  showingCountOther: 'Ipinapakita ang {count} na cosplay na gawa',
+  emptyTitle: 'Wala pang litrato sa kategoryang ito',
+  emptyDesc: 'Maging una sa pag-upload ng cosplay na litrato para sa karakter o event na ito!',
+  uploadNow: 'Mag-upload ng Litrato Ngayon',
+  downloadPhoto: 'I-download ang Litrato',
+  byAuthor: 'Ni: {name}',
+  detailCosplayer: 'Cosplayer:',
+  detailKccId: '16-Digit na ID:',
+  detailEvent: 'Event / Lokasyon:',
+  detailPhotographer: 'Litratista:',
+  shootNotes: 'Mga Tala sa Shoot',
+  likeWithCount: 'I-like ({count})',
+  download: 'I-download',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'Iba pa',
+
+  // UploadPhotoModal
+  photoTooLarge: 'Ang pinakamalaking laki ng litrato ay {maxMb} MB.',
+  imageProcessFailed: 'Hindi maproseso ang larawan. Pakisubukan ang ibang file.',
+  photoRequired: 'Mag-upload ng file ng cosplay na litrato o maglagay ng URL ng larawan.',
+  requiredFieldsMissing: 'Kailangan ang pangalan ng karakter, serye ng anime/game, at pamagat ng litrato.',
+  uploadBadge: 'Community Gallery ng MyKCC',
+  uploadTitle: 'Mag-upload ng Cosplay na Litrato',
+  uploadDesc: 'Lalabas ang litrato mo sa pampublikong gallery at mahahanap ito ayon sa karakter at event.',
+  photoFileLabel: 'File ng Cosplay na Litrato',
+  previewAlt: 'Preview ng litrato',
+  changePhoto: 'Palitan ang Litrato',
+  chooseFileHint: 'Pumili ng larawan mula sa iyong device (JPG, PNG, WebP)',
+  chooseFileButton: 'Pumili ng Image File',
+  photoTitleLabel: 'Pamagat / Konsepto ng Litrato',
+  photoTitlePlaceholder: 'Halimbawa: Raiden Shogun - Inazuma Castle',
+  characterLabel: 'Karakter na Kino-cosplay',
+  characterPlaceholder: 'Halimbawa: Frieren, Furina, Gojo Satoru',
+  seriesLabel: 'Serye ng Anime / Game / Fandom',
+  seriesPlaceholder: 'Halimbawa: Genshin Impact, Sousou no Frieren',
+  eventLabel: 'Event / Lokasyon ng Shoot',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'Buwanang Pagtitipon ng KawanCosplay',
+  eventOutdoorShoot: 'Outdoor na Photoshoot sa Kalikasan',
+  eventIndoorStudio: 'Indoor na Session sa Studio',
+  eventMatsuri: 'Japanese Matsuri / Pista ng Kultura',
+  eventOther: 'Iba pa (i-type ang sarili mo)',
+  customEventPlaceholder: 'I-type ang pangalan ng event / lokasyon',
+  photographerLabel: 'Credit ng Photographer / Crew',
+  photographerPlaceholder: '@pangalan_ng_photographer o Pangalan ng Studio',
+  captionLabel: 'Caption / Kuwento sa Likod ng Costume',
+  captionPlaceholder: 'Ikuwento kung paano mo ginawa ang costume at props, o kung bakit naging masaya ang event...',
+  cancel: 'Kanselahin',
+  submitUpload: 'I-upload sa Gallery',
 };
 
 export default gallery;

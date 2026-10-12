@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: 'Galeri Cosplay',
-  description: 'Koleksi gambar cosplay ahli rasmi',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: 'Galeri Cosplay & Pop Culture Komuniti',
+  description: 'Koleksi gambar rasmi ahli KawanCosplay dari konvensyen, pertemuan dan sesi fotografi',
   uploadPhoto: 'Muat Naik Gambar',
-  allCharacters: 'Semua Karakter',
-  allEvents: 'Semua Acara',
+  allCharacters: 'Semua Watak',
+  allEvents: 'Semua Acara & Sesi',
+
+  // PhotoGallery
+  photosAvailableOne: '{count} gambar tersedia',
+  photosAvailableOther: '{count} gambar tersedia',
+  showcaseHeading: 'Pameran Gambar KawanCosplay',
+  searchPlaceholder: 'Cari mengikut watak, siri, jurugambar atau acara...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: 'Memaparkan {count} karya cosplay',
+  showingCountOther: 'Memaparkan {count} karya cosplay',
+  emptyTitle: 'Belum ada gambar dalam kategori ini',
+  emptyDesc: 'Jadilah yang pertama memuat naik gambar cosplay untuk watak atau acara ini!',
+  uploadNow: 'Muat Naik Gambar Sekarang',
+  downloadPhoto: 'Muat Turun Gambar',
+  byAuthor: 'Oleh: {name}',
+  detailCosplayer: 'Cosplayer:',
+  detailKccId: 'ID 16 Digit:',
+  detailEvent: 'Acara / Lokasi:',
+  detailPhotographer: 'Jurugambar:',
+  shootNotes: 'Catatan Sesi Fotografi',
+  likeWithCount: 'Suka ({count})',
+  download: 'Muat Turun',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'Lain-lain',
+
+  // UploadPhotoModal
+  photoTooLarge: 'Saiz maksimum gambar ialah {maxMb} MB.',
+  imageProcessFailed: 'Tidak dapat memproses imej. Sila cuba fail lain.',
+  photoRequired: 'Sila muat naik fail gambar cosplay atau masukkan URL imej.',
+  requiredFieldsMissing: 'Nama watak, siri anime/permainan dan tajuk gambar wajib diisi.',
+  uploadBadge: 'Galeri Komuniti MyKCC',
+  uploadTitle: 'Muat Naik Gambar Cosplay',
+  uploadDesc: 'Gambar anda akan dipaparkan dalam galeri awam dan boleh dicari mengikut watak dan acara.',
+  photoFileLabel: 'Fail Gambar Cosplay',
+  previewAlt: 'Pratonton gambar',
+  changePhoto: 'Tukar Gambar',
+  chooseFileHint: 'Pilih imej daripada peranti anda (JPG, PNG, WebP)',
+  chooseFileButton: 'Pilih Fail Imej',
+  photoTitleLabel: 'Tajuk Gambar / Konsep',
+  photoTitlePlaceholder: 'Contoh: Raiden Shogun - Inazuma Castle',
+  characterLabel: 'Watak yang Dibawakan',
+  characterPlaceholder: 'Contoh: Frieren, Furina, Gojo Satoru',
+  seriesLabel: 'Siri Anime / Permainan / Fandom',
+  seriesPlaceholder: 'Contoh: Genshin Impact, Sousou no Frieren',
+  eventLabel: 'Acara / Lokasi Fotografi',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'Perjumpaan Bulanan KawanCosplay',
+  eventOutdoorShoot: 'Sesi Fotografi Alam Luar',
+  eventIndoorStudio: 'Sesi Studio Dalaman',
+  eventMatsuri: 'Matsuri Jepun / Pesta Budaya',
+  eventOther: 'Lain-lain (taip sendiri)',
+  customEventPlaceholder: 'Taip nama acara / lokasi',
+  photographerLabel: 'Kredit Jurugambar / Kru',
+  photographerPlaceholder: '@nama_jurugambar atau Nama Studio',
+  captionLabel: 'Kapsyen / Kisah di Sebalik Kostum',
+  captionPlaceholder: 'Ceritakan cara anda membuat kostum dan prop, atau apa yang menyeronokkan semasa acara...',
+  cancel: 'Batal',
+  submitUpload: 'Muat Naik ke Galeri',
 };
 
 export default gallery;

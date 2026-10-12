@@ -1,5 +1,132 @@
 import type { LocaleNamespace } from '../../types';
 
-const sheets: Partial<LocaleNamespace<'sheets'>> = {};
+const sheets: LocaleNamespace<'sheets'> = {
+  // Header
+  bridgeBadge: 'Real-Time na Tulay ng Google Sheets at Form',
+  bridgeSubtitle: 'Paglipat mula Google Form papuntang Firebase',
+  pageTitle: 'Sync ng Database ng Spreadsheet at Google Form',
+  pageDesc:
+    'I-import ang kasalukuyang spreadsheet ng mga miyembro at i-on ang real-time sync, para awtomatikong maidagdag sa Firebase ang bawat bagong miyembrong sasagot sa Google Form habang nasa transisyon.',
+  connectSheets: 'Ikonekta ang Google Sheets',
+  renewAccess: 'I-renew ang Access sa Google Sheets',
+  connectionRequiredTitle: 'Kailangang Ikonekta ang Google Sheets',
+  connectionRequiredDesc:
+    'Para direktang mabasa ang Google Form spreadsheet, bigyan ang MyKCC ng read access sa Google Sheets para sa naka-sign in na admin Google account. Dapat may access ang account na iyon sa registration spreadsheet ng KawanCosplay.',
+  accessRequestNotice:
+    'Hinihingi ang access para sa naka-sign in na account. Read access lang sa Google Sheets ang hinihingi ng MyKCC, walang access sa Google Drive.',
+  accessRequestNoticeWithEmail:
+    'Hinihingi ang access para sa naka-sign in na account ({email}). Read access lang sa Google Sheets ang hinihingi ng MyKCC, walang access sa Google Drive.',
+
+  // Step 1: spreadsheet
+  step1Title: 'Spreadsheet ng Google Form',
+  step1Desc: 'I-paste ang URL o ID ng spreadsheet ng mga sagot sa Google Form.',
+  spreadsheetInputLabel: 'URL / ID ng Google Spreadsheet',
+  spreadsheetInputPlaceholder: 'https://docs.google.com/spreadsheets/d/…/edit o ID',
+  inspectButton: 'Suriin',
+  formatHint: 'Format ng link: https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit',
+  inputNotRecognised: 'Hindi pa makilala ang URL / ID.',
+  sheetTabLabel: 'Pumili ng Sheet Tab',
+
+  // Step 2: column mapping
+  step2Title: 'Pag-map ng mga Column ng Sagot',
+  step2Desc: 'May natukoy na {count} column sa iyong Google Form',
+  autoDetectedBadge: 'Awtomatikong Natukoy',
+  columnFullName: 'Column ng Buong Pangalan',
+  columnCosname: 'Column ng Cosname / Alyas',
+  columnEmail: 'Column ng Email',
+  columnWhatsapp: 'Column ng WhatsApp / Phone Number',
+  columnWhatsapp2: 'Column ng Backup na WhatsApp / WA No. 2',
+  optionalTag: '(Opsyonal)',
+  columnDiscord: 'Column ng Discord Username',
+  columnCity: 'Column ng Lungsod / Tirahan',
+  columnRole: 'Column ng Role / Interes (Cosplayer/Crafter/atbp.)',
+  columnFandom: 'Column ng Fandom / Paboritong Karakter',
+  columnTimestamp: 'Column ng Timestamp ng Sagot',
+  optionChooseColumn: '-- Pumili ng Column --',
+  optionNone: '-- Wala / Blangko --',
+  optionDefaultIndonesia: '-- Karaniwan (Indonesia) --',
+  optionDefaultCosplayer: '-- Karaniwan (Cosplayer) --',
+  optionDefaultAnimeGames: '-- Karaniwan (Anime at Games) --',
+  optionCurrentTime: '-- Kasalukuyang Oras --',
+  previewTitle: 'Preview ng Data ng Spreadsheet (Pangalan, WhatsApp at Discord Username):',
+  previewColName: 'Pangalan / Cosname',
+  previewColDiscord: 'Username sa Discord',
+  previewColCity: 'Lungsod',
+  previewPhone2: 'Blg. 2: {phone}',
+
+  // Import
+  importing: 'Ini-import sa Firestore ({completed}/{total})...',
+  importAllButton: 'I-import sa Firebase ang Lahat ng Sagot sa Spreadsheet (kasama ang Discord at WA)',
+  importResult:
+    'Tapos na ang pag-import: <strong>{added} bagong miyembro</strong>, {updated} na-update, {unchanged} walang pagbabago, {skipped} nabigo.',
+  errorTip: 'Tip: puwede mo ring i-paste ang URL ng Google Form spreadsheet sa input sa itaas at i-click ang "Suriin".',
+  grantAccessButton: 'Magbigay ng Access / Ikonekta ang Google',
+
+  // Real-time poller
+  pollerTitle: 'Real-Time na Transition Poller',
+  pollerActive: 'Aktibo (Live)',
+  pollerInactive: 'Hindi Aktibo',
+  pollerDesc:
+    'Habang naka-on ito, sinusuri ng app ang spreadsheet bawat {seconds} segundo. Awtomatikong idinadagdag sa Firebase ang bawat bagong sagot sa Google Form at agad itong nabibigyan ng KCC ID.',
+  pollIntervalLabel: 'Pagitan ng Pagsuri:',
+  pollEverySeconds: 'Bawat {seconds} segundo',
+  pollEverySecondsOptimal: 'Bawat {seconds} segundo (Pinakamainam)',
+  lastPollLabel: 'Huling Pagsuri:',
+  lastPollNever: 'Hindi pa napapatakbo',
+  stopPoller: 'Itigil ang Live Poller',
+  startAutoSync: 'Simulan ang Real-Time na Auto Sync',
+
+  // Google Apps Script webhook
+  webhookTitle: 'Webhook ng Google Apps Script',
+  webhookDesc:
+    'Gusto mo bang agad dumating ang mga sagot sa Google Form pagkapindot ng <em>Submit</em> button, nang hindi na hinihintay ang polling interval? I-install ang script na ito sa iyong Google Sheet ng mga sagot:',
+  scriptCommentInstall: 'I-install sa: Google Sheet ng mga sagot -> Extensions -> Apps Script',
+  scriptCommentTrigger: 'Trigger: onFormSubmit -> Kapag na-submit ang form (On form submit)',
+  scriptCommentResponseData: 'Basahin ang data ng sagot sa form',
+  copied: 'Nakopya na!',
+  copyScript: 'Kopyahin ang Script',
+  installStepsTitle: 'Mabilis na Setup (1 Minuto):',
+  installStep1: '1. Buksan ang iyong Google Sheet ng mga sagot > menu na <strong>Extensions</strong> > <strong>Apps Script</strong>.',
+  installStep2: '2. I-paste ang code sa itaas > I-save.',
+  installStep3:
+    '3. Sa kaliwang menu, i-click ang <strong>Triggers</strong> > Add Trigger > Piliin ang uri ng event: <em>On form submit</em>.',
+
+  // Sync history
+  recentSyncTitle: 'Kamakailang Kasaysayan ng Sync',
+  logCount: '{count} na Log',
+  logsPermissionDenied: 'Tinanggihan ang access sa mga sync log. Mag-sign in gamit ang admin Google account.',
+  logsLoadFailed: 'Hindi ma-load ang kasaysayan ng sync. Suriin ang iyong koneksyon, pagkatapos ay i-reload ang page.',
+  logsEmpty: 'Wala pang naitalang aktibidad sa sync.',
+  logImportedRows: 'Na-import ang {count} na row',
+  logImportSummary:
+    'Tapos na ang pag-import: {added} bagong miyembro, {updated} na-update, {unchanged} walang pagbabago, {skipped} nabigo.',
+  logAutoSummary: 'Awtomatiko: {added} bago, {updated} na-update.',
+  // Label of the stored log source 'Google Sheets Importer' (the poller's logs are labelled with pollerTitle)
+  logSourceImporter: 'Taga-import ng Google Sheets',
+
+  // Errors
+  adminAccountFallback: 'ang admin account',
+  errorUnauthorized:
+    'Nag-expire na o hindi na valid ang pahintulot sa Google Sheets. I-click ang "Ikonekta ang Google Sheets" para i-renew ito, pagkatapos ay subukang muli.',
+  errorScope:
+    'Hindi naibigay ang read access sa Google Sheets. I-click ang "Ikonekta ang Google Sheets" at i-tick ang pahintulot na makita ang iyong mga Google Sheets spreadsheet.',
+  errorNoAccess:
+    'Walang access ang naka-sign in na Google account ({account}) sa spreadsheet na ito, o mali ang spreadsheet ID. I-share ang spreadsheet sa admin account na iyon (sapat na ang Viewer access), o suriing muli ang URL/ID.',
+  errorUnsupportedFile:
+    'Hindi native na Google Sheets file ang file na ito (hal. isang na-upload na Excel .xlsx). Buksan ito, piliin ang File > Save as Google Sheets, pagkatapos ay gamitin ang URL ng bagong file.',
+  errorRateLimit: 'Naabot na ang limitasyon ng request sa Google Sheets API. Maghintay nang mga isang minuto, pagkatapos ay subukang muli.',
+  errorNetwork: 'Hindi maabot ang Google Sheets. Suriin ang iyong internet connection, pagkatapos ay subukang muli.',
+  errorRejected: 'Tinanggihan ng Google Sheets ang request: {detail}',
+  errorInvalidInput:
+    'Hindi wasto ang URL o ID ng spreadsheet. I-paste ang buong URL ng Google Sheets (https://docs.google.com/spreadsheets/d/…/edit) o ang ID lang nito.',
+  errorEmptyInput: 'Maglagay muna ng URL o ID ng Google Sheets.',
+  errorNotConnected: 'Hindi pa naibibigay ang access sa Google Sheets. I-click muna ang "Ikonekta ang Google Sheets".',
+  errorEmptySheet: 'Walang laman ang spreadsheet na ito o wala pa itong mga sagot.',
+  errorReadFailed: 'Hindi mabasa ang spreadsheet.',
+  errorInspectFirst: 'Ikonekta muna ang Google Sheets at suriin ang isang spreadsheet (Hakbang 1).',
+  errorNoRows: 'Walang row ng sagot na maii-import.',
+  errorNoValidRows: 'Walang nakitang valid na row gamit ang column mapping na ito.',
+  errorCheckFirst: 'Suriin muna ang isang spreadsheet sa Hakbang 1.',
+};
 
 export default sheets;

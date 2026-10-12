@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: 'Galeri Poto Cosplay',
-  description: 'Karya poto anggota resmi',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: 'Galeri Cosplay & Pop Culture Komunitas',
+  description: 'Pintonan poto resmi karya anggota KawanCosplay ti rupa-rupa konvénsi, riungan, sareng sési poto',
   uploadPhoto: 'Unggah Poto',
   allCharacters: 'Sadaya Karakter',
-  allEvents: 'Sadaya Acara',
+  allEvents: 'Sadaya Acara & Sési Poto',
+
+  // PhotoGallery
+  photosAvailableOne: '{count} poto sayogi',
+  photosAvailableOther: '{count} poto sayogi',
+  showcaseHeading: 'Pintonan Poto KawanCosplay',
+  searchPlaceholder: 'Milarian dumasar karakter, séri, fotografer, atanapi acara...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: 'Nembongkeun {count} karya cosplay',
+  showingCountOther: 'Nembongkeun {count} karya cosplay',
+  emptyTitle: 'Teu acan aya poto dina kategori ieu',
+  emptyDesc: 'Janten anu kahiji ngunggah poto cosplay kanggo karakter atanapi acara ieu!',
+  uploadNow: 'Unggah Poto Ayeuna',
+  downloadPhoto: 'Unduh Poto',
+  byAuthor: 'Ku: {name}',
+  detailCosplayer: 'Cosplayer:',
+  detailKccId: 'ID 16-Digit:',
+  detailEvent: 'Acara / Lokasi:',
+  detailPhotographer: 'Fotografer:',
+  shootNotes: 'Catetan Sési Poto',
+  likeWithCount: 'Resep ({count})',
+  download: 'Unduh',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'Sanés',
+
+  // UploadPhotoModal
+  photoTooLarge: 'Ukuran poto pangageungna {maxMb} MB.',
+  imageProcessFailed: 'Gambar teu tiasa diolah. Mangga cobian file sanés.',
+  photoRequired: 'Mangga unggah file poto cosplay atanapi lebetkeun URL gambar.',
+  requiredFieldsMissing: 'Wasta karakter, séri anime/game, sareng judul poto kedah dieusian.',
+  uploadBadge: 'Galeri Komunitas MyKCC',
+  uploadTitle: 'Unggah Poto Cosplay',
+  uploadDesc: 'Poto anjeun bakal muncul di galeri umum sareng tiasa dipilarian dumasar karakter sareng acara.',
+  photoFileLabel: 'File Poto Cosplay',
+  previewAlt: 'Tilikan poto',
+  changePhoto: 'Gentos Poto',
+  chooseFileHint: 'Pilih gambar tina alat anjeun (JPG, PNG, WebP)',
+  chooseFileButton: 'Pilih File Gambar',
+  photoTitleLabel: 'Judul Poto / Konsép',
+  photoTitlePlaceholder: 'Conto: Raiden Shogun - Inazuma Castle',
+  characterLabel: 'Karakter anu Di-cosplay-keun',
+  characterPlaceholder: 'Conto: Frieren, Furina, Gojo Satoru',
+  seriesLabel: 'Séri Anime / Game / Fandom',
+  seriesPlaceholder: 'Conto: Genshin Impact, Sousou no Frieren',
+  eventLabel: 'Acara / Lokasi Sési Poto',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'Riungan Bulanan KawanCosplay',
+  eventOutdoorShoot: 'Sési Poto di Alam Terbuka',
+  eventIndoorStudio: 'Sési Studio Indoor',
+  eventMatsuri: 'Matsuri Jepang / Féstival Budaya',
+  eventOther: 'Sanés (serat nyalira)',
+  customEventPlaceholder: 'Serat wasta acara / lokasi',
+  photographerLabel: 'Kredit Fotografer / Kru',
+  photographerPlaceholder: '@wasta_fotografer atanapi Wasta Studio',
+  captionLabel: 'Katerangan / Carita di Balik Kostum',
+  captionPlaceholder: 'Caritakeun kumaha anjeun ngadamel kostum sareng prop-na, atanapi naon anu ngajantenkeun acarana seru...',
+  cancel: 'Bolaykeun',
+  submitUpload: 'Unggah ka Galeri',
 };
 
 export default gallery;

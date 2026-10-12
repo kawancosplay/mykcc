@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: 'แกลเลอรีภาพถ่าย',
-  description: 'ผลงานภาพถ่ายสมาชิกอย่างเป็นทางการ',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: 'แกลเลอรีคอสเพลย์และป็อปคัลเจอร์ของชุมชน',
+  description: 'ผลงานภาพถ่ายอย่างเป็นทางการของสมาชิก KawanCosplay จากงานอีเวนต์ มีตติ้ง และการถ่ายภาพ',
   uploadPhoto: 'อัปโหลดภาพ',
   allCharacters: 'ตัวละครทั้งหมด',
-  allEvents: 'อีเวนต์ทั้งหมด',
+  allEvents: 'อีเวนต์และการถ่ายภาพทั้งหมด',
+
+  // PhotoGallery
+  photosAvailableOne: 'มี {count} รูป',
+  photosAvailableOther: 'มี {count} รูป',
+  showcaseHeading: 'โชว์เคสภาพถ่าย KawanCosplay',
+  searchPlaceholder: 'ค้นหาตามตัวละคร ซีรีส์ ช่างภาพ หรืออีเวนต์...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: 'แสดงผลงานคอสเพลย์ {count} ชิ้น',
+  showingCountOther: 'แสดงผลงานคอสเพลย์ {count} ชิ้น',
+  emptyTitle: 'ยังไม่มีรูปในหมวดหมู่นี้',
+  emptyDesc: 'มาเป็นคนแรกที่อัปโหลดรูปคอสเพลย์ของตัวละครหรืออีเวนต์นี้กันเถอะ!',
+  uploadNow: 'อัปโหลดรูปเลย',
+  downloadPhoto: 'ดาวน์โหลดรูป',
+  byAuthor: 'โดย: {name}',
+  detailCosplayer: 'คอสเพลเยอร์:',
+  detailKccId: 'ID 16 หลัก:',
+  detailEvent: 'อีเวนต์ / สถานที่:',
+  detailPhotographer: 'ช่างภาพ:',
+  shootNotes: 'บันทึกการถ่ายภาพ',
+  likeWithCount: 'ถูกใจ ({count})',
+  download: 'ดาวน์โหลด',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'อื่น ๆ',
+
+  // UploadPhotoModal
+  photoTooLarge: 'ขนาดรูปสูงสุดคือ {maxMb} MB',
+  imageProcessFailed: 'ไม่สามารถประมวลผลรูปภาพได้ โปรดลองใช้ไฟล์อื่น',
+  photoRequired: 'โปรดอัปโหลดไฟล์รูปคอสเพลย์หรือใส่ URL ของรูปภาพ',
+  requiredFieldsMissing: 'ต้องระบุชื่อตัวละคร ซีรีส์อนิเมะ/เกม และชื่อรูป',
+  uploadBadge: 'แกลเลอรีชุมชน MyKCC',
+  uploadTitle: 'อัปโหลดรูปคอสเพลย์',
+  uploadDesc: 'รูปของคุณจะแสดงในแกลเลอรีสาธารณะ และค้นหาได้ตามตัวละครและอีเวนต์',
+  photoFileLabel: 'ไฟล์รูปคอสเพลย์',
+  previewAlt: 'ตัวอย่างรูป',
+  changePhoto: 'เปลี่ยนรูป',
+  chooseFileHint: 'เลือกรูปภาพจากอุปกรณ์ของคุณ (JPG, PNG, WebP)',
+  chooseFileButton: 'เลือกไฟล์รูปภาพ',
+  photoTitleLabel: 'ชื่อรูป / คอนเซปต์',
+  photoTitlePlaceholder: 'ตัวอย่าง: Raiden Shogun - Inazuma Castle',
+  characterLabel: 'ตัวละครที่คอสเพลย์',
+  characterPlaceholder: 'ตัวอย่าง: Frieren, Furina, Gojo Satoru',
+  seriesLabel: 'ซีรีส์อนิเมะ / เกม / แฟนด้อม',
+  seriesPlaceholder: 'ตัวอย่าง: Genshin Impact, Sousou no Frieren',
+  eventLabel: 'อีเวนต์ / สถานที่ถ่ายภาพ',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'มีตติ้งประจำเดือนของ KawanCosplay',
+  eventOutdoorShoot: 'ถ่ายภาพกลางแจ้งท่ามกลางธรรมชาติ',
+  eventIndoorStudio: 'ถ่ายภาพในสตูดิโอ',
+  eventMatsuri: 'งานมัตสึริญี่ปุ่น / เทศกาลวัฒนธรรม',
+  eventOther: 'อื่น ๆ (พิมพ์เอง)',
+  customEventPlaceholder: 'พิมพ์ชื่ออีเวนต์ / สถานที่',
+  photographerLabel: 'เครดิตช่างภาพ / ทีมงาน',
+  photographerPlaceholder: '@ชื่อช่างภาพ หรือชื่อสตูดิโอ',
+  captionLabel: 'คำบรรยาย / เรื่องราวเบื้องหลังชุด',
+  captionPlaceholder: 'เล่าให้เราฟังว่าคุณทำชุดและพร็อพอย่างไร หรืออะไรที่ทำให้อีเวนต์สนุก...',
+  cancel: 'ยกเลิก',
+  submitUpload: 'อัปโหลดไปยังแกลเลอรี',
 };
 
 export default gallery;

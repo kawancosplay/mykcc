@@ -1,5 +1,134 @@
 import type { LocaleNamespace } from '../../types';
 
-const sheets: Partial<LocaleNamespace<'sheets'>> = {};
+// GoogleSheetsSync (admin dashboard: Google Sheets / Google Form import and real-time sync).
+// <strong>…</strong> and <em>…</em> markers are rendered as bold / italic text; keep them in translations.
+const sheets: LocaleNamespace<'sheets'> = {
+  // Header
+  bridgeBadge: 'Google Sheets 與表單即時橋接',
+  bridgeSubtitle: '從 Google Form 過渡到 Firebase',
+  pageTitle: '試算表與 Google Form 資料庫同步',
+  pageDesc:
+    '匯入現有成員的試算表並開啟即時同步，讓過渡期間每位填寫 Google Form 的新成員都會自動加入 Firebase。',
+  connectSheets: '連結 Google Sheets',
+  renewAccess: '更新 Google Sheets 存取權',
+  connectionRequiredTitle: '需要連結 Google Sheets',
+  connectionRequiredDesc:
+    '若要直接讀取 Google Form 試算表，請為目前登入的管理員 Google 帳號授予 MyKCC 讀取 Google Sheets 的權限。該帳號必須擁有 KawanCosplay 登記試算表的存取權。',
+  accessRequestNotice:
+    '將為目前登入的帳號要求存取權。MyKCC 只要求 Google Sheets 的讀取權限，不會存取 Google Drive。',
+  accessRequestNoticeWithEmail:
+    '將為目前登入的帳號（{email}）要求存取權。MyKCC 只要求 Google Sheets 的讀取權限，不會存取 Google Drive。',
+
+  // Step 1: spreadsheet
+  step1Title: 'Google Form 試算表',
+  step1Desc: '貼上 Google Form 回覆試算表的網址或 ID。',
+  spreadsheetInputLabel: 'Google 試算表網址 / ID',
+  spreadsheetInputPlaceholder: 'https://docs.google.com/spreadsheets/d/…/edit 或 ID',
+  inspectButton: '檢查',
+  formatHint: '格式：https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit',
+  inputNotRecognised: '目前無法辨識此網址 / ID。',
+  sheetTabLabel: '選擇工作表',
+
+  // Step 2: column mapping
+  step2Title: '回覆欄位對應',
+  step2Desc: '在您的 Google Form 中偵測到 {count} 個欄位',
+  autoDetectedBadge: '自動偵測',
+  columnFullName: '全名欄位',
+  columnCosname: 'Cosname / 暱稱欄位',
+  columnEmail: '電子郵件欄位',
+  columnWhatsapp: 'WhatsApp / 電話號碼欄位',
+  columnWhatsapp2: '備用 WhatsApp / WA 號碼 2 欄位',
+  optionalTag: '（選填）',
+  columnDiscord: 'Discord 使用者名稱欄位',
+  columnCity: '城市 / 居住地欄位',
+  columnRole: '身分 / 興趣欄位（Cosplayer / 手作者等）',
+  columnFandom: '喜愛作品 / 角色欄位',
+  columnTimestamp: '回覆時間戳記欄位',
+  optionChooseColumn: '-- 選擇欄位 --',
+  optionNone: '-- 無 / 留空 --',
+  optionDefaultIndonesia: '-- 預設（印尼）--',
+  optionDefaultCosplayer: '-- 預設（Cosplayer）--',
+  optionDefaultAnimeGames: '-- 預設（動漫與遊戲）--',
+  optionCurrentTime: '-- 目前時間 --',
+  previewTitle: '試算表資料預覽（名稱、WhatsApp 與 Discord 使用者名稱）：',
+  previewColName: '名稱 / Cosname',
+  previewColDiscord: 'Discord 使用者名稱',
+  previewColCity: '城市',
+  previewPhone2: '號碼 2：{phone}',
+
+  // Import
+  importing: '正在匯入 Firestore（{completed}/{total}）...',
+  importAllButton: '將試算表中的所有回覆（含 Discord 與 WA）匯入 Firebase',
+  importResult:
+    '匯入完成：<strong>{added} 位新成員</strong>，{updated} 位已更新，{unchanged} 位未變更，{skipped} 位失敗。',
+  errorTip: '提示：您也可以將 Google Form 試算表的網址貼到上方輸入框，然後點選「檢查」。',
+  grantAccessButton: '授予存取權 / 連結 Google',
+
+  // Real-time poller
+  pollerTitle: '即時過渡輪詢器',
+  pollerActive: '執行中（即時）',
+  pollerInactive: '未執行',
+  pollerDesc:
+    '開啟後，應用程式每 {seconds} 秒檢查一次試算表。每筆新的 Google Form 回覆都會自動加入 Firebase，並立即取得 KCC ID。',
+  pollIntervalLabel: '檢查間隔：',
+  pollEverySeconds: '每 {seconds} 秒',
+  pollEverySecondsOptimal: '每 {seconds} 秒（建議）',
+  lastPollLabel: '上次檢查：',
+  lastPollNever: '尚未執行',
+  stopPoller: '停止即時輪詢',
+  startAutoSync: '開始即時自動同步',
+
+  // Google Apps Script webhook
+  webhookTitle: 'Google Apps Script Webhook',
+  webhookDesc:
+    '希望在按下<em>提交</em>按鈕時，Google Form 回覆就能立即送達，而不必等待輪詢間隔？請在您的回覆 Google Sheet 中安裝此指令碼：',
+  scriptCommentInstall: '安裝位置：回覆 Google Sheet -> 擴充功能 (Extensions) -> Apps Script',
+  scriptCommentTrigger: '觸發條件：onFormSubmit -> 提交表單時 (On form submit)',
+  scriptCommentResponseData: '讀取表單回覆資料',
+  copied: '已複製！',
+  copyScript: '複製指令碼',
+  installStepsTitle: '快速設定（1 分鐘）：',
+  installStep1: '1. 開啟您的回覆 Google Sheet > <strong>擴充功能 (Extensions)</strong> 選單 > <strong>Apps Script</strong>。',
+  installStep2: '2. 貼上上方程式碼 > 儲存。',
+  installStep3:
+    '3. 在左側選單中點選<strong>觸發條件 (Triggers)</strong> > 新增觸發條件 > 選取活動類型：<em>提交表單時 (On form submit)</em>。',
+
+  // Sync history
+  recentSyncTitle: '最近同步記錄',
+  logCount: '{count} 筆記錄',
+  logsPermissionDenied: '同步記錄存取遭拒。請使用管理員 Google 帳號登入。',
+  logsLoadFailed: '無法載入同步記錄。請檢查網路連線，然後重新載入頁面。',
+  logsEmpty: '尚無同步活動記錄。',
+  logImportedRows: '已匯入 {count} 列',
+  logImportSummary:
+    '匯入完成：{added} 位新成員，{updated} 位已更新，{unchanged} 位未變更，{skipped} 位失敗。',
+  logAutoSummary: '自動：{added} 位新增，{updated} 位已更新。',
+  // Label of the stored log source 'Google Sheets Importer' (the poller's logs are labelled with pollerTitle)
+  logSourceImporter: 'Google Sheets 匯入工具',
+
+  // Errors
+  adminAccountFallback: '管理員帳號',
+  errorUnauthorized:
+    'Google Sheets 授權已過期或失效。請點選「連結 Google Sheets」重新授權，然後再試一次。',
+  errorScope:
+    '尚未授予 Google Sheets 的讀取權限。請點選「連結 Google Sheets」，並勾選查看您 Google Sheets 試算表的權限。',
+  errorNoAccess:
+    '目前登入的 Google 帳號（{account}）沒有此試算表的存取權，或試算表 ID 有誤。請將試算表共用給該管理員帳號（「檢視者」權限即可），或再次確認網址/ID。',
+  errorUnsupportedFile:
+    '此檔案不是原生 Google Sheets 檔案（例如上傳的 Excel .xlsx 檔）。請開啟該檔案，選擇「檔案 > 儲存為 Google 試算表 (File > Save as Google Sheets)」，然後使用新檔案的網址。',
+  errorRateLimit: '已達 Google Sheets API 請求上限。請等候約一分鐘後再試一次。',
+  errorNetwork: '無法連線至 Google Sheets。請檢查網路連線，然後再試一次。',
+  errorRejected: 'Google Sheets 拒絕了請求：{detail}',
+  errorInvalidInput:
+    '試算表網址或 ID 無效。請貼上完整的 Google Sheets 網址（https://docs.google.com/spreadsheets/d/…/edit）或僅貼上其 ID。',
+  errorEmptyInput: '請先輸入 Google Sheets 網址或 ID。',
+  errorNotConnected: '尚未授予 Google Sheets 存取權。請先點選「連結 Google Sheets」。',
+  errorEmptySheet: '此試算表是空的，或尚無任何回覆。',
+  errorReadFailed: '無法讀取試算表。',
+  errorInspectFirst: '請先連結 Google Sheets 並檢查試算表（步驟 1）。',
+  errorNoRows: '沒有可匯入的回覆資料列。',
+  errorNoValidRows: '依目前的欄位對應找不到有效的資料列。',
+  errorCheckFirst: '請先在步驟 1 中檢查試算表。',
+};
 
 export default sheets;

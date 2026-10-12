@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: '포토 갤러리',
-  description: '공식 행사 및 촬영 사진',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: '커뮤니티 코스프레 & 팝컬처 갤러리',
+  description: '행사, 정모, 촬영에서 담은 KawanCosplay 회원들의 공식 사진 쇼케이스',
   uploadPhoto: '사진 업로드',
   allCharacters: '모든 캐릭터',
-  allEvents: '모든 행사',
+  allEvents: '모든 행사 & 촬영',
+
+  // PhotoGallery
+  photosAvailableOne: '사진 {count}장',
+  photosAvailableOther: '사진 {count}장',
+  showcaseHeading: 'KawanCosplay 사진 쇼케이스',
+  searchPlaceholder: '캐릭터, 작품, 사진작가, 행사로 검색...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: '코스프레 작품 {count}개 표시 중',
+  showingCountOther: '코스프레 작품 {count}개 표시 중',
+  emptyTitle: '이 카테고리에는 아직 사진이 없어요',
+  emptyDesc: '이 캐릭터나 행사의 코스프레 사진을 가장 먼저 올려 보세요!',
+  uploadNow: '지금 사진 올리기',
+  downloadPhoto: '사진 다운로드',
+  byAuthor: '작성자: {name}',
+  detailCosplayer: '코스플레이어:',
+  detailKccId: '16자리 ID:',
+  detailEvent: '행사 / 장소:',
+  detailPhotographer: '사진작가:',
+  shootNotes: '촬영 메모',
+  likeWithCount: '좋아요 ({count})',
+  download: '다운로드',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: '기타',
+
+  // UploadPhotoModal
+  photoTooLarge: '사진의 최대 크기는 {maxMb}MB예요.',
+  imageProcessFailed: '이미지를 처리할 수 없어요. 다른 파일로 시도해 주세요.',
+  photoRequired: '코스프레 사진 파일을 업로드하거나 이미지 URL을 입력해 주세요.',
+  requiredFieldsMissing: '캐릭터 이름, 애니메이션/게임 작품, 사진 제목은 필수예요.',
+  uploadBadge: 'MyKCC 커뮤니티 갤러리',
+  uploadTitle: '코스프레 사진 업로드',
+  uploadDesc: '사진은 공개 갤러리에 표시되며 캐릭터와 행사로 검색할 수 있어요.',
+  photoFileLabel: '코스프레 사진 파일',
+  previewAlt: '사진 미리보기',
+  changePhoto: '사진 변경',
+  chooseFileHint: '기기에서 이미지를 선택하세요 (JPG, PNG, WebP)',
+  chooseFileButton: '이미지 파일 선택',
+  photoTitleLabel: '사진 제목 / 콘셉트',
+  photoTitlePlaceholder: '예: 라이덴 쇼군 - 이나즈마성',
+  characterLabel: '코스프레한 캐릭터',
+  characterPlaceholder: '예: 프리렌, 푸리나, 고죠 사토루',
+  seriesLabel: '애니메이션 / 게임 / 팬덤 작품',
+  seriesPlaceholder: '예: 원신, 장송의 프리렌',
+  eventLabel: '행사 / 촬영 장소',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'KawanCosplay 월례 정모',
+  eventOutdoorShoot: '야외 자연 촬영',
+  eventIndoorStudio: '실내 스튜디오 촬영',
+  eventMatsuri: '일본 마츠리 / 문화 축제',
+  eventOther: '기타 (직접 입력)',
+  customEventPlaceholder: '행사 / 장소 이름을 입력하세요',
+  photographerLabel: '사진작가 / 크루 크레딧',
+  photographerPlaceholder: '@사진작가_이름 또는 스튜디오 이름',
+  captionLabel: '캡션 / 의상 비하인드 스토리',
+  captionPlaceholder: '의상과 소품을 어떻게 만들었는지, 행사가 왜 즐거웠는지 들려주세요...',
+  cancel: '취소',
+  submitUpload: '갤러리에 업로드',
 };
 
 export default gallery;

@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: 'Cosplay 精選畫廊',
-  description: '成員攝影寫真作品展示',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: '社群 Cosplay 與流行文化藝廊',
+  description: 'KawanCosplay 成員在動漫展、聚會與拍攝活動中的官方照片展示',
   uploadPhoto: '上傳照片',
   allCharacters: '全部角色',
-  allEvents: '全部活動',
+  allEvents: '全部活動與拍攝',
+
+  // PhotoGallery
+  photosAvailableOne: '共 {count} 張照片',
+  photosAvailableOther: '共 {count} 張照片',
+  showcaseHeading: 'KawanCosplay 照片展',
+  searchPlaceholder: '依角色、作品、攝影師或活動搜尋...',
+  filterOptionWithCount: '{label}（{count}）',
+  showingCountOne: '顯示 {count} 件 Cosplay 作品',
+  showingCountOther: '顯示 {count} 件 Cosplay 作品',
+  emptyTitle: '此分類尚無照片',
+  emptyDesc: '成為第一個為此角色或活動上傳 Cosplay 照片的人吧！',
+  uploadNow: '立即上傳照片',
+  downloadPhoto: '下載照片',
+  byAuthor: '作者：{name}',
+  detailCosplayer: 'Cosplayer：',
+  detailKccId: '16 位數 ID：',
+  detailEvent: '活動 / 地點：',
+  detailPhotographer: '攝影師：',
+  shootNotes: '拍攝筆記',
+  likeWithCount: '按讚（{count}）',
+  download: '下載',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: '其他',
+
+  // UploadPhotoModal
+  photoTooLarge: '照片大小上限為 {maxMb} MB。',
+  imageProcessFailed: '無法處理此圖片，請改用其他檔案。',
+  photoRequired: '請上傳 Cosplay 照片檔案或輸入圖片網址。',
+  requiredFieldsMissing: '角色名稱、動畫 / 遊戲作品與照片標題為必填。',
+  uploadBadge: 'MyKCC 社群藝廊',
+  uploadTitle: '上傳 Cosplay 照片',
+  uploadDesc: '您的照片將顯示在公開藝廊中，並可依角色與活動搜尋。',
+  photoFileLabel: 'Cosplay 照片檔案',
+  previewAlt: '照片預覽',
+  changePhoto: '更換照片',
+  chooseFileHint: '從您的裝置選擇圖片（JPG、PNG、WebP）',
+  chooseFileButton: '選擇圖片檔案',
+  photoTitleLabel: '照片標題 / 主題',
+  photoTitlePlaceholder: '例如：雷電將軍 - 稻妻城',
+  characterLabel: 'Cos 的角色',
+  characterPlaceholder: '例如：芙莉蓮、芙寧娜、五條悟',
+  seriesLabel: '動畫 / 遊戲 / 作品系列',
+  seriesPlaceholder: '例如：原神、葬送的芙莉蓮',
+  eventLabel: '活動 / 拍攝地點',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'KawanCosplay 每月聚會',
+  eventOutdoorShoot: '戶外自然外拍',
+  eventIndoorStudio: '室內棚拍',
+  eventMatsuri: '日式祭典 / 文化祭',
+  eventOther: '其他（自行輸入）',
+  customEventPlaceholder: '請輸入活動 / 地點名稱',
+  photographerLabel: '攝影師 / 團隊署名',
+  photographerPlaceholder: '@攝影師帳號 或 工作室名稱',
+  captionLabel: '說明 / 服裝背後的故事',
+  captionPlaceholder: '分享您是如何製作服裝與道具的，或這次活動有哪些有趣的地方...',
+  cancel: '取消',
+  submitUpload: '上傳到藝廊',
 };
 
 export default gallery;

@@ -1,5 +1,134 @@
 import type { LocaleNamespace } from '../../types';
 
-const sheets: Partial<LocaleNamespace<'sheets'>> = {};
+// GoogleSheetsSync (admin dashboard: Google Sheets / Google Form import and real-time sync).
+// <strong>…</strong> and <em>…</em> markers are rendered as bold / italic text; keep them in translations.
+const sheets: LocaleNamespace<'sheets'> = {
+  // Header
+  bridgeBadge: 'Google Sheets 与表单实时桥接',
+  bridgeSubtitle: '从 Google Form 过渡到 Firebase',
+  pageTitle: '电子表格与 Google Form 数据库同步',
+  pageDesc:
+    '导入现有成员的电子表格并开启实时同步，这样在过渡期间每位填写 Google Form 的新成员都会被自动添加到 Firebase。',
+  connectSheets: '连接 Google Sheets',
+  renewAccess: '续期 Google Sheets 访问权限',
+  connectionRequiredTitle: '需要连接 Google Sheets',
+  connectionRequiredDesc:
+    '要直接读取 Google Form 电子表格，请为当前登录的管理员 Google 账号授予 MyKCC 读取 Google Sheets 的权限。该账号必须有权访问 KawanCosplay 登记电子表格。',
+  accessRequestNotice:
+    '将为当前登录的账号申请访问权限。MyKCC 只申请 Google Sheets 的读取权限，不会访问 Google Drive。',
+  accessRequestNoticeWithEmail:
+    '将为当前登录的账号（{email}）申请访问权限。MyKCC 只申请 Google Sheets 的读取权限，不会访问 Google Drive。',
+
+  // Step 1: spreadsheet
+  step1Title: 'Google Form 电子表格',
+  step1Desc: '粘贴 Google Form 回复电子表格的 URL 或 ID。',
+  spreadsheetInputLabel: 'Google 电子表格 URL / ID',
+  spreadsheetInputPlaceholder: 'https://docs.google.com/spreadsheets/d/…/edit 或 ID',
+  inspectButton: '检查',
+  formatHint: '格式：https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit',
+  inputNotRecognised: '暂无法识别该 URL / ID。',
+  sheetTabLabel: '选择工作表',
+
+  // Step 2: column mapping
+  step2Title: '回复列映射',
+  step2Desc: '在您的 Google Form 中检测到 {count} 列',
+  autoDetectedBadge: '自动检测',
+  columnFullName: '全名列',
+  columnCosname: 'Cosname / 昵称列',
+  columnEmail: '邮箱列',
+  columnWhatsapp: 'WhatsApp / 电话号码列',
+  columnWhatsapp2: '备用 WhatsApp / WA 号码 2 列',
+  optionalTag: '（选填）',
+  columnDiscord: 'Discord 用户名列',
+  columnCity: '城市 / 居住地列',
+  columnRole: '身份 / 兴趣列（Cosplayer / 手作者等）',
+  columnFandom: '喜爱作品 / 角色列',
+  columnTimestamp: '回复时间戳列',
+  optionChooseColumn: '-- 选择列 --',
+  optionNone: '-- 无 / 留空 --',
+  optionDefaultIndonesia: '-- 默认（印度尼西亚）--',
+  optionDefaultCosplayer: '-- 默认（Cosplayer）--',
+  optionDefaultAnimeGames: '-- 默认（动漫与游戏）--',
+  optionCurrentTime: '-- 当前时间 --',
+  previewTitle: '电子表格数据预览（名称、WhatsApp 和 Discord 用户名）：',
+  previewColName: '名称 / Cosname',
+  previewColDiscord: 'Discord 用户名',
+  previewColCity: '城市',
+  previewPhone2: '号码 2：{phone}',
+
+  // Import
+  importing: '正在导入 Firestore（{completed}/{total}）...',
+  importAllButton: '将电子表格中的全部回复（含 Discord 和 WA）导入 Firebase',
+  importResult:
+    '导入完成：<strong>{added} 位新成员</strong>，{updated} 位已更新，{unchanged} 位未变更，{skipped} 位失败。',
+  errorTip: '提示：您也可以将 Google Form 电子表格的 URL 粘贴到上方输入框中，然后点击“检查”。',
+  grantAccessButton: '授予访问权限 / 连接 Google',
+
+  // Real-time poller
+  pollerTitle: '实时过渡轮询器',
+  pollerActive: '运行中（实时）',
+  pollerInactive: '未运行',
+  pollerDesc:
+    '开启后，应用每 {seconds} 秒检查一次电子表格。每条新的 Google Form 回复都会被自动添加到 Firebase，并立即获得 KCC ID。',
+  pollIntervalLabel: '检查间隔：',
+  pollEverySeconds: '每 {seconds} 秒',
+  pollEverySecondsOptimal: '每 {seconds} 秒（推荐）',
+  lastPollLabel: '上次检查：',
+  lastPollNever: '尚未运行',
+  stopPoller: '停止实时轮询',
+  startAutoSync: '开始实时自动同步',
+
+  // Google Apps Script webhook
+  webhookTitle: 'Google Apps Script Webhook',
+  webhookDesc:
+    '希望在点击<em>提交</em>按钮时，Google Form 回复能立即送达，而无需等待轮询间隔？请在您的回复 Google Sheet 中安装此脚本：',
+  scriptCommentInstall: '安装位置：回复 Google Sheet -> 扩展程序 (Extensions) -> Apps Script',
+  scriptCommentTrigger: '触发器：onFormSubmit -> 提交表单时 (On form submit)',
+  scriptCommentResponseData: '读取表单回复数据',
+  copied: '已复制！',
+  copyScript: '复制脚本',
+  installStepsTitle: '快速设置（1 分钟）：',
+  installStep1: '1. 打开您的回复 Google Sheet > <strong>扩展程序 (Extensions)</strong> 菜单 > <strong>Apps Script</strong>。',
+  installStep2: '2. 粘贴上方代码 > 保存。',
+  installStep3:
+    '3. 在左侧菜单中点击<strong>触发器 (Triggers)</strong> > 添加触发器 > 选择事件类型：<em>提交表单时 (On form submit)</em>。',
+
+  // Sync history
+  recentSyncTitle: '最近同步记录',
+  logCount: '{count} 条日志',
+  logsPermissionDenied: '同步日志访问被拒绝。请使用管理员 Google 账号登录。',
+  logsLoadFailed: '无法加载同步记录。请检查网络连接，然后重新加载页面。',
+  logsEmpty: '暂无同步活动记录。',
+  logImportedRows: '已导入 {count} 行',
+  logImportSummary:
+    '导入完成：{added} 位新成员，{updated} 位已更新，{unchanged} 位未变更，{skipped} 位失败。',
+  logAutoSummary: '自动：{added} 位新增，{updated} 位已更新。',
+  // Label of the stored log source 'Google Sheets Importer' (the poller's logs are labelled with pollerTitle)
+  logSourceImporter: 'Google Sheets 导入器',
+
+  // Errors
+  adminAccountFallback: '管理员账号',
+  errorUnauthorized:
+    'Google Sheets 授权已过期或失效。请点击“连接 Google Sheets”重新授权，然后重试。',
+  errorScope:
+    '未授予 Google Sheets 的读取权限。请点击“连接 Google Sheets”，并勾选查看您的 Google Sheets 电子表格的权限。',
+  errorNoAccess:
+    '当前登录的 Google 账号（{account}）无权访问此电子表格，或电子表格 ID 有误。请将电子表格共享给该管理员账号（“查看者”权限即可），或再次核对 URL/ID。',
+  errorUnsupportedFile:
+    '此文件不是原生 Google Sheets 文件（例如上传的 Excel .xlsx 文件）。请打开该文件，选择“文件 > 保存为 Google 表格 (File > Save as Google Sheets)”，然后使用新文件的 URL。',
+  errorRateLimit: '已达到 Google Sheets API 请求上限。请等待约一分钟后重试。',
+  errorNetwork: '无法连接 Google Sheets。请检查网络连接，然后重试。',
+  errorRejected: 'Google Sheets 拒绝了请求：{detail}',
+  errorInvalidInput:
+    '电子表格 URL 或 ID 无效。请粘贴完整的 Google Sheets URL（https://docs.google.com/spreadsheets/d/…/edit）或仅粘贴其 ID。',
+  errorEmptyInput: '请先输入 Google Sheets URL 或 ID。',
+  errorNotConnected: '尚未授予 Google Sheets 访问权限。请先点击“连接 Google Sheets”。',
+  errorEmptySheet: '此电子表格为空，或尚无任何回复。',
+  errorReadFailed: '无法读取电子表格。',
+  errorInspectFirst: '请先连接 Google Sheets 并检查电子表格（第 1 步）。',
+  errorNoRows: '没有可导入的回复行。',
+  errorNoValidRows: '按当前列映射未找到有效的行。',
+  errorCheckFirst: '请先在第 1 步中检查电子表格。',
+};
 
 export default sheets;

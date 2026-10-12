@@ -173,9 +173,12 @@
     -webkit-touch-callout: none;
   }
 
-  /* Button labels stay on one line unless a utility (`whitespace-normal`) says otherwise */
+  /* Button labels wrap when they do not fit, so long translations never push a phone screen sideways
+     (`text-wrap: balance` splits a two-line label evenly). Controls that must stay on one line set it
+     themselves: .glass-segment, .glass-chip, .glass-tabbar-item, or a `whitespace-nowrap` / `truncate` utility. */
   :where(button, a[role="button"]) {
-    white-space: nowrap;
+    text-wrap: balance;
+    overflow-wrap: break-word;
   }
 
   :focus-visible {

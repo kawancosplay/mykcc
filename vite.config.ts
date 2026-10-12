@@ -46,6 +46,25 @@ export default defineConfig(() => {
         '@': path.resolve(import.meta.dirname, '.'),
       },
     },
+    build: {
+      // The Firebase SDK chunk alone is ~575 kB (171 kB gzip); warn only if something grows past that.
+      chunkSizeWarningLimit: 600,
+      rolldownOptions: {
+        output: {
+          // Startup vendor code was one ~770 kB chunk (firebase + framer-motion + react). Separate chunks
+          // download in parallel and stay cached when only one of the libraries changes.
+          codeSplitting: {
+            groups: [
+              // Highest priority first: groups also pull in their dependencies, so React must be claimed
+              // before framer-motion (which depends on it).
+              { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, priority: 4 },
+              { name: 'firebase', test: /node_modules[\\/](@firebase|firebase)[\\/]/, priority: 3 },
+              { name: 'motion', test: /node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/, priority: 2 },
+            ],
+          },
+        },
+      },
+    },
     server: {
       // HMR is disabled in AI Studio cloud environment where WebSockets are not supported
       hmr: false,

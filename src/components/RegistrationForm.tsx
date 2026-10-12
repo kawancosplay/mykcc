@@ -835,7 +835,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <button
                 type="button"
                 onClick={() => setShowPhone2(true)}
-                className="pressable min-h-11 text-sm text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                className="pressable min-h-11 text-left text-sm text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <span>{t('registration.addBackupPhone')}</span>
               </button>
@@ -917,7 +917,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
         {/* QUESTION 4: AGE CATEGORY (MINOR VS LEGAL AGE) */}
         <div className="glass-card rounded-3xl p-5 sm:p-8">
-          <div className="flex items-center justify-between gap-3 mb-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1.5">
             <label className="block text-sm sm:text-base font-bold text-white">
               {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
             </label>
@@ -926,7 +926,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               type="button"
               onClick={() => setShowAgeExplainer(!showAgeExplainer)}
               aria-expanded={showAgeExplainer}
-              className="touch-target pressable shrink-0 text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 underline"
+              className="touch-target pressable min-w-0 text-left text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 underline"
             >
               <Info className="w-3.5 h-3.5" />
               <span>{t('registration.ageExplanationTitle')}</span>

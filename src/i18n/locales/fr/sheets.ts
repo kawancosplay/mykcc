@@ -1,5 +1,134 @@
 import type { LocaleNamespace } from '../../types';
 
-const sheets: Partial<LocaleNamespace<'sheets'>> = {};
+// GoogleSheetsSync (admin dashboard: Google Sheets / Google Form import and real-time sync).
+// <strong>…</strong> and <em>…</em> markers are rendered as bold / italic text; keep them in translations.
+const sheets: LocaleNamespace<'sheets'> = {
+  // Header
+  bridgeBadge: 'Passerelle temps réel Google Sheets & Form',
+  bridgeSubtitle: 'Transition de Google Form vers Firebase',
+  pageTitle: 'Synchronisation de la base de données avec la feuille de calcul & le Google Form',
+  pageDesc:
+    'Importez la feuille de calcul existante des membres actuels et activez la synchronisation en temps réel, afin que chaque nouveau membre qui remplit le Google Form pendant la transition soit ajouté automatiquement à Firebase.',
+  connectSheets: 'Connecter Google Sheets',
+  renewAccess: 'Renouveler l’accès à Google Sheets',
+  connectionRequiredTitle: 'Connexion à Google Sheets requise',
+  connectionRequiredDesc:
+    'Pour lire directement la feuille de calcul du Google Form, accordez à MyKCC l’accès en lecture à Google Sheets pour le compte Google admin connecté. Ce compte doit avoir accès à la feuille de calcul des inscriptions KawanCosplay.',
+  accessRequestNotice:
+    'L’accès est demandé pour le compte connecté. MyKCC demande uniquement l’accès en lecture à Google Sheets, aucun accès à Google Drive.',
+  accessRequestNoticeWithEmail:
+    'L’accès est demandé pour le compte connecté ({email}). MyKCC demande uniquement l’accès en lecture à Google Sheets, aucun accès à Google Drive.',
+
+  // Step 1: spreadsheet
+  step1Title: 'Feuille de calcul du Google Form',
+  step1Desc: 'Collez l’URL ou l’ID de la feuille de calcul des réponses du Google Form.',
+  spreadsheetInputLabel: 'URL / ID de la feuille de calcul Google',
+  spreadsheetInputPlaceholder: 'https://docs.google.com/spreadsheets/d/…/edit ou ID',
+  inspectButton: 'Vérifier',
+  formatHint: 'Format : https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit',
+  inputNotRecognised: 'URL / ID pas encore reconnu.',
+  sheetTabLabel: 'Choisir l’onglet',
+
+  // Step 2: column mapping
+  step2Title: 'Correspondance des colonnes de réponses',
+  step2Desc: '{count} colonnes détectées dans votre Google Form',
+  autoDetectedBadge: 'Détection auto',
+  columnFullName: 'Colonne nom complet',
+  columnCosname: 'Colonne cosname / alias',
+  columnEmail: 'Colonne e-mail',
+  columnWhatsapp: 'Colonne numéro WhatsApp / téléphone',
+  columnWhatsapp2: 'Colonne WhatsApp de secours / N° WA 2',
+  optionalTag: '(Facultatif)',
+  columnDiscord: 'Colonne nom d’utilisateur Discord',
+  columnCity: 'Colonne ville / domicile',
+  columnRole: 'Colonne rôle / intérêt (cosplayer, crafter, etc.)',
+  columnFandom: 'Colonne fandom / personnage préféré',
+  columnTimestamp: 'Colonne horodatage de la réponse',
+  optionChooseColumn: '-- Choisir une colonne --',
+  optionNone: '-- Aucune / Vide --',
+  optionDefaultIndonesia: '-- Par défaut (Indonésie) --',
+  optionDefaultCosplayer: '-- Par défaut (Cosplayer) --',
+  optionDefaultAnimeGames: '-- Par défaut (Anime & jeux vidéo) --',
+  optionCurrentTime: '-- Heure actuelle --',
+  previewTitle: 'Aperçu des données de la feuille de calcul (nom, WhatsApp et nom d’utilisateur Discord) :',
+  previewColName: 'Nom / Cosname',
+  previewColDiscord: 'Nom d’utilisateur Discord',
+  previewColCity: 'Ville',
+  previewPhone2: 'N° 2 : {phone}',
+
+  // Import
+  importing: 'Importation dans Firestore ({completed}/{total})...',
+  importAllButton: 'Importer toutes les réponses de la feuille de calcul (Discord & WA inclus) dans Firebase',
+  importResult:
+    'Importation terminée : <strong>{added} nouveaux membres</strong>, {updated} mis à jour, {unchanged} inchangés, {skipped} en échec.',
+  errorTip: 'Astuce : vous pouvez aussi coller l’URL de la feuille de calcul du Google Form dans le champ ci-dessus et cliquer sur « Vérifier ».',
+  grantAccessButton: 'Accorder l’accès / Connecter Google',
+
+  // Real-time poller
+  pollerTitle: 'Vérification en temps réel (transition)',
+  pollerActive: 'Active (en direct)',
+  pollerInactive: 'Inactive',
+  pollerDesc:
+    'Tant que cette option est activée, l’application vérifie la feuille de calcul toutes les {seconds} secondes. Chaque nouvelle réponse au Google Form est ajoutée automatiquement à Firebase et reçoit immédiatement son KCC ID.',
+  pollIntervalLabel: 'Intervalle de vérification :',
+  pollEverySeconds: 'Toutes les {seconds} secondes',
+  pollEverySecondsOptimal: 'Toutes les {seconds} secondes (optimal)',
+  lastPollLabel: 'Dernière vérification :',
+  lastPollNever: 'Pas encore exécutée',
+  stopPoller: 'Arrêter la vérification en direct',
+  startAutoSync: 'Lancer la synchro auto en temps réel',
+
+  // Google Apps Script webhook
+  webhookTitle: 'Webhook Google Apps Script',
+  webhookDesc:
+    'Vous voulez que les réponses au Google Form arrivent instantanément dès qu’on appuie sur le bouton <em>Envoyer</em>, sans attendre l’intervalle de vérification ? Installez ce script dans la feuille Google Sheets des réponses :',
+  scriptCommentInstall: 'Installation : feuille Google Sheets des réponses -> Extensions -> Apps Script',
+  scriptCommentTrigger: 'Déclencheur : onFormSubmit -> Lors de l’envoi du formulaire',
+  scriptCommentResponseData: 'Lire les données de la réponse au formulaire',
+  copied: 'Copié !',
+  copyScript: 'Copier le script',
+  installStepsTitle: 'Installation rapide (1 minute) :',
+  installStep1: '1. Ouvrez la feuille Google Sheets des réponses > menu <strong>Extensions</strong> > <strong>Apps Script</strong>.',
+  installStep2: '2. Collez le code ci-dessus > Enregistrez.',
+  installStep3:
+    '3. Dans le menu de gauche, cliquez sur <strong>Déclencheurs</strong> (Triggers) > Ajouter un déclencheur > Sélectionnez le type d’événement : <em>Lors de l’envoi du formulaire</em> (On form submit).',
+
+  // Sync history
+  recentSyncTitle: 'Historique des synchros récentes',
+  logCount: '{count} entrées',
+  logsPermissionDenied: 'Accès aux journaux de synchro refusé. Connectez-vous avec le compte Google admin.',
+  logsLoadFailed: 'Impossible de charger l’historique de synchro. Vérifiez votre connexion, puis rechargez la page.',
+  logsEmpty: 'Aucune activité de synchro enregistrée pour le moment.',
+  logImportedRows: '{count} lignes importées',
+  logImportSummary:
+    'Importation terminée : {added} nouveaux membres, {updated} mis à jour, {unchanged} inchangés, {skipped} en échec.',
+  logAutoSummary: 'Automatique : {added} nouveaux, {updated} mis à jour.',
+  // Label of the stored log source 'Google Sheets Importer' (the poller's logs are labelled with pollerTitle)
+  logSourceImporter: 'Importateur Google Sheets',
+
+  // Errors
+  adminAccountFallback: 'le compte admin',
+  errorUnauthorized:
+    'L’autorisation Google Sheets a expiré ou n’est plus valide. Cliquez sur « Connecter Google Sheets » pour la renouveler, puis réessayez.',
+  errorScope:
+    'L’accès en lecture à Google Sheets n’a pas été accordé. Cliquez sur « Connecter Google Sheets » et cochez l’autorisation permettant de voir vos feuilles de calcul Google Sheets.',
+  errorNoAccess:
+    'Le compte Google connecté ({account}) n’a pas accès à cette feuille de calcul, ou l’ID de la feuille est incorrect. Partagez la feuille de calcul avec ce compte admin (l’accès « Lecteur » suffit) ou vérifiez l’URL/l’ID.',
+  errorUnsupportedFile:
+    'Ce fichier n’est pas un fichier Google Sheets natif (ex. : un fichier Excel .xlsx importé). Ouvrez-le, choisissez Fichier > Enregistrer au format Google Sheets, puis utilisez l’URL du nouveau fichier.',
+  errorRateLimit: 'La limite de requêtes de l’API Google Sheets a été atteinte. Patientez environ une minute, puis réessayez.',
+  errorNetwork: 'Impossible de joindre Google Sheets. Vérifiez votre connexion Internet, puis réessayez.',
+  errorRejected: 'Google Sheets a refusé la requête : {detail}',
+  errorInvalidInput:
+    'URL ou ID de feuille de calcul invalide. Collez l’URL complète de Google Sheets (https://docs.google.com/spreadsheets/d/…/edit) ou seulement son ID.',
+  errorEmptyInput: 'Saisissez d’abord une URL ou un ID Google Sheets.',
+  errorNotConnected: 'L’accès à Google Sheets n’a pas encore été accordé. Cliquez d’abord sur « Connecter Google Sheets ».',
+  errorEmptySheet: 'Cette feuille de calcul est vide ou ne contient encore aucune réponse.',
+  errorReadFailed: 'Impossible de lire la feuille de calcul.',
+  errorInspectFirst: 'Connectez d’abord Google Sheets et vérifiez une feuille de calcul (étape 1).',
+  errorNoRows: 'Aucune ligne de réponse à importer.',
+  errorNoValidRows: 'Aucune ligne valide trouvée avec cette correspondance de colonnes.',
+  errorCheckFirst: 'Vérifiez d’abord une feuille de calcul à l’étape 1.',
+};
 
 export default sheets;

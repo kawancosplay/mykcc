@@ -1,25 +1,105 @@
 import type { LocaleNamespace } from '../../types';
 
-const common: Partial<LocaleNamespace<'common'>> = {
+const common: LocaleNamespace<'common'> = {
   appName: 'MyKCC',
-  tagline: 'Communauté mondiale Pop Culture, Cosplay & Idols (100% SFW)',
-  navForm: "Formulaire d'adhésion",
-  navCard: 'Mon Pass Digital',
-  navGallery: 'Galerie Cosplay',
-  navProfile: 'Mon Profil',
-  navAdmin: 'Tableau Admin',
+  tagline: 'Communauté mondiale pop culture, cosplay & wota (100 % SFW)',
+  navForm: 'Formulaire d’inscription',
+  navCard: 'Mon pass numérique',
+  navGallery: 'Galerie cosplay',
+  navProfile: 'Mon profil',
+  navAdmin: 'Tableau de bord admin',
   navLogin: 'Connexion / Inscription',
   navLogout: 'Déconnexion',
-  userId16Label: 'Identifiant officiel à 16 chiffres',
+  userId16Label: 'KCC ID officiel',
   officialBannerText: 'Site officiel de KawanCosplay',
-  howYouKnow: 'Comment vérifier l’authenticité',
-  aboutKccTitle: 'Communauté internationale officielle (100% SFW)',
-  aboutKccDesc: 'Une communauté pop culture mondiale dédiée aux créations 100% SFW et conviviales.',
+  howYouKnow: 'Voici comment le vérifier',
+  aboutKccTitle: 'Communauté internationale officielle (100 % SFW)',
+  aboutKccDesc: 'KawanCosplay est une communauté internationale et créative autour de la pop culture, dédiée à un cosplay sain 100 % SFW (Safe For Work), à l’appréciation des idols et à l’anime, et ouverte aux membres du monde entier.',
   secureSiteTitle: 'Les sites sécurisés utilisent HTTPS et un cadenas (🔒)',
-  secureSiteDesc: 'Vérifiez la présence du cadenas (🔒) dans la barre d’adresse.',
-  officialContactTitle: 'Hotline WhatsApp officielle & E-mail',
-  officialContactDesc: 'Contact officiel via WhatsApp Hotline +62 857-1103-2782 et cosplaysehat@gmail.com.',
+  secureSiteDesc: 'Regardez la barre d’adresse de votre navigateur. Les sites officiels commencent toujours par https:// et affichent un cadenas de sécurité (🔒).',
+  officialContactTitle: 'Hotline WhatsApp et e-mail officiels',
+  officialContactDesc: 'Les demandes officielles sont traitées exclusivement via la hotline WhatsApp +62 857-1103-2782 et cosplaysehat@gmail.com.',
   whatsappHotline: 'Hotline WhatsApp officielle : +62 857-1103-2782',
+
+  // Generic
+  close: 'Fermer',
+  optional: '(Facultatif)',
+  tryAgain: 'Réessayer',
+  errorWithDetail: '{message} ({detail})',
+  loadingApp: 'Chargement de l’application...',
+  loadingAdmin: 'Chargement de l’espace admin...',
+
+  // Navbar & app shell
+  navFormShort: 'Inscription',
+  navCardShort: 'KCC ID',
+  navGalleryShort: 'Galerie',
+  openMenu: 'Ouvrir le menu',
+  closeMenu: 'Fermer le menu',
+  chooseLanguage: 'Choisir la langue ({language})',
+  siteEditorShort: 'Éditeur du site',
+  themeEditor: 'Éditeur de thème',
+  whatsappCommunity: 'Communauté WhatsApp',
+  whatsappContact: 'WhatsApp : +62 857-1103-2782',
+  emailContact: 'E-mail : cosplaysehat@gmail.com',
+  userFallbackName: 'Utilisateur',
+  idValue: 'ID : {id}',
+  kccIdValue: 'KCC ID : {id}',
+  logoAlt: 'Logo KawanCosplay',
+  officialBadge: 'Officiel',
+
+  // PWA install
+  pwaInstall: 'Installer l’app',
+  pwaIosTitle: 'Installer sur iPhone / iPad',
+  pwaIosStep1: '1. Touchez le bouton {share} dans la barre d’outils de Safari.',
+  pwaIosShare: 'Partager',
+  pwaIosStep2: '2. Faites défiler vers le bas et touchez {addToHome}.',
+  pwaIosAddToHome: 'Sur l’écran d’accueil',
+
+  // Admin portal shell
+  backToPublicSite: 'Retour au site public',
+  adminPortalTitle: 'Portail admin KawanCosplay',
+  googleSignInBadge: 'Connexion Google',
+  adminRestricted: 'Réservé aux admins',
+  lockAndExitAdminTitle: 'Verrouiller et quitter le portail admin',
+  lockExit: 'Verrouiller / Quitter',
+  adminPortal: 'Portail admin',
+  adminPortalLinkTitle: 'Portail réservé aux admins KCC (connexion Google admin)',
+  sheetsPopupClosed: 'La fenêtre d’autorisation Google a été fermée avant la fin.',
+  sheetsWrongAccount: 'Choisissez le même compte Google que le compte admin connecté.',
+  sheetsPopupBlocked: 'Le navigateur a bloqué la fenêtre de connexion Google. Autorisez les pop-ups pour ce site et réessayez.',
+  sheetsConnectFailed:
+    'Impossible de connecter Google Sheets. Choisissez le compte admin (cosplaysehat@gmail.com) et autorisez l’accès en lecture à Google Sheets.',
+
+  // KCC ID lookup page
+  cardPageBadge: 'Carte de membre MyKCC',
+  cardPageTitle: 'Carte de membre & KCC ID',
+  cardPageDesc:
+    'Pour protéger la vie privée de tous les membres, la liste complète des membres est réservée au portail admin. Saisissez votre KCC ID à 16 chiffres (ex. : 2026 1008 0715 3001) pour afficher votre pass numérique officiel.',
+  connectedProfile: 'Profil connecté',
+  openPass: 'Ouvrir le pass',
+  lookupPlaceholder: 'KCC ID à 16 chiffres, ex. : 2026 1008 0715 3001',
+  lookupSubmit: 'Rechercher et afficher la carte de membre',
+  searching: 'Recherche...',
+  passFound: 'Pass trouvé !',
+  notRegisteredYet: 'Pas encore inscrit ?',
+  fillRegistrationForm: 'Remplir le formulaire d’inscription →',
+  lookupInvalidId: 'Veuillez saisir votre KCC ID à 16 chiffres (chiffres uniquement, espaces autorisés).',
+  lookupNotFound: 'Aucune carte de membre trouvée pour ce KCC ID. Veuillez vérifier les 16 chiffres.',
+  lookupPermissionDenied:
+    'La recherche de carte est actuellement indisponible (accès à la base de données refusé). Veuillez réessayer plus tard ou contacter un admin KCC.',
+
+  // Profile tab states
+  profileLoadFailed: 'Impossible de charger votre profil de membre.',
+  checkConnectionRetry: 'Vérifiez votre connexion Internet, puis réessayez.',
+  preparingProfile: 'Préparation du profil de membre...',
+  preparingProfileDesc: 'Connexion de votre compte à votre identité numérique KCC.',
+  pleaseSignIn: 'Veuillez vous connecter',
+  clickToSignIn: 'Cliquez ici pour vous connecter',
+
+  // Footer
+  footerPlatform: 'Plateforme internationale pop culture 100 % SFW.',
+  copyright: '© 2026 MyKCC. Tous droits réservés.',
+  privacyShieldActive: 'Système d’identité à 16 chiffres et bouclier de confidentialité actif',
 };
 
 export default common;

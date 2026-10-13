@@ -25,21 +25,33 @@ import type {
   SyncLog,
   BulkImportResult,
   SubscriptionErrorKind,
+  SheetTimeContext,
 } from '../types';
 import {
   fetchSpreadsheetMetadata,
   fetchSheetValues,
+  fetchTimestampColumn,
   autoDetectColumnMapping,
   parseRowsToMembers,
+  parseSheetRows,
   parseSpreadsheetId,
   sheetRange,
+  sheetTimeContext,
   classifySheetsError,
+  DEFAULT_SHEET_TIME_CONTEXT,
 } from '../lib/sheetsService';
 import { bulkImportMembers, recordSyncLog } from '../lib/firestoreService';
-import { describeFirestoreError } from '../lib/firebase';
+import { formatKccId } from '../lib/idGenerator';
+import { describeFirestoreError, warmAuthPopup } from '../lib/firebase';
 import { haptic } from '../lib/haptic';
 import { useI18n } from '../i18n';
-import type { LanguageCode, TranslateFn, TranslationKey } from '../i18n';
+import type { LanguageCode, TranslationKey } from '../i18n';
+import { describeSheetsError } from './admin/adminUi';
+import type { AdminBusyTask } from './admin/adminUi';
+import { RegistrationDateFixPanel } from './admin/RegistrationDateFixPanel';
+
+// Rows listed by number in the "unreadable timestamp" import notice
+const UNPARSABLE_ROWS_SHOWN = 10;
 
 interface GoogleSheetsSyncProps {
   user: User | null;
@@ -51,9 +63,14 @@ interface GoogleSheetsSyncProps {
   connectError?: string | null;
   syncLogs: SyncLog[];
   syncLogsError?: SubscriptionErrorKind | null;
-  totalMembersInFirestore: number;
+  // Ignored since sprint 3 (KCC IDs are assigned by bulkImportMembers); kept so existing callers compile
+  totalMembersInFirestore?: number;
   // Kept for callers that still pass it; the UI language comes from useI18n()
   currentLang?: LanguageCode;
+  // Long-running task guard of the dashboard: the import reports 'import', the date fix 'dateFix'; while
+  // another task runs the import, the date fix and the poller's writes wait
+  busyTask?: AdminBusyTask | null;
+  onBusyChange?: (task: AdminBusyTask | null) => void;
 }
 
 // Last spreadsheet inspected successfully in this browser (per-browser convenience only)
@@ -75,32 +92,6 @@ function writeLastSpreadsheetId(spreadsheetId: string): void {
     window.localStorage.setItem(LAST_SPREADSHEET_ID_KEY, spreadsheetId);
   } catch {
     // Storage blocked / quota exceeded: only the convenience default is lost
-  }
-}
-
-/**
- * Friendly message for a failed Google Sheets API call (classifySheetsError != null).
- */
-function describeSheetsError(error: unknown, t: TranslateFn, accountEmail: string | null | undefined): string {
-  const account = accountEmail || t('sheets.adminAccountFallback');
-  switch (classifySheetsError(error)) {
-    case 'unauthorized':
-      return t('sheets.errorUnauthorized');
-    case 'scope':
-      return t('sheets.errorScope');
-    case 'no-access':
-    case 'not-found':
-      return t('sheets.errorNoAccess', { account });
-    case 'unsupported-file':
-      return t('sheets.errorUnsupportedFile');
-    case 'rate-limit':
-      return t('sheets.errorRateLimit');
-    case 'network':
-      return t('sheets.errorNetwork');
-    default: {
-      const detail = error instanceof Error ? error.message : String(error);
-      return t('sheets.errorRejected', { detail });
-    }
   }
 }
 
@@ -146,9 +137,20 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   connectError = null,
   syncLogs,
   syncLogsError = null,
-  totalMembersInFirestore,
+  busyTask = null,
+  onBusyChange,
 }) => {
   const { t, formatNumber, formatDate } = useI18n();
+
+  // The Sheets connect button opens a Google popup: load its resolver ahead of the tap
+  useEffect(() => {
+    warmAuthPopup();
+  }, []);
+
+  // Latest busy state for the poller callback (it must not write while a migration / date fix runs)
+  const busyTaskRef = useRef(busyTask);
+  busyTaskRef.current = busyTask;
+  const otherTaskRunning = busyTask !== null && busyTask !== 'import';
 
   // Display label of a stored sync log source (unknown sources are shown as stored)
   const describeLogSource = (source: string): string => {
@@ -188,6 +190,8 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   const [spreadsheetTitle, setSpreadsheetTitle] = useState('');
   const [sheetTabs, setSheetTabs] = useState<string[]>([]);
   const [selectedTab, setSelectedTab] = useState('');
+  // Time zone + locale of the inspected spreadsheet (how its timestamps are read)
+  const [sheetContext, setSheetContext] = useState<SheetTimeContext>(DEFAULT_SHEET_TIME_CONTEXT);
 
   // Row inspection & mapping
   const [headers, setHeaders] = useState<string[]>([]);
@@ -218,6 +222,8 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ completed: 0, total: 0 });
   const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
+  // 1-based sheet rows of the last manual import whose timestamp could not be read
+  const [unparsableRows, setUnparsableRows] = useState<number[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Live real-time transition poller
@@ -299,6 +305,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       setSelectedTab(activeTab);
       setSelectedSpreadsheetId(targetId);
       setSpreadsheetTitle(meta.properties?.title || '');
+      setSheetContext(sheetTimeContext(meta));
       // Readable with this account: remember it for the next visit
       writeLastSpreadsheetId(targetId);
 
@@ -337,28 +344,38 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       setErrorMsg(t('sheets.errorInspectFirst'));
       return;
     }
+    if (otherTaskRunning || isImporting) return;
 
     setIsImporting(true);
     setErrorMsg(null);
     setImportResult(null);
+    setUnparsableRows([]);
+    onBusyChange?.('import');
 
     try {
-      // Fetch all rows
+      // Fetch all rows (formatted) + the timestamp column as serial numbers (real registration time)
       const allRows = await fetchSheetValues(accessToken, targetId, sheetRange(selectedTab, 'A1:Z2000'));
       if (allRows.length <= 1) {
         throw new Error(t('sheets.errorNoRows'));
       }
+      const timestamps =
+        columnMapping.timestamp >= 0
+          ? await fetchTimestampColumn(accessToken, targetId, selectedTab, columnMapping.timestamp, allRows.length)
+          : undefined;
 
-      const membersToImport = parseRowsToMembers(
-        allRows,
-        columnMapping,
-        totalMembersInFirestore,
-        'spreadsheet_import'
+      const parsed = parseSheetRows(allRows, columnMapping, 'spreadsheet_import', {
+        context: sheetContext,
+        timestamps,
+      });
+      // Row bookkeeping stays here; only member fields go to the data layer
+      const membersToImport = parsed.members.map(
+        ({ sheetRow: _sheetRow, createdAtFromSheet: _fromSheet, ...member }) => member
       );
 
       if (membersToImport.length === 0) {
         throw new Error(t('sheets.errorNoValidRows'));
       }
+      setUnparsableRows(parsed.unparsableRows);
 
       setImportProgress({ completed: 0, total: membersToImport.length });
 
@@ -389,6 +406,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
       setErrorMsg(classifySheetsError(err) ? describeSheetsError(err, t, user?.email) : describeFirestoreError(err));
     } finally {
       setIsImporting(false);
+      onBusyChange?.(null);
     }
   };
 
@@ -399,6 +417,8 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     if (isAutoSyncActive && accessToken && selectedSpreadsheetId) {
       interval = setInterval(async () => {
         if (pollInFlightRef.current) return;
+        // Never write members while another admin task (migration, date fix, import, …) runs
+        if (busyTaskRef.current !== null) return;
         pollInFlightRef.current = true;
         try {
           const rawValues = await fetchSheetValues(
@@ -410,12 +430,20 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
           const signature = `${selectedSpreadsheetId}|${selectedTab}|${JSON.stringify(columnMapping)}|${JSON.stringify(rawValues)}`;
 
           if (rawValues.length > 1 && signature !== lastPollSignatureRef.current) {
-            const parsed = parseRowsToMembers(
-              rawValues,
-              columnMapping,
-              totalMembersInFirestore,
-              'google_form_sync'
-            );
+            const timestamps =
+              columnMapping.timestamp >= 0
+                ? await fetchTimestampColumn(
+                    accessToken,
+                    selectedSpreadsheetId,
+                    selectedTab,
+                    columnMapping.timestamp,
+                    rawValues.length
+                  )
+                : undefined;
+            const parsed = parseRowsToMembers(rawValues, columnMapping, undefined, 'google_form_sync', {
+              context: sheetContext,
+              timestamps,
+            });
 
             // Unchanged rows are skipped by the data layer (no rewrite every poll).
             const res = await bulkImportMembers(parsed);
@@ -449,7 +477,7 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isAutoSyncActive, accessToken, selectedSpreadsheetId, selectedTab, columnMapping, totalMembersInFirestore, pollIntervalSeconds]);
+  }, [isAutoSyncActive, accessToken, selectedSpreadsheetId, selectedTab, columnMapping, sheetContext, pollIntervalSeconds]);
 
   // Google Apps Script snippet generator
   const webhookUrl = `${window.location.origin}/api/sync-form`;
@@ -918,7 +946,7 @@ function onFormSubmit(e) {
               <button
                 type="button"
                 onClick={handleImportToFirebase}
-                disabled={isImporting}
+                disabled={isImporting || otherTaskRunning}
                 className="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:via-teal-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 pressable-soft disabled:opacity-50"
               >
                 {isImporting ? (
@@ -957,7 +985,45 @@ function onFormSubmit(e) {
                   </div>
                 </div>
               )}
+
+              {importResult && importResult.issuedIds && importResult.issuedIds.length > 0 && (
+                <p className="mt-3 text-xs text-emerald-200 font-mono break-words">
+                  {t('sheets.importIssuedIds', {
+                    count: formatNumber(importResult.issuedIds.length),
+                    first: formatKccId(importResult.issuedIds[0]),
+                    last: formatKccId(importResult.issuedIds[importResult.issuedIds.length - 1]),
+                  })}
+                </p>
+              )}
+
+              {importResult && unparsableRows.length > 0 && (
+                <p className="mt-3 p-3 rounded-xl bg-amber-950/60 border border-amber-500/40 text-xs text-amber-200 flex items-start gap-1.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-px" aria-hidden="true" />
+                  <span>
+                    {t('sheets.importUnparsableRows', {
+                      count: formatNumber(unparsableRows.length),
+                      rows:
+                        unparsableRows.slice(0, UNPARSABLE_ROWS_SHOWN).join(', ') +
+                        (unparsableRows.length > UNPARSABLE_ROWS_SHOWN ? ', …' : ''),
+                    })}
+                  </span>
+                </p>
+              )}
             </div>
+          )}
+
+          {/* Fix registration dates from the spreadsheet (needs an inspected sheet) */}
+          {headers.length > 0 && selectedSpreadsheetId && (
+            <RegistrationDateFixPanel
+              accessToken={accessToken}
+              spreadsheetId={selectedSpreadsheetId}
+              tabTitle={selectedTab}
+              mapping={columnMapping}
+              context={sheetContext}
+              busy={busyTask !== null && busyTask !== 'dateFix'}
+              onBusyChange={(task) => onBusyChange?.(task)}
+              accountEmail={user?.email}
+            />
           )}
 
           {errorMsg && (

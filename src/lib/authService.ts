@@ -9,15 +9,24 @@ import {
   type User,
 } from 'firebase/auth';
 import { collection, query, where, limit, getDocsFromServer, doc, updateDoc } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, OperationType, isMainAdminUser, checkIsAdminUser } from './firebase';
+import {
+  auth,
+  db,
+  handleFirestoreError,
+  OperationType,
+  isMainAdminUser,
+  checkIsAdminUser,
+  popupRedirectResolver,
+  requireAdminUser,
+} from './firebase';
 import type { Member, RegistrationResult } from '../types';
-import { MAIN_ACCOUNT_UID, isValidUserId16, findDuplicateMember, extractAllPhones } from './idGenerator';
+import { isMainAccountKccId, isValidKccId, findDuplicateMember, extractAllPhones } from './idGenerator';
 import {
   MEMBERS_COLLECTION,
   MEMBER_FIELD_LIMITS,
   normalizeMember,
   createMemberIfAbsent,
-  assignNewUserId16,
+  mainAccountKccId,
   sanitizeMemberProfileUpdate,
   buildMemberCard,
   upsertMemberCard,
@@ -25,6 +34,8 @@ import {
   buildMemberMergeUpdate,
   updateMemberWithCard,
 } from './firestoreService';
+import { writeAdminLog } from './adminLogService';
+import { translate } from '../i18n';
 
 // Member login ("Lanjutkan dengan Google"): BASIC scopes only. Firebase requests openid + email and
 // GoogleAuthProvider adds profile. NEVER call addScope here (no Drive / Sheets scopes, no
@@ -57,18 +68,58 @@ export async function resetPassword(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email);
 }
 
+function authErrorCode(error: unknown): string {
+  if (error && typeof error === 'object' && 'code' in error) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  return '';
+}
+
+/**
+ * Admin: Firebase password-reset email to the member's STORED email (no actionCodeSettings: a continue
+ * URL would need an authorized domain). With email-enumeration protection Firebase reports success even
+ * when no password login exists for that email (members who use "Continue with Google" have no password).
+ * Does not touch the admin's own session. Logs password_reset_sent (label = name, never the email).
+ * Throws errors.memberHasNoEmail and translated auth errors.
+ */
+export async function sendMemberPasswordReset(member: Member): Promise<void> {
+  await requireAdminUser();
+  const email = typeof member?.email === 'string' ? member.email.trim().toLowerCase() : '';
+  if (!email) throw new Error(translate('errors.memberHasNoEmail'));
+
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    const code = authErrorCode(error);
+    if (code === 'auth/invalid-email' || code === 'auth/missing-email') {
+      throw new Error(translate('errors.authInvalidEmail'));
+    }
+    if (code === 'auth/too-many-requests') throw new Error(translate('errors.authTooManyRequests'));
+    if (code === 'auth/network-request-failed') throw new Error(translate('errors.authNetworkFailed'));
+    throw error;
+  }
+
+  await writeAdminLog({
+    action: 'password_reset_sent',
+    targetType: 'member',
+    targetId: member.id,
+    targetLabel: member.name || member.cosplayName || undefined,
+  });
+}
+
 /**
  * A signed-in user may own the auto-created members/{uid} profile AND registrations they submitted
  * through the public form while signed in. Order (the first one is "the" profile):
- * 1. for the verified main account, the doc that stores 0000 0000 0000 0000 (admin test registrations
- *    never replace it);
+ * 1. for the verified main account, the doc that stores the main ID (0000 0000, or 16 zeros before the
+ *    8-digit switch; admin test registrations never replace it);
  * 2. real registrations (id !== uid), earliest createdAt first, ties by doc id (they hold the form data
  *    and the KCC ID shown on the success screen), so the profile does not flip between docs;
  * 3. the members/{uid} sign-in profile.
  */
 function orderOwnedMembers(members: Member[], user: User): Member[] {
   const isMain = isMainAdminUser(user);
-  const rank = (m: Member) => (isMain && m.userId16 === MAIN_ACCOUNT_UID ? 0 : m.id !== user.uid ? 1 : 2);
+  const rank = (m: Member) => (isMain && isMainAccountKccId(m.userId16) ? 0 : m.id !== user.uid ? 1 : 2);
   return [...members].sort((a, b) => {
     const byRank = rank(a) - rank(b);
     if (byRank !== 0) return byRank;
@@ -152,7 +203,9 @@ export async function ensureMemberForUser(
   }
 
   const isMain = isMainAdminUser(user);
-  const userId16 = isMain ? MAIN_ACCOUNT_UID : await assignNewUserId16();
+  // Only the main account asks for its main ID; everyone else gets the next running number (counter) or,
+  // before the 8-digit switch, a legacy 16-digit ID (createMemberIfAbsent assigns it inside its transaction)
+  const mainId = isMain ? await mainAccountKccId() : undefined;
   const name =
     (overrides?.name || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Cosplayer')
       .trim()
@@ -160,8 +213,8 @@ export async function ensureMemberForUser(
   const fullName =
     (overrides?.fullName || user.displayName || name).trim().slice(0, MEMBER_FIELD_LIMITS.fullName) || name;
 
-  const payload: Omit<Member, 'id'> = {
-    userId16,
+  const payload: Omit<Member, 'id' | 'userId16'> & { userId16?: string } = {
+    userId16: mainId,
     authUid: user.uid,
     name,
     cosplayName: name,
@@ -223,7 +276,7 @@ export async function loginWithEmail(email: string, password: string): Promise<{
 }
 
 export async function loginWithGoogleOAuth(): Promise<{ user: User; member: Member | null; accessToken: string }> {
-  const result = await signInWithPopup(auth, googleProvider);
+  const result = await signInWithPopup(auth, googleProvider, popupRedirectResolver);
   const credential = GoogleAuthProvider.credentialFromResult(result);
   // Basic scopes only: never stored as the Sheets token (that comes from googleAuth.googleSignIn)
   const accessToken = credential?.accessToken || '';
@@ -234,7 +287,7 @@ export async function loginWithGoogleOAuth(): Promise<{ user: User; member: Memb
 
 export async function loginWithAppleOAuth(): Promise<{ user: User; member: Member | null }> {
   const appleProvider = new OAuthProvider('apple.com');
-  const result = await signInWithPopup(auth, appleProvider);
+  const result = await signInWithPopup(auth, appleProvider, popupRedirectResolver);
   const user = result.user;
   const member = await ensureMemberSafely(user, 'Apple sign-in');
   return { user, member };
@@ -242,7 +295,7 @@ export async function loginWithAppleOAuth(): Promise<{ user: User; member: Membe
 
 export async function loginWithMicrosoftOAuth(): Promise<{ user: User; member: Member | null }> {
   const msProvider = new OAuthProvider('microsoft.com');
-  const result = await signInWithPopup(auth, msProvider);
+  const result = await signInWithPopup(auth, msProvider, popupRedirectResolver);
   const user = result.user;
   const member = await ensureMemberSafely(user, 'Microsoft sign-in');
   return { user, member };
@@ -266,7 +319,7 @@ export async function updateMemberProfileData(member: Member, fields: Partial<Me
   const currentUid = auth.currentUser?.uid;
   if (currentUid) invalidateMemberCache(currentUid);
 
-  if (isValidUserId16(updated.userId16)) {
+  if (isValidKccId(updated.userId16)) {
     try {
       await upsertMemberCard(buildMemberCard(updated));
     } catch (error) {

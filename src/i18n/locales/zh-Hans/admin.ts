@@ -3,7 +3,6 @@ import type { LocaleNamespace } from '../../types';
 const admin: LocaleNamespace<'admin'> = {
   dashboardTitle: 'KawanCosplay 管理员后台',
   dashboardDesc: '受限的管理门户，用于管理社区成员名单和同步 Google Sheets。',
-  loginPrompt: '请输入管理员密钥，或以 cosplaysehat@gmail.com 登录',
   privacyRestrictedNotice: '为保护成员隐私，成员名单严格仅限 KawanCosplay 管理员查看。',
   exportCsv: '导出 CSV',
   totalMembers: '已注册成员总数',

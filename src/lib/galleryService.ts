@@ -9,12 +9,26 @@ import {
   orderBy,
   limit,
   increment,
+  startAfter,
+  getDocs,
+  getDocsFromServer,
+  writeBatch,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import { db, auth, handleFirestoreError, OperationType } from './firebase';
-import { Photo } from '../types';
+import { db, auth, handleFirestoreError, OperationType, requireAdminUser } from './firebase';
+import { buildAdminLog } from './adminLogService';
+import { isValidKccId } from './idGenerator';
+import type { Photo, PhotoPage, PhotoPageCursor } from '../types';
 import { translate } from '../i18n';
 
-const PHOTOS_COLLECTION = 'photos';
+export const PHOTOS_COLLECTION = 'photos';
+
+/** Public gallery page size (12 + "load more"). */
+export const PUBLIC_GALLERY_PAGE_SIZE = 12;
+/** Admin Gallery tab page size. */
+export const ADMIN_GALLERY_PAGE_SIZE = 24;
+// firestore.rules: photos list only with limit <= 100, and a page asks for pageSize + 1 docs
+const MAX_PHOTO_PAGE_SIZE = 99;
 
 // Field limits identical to firestore.rules isValidPhoto()
 export const PHOTO_FIELD_LIMITS = {
@@ -35,6 +49,10 @@ export const PHOTO_FIELD_LIMITS = {
 // recovers), so the upload spinner never hangs and the user does not retry into a duplicate.
 const PHOTO_WRITE_TIMEOUT_MS = 15000;
 
+/**
+ * @deprecated Live listener of the newest 100 photos (~320 KB on every page load). Use fetchPhotosPage
+ * when the gallery is opened; kept until the last caller is removed.
+ */
 export function subscribeToPhotos(
   onUpdate: (photos: Photo[]) => void,
   onError?: (error: Error) => void
@@ -60,6 +78,65 @@ export function subscribeToPhotos(
       }
     }
   );
+}
+
+/**
+ * One-shot page of photos, newest first: orderBy('createdAt','desc') [+ startAfter(cursor)] +
+ * limit(pageSize + 1). pageSize is clamped to 1..99 (rules: limit <= 100); hasMore = more than pageSize
+ * docs came back. Ties on createdAt are handled by startAfter(docSnapshot) (Firestore adds the doc id to
+ * the order). source 'server' (admin) reads from the server; default lets the SDK use its cache rules.
+ * Read errors are thrown.
+ */
+export async function fetchPhotosPage(options: {
+  pageSize: number;
+  cursor?: PhotoPageCursor | null;
+  source?: 'default' | 'server';
+}): Promise<PhotoPage> {
+  const pageSize = Math.max(1, Math.min(MAX_PHOTO_PAGE_SIZE, Math.floor(Number(options?.pageSize) || PUBLIC_GALLERY_PAGE_SIZE)));
+  const cursorSnap = (options?.cursor ?? null) as unknown as QueryDocumentSnapshot | null;
+  const q = cursorSnap
+    ? query(collection(db, PHOTOS_COLLECTION), orderBy('createdAt', 'desc'), startAfter(cursorSnap), limit(pageSize + 1))
+    : query(collection(db, PHOTOS_COLLECTION), orderBy('createdAt', 'desc'), limit(pageSize + 1));
+
+  let snap;
+  try {
+    snap = options?.source === 'server' ? await getDocsFromServer(q) : await getDocs(q);
+  } catch (error) {
+    return handleFirestoreError(error, OperationType.LIST, PHOTOS_COLLECTION);
+  }
+
+  const docs = snap.docs.slice(0, pageSize);
+  const last = docs.length > 0 ? docs[docs.length - 1] : null;
+  return {
+    photos: docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Photo, 'id'>) })),
+    cursor: last ? (last as unknown as PhotoPageCursor) : (options?.cursor ?? null),
+    hasMore: snap.docs.length > pageSize,
+  };
+}
+
+/**
+ * Admin: deletes a photo together with its photo_deleted audit log entry (one batch, 2 ops).
+ * targetLabel = title / character, details = uploader name. Errors are thrown.
+ */
+export async function deletePhotoAsAdmin(photo: Photo): Promise<void> {
+  await requireAdminUser();
+  if (!photo?.id) return;
+  const uploader = clip(photo.authorCosname, PHOTO_FIELD_LIMITS.authorCosname) || clip(photo.authorName, PHOTO_FIELD_LIMITS.authorName);
+  const log = buildAdminLog({
+    action: 'photo_deleted',
+    targetType: 'photo',
+    targetId: photo.id,
+    targetLabel: clip(photo.title, 120) || clip(photo.character, 120) || undefined,
+    details: uploader ? `uploader: ${uploader}` : undefined,
+  });
+  const batch = writeBatch(db);
+  batch.delete(doc(db, PHOTOS_COLLECTION, photo.id));
+  batch.set(log.ref, log.data);
+  try {
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `${PHOTOS_COLLECTION}/${photo.id}`);
+  }
 }
 
 function clip(value: unknown, maxLength: number): string {
@@ -100,8 +177,9 @@ export async function addPhotoToFirestore(photo: Omit<Photo, 'id'>): Promise<str
 
   const memberId = clip(photo.memberId, 128);
   if (memberId) payload.memberId = memberId;
-  const userId16 = clip(photo.userId16, 24);
-  if (userId16) payload.userId16 = userId16;
+  // The uploader's current KCC ID (8 digits after the switch, 16 before); display only
+  const userId16 = typeof photo.userId16 === 'string' ? photo.userId16.replace(/[\s-]/g, '') : '';
+  if (isValidKccId(userId16)) payload.userId16 = userId16;
   const authorCosname = clip(photo.authorCosname, PHOTO_FIELD_LIMITS.authorCosname);
   if (authorCosname) payload.authorCosname = authorCosname;
   const authorNameAlias = clip(photo.authorNameAlias, PHOTO_FIELD_LIMITS.authorNameAlias);

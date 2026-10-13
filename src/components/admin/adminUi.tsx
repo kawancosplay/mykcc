@@ -2,14 +2,18 @@
  * Shared helpers for the admin dashboard (src/components/admin/*): constants, small formatters, CSV/clipboard
  * helpers and two UI primitives (notice banner, portaled bottom sheet / dialog). No data access here.
  */
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
-import type { AdminLogAction, Member } from '../../types';
+import type { User } from 'firebase/auth';
+import type { AdminEntry, AdminLogAction, Member } from '../../types';
 import { useI18n } from '../../i18n';
 import type { TranslationKey } from '../../i18n';
+import type { TranslateFn } from '../../i18n';
 import { usePresenceMotion, useScrollLock, useSheetDrag } from '../../lib/motion';
+import { isMainAdminUser } from '../../lib/firebase';
+import { classifySheetsError } from '../../lib/sheetsService';
 
 /** Long-running admin tasks; while one runs the dashboard blocks tab switches, the idle lock and other ID writes. */
 export type AdminBusyTask = 'migration' | 'dateFix' | 'repair' | 'bulkMerge' | 'import' | 'purge' | 'reassign';
@@ -63,6 +67,30 @@ export const LOG_ACTION_KEYS: Record<AdminLogAction, TranslationKey> = {
   dashboard_lock_cleared: 'admin.logActionDashboardLockCleared',
 };
 
+/** Friendly message for a failed Google Sheets API call (classifySheetsError(error) !== null). */
+export function describeSheetsError(error: unknown, t: TranslateFn, accountEmail: string | null | undefined): string {
+  const account = accountEmail || t('sheets.adminAccountFallback');
+  switch (classifySheetsError(error)) {
+    case 'unauthorized':
+      return t('sheets.errorUnauthorized');
+    case 'scope':
+      return t('sheets.errorScope');
+    case 'no-access':
+    case 'not-found':
+      return t('sheets.errorNoAccess', { account });
+    case 'unsupported-file':
+      return t('sheets.errorUnsupportedFile');
+    case 'rate-limit':
+      return t('sheets.errorRateLimit');
+    case 'network':
+      return t('sheets.errorNetwork');
+    default: {
+      const detail = error instanceof Error ? error.message : String(error);
+      return t('sheets.errorRejected', { detail });
+    }
+  }
+}
+
 /**
  * Renders a translated template whose {placeholders} are React nodes (e.g. bold counts).
  * Placeholders without a node are left as they are.
@@ -89,6 +117,23 @@ export const memberPhones = (m: Pick<Member, 'phone' | 'phone2' | 'additionalPho
   [m.phone, m.phone2, ...(Array.isArray(m.additionalPhones) ? m.additionalPhones : [])].filter(
     (p): p is string => typeof p === 'string' && p.trim() !== ''
   );
+
+/**
+ * Why a member cannot be made admin (null = allowed): the main account is always admin, a member who never
+ * signed in has no login uid, an existing admin entry cannot be created twice (the rules deny updates).
+ */
+export function makeAdminBlockReason(
+  member: Member,
+  user: User,
+  admins: AdminEntry[] | null
+): 'admin.makeAdminNeedsSignIn' | 'admin.alreadyAdmin' | 'admin.isMainAccount' | null {
+  const email = (member.email || '').trim().toLowerCase();
+  if (email === OFFICIAL_ADMIN_EMAIL) return 'admin.isMainAccount';
+  if (member.authUid && member.authUid === user.uid && isMainAdminUser(user)) return 'admin.isMainAccount';
+  if (!member.authUid) return 'admin.makeAdminNeedsSignIn';
+  if (admins && admins.some((a) => a.uid === member.authUid)) return 'admin.alreadyAdmin';
+  return null;
+}
 
 /** Public card link for a KCC ID (8 or 16 digits). */
 export const cardLink = (kccId: string): string => `${PUBLIC_SITE_URL}/?kcc=${digitsOnly(kccId)}`;
@@ -192,6 +237,24 @@ export async function copyText(text: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * True while the viewport is at least `px` wide (matchMedia, re-renders on change). Lets a screen render
+ * EITHER its phone layout or its desktop layout instead of both (half the DOM on long lists).
+ */
+export function useMinWidth(px: number): boolean {
+  const query = `(min-width: ${px}px)`;
+  return useSyncExternalStore(
+    (onChange) => {
+      if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => {};
+      const mql = window.matchMedia(query);
+      mql.addEventListener('change', onChange);
+      return () => mql.removeEventListener('change', onChange);
+    },
+    () => (typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : true),
+    () => true
+  );
 }
 
 /** Opacity-only spinner (no transform-based containing block issues: it is never a parent of fixed elements). */

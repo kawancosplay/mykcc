@@ -3,7 +3,6 @@ import type { LocaleNamespace } from '../../types';
 const admin: LocaleNamespace<'admin'> = {
   dashboardTitle: 'Painel de Admin KawanCosplay',
   dashboardDesc: 'Portal de admin restrito para a lista de membros da comunidade e a sincronização com o Google Sheets.',
-  loginPrompt: 'Digite a Chave de Acesso de Admin ou entre como cosplaysehat@gmail.com',
   privacyRestrictedNotice: 'Para proteger a privacidade dos membros, a lista de membros é estritamente restrita aos admins da KawanCosplay.',
   exportCsv: 'Exportar CSV',
   totalMembers: 'Total de Membros Inscritos',

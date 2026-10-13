@@ -3,7 +3,6 @@ import type { LocaleNamespace } from '../../types';
 const admin: LocaleNamespace<'admin'> = {
   dashboardTitle: 'แดชบอร์ดผู้ดูแล KawanCosplay',
   dashboardDesc: 'พอร์ทัลสำหรับผู้ดูแลเท่านั้น ใช้จัดการรายชื่อสมาชิกของชุมชนและซิงค์ Google Sheets',
-  loginPrompt: 'กรอกพาสคีย์ผู้ดูแล หรือเข้าสู่ระบบด้วย cosplaysehat@gmail.com',
   privacyRestrictedNotice:
     'เพื่อปกป้องความเป็นส่วนตัวของสมาชิก รายชื่อสมาชิกจำกัดการเข้าถึงอย่างเคร่งครัดเฉพาะผู้ดูแล KawanCosplay เท่านั้น',
   exportCsv: 'ส่งออก CSV',

@@ -3,7 +3,6 @@ import type { LocaleNamespace } from '../../types';
 const admin: LocaleNamespace<'admin'> = {
   dashboardTitle: 'Dashboard Admin KawanCosplay',
   dashboardDesc: 'Portal administrasi husus kanggo daptar anggota komunitas sareng singkronisasi Google Sheets.',
-  loginPrompt: 'Lebetkeun Konci Admin atanapi asup salaku cosplaysehat@gmail.com',
   privacyRestrictedNotice: 'Pikeun ngajaga privasi anggota, daptar anggota ngan ukur tiasa diaksés ku Admin KawanCosplay.',
   exportCsv: 'Ékspor CSV',
   totalMembers: 'Total Anggota Daptar',

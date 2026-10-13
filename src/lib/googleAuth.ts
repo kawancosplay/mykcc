@@ -6,7 +6,8 @@ import {
   User,
   signOut,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, popupRedirectResolver, isMainAdminUser } from './firebase';
+import { MAIN_ACCOUNT_EMAIL } from './idGenerator';
 import { translate } from '../i18n';
 
 /**
@@ -214,9 +215,10 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
   isSigningIn = true;
   try {
     const currentUser = auth.currentUser;
+    // auth is created without a popup resolver (firebase.ts), so every popup call passes it
     const result = currentUser
-      ? await reauthenticateWithPopup(currentUser, createSheetsProvider(currentUser.email))
-      : await signInWithPopup(auth, createSheetsProvider(null));
+      ? await reauthenticateWithPopup(currentUser, createSheetsProvider(currentUser.email), popupRedirectResolver)
+      : await signInWithPopup(auth, createSheetsProvider(null), popupRedirectResolver);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
       throw new Error(translate('errors.googleAccessTokenMissing'));
@@ -233,6 +235,46 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     isSigningIn = false;
   }
 };
+
+// ---------------------------------------------------------------------------------------------
+// Dashboard lock "forgot password": Google re-authentication of the main account
+// ---------------------------------------------------------------------------------------------
+
+/** Re-authentication proof is accepted by dashboardLock.setDashboardPassword for this long. */
+export const MAIN_REAUTH_VALID_MS = 10 * 60 * 1000;
+let lastMainReauthAt = 0;
+
+/** Time (ms) of the last successful reauthenticateMainAccount in this page; 0 = never. */
+export function getLastMainReauthAt(): number {
+  return lastMainReauthAt;
+}
+
+/**
+ * Dashboard lock "forgot password": re-authenticates the signed-in MAIN account with a Google popup
+ * (basic scopes only, login_hint = the main account's email). The signed-in user never changes; picking
+ * another Google account fails with errors.lockReauthWrongAccount. A closed popup rethrows the original
+ * error (check isPopupCancelledError). Throws errors.lockMainOnly for any other signed-in user.
+ */
+export async function reauthenticateMainAccount(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user || !isMainAdminUser(user)) {
+    throw new Error(translate('errors.lockMainOnly'));
+  }
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ login_hint: MAIN_ACCOUNT_EMAIL, prompt: 'select_account' });
+  try {
+    const result = await reauthenticateWithPopup(user, provider, popupRedirectResolver);
+    if (!isMainAdminUser(result.user)) {
+      throw new Error(translate('errors.lockReauthWrongAccount'));
+    }
+    lastMainReauthAt = Date.now();
+  } catch (error: unknown) {
+    if (isUserMismatchError(error)) {
+      throw new Error(translate('errors.lockReauthWrongAccount'));
+    }
+    throw error;
+  }
+}
 
 export const logout = async (): Promise<void> => {
   try {

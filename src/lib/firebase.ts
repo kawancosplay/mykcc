@@ -22,6 +22,7 @@ import firebaseConfig from '../../firebase-applet-config.json';
 import { MAIN_ACCOUNT_EMAIL } from './idGenerator';
 import type { SubscriptionErrorKind } from '../types';
 import { translate } from '../i18n';
+import type { TranslationKey } from '../i18n';
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const customDbId = (firebaseConfig as Record<string, any>).firestoreDatabaseId;
@@ -131,7 +132,7 @@ export function isMainAdminUser(user: User | null | undefined): boolean {
 }
 
 /**
- * Admin = main account OR a console-created admins/{uid} document (same check as firestore.rules isAdmin()).
+ * Admin = main account OR an admins/{uid} document (same check as firestore.rules isAdmin()).
  */
 export async function checkIsAdminUser(user: User | null | undefined): Promise<boolean> {
   if (!user) return false;
@@ -143,6 +144,44 @@ export async function checkIsAdminUser(user: User | null | undefined): Promise<b
     console.warn('Admin check (admins/{uid}) failed:', error);
     return false;
   }
+}
+
+// The ID token's `email` claim per uid (getIdTokenResult). firestore.rules compare admins.addedByEmail and
+// adminLogs.actorEmail with request.auth.token.email byte for byte, so those fields are taken from here,
+// never from form input or member data.
+const tokenEmailCache = new Map<string, string | null>();
+
+/** The signed-in user's ID-token email claim (cached per uid for the session); null when absent/unreadable. */
+export async function getTokenEmail(user: User | null | undefined): Promise<string | null> {
+  if (!user) return null;
+  if (tokenEmailCache.has(user.uid)) return tokenEmailCache.get(user.uid) ?? null;
+  try {
+    const result = await user.getIdTokenResult();
+    const email = typeof result.claims.email === 'string' && result.claims.email ? result.claims.email : null;
+    tokenEmailCache.set(user.uid, email);
+    return email;
+  } catch (error) {
+    console.warn('Could not read the ID token email claim:', error);
+    return null;
+  }
+}
+
+/** Cached token email (see getTokenEmail); undefined when it was not loaded yet for this uid. */
+export function getCachedTokenEmail(uid: string): string | null | undefined {
+  return tokenEmailCache.has(uid) ? (tokenEmailCache.get(uid) ?? null) : undefined;
+}
+
+/**
+ * Throws a translated error unless the signed-in user is an admin (main account or admins/{uid}).
+ * Also loads the token email claim, so buildAdminLog / admin entries can use it synchronously.
+ */
+export async function requireAdminUser(errorKey: TranslationKey = 'errors.adminOnly'): Promise<User> {
+  const user = auth.currentUser;
+  if (!user || !(await checkIsAdminUser(user))) {
+    throw new Error(translate(errorKey));
+  }
+  await getTokenEmail(user);
+  return user;
 }
 
 function getErrorMessage(error: unknown): string {

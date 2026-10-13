@@ -3,7 +3,6 @@ import type { LocaleNamespace } from '../../types';
 const admin: LocaleNamespace<'admin'> = {
   dashboardTitle: 'KawanCosplay நிர்வாகி டாஷ்போர்டு',
   dashboardDesc: 'சமூக உறுப்பினர் பட்டியல் மற்றும் Google Sheets ஒத்திசைவுக்கான கட்டுப்படுத்தப்பட்ட நிர்வாக போர்டல்.',
-  loginPrompt: 'நிர்வாகி பாஸ்கீயை உள்ளிடவும் அல்லது cosplaysehat@gmail.com ஆக உள்நுழையவும்',
   privacyRestrictedNotice: 'உறுப்பினர் தனியுரிமையைப் பாதுகாக்க, உறுப்பினர் பட்டியல் KawanCosplay நிர்வாகிகளுக்கு மட்டுமே கண்டிப்பாகக் கட்டுப்படுத்தப்பட்டுள்ளது.',
   exportCsv: 'CSV ஏற்றுமதி',
   totalMembers: 'மொத்தப் பதிவுசெய்த உறுப்பினர்கள்',

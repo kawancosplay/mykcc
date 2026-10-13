@@ -322,6 +322,16 @@ function normalizeSocial(s?: string): string {
     .trim();
 }
 
+/** Social media handle for comparison (URL prefix, '@' and trailing slashes removed, lowercase). */
+export function normalizeSocialHandle(s?: string): string {
+  return typeof s === 'string' ? normalizeSocial(s) : '';
+}
+
+/** Phone number for comparison: digits only, leading 62 -> 0 ('' for non-strings). */
+export function normalizePhoneDigits(p?: string): string {
+  return typeof p === 'string' ? normalizePhone(p) : '';
+}
+
 /**
  * Extracts and normalizes all available phone numbers for a member or candidate record
  */

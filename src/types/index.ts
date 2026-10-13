@@ -305,3 +305,9 @@ export interface PhotoPage {
   cursor: PhotoPageCursor | null;
   hasMore: boolean;
 }
+
+// Audit log paging; the cursor is opaque to components (adminLogService.listAdminLogs)
+export type AdminLogCursor = { readonly __brand: 'AdminLogCursor' };
+
+/** How a public KCC ID lookup resolved (firestoreService.lookupMemberCard). */
+export type KccLookupSource = 'kcc8' | 'alias' | 'padded16' | 'legacy16';

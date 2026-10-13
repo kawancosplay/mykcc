@@ -3,7 +3,6 @@ import type { LocaleNamespace } from '../../types';
 const admin: LocaleNamespace<'admin'> = {
   dashboardTitle: 'Bảng quản trị KawanCosplay',
   dashboardDesc: 'Cổng quản trị giới hạn dành cho danh sách thành viên cộng đồng và đồng bộ Google Sheets.',
-  loginPrompt: 'Nhập mã khóa Admin hoặc đăng nhập bằng cosplaysehat@gmail.com',
   privacyRestrictedNotice:
     'Để bảo vệ quyền riêng tư của thành viên, danh sách thành viên được giới hạn nghiêm ngặt, chỉ admin KawanCosplay mới được xem.',
   exportCsv: 'Xuất file CSV',

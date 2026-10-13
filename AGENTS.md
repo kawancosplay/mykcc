@@ -6,8 +6,9 @@ Last updated: 2026-10-13.
 
 ## 1. Project
 
-MyKCC is the member portal of KawanCosplay Community (KCC): public registration form, 16-digit KCC ID,
-digital member card, cosplay photo gallery, admin dashboard with Google Sheets sync.
+MyKCC is the member portal of KawanCosplay Community (KCC): public registration form, KCC ID (8-digit
+running number; legacy 16-digit IDs still resolve), digital member card, cosplay photo gallery, admin
+dashboard with Google Sheets sync.
 
 | Item | Value |
 |---|---|
@@ -28,7 +29,7 @@ digital member card, cosplay photo gallery, admin dashboard with Google Sheets s
 
 | Gemini / Google-side agent | Claude / code-side agent |
 |---|---|
-| Firebase console: publish rules, Auth providers, `admins/{uid}` docs, indexes, quota/billing | Code changes in this repo (UI, i18n, performance, data layer) |
+| Firebase console: publish rules, Auth providers, indexes, quota/billing (`admins/{uid}` are managed from the admin dashboard since sprint 3) | Code changes in this repo (UI, i18n, performance, data layer) |
 | Google Cloud: APIs (Drive, Sheets), OAuth consent screen + test users, service accounts | Type-check + build before every push, merges, conflict resolution |
 | Google Sheets / Drive integration testing with real accounts | Reviews, keeping `AGENTS.md` up to date |
 
@@ -47,44 +48,86 @@ Either agent may do the other's work when asked, but follow the rules below.
 
 ## 4. Security model (do not weaken)
 
-`firestore.rules` in this repo is the **source of truth** and is what is published on the named DB
-(published 2026-10-11). `firebase.json` targets the named DB, so `firebase deploy --only firestore:rules` works.
+`firestore.rules` in this repo is the **source of truth** and is what is published on the named DB.
+The 2026-10-11 rules are live; the sprint-3 rules (counter, aliases, app-managed admins, dashboard lock, audit
+log) are in the repo and must be published by the owner BEFORE a sprint-3 build is promoted (runbook:
+`docs/sprint3/spec-data.md` §4; they are compatible with the live sprint-2 code).
+`firebase.json` targets the named DB, so `firebase deploy --only firestore:rules` works.
 Console: Firestore → database dropdown → `ai-studio-kawancosplaymemb-…` → **Security / Rules** → Publish.
 Always publish the repo file; if you change rules, change the file in a PR first, then publish exactly that file.
 
 | Collection | Who can read | Who can write |
 |---|---|---|
-| `members/{id}` — personal data (phone, email, age, birthday, discord, reason) | admin; the member themself (`authUid == uid`, or verified email match) | public create of `kc_*` docs with a non-reserved KCC ID; owner may edit profile fields only; admin anything |
-| `memberCards/{userId16}` — PUBLIC projection for the KCC ID lookup | anyone can **get** by exact ID; **list is denied** for everyone | created with the member; owner (`ownerUid`) may refresh; admin |
+| `members/{id}` — personal data (phone, email, age, birthday, discord, reason) | admin; the member themself (`authUid == uid`, or verified email match) | public create of `kc_*` / own-uid docs with a non-reserved KCC ID claimed through the counter (8 digits) or, before the switch only, a 16-digit ID; owner may edit profile fields only; admin anything except a NEW 16-digit ID after the switch. `legacyUserId16` is admin-only |
+| `memberCards/{kccId}` — PUBLIC projection for the KCC ID lookup (doc id == `userId16`) | anyone can **get** by exact ID; **list is denied** for everyone | created with the member (same write as the counter claim); owner (`ownerUid`) may refresh; admin |
+| `memberCardAliases/{old16}` → `{ kccId, createdAt }` | anyone can **get** by exact old ID; list denied | admin (written by the 8-digit switch / merges) |
+| `counters/kccId` → `{ last, lastId, planEnd?, updatedAt? }` | public **get** (the anonymous claim transaction reads it); list denied | create: admin (the switch); update: admin (never backwards) or exactly +1 bound to the card created in the same write; delete: nobody |
 | `photos/{id}` | public get; list only with `limit <= 100` | create = signed-in + `authorUid == uid`; non-admins may only add exactly +1 like; delete = author or admin |
+| `admins/{uid}` | own doc, or any admin; list: admin | create: any admin (strict schema, bound to a member doc whose `authUid` is that uid); update: nobody; delete: any admin |
+| `adminSettings/dashboardLock` (PBKDF2 hash of the dashboard lock password) | admin get | main account only |
+| `adminLogs/{id}` (audit log) | admin get/list | admin create (schema, `actorUid == auth.uid`, `at == request.time`); no update/delete |
 | `sync_logs`, `siteSettings` (write) | admin (`siteSettings` get is public) | admin |
-| `admins/{uid}` | own doc only | console only |
 
-Admin = Firebase user with **verified** email `cosplaysehat@gmail.com`, or an `admins/{uid}` document.
+Admin = Firebase user with **verified** email `cosplaysehat@gmail.com` (permanent, has no doc), or an
+`admins/{uid}` document. Any admin can add/remove other admins from the dashboard (owner decision).
 
-**Never do any of these** (each one has already happened once):
+The dashboard lock password is a CONVENIENCE lock for unattended devices (every admin can read the hash; devtools
+can bypass the screen). The rules stay the real protection. The audit log is written by the acting admin's
+client: an accountability aid, not tamper-proof auditing.
+
+**Never do any of these** (each one has already happened once, or would break the sprint-3 data model):
 - `allow list: if true` (or `read: if true`) on `members`, or anonymous update/delete of members → leaks every
-  member's phone/email/birthday. Public lookups go through `memberCards`, never through `members`.
-- Put personal data (phone, email, age, birthday, discord, reason) into `memberCards`.
+  member's phone/email/birthday. Public lookups go through `memberCards` / `memberCardAliases`, never `members`.
+- Put personal data (phone, email, age, birthday, discord, reason) into `memberCards`, `adminLogs`
+  (`targetLabel` = cosname / photo title, `details` = field NAMES or counts only) or `admins` beyond email/name.
 - A client-side admin passkey (one was hard-coded and shipped in the public JS bundle). Admin access must come
-  from Firebase Auth + rules.
+  from Firebase Auth + rules. Never put a password or a password hash in the JS bundle.
 - Anonymous writes on page load (e.g. seeding demo photos/members into production).
 - Derive KCC IDs from a client-side list of members (everyone got `0000 0000 0000 0101`), or assign the main
-  (`0000…0000`) / admin range (`0000…0001`–`0000…0100`) IDs from anything typed into the public form.
+  (`0000 0000`) / admin range (`0000 0001`–`0000 0100`) IDs from anything typed into the public form.
+- Write a KCC ID outside the counter after the switch: every new number goes through `counters/kccId`
+  (claim transaction) in the same write as its card. Do not create cards at `last + 1…` by hand (it blocks every
+  public registration until an admin runs the counter health check / advance).
+- Delete `counters/kccId` in the console (it would reopen the 16-digit path), or roll production back to a
+  pre-sprint-3 build after the switch (its registration is denied by the rules and it shows 8-digit IDs wrongly).
 - Swallow Firestore write errors and show "success" anyway.
 - Publish rules to `(default)` — it has no effect on the live app.
 
 Admin batch writes must stay ≤ 15 operations per batch (`ADMIN_BATCH_SIZE`): each op costs one `exists()`
-call for the `admins/{uid}` check and rules allow max 20 per request.
+call for the `admins/{uid}` check and rules allow max 20 per request. An audit-log entry written in the same
+batch counts as one of the 15. Fixed batch shapes: 8-digit switch 3 members × 4 ops = 12; date fix 7 × 2 = 14;
+import claim 1 counter + 7 × (member + card) = 15; admin actions with their log ≤ 5.
 
 ## 5. KCC ID
 
-16 digits, displayed as `XXXX XXXX XXXX XXXX`.
-- `0000 0000 0000 0000` = KCC main account (only for the authenticated main admin).
-- `0000 0000 0000 0001`–`0000 0000 0000 0100` = admin range (only assigned by an admin).
-- Public registrations get a unique chronological ID (`generate16DigitUserId`), checked against `memberCards`.
-- The admin dashboard "Perbaikan KCC ID & Kartu Publik" → **Jalankan Perbaikan** dedupes IDs and rebuilds
-  `memberCards`; safe to re-run. "Pendaftaran Ganda" scans/merges duplicate registrations.
+Stored in the field **`userId16`** on `members`, `memberCards` (doc id) and `photos` — the name is kept for
+compatibility (LIVE code reads it; a rename would rewrite every doc). **`userId16` holds the KCC ID: 8 digits
+after the 8-digit switch, 16 digits before. Legacy 16-digit IDs resolve through `memberCardAliases`.**
+Code: `type KccId = string`; use `isValidKccId` (8 or 16) for "is this a stored KCC ID", `isKccId8` /
+`isLegacyKccId16` for the format, `formatKccId` for display (`isValidUserId16` now means "legacy 16 digits").
+
+- **8 digits** (current), displayed `XXXX XXXX`: `0000 0000` = KCC main account (authenticated main admin only);
+  `0000 0001`–`0000 0100` = admin range (assigned by admins only); members from `0000 0101`, a running number
+  issued by `counters/kccId` in a transaction together with the card + member (`registerMember`,
+  `createMemberIfAbsent`, admin claims), never reused. Anonymous visitors can register.
+- **16 digits** (legacy, before the switch), displayed `XXXX XXXX XXXX XXXX`: `0000…0000` main, `0000…0001`–
+  `0000…0100` admin range, members `YYYYMMDDHHmmss` + 2-digit sequence. While `counters/kccId` does not exist,
+  registration uses this path (`assignLegacyUserId16`); once it exists the rules deny every NEW 16-digit ID.
+- **The 8-digit switch** (admin → ID tools → "Switch to 8-digit KCC IDs"): preview (old → new table + CSV),
+  then apply. Members are renumbered in order of `createdAt` (ties: doc id); main/admin-range holders keep their
+  slot (`0000000000000000` → `00000000`, `000000000000000N` → `0000000N`). It creates the counter
+  (`last = planEnd = 100 + members`), rebuilds cards under the new IDs, deletes the old 16-digit cards, writes
+  `memberCardAliases/{old16}` and stores the old ID in `legacyUserId16`; then photos get the new ID. Resumable and
+  idempotent (preview again after an interruption). No automatic undo (`legacyUserId16` + aliases keep the data).
+- **Run order after deploy:** merge duplicates → fix registration dates from the spreadsheet → switch to 8-digit.
+- Lookup (`lookupMemberCard`): 8 digits → card; 16 digits → alias → `00000000xxxxxxxx` = last 8 → legacy card.
+  Card link: `https://mykcc.vercel.app/?kcc=<digits>`.
+- Sheets import assigns new running numbers (admin claim, chunks of 7) after the switch; registration dates come
+  from the Form timestamp (serial in the sheet's time zone, or the text in the sheet's locale; `11/10/2026
+  01.44.06` in id_ID = 11 Oct 2026 01:44:06 WIB).
+- Repair ("Perbaikan KCC ID & Kartu Publik" → **Jalankan Perbaikan**) dedupes IDs and rebuilds `memberCards`;
+  after the switch it claims counter numbers. "Pendaftaran Ganda" scans/merges duplicate registrations. Counter
+  health: "check" probes `last+1…last+5`; "advance" moves the counter past blocking cards.
 
 ## 6. Frontend conventions
 
@@ -143,6 +186,21 @@ Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the 
 - D3 (2026-10-13): removed dead `DirectoryView.tsx`, old `src/lib/i18n.ts`, stale `firestore.rules.test.ts`;
   button text may wrap (fixes sideways scrolling on phones); vendor code split into `react-vendor`, `firebase`
   and `motion` chunks.
+
+**Sprint 3 — branch `claude/sprint-3` (in progress, NOT live; design in `docs/sprint3/`):**
+- Rules (`firestore.rules`, not published yet): counter + aliases + 8-digit IDs, app-managed admins, dashboard
+  lock, audit log. Publish them BEFORE promoting any sprint-3 build (`docs/sprint3/spec-data.md` §4).
+- Data layer (2026-10-13): `src/lib/idGenerator.ts` 8/16-digit KCC ID helpers; `firestoreService.ts` counter
+  claim transaction (+ legacy 16-digit fallback while no counter exists), lookup with aliases, chronological
+  8-digit migration (preview / CSV / apply / resume), registration-date fix, Sheets import with running
+  numbers, admin member edit, unlink login, counter health, repair/merge after the switch;
+  `sheetsService.ts` sheet time zone/locale + serial/text timestamp parsing (fixes `11/10/2026 01.44.06`);
+  new `adminService.ts` (admins), `dashboardLock.ts` (PBKDF2-SHA256, 310k iterations), `adminLogService.ts`
+  (audit log), `adminPlanning.ts` (pure planners), `memberRules.ts` (field limits); `galleryService.ts` paged
+  listing + admin delete with log; `authService.sendMemberPasswordReset`; `firebase.ts` Auth without the popup
+  resolver at start-up + `warmAuthPopup()`.
+- Admin run order after deploy: merge duplicates → fix registration dates → switch to 8-digit IDs. Turn the
+  Sheets auto-sync off while doing it.
 
 Open:
 - **Before merging PR #1:** visual check on a phone-size and a desktop-size window (sheets, drag-to-dismiss,

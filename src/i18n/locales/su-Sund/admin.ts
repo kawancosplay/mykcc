@@ -3,7 +3,6 @@ import type { LocaleNamespace } from '../../types';
 const admin: LocaleNamespace<'admin'> = {
   dashboardTitle: 'ᮓᮞ᮪ᮘᮧᮁᮓ᮪ ᮃᮓ᮪ᮙᮤᮔ᮪',
   dashboardDesc: 'ᮕᮧᮁᮒᮜ᮪ ᮃᮓ᮪ᮙᮤᮔᮤᮞ᮪ᮒᮢᮞᮤ ᮠᮥᮞᮥᮞ᮪ ᮊᮀᮌᮧ ᮓᮕ᮪ᮒᮁ ᮃᮀᮌᮧᮒ ᮊᮧᮙᮥᮔᮤᮒᮞ᮪ ᮞᮛᮨᮀ ᮞᮤᮀᮊᮢᮧᮔᮤᮞᮞᮤ Google Sheets.',
-  loginPrompt: 'ᮜᮨᮘᮨᮒ᮪ᮊᮩᮔ᮪ ᮊᮧᮔ᮪ᮎᮤ ᮃᮓ᮪ᮙᮤᮔ᮪ ᮃᮒᮔᮕᮤ ᮃᮞᮥᮕ᮪ ᮞᮜᮊᮥ cosplaysehat@gmail.com',
   privacyRestrictedNotice: 'ᮕᮤᮊᮩᮔ᮪ ᮍᮏᮌ ᮕᮢᮤᮗᮞᮤ ᮃᮀᮌᮧᮒ, ᮓᮕ᮪ᮒᮁ ᮃᮀᮌᮧᮒ ᮍᮔ᮪ ᮅᮊᮥᮁ ᮒᮤᮃᮞ ᮓᮤᮃᮊ᮪ᮞᮦᮞ᮪ ᮊᮥ ᮃᮓ᮪ᮙᮤᮔ᮪ KawanCosplay.',
   exportCsv: 'ᮆᮊ᮪ᮞ᮪ᮕᮧᮁ CSV',
   totalMembers: 'ᮒᮧᮒᮜ᮪ ᮃᮀᮌᮧᮒ ᮓᮕ᮪ᮒᮁ',

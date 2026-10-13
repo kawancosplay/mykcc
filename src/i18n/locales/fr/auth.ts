@@ -14,7 +14,7 @@ const auth: LocaleNamespace<'auth'> = {
   signUpTab: 'Inscription',
   nameLabel: 'Nom (cosname / alias)',
   namePlaceholder: 'ex. : Rian_Cos / Alya / Ken',
-  nameHint: 'Facultatif lors de la création du compte. Vous pourrez ajouter votre nom complet et votre cosname plus tard dans le formulaire de la communauté.',
+  nameHint: 'Facultatif lors de la création du compte. Vous pourrez ajouter votre nom complet et votre cosname plus tard dans le formulaire d’inscription de la communauté.',
   emailPlaceholder: 'nom@gmail.com',
   forgotPasswordLink: 'Mot de passe oublié ?',
   passwordPlaceholder: 'Au moins 6 caractères',

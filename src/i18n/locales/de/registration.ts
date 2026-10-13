@@ -1,40 +1,172 @@
 import type { LocaleNamespace } from '../../types';
 
-const registration: Partial<LocaleNamespace<'registration'>> = {
-  formTitle: 'KawanCosplay Neumitglieder-Registrierung',
-  formDesc: 'Willkommen bei KawanCosplay! Eine weltweite Community für Cosplayer, Idol-Fans (Wotas), Otakus und Popkultur-Begeisterte. Echter Name nicht erforderlich, sofortige 16-stellige User-ID!',
-  inclusiveWelcome: 'Cosplayer, Idol-Fans, Otakus und allgemeine Fans sind herzlich willkommen!',
-  requiredIndicator: '* Gibt eine Pflichtfrage an',
-  nameLabel: 'Cosplay-Name / Alias (Erforderlich)',
-  namePrivacyNotice: 'Um Ihre Privatsphäre zu schützen, müssen Sie Ihren echten Namen NICHT angeben. Ein Nickname, Cosplay-Name oder Alias reicht vollkommen aus.',
-  stageOrFakeName: 'Cosplay-Name / Künstlername / Pseudonym / Alias (Erforderlich)',
-  realNameOptional: 'Vollständiger bürgerlicher Name (Optional - kann leer bleiben)',
-  fullNameLabel: 'Bürgerlicher Name (Optional)',
-  phoneLabel: 'WhatsApp / Telefonnummer (Optional)',
+const registration: LocaleNamespace<'registration'> = {
+  formTitle: 'KawanCosplay – Registrierung für neue Mitglieder',
+  formDesc:
+    'Willkommen bei der KawanCosplay Community (KCC), der internationalen Cosplay-Community mit 100% SFW. Sie ist Teil der KawanCosplay Group, die aus KawanCosplay Media und der KawanCosplay Community besteht. KCC ist eine WhatsApp-Gruppe und ein Discord-Server von KawanCosplay. Ursprünglich als geselliges Forum für Cosplayer gegründet, die mit KawanCosplay auf Instagram zusammenarbeiten, steht sie heute allen offen, die sich für die Welt des Cosplays interessieren – ob du selbst cosplayst oder nicht. Gegründet am 30. Juni 2025. Werde gern Teil von uns und tausch dich mit unseren Mitgliedern in der WhatsApp-Gruppe und/oder auf dem Discord-Server aus. Internationale Mitglieder sind willkommen, unabhängig von Religion, Herkunft und Sprache. Um die Sicherheit zu gewährleisten und Missbrauch zu verhindern, fülle bitte das Formular aus, um unserer Community beizutreten. Der Link zur WhatsApp-Gruppe ist verfügbar, nachdem du das Formular abgeschickt hast. Schließe diesen Tab deshalb bitte nicht, wenn du mit dem Ausfüllen fertig bist. Der Discord-Server ist allerdings erst verfügbar, nachdem du der WhatsApp-Gruppe beigetreten bist. Wenn du weitere Hilfe brauchst, schreib bitte eine DM an @kawancosplayers auf Instagram oder kontaktiere unsere Hotline +62 857-1103-2782 per WhatsApp.',
+  inclusiveWelcome: 'Alle sind willkommen: Cosplayer, Idol-Fans, Otaku und alle Popkultur-Freunde!',
+  requiredIndicator: '* Pflichtfrage',
+  officialFormTag: 'Offizielles KawanCosplay-Formular',
+  safeCommunityTag: '100% SFW & gesunde Community',
+  nameLabel: 'Name (Cosplay-Name / Alias / Bühnenname)',
+  namePrivacyNotice:
+    'Zum Schutz deiner Privatsphäre musst du deinen echten Namen NICHT angeben. Ein Fantasiename, Cosplay-Alias oder Bühnenname reicht völlig aus.',
+  namePlaceholder: 'Deine Antwort (z. B. Ken, AlyaChan, Rian)',
+  stageOrFakeName: 'Cosplay-Name / Bühnenname / Fantasiename / Spitzname / Alias',
+  realNameOptional: 'Bürgerlicher Name (optional – leer lassen, wenn du deine Privatsphäre wahren möchtest)',
+  fullNameLabel: 'Bürgerlicher Name (optional)',
+  phoneLabel: 'WhatsApp- / Handynummer (optional)',
+  whatsappLabel: 'Aktive WhatsApp-Handynummer (Pflichtfeld)',
+  whatsappNotice:
+    'Pflichtfeld, weil KawanCosplay eine Community auf WhatsApp-Basis ist. Jedes Mitglied hat genau ein Konto mit einer KCC ID. Der Link zur offiziellen WhatsApp-Gruppe wird direkt nach dem Absenden freigeschaltet.',
+  whatsappPlaceholder: 'Deine Antwort (z. B. +62 812 3456 7890 oder 0812...)',
+  discordLabel: 'Discord-Benutzername',
+  discordDesc:
+    'Gib deinen Discord-Benutzernamen ein, damit deine Rollen auf dem KawanCosplay-Discord-Server synchronisiert werden können (z. B. alyachan oder user#0001).',
+  discordPlaceholder: 'Deine Antwort (z. B. alyachan oder user#0001)',
   emailLabel: 'Aktive E-Mail-Adresse',
-  ageCategoryLabel: 'Altersstatus (Minderjährig vs. Volljährig)',
-  legalAge: 'Volljährig (18+ Jahre alt)',
-  minorAge: 'Minderjährig (<18 Jahre alt)',
+  emailOptionalNotice:
+    'Optional. Du kannst das Feld leer lassen, da unsere Community-Datenbank nie E-Mail-Adressen vorausgesetzt hat.',
+  emailRequiredNotice: 'Für die Registrierung ist eine E-Mail-Adresse erforderlich.',
+  emailPlaceholder: 'Deine Antwort (z. B. name@example.com)',
+  ageCategoryLabel: 'Altersstatus (minderjährig vs. volljährig / erwachsen)',
+  legalAge: 'Volljährig / erwachsen (ab 18 Jahren)',
+  minorAge: 'Minderjährig (unter 18 Jahren)',
   preferNotToSay: 'Keine Angabe',
-  ageExplanationTitle: 'Was bedeuten minderjährig und volljährig?',
-  ageExplanationDesc: 'Unter 18 Jahren gilt man als minderjährig (Jugendschutz). Ab 18 Jahren gilt man als volljährig.',
-  exactAgeOptional: 'Genaue Altersangabe oder Geburtsdatum (Optional)',
+  ageExplanationTitle: 'Was bedeuten „minderjährig“ und „volljährig“?',
+  ageExplanationDesc:
+    'In diesem Formular gilt als minderjährig, wer unter 18 Jahre alt ist – so kann unsere Community altersgerechte Sicherheit gewährleisten. Als volljährig gilt hier, wer 18 Jahre oder älter ist.',
+  exactAgeOptional: 'Genaues Alter oder Geburtstag (optional – kann leer bleiben)',
+  ageDesc: 'Optional. Leer lassen oder angeben, damit die Community dir zum Geburtstag gratulieren kann.',
+  agePlaceholder: 'Deine Antwort (z. B. 21 Jahre oder 15. Mai)',
+  locationTitle: 'Wohnort (alle Länder & Städte weltweit)',
+  locationNotice: 'KawanCosplay steht Mitgliedern aus der ganzen Welt offen.',
   countryLabel: 'Wohnsitzland',
-  provinceLabel: 'Bundesland / Region',
-  cityLabel: 'Stadt / Landkreis',
-  roleTitle: 'Hauptrolle / Interesse in der Gemeinschaft',
-  fandomTitle: 'Lieblings-Fandom, Anime oder Idol-Gruppe',
-  experienceTitle: 'Erfahrungsgrad',
-  socialMediaTitle: 'Soziale Netzwerke (Optional)',
-  portfolioTitle: 'Portfolio-Link (Optional)',
-  avatarTitle: 'Profilbild / Foto (Optional)',
-  reasonTitle: 'Beitrittsgrund',
-  codeOfConductAgreement: 'Ich stimme dem Verhaltenskodex zu (100% SFW, gegenseitiger Respekt, sicherer Raum)',
+  provinceLabel: 'Provinz / Bundesland / Präfektur',
+  cityLabel: 'Stadt / Landkreis / Bezirk',
+  customCityPlaceholder: 'Gib deinen Wohnort ein...',
+  roleTitle: 'Hauptrolle / Interesse in der Community',
+  roleDesc: 'Offen für Cosplayer, Idol-Fans (Wotas), Otakus, Crafter und alle Unterstützer!',
+  roleOthers: 'Sonstige / eigene Rolle',
+  roleOthersPlaceholder: 'Beschreibe deine eigene Rolle oder Spezialisierung in der Community...',
+  fandomTitle: 'Lieblings-Fandom / -Serie',
+  fandomDesc: 'Wähle oder nenne deinen Lieblings-Anime, dein Lieblingsspiel, Fandom oder deine Lieblings-Idol-Gruppe.',
+  fandomOther: 'Sonstiges / Multi-Genre',
+  experienceTitle: 'Erfahrung in der Popkultur- / Cosplay-Szene',
+  experienceDesc: 'Wie lange bist du schon in der Cosplay- / Popkultur-Szene dabei?',
+  socialMediaTitle: 'Social-Media-Accounts',
+  socialMediaDesc: 'Instagram-, TikTok- oder X-Handle oder Profillink (optional).',
+  socialMediaPlaceholder: 'Deine Antwort (z. B. @cosplay_name)',
+  portfolioTitle: 'Portfolio / Google-Drive-Link',
+  portfolioDesc: 'Google-Drive-Link oder Portfolio-Website (optional).',
+  portfolioPlaceholder: 'Deine Antwort (https://drive.google.com/...)',
+  avatarTitle: 'Profilbild / Cosplay-Foto',
+  avatarDesc:
+    'Lade dein Cosplay- oder Charakterfoto für deinen digitalen Pass hoch oder wähle unten einen vorgefertigten Avatar.',
+  uploadButton: 'Foto hochladen (max. 2MB)',
+  presetAvatarLabel: 'Oder wähle eine vorgefertigte Illustration:',
+  reasonTitle: 'Beitrittsgrund & Erwartungen',
+  reasonDesc:
+    'Warum möchtest du beitreten oder was erwartest du? (z. B. Freunde für Conventions finden, Crafting lernen, Gruppen-Shootings)',
+  reasonPlaceholder: 'Deine Antwort...',
+  codeOfConductTitle: 'Zustimmung zum Verhaltenskodex der Community',
+  codeOfConductAgreement:
+    'Ich stimme dem Verhaltenskodex von KawanCosplay zu (100% SFW, gegenseitiger Respekt, keinerlei Belästigung, einladender sicherer Raum)',
   submitButton: 'Registrierung absenden',
+  submittingText: 'Wird gesendet...',
   clearForm: 'Formular leeren',
-  responseRecorded: 'Ihre Antwort wurde erfasst! Herzlich willkommen.',
-  viewMyKccId: 'Meinen digitalen Ausweis ansehen',
+  responseRecorded: 'Deine Antwort wurde gespeichert! Willkommen bei KawanCosplay.',
+  singleAccountIdTitle: 'Deine einzige KCC ID (16-stellig)',
+  whatsappUnlockedBadge: 'WhatsApp-Community-Gruppe freigeschaltet',
+  whatsappUnlockedTitle: 'Tritt der offiziellen KawanCosplay-WhatsApp-Gruppe bei',
+  whatsappUnlockedDesc:
+    'Danke für deine Registrierung! Klicke auf den Button unten, um der offiziellen WhatsApp-Community-Gruppe von KawanCosplay beizutreten:',
+  joinWhatsappButton: 'WhatsApp-Gruppe beitreten',
+  viewMyKccId: 'Digitalen Pass ansehen & herunterladen',
   submitAnother: 'Weitere Antwort senden',
+
+  // Generic form bits
+  optionalTag: '(optional)',
+  officialHotlineLabel: 'Offizielle WhatsApp-Hotline:',
+  needHelpHotline: 'Brauchst du Hilfe? WhatsApp-Hotline:',
+  clearFormConfirm: 'Alle Eingaben im Formular löschen?',
+
+  // Backup WhatsApp number
+  addBackupPhone: '+ Mehr als eine WhatsApp-Nummer? Ersatznummer hinzufügen (optional)',
+  backupPhoneLabel: 'Ersatz- / zusätzliche WhatsApp-Nummer',
+  removeBackupPhone: 'Abbrechen / Entfernen',
+  backupPhoneNotice:
+    'Diese Nummer wird als Ersatznummer gespeichert. Wenn du das Formular erneut ausfüllst, während du mit demselben Konto angemeldet bist, bleibt deine KCC ID gleich; doppelte Registrierungen ohne Anmeldung werden von einem Admin zusammengeführt.',
+  backupPhonePlaceholder: 'z. B. 08123456789 oder +62 857...',
+
+  // Location (option labels only; the stored values stay 'Kustom / Wilayah Lainnya' / 'Kustom / Kota Lainnya')
+  customProvinceOption: 'Eigene / andere Region',
+  customCityOption: 'Eigene / andere Stadt',
+  customProvincePlaceholder: 'Gib dein Bundesland / deine Provinz / Region ein...',
+
+  // Primary role labels (the stored primaryRole values are unchanged)
+  roleCosplayer: 'Cosplayer / Crossplayer',
+  roleIdolFan: 'Idol-Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
+  roleOtaku: 'Anime-, Manga- & Gaming-Otaku (Fan von Anime, Games & Popkultur)',
+  roleGeneralEnthusiast: 'Allgemeiner Fan / Unterstützer (Freunde, Unterstützer & Besucher von Treffen)',
+  rolePropMaker: 'Prop-Maker / Crafter (Waffen, Rüstungen & Accessoires)',
+  rolePhotographer: 'Cosplay-Fotograf / Videograf',
+  roleCostumeMaker: 'Kostümbau / Schneiderei / Perücken-Styling',
+  roleEventCrew: 'Event-Crew, Bühnenteam & Freiwillige',
+  roleContentCreator: 'Content-Creator / Streamer',
+
+  // Fandom labels (the stored fandom values are unchanged)
+  fandomHoyoverse: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
+  fandomShonenSeinen: 'Shōnen- / Seinen-Anime & Manga (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+  fandomIdolMusic: 'Idol & Musik (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
+  fandomIsekaiFantasy: 'Isekai & Fantasy (Frieren, Slime, Re:Zero, DanMachi)',
+  fandomGamingEsports: 'Gaming & E-Sport (Valorant, League of Legends, MLBB, Elden Ring)',
+  fandomVtuber: 'VTuber (Hololive, Nijisanji, Indie-VTuber)',
+  fandomTokusatsuMecha: 'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)',
+  fandomWesternPopCulture: 'Westliche Popkultur (Marvel, DC, Star Wars, Disney)',
+  fandomOriginalCharacter: 'Eigener Charakter (OC) & kreative Fantasy',
+
+  // Experience labels (the stored experience values are unchanged)
+  experienceBeginner: 'Einsteiger (< 1 Jahr)',
+  experienceOneToThreeYears: '1 - 3 Jahre',
+  experienceVeteran: 'Veteran (> 3 Jahre)',
+  experienceCasual: 'Gelegentlich / Fan',
+
+  // Avatar
+  avatarTooLarge: 'Das Avatarfoto darf maximal {maxMb}MB groß sein.',
+  photoProcessFailed: 'Das Foto konnte nicht verarbeitet werden.',
+  avatarPreviewAlt: 'Avatar-Vorschau',
+  presetAvatarAria: 'Vorgefertigter Avatar {number}',
+
+  // Validation errors
+  nameRequiredError: 'Bitte gib deinen Cosplay-Namen / Alias / Bühnennamen an.',
+  emailRequiredError: 'Eine E-Mail-Adresse ist erforderlich.',
+  whatsappRequiredError:
+    'Eine gültige WhatsApp-Handynummer ist erforderlich (mindestens {minDigits} Ziffern), da KawanCosplay eine Community auf WhatsApp-Basis ist.',
+  backupPhoneTooShortError: 'Die Ersatz-WhatsApp-Nummer braucht mindestens {minDigits} Ziffern (oder lass das Feld leer).',
+  customCityRequiredError: 'Bitte gib deine Stadt / deinen Landkreis ein (Option „{option}“).',
+  codeOfConductRequiredError: 'Bitte bestätige deine Zustimmung zum Verhaltenskodex der KawanCosplay Community.',
+
+  // Demo sandbox (admin only)
+  sandboxActiveNotice:
+    'Sandbox-Modus aktiv: Dieser Demo-Test ist isoliert und wird NICHT in der Firestore-Datenbank gespeichert.',
+  exitSandbox: 'Sandbox verlassen',
+  sandboxSubmissionNotice:
+    '🧪 Demo-Test in der Sandbox: Dieser Test lief im lokalen Speicher und wurde NICHT in der Datenbank gespeichert.',
+
+  // Success screen
+  duplicateMergedNotice:
+    '✓ Deine Angaben passen zu einer früheren Registrierung. Jedes Mitglied hat genau eine KCC ID – deine KCC ID bleibt gleich und dein Profil wurde aktualisiert.',
+  verifiedMemberLabel: 'Verifiziertes Mitglied:',
+  discordValue: 'Discord: {username}',
+
+  // Prefilled WhatsApp message to the admins (one line each; optional lines are left out)
+  whatsappMessageIntro: 'Hallo KawanCosplay-Admin! Ich habe das Registrierungsformular für Mitglieder ausgefüllt.',
+  whatsappMessageName: 'Name: {name}',
+  whatsappMessageKccId: 'KCC ID: {id}',
+  whatsappMessagePhone: 'WhatsApp-Nr.: {phone}',
+  whatsappMessagePhone2: 'WhatsApp-Nr. 2: {phone}',
+  whatsappMessageRequest: 'Bitte schick mir den Einladungslink zur WhatsApp-Gruppe der KawanCosplay Community. Danke!',
 };
 
 export default registration;

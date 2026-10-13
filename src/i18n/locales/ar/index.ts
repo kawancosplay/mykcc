@@ -1,4 +1,4 @@
-import type { PartialLocaleDictionary } from '../../types';
+import type { LocaleDictionary } from '../../types';
 import common from './common';
 import auth from './auth';
 import card from './card';
@@ -12,6 +12,6 @@ import demo from './demo';
 import sheets from './sheets';
 import errors from './errors';
 
-const dictionary: PartialLocaleDictionary = { common, auth, card, registration, profile, gallery, stats, siteEditor, admin, demo, sheets, errors };
+const dictionary: LocaleDictionary = { common, auth, card, registration, profile, gallery, stats, siteEditor, admin, demo, sheets, errors };
 
 export default dictionary;

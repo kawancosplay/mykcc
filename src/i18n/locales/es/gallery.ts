@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: 'Galería Cosplay & Cultura Pop',
-  description: 'Colección de fotos de nuestros miembros',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: 'Galería comunitaria de cosplay y cultura pop',
+  description: 'Muestra fotográfica oficial de los miembros de KawanCosplay en convenciones, encuentros y sesiones de fotos',
   uploadPhoto: 'Subir foto',
   allCharacters: 'Todos los personajes',
-  allEvents: 'Todos los eventos',
+  allEvents: 'Todos los eventos y sesiones',
+
+  // PhotoGallery
+  photosAvailableOne: '{count} foto disponible',
+  photosAvailableOther: '{count} fotos disponibles',
+  showcaseHeading: 'Muestra fotográfica de KawanCosplay',
+  searchPlaceholder: 'Busca por personaje, serie, fotógrafo o evento...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: 'Mostrando {count} obra de cosplay',
+  showingCountOther: 'Mostrando {count} obras de cosplay',
+  emptyTitle: 'Todavía no hay fotos en esta categoría',
+  emptyDesc: '¡Sube la primera foto de cosplay de este personaje o evento!',
+  uploadNow: 'Subir una foto ahora',
+  downloadPhoto: 'Descargar foto',
+  byAuthor: 'Por: {name}',
+  detailCosplayer: 'Cosplayer:',
+  detailKccId: 'ID de 16 dígitos:',
+  detailEvent: 'Evento / Lugar:',
+  detailPhotographer: 'Fotografía:',
+  shootNotes: 'Notas de la sesión',
+  likeWithCount: 'Me gusta ({count})',
+  download: 'Descargar',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'Otro',
+
+  // UploadPhotoModal
+  photoTooLarge: 'El tamaño máximo de la foto es {maxMb} MB.',
+  imageProcessFailed: 'No se pudo procesar la imagen. Prueba con otro archivo.',
+  photoRequired: 'Sube un archivo de foto de cosplay o pega la URL de una imagen.',
+  requiredFieldsMissing: 'El nombre del personaje, la serie de anime/videojuego y el título de la foto son obligatorios.',
+  uploadBadge: 'Galería comunitaria MyKCC',
+  uploadTitle: 'Subir una foto de cosplay',
+  uploadDesc: 'Tu foto aparecerá en la galería pública y se podrá buscar por personaje y evento.',
+  photoFileLabel: 'Archivo de foto de cosplay',
+  previewAlt: 'Vista previa de la foto',
+  changePhoto: 'Cambiar foto',
+  chooseFileHint: 'Elige una imagen de tu dispositivo (JPG, PNG, WebP)',
+  chooseFileButton: 'Elegir archivo de imagen',
+  photoTitleLabel: 'Título / Concepto de la foto',
+  photoTitlePlaceholder: 'Ejemplo: Raiden Shogun - Castillo de Inazuma',
+  characterLabel: 'Personaje del cosplay',
+  characterPlaceholder: 'Ejemplo: Frieren, Furina, Gojo Satoru',
+  seriesLabel: 'Serie de anime / videojuego / fandom',
+  seriesPlaceholder: 'Ejemplo: Genshin Impact, Sousou no Frieren',
+  eventLabel: 'Evento / Lugar de la sesión',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'Encuentro mensual de KawanCosplay',
+  eventOutdoorShoot: 'Sesión de fotos en la naturaleza',
+  eventIndoorStudio: 'Sesión en estudio',
+  eventMatsuri: 'Matsuri japonés / Festival cultural',
+  eventOther: 'Otro (escribe el tuyo)',
+  customEventPlaceholder: 'Escribe el nombre del evento / lugar',
+  photographerLabel: 'Créditos de fotografía / equipo',
+  photographerPlaceholder: '@nombre_fotografo o nombre del estudio',
+  captionLabel: 'Descripción / Historia detrás del traje',
+  captionPlaceholder: 'Cuéntanos cómo hiciste el traje y los props, o qué hizo divertido el evento...',
+  cancel: 'Cancelar',
+  submitUpload: 'Subir a la galería',
 };
 
 export default gallery;

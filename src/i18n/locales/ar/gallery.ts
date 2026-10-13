@@ -1,11 +1,68 @@
 import type { LocaleNamespace } from '../../types';
 
-const gallery: Partial<LocaleNamespace<'gallery'>> = {
-  title: 'معرض الصور',
-  description: 'صور الأعضاء الرسمية',
+const gallery: LocaleNamespace<'gallery'> = {
+  title: 'معرض الكوسبلاي والثقافة الشعبية للمجتمع',
+  description: 'معرض صور رسمي لأعضاء KawanCosplay في المعارض واللقاءات وجلسات التصوير',
   uploadPhoto: 'رفع صورة',
   allCharacters: 'جميع الشخصيات',
-  allEvents: 'جميع الفعاليات',
+  allEvents: 'جميع الفعاليات وجلسات التصوير',
+
+  // PhotoGallery
+  photosAvailableOne: '{count} صورة متاحة',
+  photosAvailableOther: 'الصور المتاحة: {count}',
+  showcaseHeading: 'معرض صور KawanCosplay',
+  searchPlaceholder: 'ابحث حسب الشخصية أو السلسلة أو المصوّر أو الفعالية...',
+  filterOptionWithCount: '{label} ({count})',
+  showingCountOne: 'عرض {count} عمل كوسبلاي',
+  showingCountOther: 'عرض {count} من أعمال الكوسبلاي',
+  emptyTitle: 'لا توجد صور في هذه الفئة بعد',
+  emptyDesc: 'كن أول من يرفع صورة كوسبلاي لهذه الشخصية أو الفعالية!',
+  uploadNow: 'ارفع صورة الآن',
+  downloadPhoto: 'تنزيل الصورة',
+  byAuthor: 'بواسطة: {name}',
+  detailCosplayer: 'الكوسبلاير:',
+  detailKccId: 'KCC ID (16 رقمًا):',
+  detailEvent: 'الفعالية / الموقع:',
+  detailPhotographer: 'المصوّر:',
+  shootNotes: 'ملاحظات التصوير',
+  likeWithCount: 'إعجاب ({count})',
+  download: 'تنزيل',
+  // Shown for photos saved with the "Other" event but no custom name
+  eventOtherShort: 'أخرى',
+
+  // UploadPhotoModal
+  photoTooLarge: 'الحد الأقصى لحجم الصورة هو {maxMb} ميغابايت.',
+  imageProcessFailed: 'تعذّرت معالجة الصورة. يُرجى تجربة ملف آخر.',
+  photoRequired: 'يُرجى رفع ملف صورة كوسبلاي أو إدخال رابط صورة.',
+  requiredFieldsMissing: 'اسم الشخصية وسلسلة الأنمي/اللعبة وعنوان الصورة حقول مطلوبة.',
+  uploadBadge: 'معرض مجتمع MyKCC',
+  uploadTitle: 'رفع صورة كوسبلاي',
+  uploadDesc: 'ستظهر صورتك في المعرض العام ويمكن البحث عنها حسب الشخصية والفعالية.',
+  photoFileLabel: 'ملف صورة الكوسبلاي',
+  previewAlt: 'معاينة الصورة',
+  changePhoto: 'تغيير الصورة',
+  chooseFileHint: 'اختر صورة من جهازك (JPG، PNG، WebP)',
+  chooseFileButton: 'اختيار ملف صورة',
+  photoTitleLabel: 'عنوان الصورة / الفكرة',
+  photoTitlePlaceholder: 'مثال: Raiden Shogun - Inazuma Castle',
+  characterLabel: 'الشخصية المجسَّدة',
+  characterPlaceholder: 'مثال: Frieren، Furina، Gojo Satoru',
+  seriesLabel: 'سلسلة الأنمي / اللعبة / الفاندوم',
+  seriesPlaceholder: 'مثال: Genshin Impact، Sousou no Frieren',
+  eventLabel: 'الفعالية / موقع التصوير',
+  // Event option labels (the saved Firestore value stays the English preset text)
+  eventMonthlyGathering: 'اللقاء الشهري لـ KawanCosplay',
+  eventOutdoorShoot: 'جلسة تصوير في الطبيعة',
+  eventIndoorStudio: 'جلسة تصوير داخل الاستوديو',
+  eventMatsuri: 'ماتسوري ياباني / مهرجان ثقافي',
+  eventOther: 'أخرى (اكتبها بنفسك)',
+  customEventPlaceholder: 'اكتب اسم الفعالية / الموقع',
+  photographerLabel: 'المصوّر / فريق التصوير',
+  photographerPlaceholder: '@اسم_المصور أو اسم الاستوديو',
+  captionLabel: 'الوصف / القصة وراء الزي',
+  captionPlaceholder: 'أخبرنا كيف صنعت الزي والإكسسوارات، أو ما الذي جعل الفعالية ممتعة...',
+  cancel: 'إلغاء',
+  submitUpload: 'الرفع إلى المعرض',
 };
 
 export default gallery;

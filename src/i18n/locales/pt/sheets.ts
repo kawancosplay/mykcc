@@ -32,7 +32,7 @@ const sheets: LocaleNamespace<'sheets'> = {
   // Step 2: column mapping
   step2Title: 'Mapeamento das Colunas de Respostas',
   step2Desc: '{count} colunas detectadas no seu Google Form',
-  autoDetectedBadge: 'Detectado Automaticamente',
+  autoDetectedBadge: 'Autodetectado',
   columnFullName: 'Coluna de Nome Completo',
   columnCosname: 'Coluna de Cosname / Apelido',
   columnEmail: 'Coluna de E-mail',

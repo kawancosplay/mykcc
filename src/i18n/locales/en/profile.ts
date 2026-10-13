@@ -5,7 +5,8 @@ export default {
   // Hero
   changeAvatar: 'Change profile photo',
   verifiedActive: 'Verified & Active',
-  kccIdLabel: 'KCC ID (16 DIGITS)',
+  kccIdLabel: 'KCC ID',
+  oldKccId: 'Old ID: {id}',
   copyKccId: 'Copy KCC ID',
   viewIdCard: "View Member's ID Card",
 
@@ -19,6 +20,11 @@ export default {
   whatsappLabel: 'Active WhatsApp Number',
   backupPhoneLabel: 'Second / Backup WhatsApp Number',
   backupPhonePlaceholder: 'e.g. 0812... or +62 857...',
+  extraPhonesLabel: 'Extra WhatsApp numbers',
+  extraPhonesHint: 'Optional, up to 4 numbers. Admins can reach you on any of them.',
+  addExtraPhone: 'Add number',
+  removeExtraPhone: 'Remove this number',
+  extraPhoneTooShort: 'A WhatsApp number needs at least {minDigits} digits.',
   discordPlaceholder: 'e.g. alyachan_cos or user#0001',
   roleLabel: 'Primary Community Role',
   customRolePlaceholder: 'Type your other role / specialty...',

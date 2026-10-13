@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { getLanguageMeta, isLanguageCode } from './languages';
 import type { LanguageCode } from './languages';
 import {
@@ -27,15 +27,20 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Kept in sync during render so non-React callers (translate()) use the same language as this render.
   setActiveLanguage(lang);
 
-  // English is used while the selected locale is still loading (or if it failed to load).
+  // English is used while the selected locale is still loading (or if it failed to load). main.tsx
+  // waits (capped) for the initial locale before the first render, so the first frame is already final.
   const dictionary = getLoadedLocale(lang);
 
-  useEffect(() => {
+  // Before paint: `dir` changes the whole layout, so it must not flip after the first frame.
+  useLayoutEffect(() => {
     const root = document.documentElement;
     root.lang = lang;
     root.dir = getLanguageMeta(lang).isRtl ? 'rtl' : 'ltr';
-    ensureLanguageFont(lang);
     applyLanguageFontStack(lang);
+  }, [lang]);
+
+  useEffect(() => {
+    ensureLanguageFont(lang);
 
     if (getLoadedLocale(lang)) return;
     let cancelled = false;

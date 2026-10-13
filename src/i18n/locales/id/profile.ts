@@ -7,7 +7,8 @@ const profile: LocaleNamespace<'profile'> = {
   // Hero
   changeAvatar: 'Ganti foto profil',
   verifiedActive: 'Terverifikasi Aktif',
-  kccIdLabel: 'KCC ID (16 DIGIT)',
+  kccIdLabel: 'KCC ID',
+  oldKccId: 'ID lama: {id}',
   copyKccId: 'Salin KCC ID',
   viewIdCard: "Lihat Member's ID Card",
 
@@ -21,6 +22,11 @@ const profile: LocaleNamespace<'profile'> = {
   whatsappLabel: 'Nomor WhatsApp Aktif',
   backupPhoneLabel: 'Nomor WhatsApp Kedua / Cadangan',
   backupPhonePlaceholder: 'Contoh: 0812... atau +62 857...',
+  extraPhonesLabel: 'Nomor WhatsApp tambahan',
+  extraPhonesHint: 'Opsional, maksimal 4 nomor. Admin dapat menghubungi Anda di nomor mana pun.',
+  addExtraPhone: 'Tambah nomor',
+  removeExtraPhone: 'Hapus nomor ini',
+  extraPhoneTooShort: 'Nomor WhatsApp minimal {minDigits} digit.',
   discordPlaceholder: 'Contoh: alyachan_cos atau user#0001',
   roleLabel: 'Peran Utama di Komunitas',
   customRolePlaceholder: 'Ketik peran / spesialisasi Anda lainnya...',

@@ -21,13 +21,21 @@ const gallery: LocaleNamespace<'gallery'> = {
   downloadPhoto: 'Unduh Foto',
   byAuthor: 'Oleh: {name}',
   detailCosplayer: 'Cosplayer:',
-  detailKccId: 'ID 16 Digit:',
+  detailKccId: 'KCC ID:',
   detailEvent: 'Event / Lokasi:',
   detailPhotographer: 'Fotografer:',
   shootNotes: 'Catatan Pemotretan',
   likeWithCount: 'Sukai ({count})',
   download: 'Unduh',
   eventOtherShort: 'Lainnya',
+
+  // Paging
+  loadMore: 'Muat foto lainnya',
+  loadingMore: 'Memuat…',
+  refresh: 'Muat ulang',
+  loadFailed: 'Galeri tidak dapat dimuat. Periksa koneksi lalu coba lagi.',
+  morePhotosHint: '+ lainnya',
+  filterLoadMoreHint: 'Tidak ada foto dimuat yang cocok. Muat lebih banyak untuk mencari foto lama.',
 
   // UploadPhotoModal
   photoTooLarge: 'Ukuran foto maksimal {maxMb} MB.',

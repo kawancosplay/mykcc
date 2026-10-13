@@ -19,7 +19,7 @@ export default {
   downloadPhoto: 'Download Photo',
   byAuthor: 'By: {name}',
   detailCosplayer: 'Cosplayer:',
-  detailKccId: '16-Digit ID:',
+  detailKccId: 'KCC ID:',
   detailEvent: 'Event / Location:',
   detailPhotographer: 'Photographer:',
   shootNotes: 'Shoot Notes',
@@ -27,6 +27,14 @@ export default {
   download: 'Download',
   // Shown for photos saved with the "Other" event but no custom name
   eventOtherShort: 'Other',
+
+  // Paging (the gallery loads page by page when it is opened)
+  loadMore: 'Load more photos',
+  loadingMore: 'Loading…',
+  refresh: 'Refresh',
+  loadFailed: 'Could not load the gallery. Check your connection and try again.',
+  morePhotosHint: '+ more',
+  filterLoadMoreHint: 'No loaded photo matches. Load more to search older photos.',
 
   // UploadPhotoModal
   photoTooLarge: 'The maximum photo size is {maxMb} MB.',

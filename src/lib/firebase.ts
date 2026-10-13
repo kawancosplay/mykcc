@@ -1,5 +1,15 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, type User } from 'firebase/auth';
+import {
+  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  browserPopupRedirectResolver,
+  getRedirectResult,
+  type Auth,
+  type User,
+} from 'firebase/auth';
 import {
   initializeFirestore,
   getFirestore,
@@ -30,7 +40,38 @@ function createFirestore(): Firestore {
 }
 
 export const db = createFirestore();
-export const auth = getAuth(app);
+
+// Auth WITHOUT a popupRedirectResolver at start-up: getAuth() would load the auth iframe + gapi on every
+// page load. Every popup call passes browserPopupRedirectResolver itself (authService, googleAuth), and
+// warmAuthPopup() loads it ahead of a sign-in tap. Same persistence order as getAuth() in browsers.
+function createAuth(): Auth {
+  try {
+    return initializeAuth(app, {
+      persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+    });
+  } catch (error) {
+    // Already initialized (e.g. Vite HMR re-ran this module): reuse the existing instance.
+    console.warn('Auth already initialized, reusing instance:', error);
+    return getAuth(app);
+  }
+}
+
+export const auth = createAuth();
+
+/** Popup resolver for signInWithPopup / reauthenticateWithPopup (auth is created without one). */
+export const popupRedirectResolver = browserPopupRedirectResolver;
+
+let authPopupWarmed = false;
+
+/** Loads the popup resolver (auth iframe + gapi) ahead of a sign-in tap; safe to call repeatedly. */
+export function warmAuthPopup(): void {
+  if (authPopupWarmed || typeof window === 'undefined') return;
+  authPopupWarmed = true;
+  void getRedirectResult(auth, browserPopupRedirectResolver).catch(() => {
+    // Nothing to do: a failed warm-up only means the first popup loads the resolver itself
+    authPopupWarmed = false;
+  });
+}
 
 export enum OperationType {
   CREATE = 'create',

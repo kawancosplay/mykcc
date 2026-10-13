@@ -9,7 +9,7 @@ const auth: LocaleNamespace<'auth'> = {
 
   // AuthModal
   forgotPasswordTitle: 'Lupa Kata Sandi',
-  portalSubtitle: 'Portal Komunitas Resmi MyKCC (16-Digit User ID)',
+  portalSubtitle: 'Portal Komunitas Resmi MyKCC (KCC ID)',
   loginTab: 'Masuk',
   signUpTab: 'Daftar',
   nameLabel: 'Nama (Name / Cosname / Alias)',
@@ -18,7 +18,7 @@ const auth: LocaleNamespace<'auth'> = {
   emailPlaceholder: 'nama@gmail.com',
   forgotPasswordLink: 'Lupa kata sandi?',
   passwordPlaceholder: 'Minimal 6 karakter',
-  signUpSubmit: 'Buat Akun & Dapatkan 16-Digit ID',
+  signUpSubmit: 'Buat Akun & Dapatkan KCC ID',
   sendResetEmail: 'Kirim Email Reset',
   backToLogin: 'Kembali ke Login',
   continueWithGoogle: 'Lanjutkan dengan Google',
@@ -27,6 +27,7 @@ const auth: LocaleNamespace<'auth'> = {
   resetEmailSent: 'Email untuk reset kata sandi telah dikirim.',
   authFailed: 'Terjadi kendala autentikasi.',
   googleLoginFailed: 'Login dengan Google dibatalkan atau terkendala.',
+  popupBlockedTapAgain: 'Browser memblokir jendela login. Ketuk tombolnya sekali lagi.',
 };
 
 export default auth;

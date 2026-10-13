@@ -9,7 +9,7 @@ export default {
   googleFormLabel: 'Google Form Sync',
   googleFormDesc: 'From the Live Transition Sync',
   citiesLabel: 'Home Cities',
-  citiesDesc: 'Cities across Indonesia',
+  citiesDesc: 'Cities around the world',
   rolesTitle: 'Roles in the Community',
   rolesDesc: 'The mix of cosplayers, crafters, photographers, makeup artists, and crew',
   regionsTitle: 'Regional / City Distribution',

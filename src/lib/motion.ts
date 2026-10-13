@@ -5,8 +5,10 @@
  * components already use). Never import from 'motion/react': that would bundle a second, older copy.
  *
  * Reduced motion: every helper here switches to quick opacity-only fades (no movement, no springs)
- * when the user prefers reduced motion. Optionally wrap the app in <MotionConfig {...MOTION_CONFIG}>
- * so transforms/layout animations written elsewhere are disabled for those users as well.
+ * when the user prefers reduced motion OR lite mode is on (src/lib/perfMode.ts). Both reach the
+ * helpers through framer's <MotionConfig reducedMotion>: App wraps both roots in
+ * <MotionConfig {...getMotionConfig(lite)}> ('always' in lite, else 'user' = the OS setting), and
+ * `useReducedMotion()` below reads that config, so every component follows without its own check.
  *
  * Transforms and `position: fixed`: a non-`none` transform traps fixed children (AGENTS.md section 6).
  * All variants here end on x/y = 0 and scale = 1, where framer-motion writes `transform: none`, so a
@@ -15,10 +17,17 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { useDragControls, useReducedMotion } from 'framer-motion';
+import { useDragControls, useReducedMotionConfig } from 'framer-motion';
 import type { PanInfo, Variants } from 'framer-motion';
 
-export { useReducedMotion };
+/**
+ * True when motion should be reduced: the OS "reduce motion" setting, or lite mode (App passes
+ * `reducedMotion="always"` to <MotionConfig> then). Same name and call style as framer's hook, so
+ * `useReducedMotion() === true` keeps working everywhere.
+ */
+export function useReducedMotion(): boolean {
+  return useReducedMotionConfig() ?? false;
+}
 
 // ---------------------------------------------------------------------------
 // Easing + duration tokens (mirror the CSS custom properties in src/index.css)
@@ -76,9 +85,16 @@ export const SPRING: Record<'sheet' | 'press' | 'thumb' | 'page', SpringPreset> 
   page: { type: 'spring', stiffness: 340, damping: 36, mass: 1 },
 };
 
-export const TWEEN: Record<'fadeIn' | 'fadeOut' | 'reducedIn' | 'reducedOut' | 'dialog' | 'sheetExit' | 'press' | 'instant', TweenPreset> = {
+export const TWEEN: Record<
+  'fadeIn' | 'fadeOut' | 'reducedIn' | 'reducedOut' | 'dialog' | 'sheetExit' | 'press' | 'instant' | 'pageIn' | 'pageOut',
+  TweenPreset
+> = {
   fadeIn: { duration: DURATION.fadeIn, ease: 'easeOut' },
   fadeOut: { duration: DURATION.fadeOut, ease: 'easeIn' },
+  // Page / tab content: a short tween instead of a spring that needs ~0.5 s to settle. With
+  // AnimatePresence mode="wait" a screen change is then <= ~0.32 s (exit 0.11 + enter 0.2).
+  pageIn: { duration: 0.2, ease: EASE.outSoft },
+  pageOut: { duration: 0.11, ease: 'easeIn' },
   reducedIn: { duration: DURATION.reduced, ease: 'easeOut' },
   reducedOut: { duration: DURATION.reduced, ease: 'easeIn' },
   dialog: { duration: DURATION.dialog, ease: EASE.ios },
@@ -89,6 +105,13 @@ export const TWEEN: Record<'fadeIn' | 'fadeOut' | 'reducedIn' | 'reducedOut' | '
 
 /** Spread into <MotionConfig> at the app root: framer-motion then honours the OS reduced-motion setting. */
 export const MOTION_CONFIG = { reducedMotion: 'user' } as const;
+
+const LITE_MOTION_CONFIG = { reducedMotion: 'always' } as const;
+
+/** <MotionConfig {...getMotionConfig(lite)}>: lite mode forces the reduced (fade-only) path everywhere. */
+export function getMotionConfig(lite: boolean): { reducedMotion: 'always' | 'user' } {
+  return lite ? LITE_MOTION_CONFIG : MOTION_CONFIG;
+}
 
 /** Media query where `.glass-sheet` turns from a bottom sheet into a centered dialog (index.css). */
 export const SHEET_DIALOG_QUERY = '(min-width: 640px)';
@@ -116,8 +139,8 @@ export const fadeVariants: Variants = {
 /** Screen / route change: fade + small upward slide. */
 export const pageVariants: Variants = {
   initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0, transition: SPRING.page },
-  exit: { opacity: 0, transition: TWEEN.fadeOut },
+  animate: { opacity: 1, y: 0, transition: TWEEN.pageIn },
+  exit: { opacity: 0, transition: TWEEN.pageOut },
 };
 
 const TAB_SHIFT = 16;
@@ -130,11 +153,11 @@ const TAB_SHIFT = 16;
 export const tabVariants: Variants = {
   initial: (direction: number = 0) =>
     direction === 0 ? { opacity: 0, y: 6 } : { opacity: 0, x: Math.sign(direction) * TAB_SHIFT },
-  animate: { opacity: 1, x: 0, y: 0, transition: SPRING.page },
+  animate: { opacity: 1, x: 0, y: 0, transition: TWEEN.pageIn },
   exit: (direction: number = 0) =>
     direction === 0
-      ? { opacity: 0, transition: TWEEN.fadeOut }
-      : { opacity: 0, x: Math.sign(direction) * -TAB_SHIFT, transition: TWEEN.fadeOut },
+      ? { opacity: 0, transition: TWEEN.pageOut }
+      : { opacity: 0, x: Math.sign(direction) * -TAB_SHIFT, transition: TWEEN.pageOut },
 };
 
 /** `.glass-sheet` below 640px: slides up from the bottom edge. */

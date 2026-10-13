@@ -3,7 +3,7 @@ export default {
   title: 'Demo Form Testing Sandbox',
   sandboxBadge: 'Sandbox Mode',
   description:
-    '1-click preset auto-fill to test KCC ID generation (Timestamp UID, Admin UID 0001-0100, Main Account 0000).',
+    '1-click preset auto-fill to test KCC ID generation (running 8-digit number, admin range 0000 0001–0000 0100, main account 0000 0000).',
   randomizeTitle: 'Generate Random Persona',
   randomize: 'Randomize',
 
@@ -11,7 +11,7 @@ export default {
   rulesTitle: 'KawanCosplay User ID Rules:',
   ruleMainAccount: 'KCC Main Account',
   ruleAdminRange: 'KCC Admin Range',
-  ruleTimestamp: 'Timestamp-arranged Member UID',
+  ruleTimestamp: 'Members: running number in order of registration',
 
   // Preset cards
   previewName: 'Name:',
@@ -23,20 +23,20 @@ export default {
   presetLoaded: 'Preset loaded',
 
   // Presets
-  presetCosplayerName: 'Demo Cosplayer (Timestamp UID)',
-  presetCosplayerBadge: 'Timestamp UID',
-  presetCosplayerDesc: '16-digit UID arranged by submission timestamp (YYYYMMDDHHmmssSeq)',
+  presetCosplayerName: 'Demo Cosplayer (running number)',
+  presetCosplayerBadge: 'Running number',
+  presetCosplayerDesc: 'Next 8-digit KCC ID in order of registration (members start at 0000 0101)',
   presetAdminName: 'Demo KCC Admin (UID 0001-0100)',
   presetAdminBadge: 'Admin UID Range',
-  presetAdminDesc: 'UID 0000 0000 0000 0001 to 0000 0000 0000 0100 for KCC Admin',
+  presetAdminDesc: 'ID 0000 0001 to 0000 0100 for KCC admins',
   presetMainAccountName: 'Demo KCC Main Account (UID 0000)',
-  presetMainAccountDesc: 'UID 0000 0000 0000 0000 strictly for main account cosplaysehat@gmail.com',
+  presetMainAccountDesc: 'ID 0000 0000 strictly for the main account cosplaysehat@gmail.com',
   presetPropMakerName: 'Demo Prop Maker / Crafter',
-  presetPropMakerBadge: 'Crafter (Timestamp)',
-  presetPropMakerDesc: 'Prop & armor artisan with timestamp-based UID',
+  presetPropMakerBadge: 'Crafter (running number)',
+  presetPropMakerDesc: 'Prop & armor artisan with a running-number KCC ID',
   presetPhotographerName: 'Demo Cosplay Photographer',
   presetPhotographerBadge: 'Photographer',
-  presetPhotographerDesc: 'Photographer & videographer with timestamp-based UID',
+  presetPhotographerDesc: 'Photographer & videographer with a running-number KCC ID',
   presetOthersName: 'Demo Others / Custom Role',
   presetOthersBadge: 'Others Role',
   presetOthersDesc: 'Custom role "Others" with specialized Cosplay Makeup & Wig Stylist',

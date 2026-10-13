@@ -72,19 +72,31 @@ export default {
   cardPageBadge: "MyKCC Member's ID Card",
   cardPageTitle: "Member's ID Card & KCC ID",
   cardPageDesc:
-    'To protect the privacy of all members, the complete member list is restricted to the admin portal. Enter your 16-Digit KCC ID (e.g. 2026 1008 0715 3001) to display your official digital pass.',
+    'To protect the privacy of all members, the complete member list is restricted to the admin portal. Enter your 8-digit KCC ID (e.g. 0000 0101) to display your official digital pass. Old 16-digit IDs still work.',
   connectedProfile: 'Connected Profile',
   openPass: 'Open Pass',
-  lookupPlaceholder: '16-Digit KCC ID, e.g. 2026 1008 0715 3001',
+  lookupPlaceholder: 'KCC ID, e.g. 0000 0101',
   lookupSubmit: "Search & View Member's ID Card",
   searching: 'Searching...',
   passFound: 'Pass Found!',
   notRegisteredYet: 'Not registered yet?',
   fillRegistrationForm: 'Fill Registration Form →',
-  lookupInvalidId: 'Please enter your 16-digit KCC ID (digits only, spaces allowed).',
-  lookupNotFound: 'No Member ID Card found for that KCC ID. Please double-check the 16 digits.',
+  lookupInvalidId: 'Please enter your 8-digit KCC ID (or an old 16-digit ID): digits only, spaces allowed.',
+  lookupNotFound: 'No Member ID Card found for that KCC ID. Please double-check the digits.',
   lookupPermissionDenied:
     'Card lookup is currently unavailable (database access denied). Please try again later or contact a KCC admin.',
+  lookupOldIdNotice: "This is an old ID. The member's KCC ID is now {id}.",
+
+  // Display mode (lite / low-power mode)
+  perfModeTitle: 'Display mode',
+  perfModeAuto: 'Auto',
+  perfModeLite: 'Lite',
+  perfModeFull: 'Full',
+  perfModeAutoLiteHint: 'Auto: Lite is on for this device',
+  perfModeAutoFullHint: 'Auto: full effects on this device',
+  perfModeFooter: 'Display mode: {mode}',
+  perfLiteNotice: 'Lite mode is on for smoother scrolling on this device. You can change it in the menu.',
+  perfLiteNoticeAction: 'Change',
 
   // Profile tab states
   profileLoadFailed: 'Could not load your member profile.',
@@ -97,5 +109,5 @@ export default {
   // Footer
   footerPlatform: '100% SFW International Pop-Culture Platform.',
   copyright: '© 2026 MyKCC. All rights reserved.',
-  privacyShieldActive: '16-Digit Identity & Privacy Shield System Active',
+  privacyShieldActive: 'KCC ID Identity & Privacy Shield System Active',
 } as const;

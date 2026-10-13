@@ -12,7 +12,7 @@ const stats: LocaleNamespace<'stats'> = {
   googleFormLabel: 'Sinkron Google Form',
   googleFormDesc: 'Hasil Live Transition Sync',
   citiesLabel: 'Sebaran Kota Domisili',
-  citiesDesc: 'Kota se-Indonesia',
+  citiesDesc: 'Kota di seluruh dunia',
   rolesTitle: 'Sebaran Peran di Komunitas',
   rolesDesc: 'Komposisi cosplayer, crafter, fotografer, makeup artist, dan crew',
   regionsTitle: 'Sebaran Regional / Kota',

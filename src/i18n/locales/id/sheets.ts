@@ -127,6 +127,11 @@ const sheets: LocaleNamespace<'sheets'> = {
   errorNoRows: 'Tidak ada baris data respon baru untuk diimpor.',
   errorNoValidRows: 'Tidak ada baris valid yang ditemukan berdasarkan pemetaan kolom.',
   errorCheckFirst: 'Periksa spreadsheet terlebih dahulu pada Langkah 1.',
+
+  // Sprint 3: import with real registration dates + running KCC IDs
+  importUnparsableRows:
+    '{count} baris memiliki timestamp yang tidak terbaca dan diimpor dengan tanggal hari ini (baris {rows}). Perbaiki sheet, lalu gunakan "Perbaiki tanggal pendaftaran".',
+  importIssuedIds: 'KCC ID baru diberikan: {count} ({first} – {last})',
 };
 
 export default sheets;

@@ -1,6 +1,9 @@
 // Framework-free i18n runtime: locale loading/cache, key lookup, interpolation, Intl helpers and fonts.
 // React code uses useI18n() (I18nProvider.tsx); src/lib code uses translate().
 import en from './locales/en';
+// Indonesian is the community's main language: bundled statically next to English, so most visitors get
+// their first frame in the final language without a second, sequential request (perf: no en→id re-flow).
+import id from './locales/id';
 import { DEFAULT_LANGUAGE, getLanguageMeta, googleFontHref, isLanguageCode, matchLanguageTag } from './languages';
 import type { LanguageCode } from './languages';
 import type { PartialLocaleDictionary, TranslationKey, TranslateVars } from './types';
@@ -9,8 +12,12 @@ export const LANGUAGE_STORAGE_KEY = 'kcc_lang';
 
 type LocaleModule = { default: PartialLocaleDictionary };
 
-// Every locale except English (bundled statically as the fallback) is its own lazily loaded chunk.
-const localeModules = import.meta.glob<LocaleModule>(['./locales/*/index.ts', '!./locales/en/index.ts']);
+// Every other locale is its own lazily loaded chunk.
+const localeModules = import.meta.glob<LocaleModule>([
+  './locales/*/index.ts',
+  '!./locales/en/index.ts',
+  '!./locales/id/index.ts',
+]);
 
 const localeLoaders: Partial<Record<LanguageCode, () => Promise<LocaleModule>>> = {};
 for (const [path, loader] of Object.entries(localeModules)) {
@@ -18,7 +25,7 @@ for (const [path, loader] of Object.entries(localeModules)) {
   if (isLanguageCode(code)) localeLoaders[code] = loader;
 }
 
-const loadedLocales: Partial<Record<LanguageCode, PartialLocaleDictionary>> = {};
+const loadedLocales: Partial<Record<LanguageCode, PartialLocaleDictionary>> = { id };
 const pendingLocales: Partial<Record<LanguageCode, Promise<PartialLocaleDictionary | null>>> = {};
 
 /** The dictionary of a language if it is already available (English always is), else null. */
@@ -206,6 +213,23 @@ export function countryNameIn(locale: string, isoCode: string, fallback?: string
 
 // ---- Script fonts -----------------------------------------------------------------------------
 
+// Latin languages load no web font, so index.html no longer preconnects to Google Fonts (two wasted
+// early connections on a slow link). Script languages add the preconnects here, right before the CSS.
+function ensureFontPreconnects(): void {
+  const origins: Array<[string, boolean]> = [
+    ['https://fonts.googleapis.com', false],
+    ['https://fonts.gstatic.com', true],
+  ];
+  for (const [href, crossOrigin] of origins) {
+    if (document.head.querySelector(`link[rel="preconnect"][href="${href}"]`)) continue;
+    const link = document.createElement('link');
+    link.rel = 'preconnect';
+    link.href = href;
+    if (crossOrigin) link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+  }
+}
+
 /** Adds the Google Fonts stylesheet a language needs (one <link> per family, created once). */
 export function ensureLanguageFont(lang: LanguageCode): void {
   if (typeof document === 'undefined') return;
@@ -215,6 +239,7 @@ export function ensureLanguageFont(lang: LanguageCode): void {
     (link) => link.dataset.i18nFont === font.family
   );
   if (existing) return;
+  ensureFontPreconnects();
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = googleFontHref(font);

@@ -74,19 +74,31 @@ const common: LocaleNamespace<'common'> = {
   cardPageBadge: "MyKCC Member's ID Card",
   cardPageTitle: "Member's ID Card & KCC ID",
   cardPageDesc:
-    'Demi menjaga privasi seluruh anggota, daftar lengkap anggota hanya dapat diakses oleh Admin di portal terpisah. Masukkan 16-Digit KCC ID Anda (contoh: 2026 1008 0715 3001) untuk menampilkan kartu identitas digital resmi Anda.',
+    'Demi menjaga privasi seluruh anggota, daftar lengkap anggota hanya dapat diakses oleh Admin di portal terpisah. Masukkan KCC ID 8 digit Anda (contoh: 0000 0101) untuk menampilkan kartu identitas digital resmi Anda. ID lama 16 digit tetap bisa dipakai.',
   connectedProfile: 'Akun Anda Terhubung',
   openPass: 'Buka Kartu',
-  lookupPlaceholder: 'KCC ID 16 digit, contoh: 2026 1008 0715 3001',
+  lookupPlaceholder: 'KCC ID, contoh: 0000 0101',
   lookupSubmit: "Cari & Tampilkan Member's ID Card",
   searching: 'Mencari...',
   passFound: 'Data Ditemukan!',
   notRegisteredYet: 'Belum terdaftar?',
   fillRegistrationForm: 'Isi Formulir Pendaftaran →',
-  lookupInvalidId: 'Mohon masukkan 16 digit KCC ID Anda (angka saja, spasi boleh).',
-  lookupNotFound: 'Kartu anggota dengan KCC ID tersebut tidak ditemukan. Periksa kembali 16 digit KCC ID Anda.',
+  lookupInvalidId: 'Mohon masukkan KCC ID 8 digit Anda (atau ID lama 16 digit): angka saja, spasi boleh.',
+  lookupNotFound: 'Kartu anggota dengan KCC ID tersebut tidak ditemukan. Periksa kembali angka KCC ID Anda.',
   lookupPermissionDenied:
     'Pencarian kartu sedang tidak tersedia (akses database ditolak). Silakan coba lagi nanti atau hubungi Admin KCC.',
+  lookupOldIdNotice: 'Ini ID lama. KCC ID anggota ini sekarang {id}.',
+
+  // Mode tampilan (mode ringan / hemat daya)
+  perfModeTitle: 'Mode tampilan',
+  perfModeAuto: 'Otomatis',
+  perfModeLite: 'Ringan',
+  perfModeFull: 'Penuh',
+  perfModeAutoLiteHint: 'Otomatis: mode Ringan aktif di perangkat ini',
+  perfModeAutoFullHint: 'Otomatis: efek penuh di perangkat ini',
+  perfModeFooter: 'Mode tampilan: {mode}',
+  perfLiteNotice: 'Mode Ringan aktif agar scroll lebih lancar di perangkat ini. Anda bisa mengubahnya di menu.',
+  perfLiteNoticeAction: 'Ubah',
 
   // Profile tab states
   profileLoadFailed: 'Gagal memuat profil member.',
@@ -99,7 +111,7 @@ const common: LocaleNamespace<'common'> = {
   // Footer
   footerPlatform: 'Platform Pop Culture Internasional 100% SFW.',
   copyright: '© 2026 MyKCC. Hak cipta dilindungi.',
-  privacyShieldActive: 'Sistem Identitas 16 Digit & Perisai Privasi Aktif',
+  privacyShieldActive: 'Sistem Identitas KCC ID & Perisai Privasi Aktif',
 };
 
 export default common;

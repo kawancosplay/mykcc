@@ -5,7 +5,7 @@ const demo: LocaleNamespace<'demo'> = {
   title: 'Mode Pengujian Formulir Demo (Demo Form Testing)',
   sandboxBadge: 'Mode Sandbox',
   description:
-    'Klik 1-tombol untuk auto-fill data demo dan menguji pembuatan KCC ID (Timestamp UID, Admin UID 0001-0100, Main Account 0000).',
+    'Klik 1-tombol untuk auto-fill data demo dan menguji pembuatan KCC ID (nomor urut 8 digit, rentang admin 0000 0001–0000 0100, akun utama 0000 0000).',
   randomizeTitle: 'Buat Persona Acak',
   randomize: 'Acak Data',
 
@@ -13,7 +13,7 @@ const demo: LocaleNamespace<'demo'> = {
   rulesTitle: 'Aturan Alokasi User ID KawanCosplay:',
   ruleMainAccount: 'KCC Main Account (cosplaysehat@gmail.com)',
   ruleAdminRange: 'KCC Admin (Pengurus Inti)',
-  ruleTimestamp: 'Member Reguler berdasar Timestamp pengisian',
+  ruleTimestamp: 'Anggota: nomor urut sesuai urutan pendaftaran',
 
   // Preset cards
   previewName: 'Nama:',
@@ -25,20 +25,20 @@ const demo: LocaleNamespace<'demo'> = {
   presetLoaded: 'Preset dimuat',
 
   // Presets
-  presetCosplayerName: 'Demo Cosplayer (Timestamp UID)',
-  presetCosplayerBadge: 'UID Timestamp',
-  presetCosplayerDesc: 'UID 16-digit diatur berdasar tanggal & jam submit (YYYYMMDDHHmmssSeq)',
+  presetCosplayerName: 'Demo Cosplayer (nomor urut)',
+  presetCosplayerBadge: 'Nomor urut',
+  presetCosplayerDesc: 'KCC ID 8 digit berikutnya sesuai urutan pendaftaran (anggota mulai dari 0000 0101)',
   presetAdminName: 'Demo KCC Admin (UID 0001-0100)',
   presetAdminBadge: 'Rentang UID Admin',
-  presetAdminDesc: 'UID 0000 0000 0000 0001 s/d 0000 0000 0000 0100 khusus KCC Admin',
+  presetAdminDesc: 'ID 0000 0001 s/d 0000 0100 khusus admin KCC',
   presetMainAccountName: 'Demo KCC Main Account (UID 0000)',
-  presetMainAccountDesc: 'UID 0000 0000 0000 0000 khusus akun utama cosplaysehat@gmail.com',
+  presetMainAccountDesc: 'ID 0000 0000 khusus akun utama cosplaysehat@gmail.com',
   presetPropMakerName: 'Demo Prop Maker / Crafter',
-  presetPropMakerBadge: 'Crafter (Timestamp)',
-  presetPropMakerDesc: 'Pengrajin kostum / prop dengan UID berbasis timestamp',
+  presetPropMakerBadge: 'Crafter (nomor urut)',
+  presetPropMakerDesc: 'Pengrajin kostum / prop dengan KCC ID nomor urut',
   presetPhotographerName: 'Demo Fotografer Cosplay',
   presetPhotographerBadge: 'Fotografer',
-  presetPhotographerDesc: 'Fotografer & videografer dengan UID berbasis timestamp',
+  presetPhotographerDesc: 'Fotografer & videografer dengan KCC ID nomor urut',
   presetOthersName: 'Demo Peran Lainnya / Others',
   presetOthersBadge: 'Peran Lainnya',
   presetOthersDesc: 'Peran kustom "Lainnya / Others" dengan spesialisasi Makeup & Wig Stylist',

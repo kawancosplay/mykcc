@@ -8,6 +8,8 @@ export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss(), VitePWA({
       registerType: 'autoUpdate',
+      // registerSW.js as a deferred script: no extra render-blocking request in <head>.
+      injectRegister: 'script-defer',
       manifest: {
         id: '/',
         name: 'MyKCC - KawanCosplay Community Member Portal',

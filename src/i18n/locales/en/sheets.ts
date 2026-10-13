@@ -127,4 +127,9 @@ export default {
   errorNoRows: 'There are no response rows to import.',
   errorNoValidRows: 'No valid rows were found with this column mapping.',
   errorCheckFirst: 'Check a spreadsheet first in Step 1.',
+
+  // Sprint 3: import with real registration dates + running KCC IDs
+  importUnparsableRows:
+    '{count} rows have an unreadable timestamp and were imported with today\'s date (rows {rows}). Correct the sheet, then use "Fix registration dates".',
+  importIssuedIds: 'New KCC IDs issued: {count} ({first} – {last})',
 } as const;

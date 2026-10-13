@@ -1,5 +1,5 @@
 export { I18nProvider, useI18n } from './I18nProvider';
-export { translate, getActiveLanguage, LANGUAGE_STORAGE_KEY } from './runtime';
+export { translate, getActiveLanguage, getInitialLanguage, loadLocale, LANGUAGE_STORAGE_KEY } from './runtime';
 export {
   LANGUAGES,
   DEFAULT_LANGUAGE,

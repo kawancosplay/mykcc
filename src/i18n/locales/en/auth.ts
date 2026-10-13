@@ -7,7 +7,7 @@ export default {
 
   // AuthModal
   forgotPasswordTitle: 'Forgot Password',
-  portalSubtitle: 'Official MyKCC Community Portal (16-Digit User ID)',
+  portalSubtitle: 'Official MyKCC Community Portal (KCC ID)',
   loginTab: 'Sign In',
   signUpTab: 'Sign Up',
   nameLabel: 'Name (Cosname / Alias)',
@@ -16,7 +16,7 @@ export default {
   emailPlaceholder: 'name@gmail.com',
   forgotPasswordLink: 'Forgot password?',
   passwordPlaceholder: 'At least 6 characters',
-  signUpSubmit: 'Create Account & Get 16-Digit ID',
+  signUpSubmit: 'Create Account & Get Your KCC ID',
   sendResetEmail: 'Send Reset Email',
   backToLogin: 'Back to Sign In',
   continueWithGoogle: 'Continue with Google',
@@ -25,4 +25,5 @@ export default {
   resetEmailSent: 'A password reset email has been sent.',
   authFailed: 'Something went wrong while signing in. Please try again.',
   googleLoginFailed: 'Google sign-in was cancelled or ran into a problem.',
+  popupBlockedTapAgain: 'The browser blocked the sign-in window. Tap the button again.',
 } as const;

@@ -434,13 +434,13 @@ button, a[role="button"] {
     box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
   }
 
+  /* Card over imagery. Sprint 3: no live blur any more (it was unused and an in-flow blur costs a
+     re-blur per scroll frame); a denser tint keeps text readable over photos. */
   .glass-card-frosted {
-    background-color: rgba(22, 14, 46, 0.5);
+    background-color: rgba(22, 14, 46, 0.86);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     box-shadow: var(--glass-highlight), var(--glass-shadow-md);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
-    backdrop-filter: blur(16px) saturate(160%);
   }
 
   .glass-card-interactive {
@@ -454,17 +454,17 @@ button, a[role="button"] {
     box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
   }
 
-  /* ---------- Floating panels: blur on the element ---------- */
+  /* ---------- Floating panels ---------- */
+  /* Centered dialog panel (legacy; unused since the sheet pattern). No blur of its own any more:
+     a near-opaque fill looks the same over the dimmed overlay. */
   .glass-elevated,
   .liquid-glass-elevated {
     position: relative;
-    background-color: var(--glass-fill-elevated);
+    background-color: rgba(18, 12, 40, 0.95);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     border-top-color: var(--glass-stroke-top);
     box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    backdrop-filter: blur(28px) saturate(180%);
   }
 
   /* Positions the sheet: bottom-aligned on phones, centered on >= 640px. Clicks on the empty
@@ -1020,6 +1020,41 @@ button, a[role="button"] {
     }
   }
 
+  /* ---------- Phones: blur only on fixed surfaces ---------- */
+  /* Chips and icon buttons scroll WITH the content, so each one is an extra backdrop pass per scroll
+     frame while barely visible on the translucent cards they sit on: solid fill instead. Fixed /
+     overlay surfaces (sticky header, tab bar, sheets, menus, toast) keep their blur with a smaller
+     radius and saturate (the cost grows with the radius; saturate is a second filter pass). */
+  @media (max-width: 767px) {
+    .glass-chip {
+      background-color: rgba(255, 255, 255, 0.1);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass-icon-button {
+      background-color: rgba(20, 14, 40, 0.72);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .liquid-glass::before,
+    .glass-bar::before,
+    .glass-pill::before,
+    .glass-tabbar::before {
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      backdrop-filter: blur(14px) saturate(140%);
+    }
+
+    .glass-sheet,
+    .glass-menu,
+    .liquid-glass-menu,
+    .glass-toast {
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+      backdrop-filter: blur(18px) saturate(150%);
+    }
+  }
+
   /* ---------- Fallbacks ---------- */
   /* Graceful translucent solid fallback when backdrop-filter is unsupported */
   @supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
@@ -1084,6 +1119,50 @@ button, a[role="button"] {
     .glass-overlay {
       background-color: rgba(5, 2, 10, 0.85);
     }
+  }
+
+  /* Lite / low-power mode (src/lib/perfMode.ts; `html[data-perf="lite"]` is set by the inline script in
+     index.html before this CSS loads, so the first paint is already right). Same layout and colours:
+     live blur becomes the dense translucent fills of the no-backdrop-filter fallback above. */
+  :root[data-perf="lite"] .liquid-glass::before,
+  :root[data-perf="lite"] .glass-bar::before,
+  :root[data-perf="lite"] .glass-pill::before,
+  :root[data-perf="lite"] .glass-tabbar::before {
+    background-color: rgba(14, 10, 30, 0.94);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-elevated,
+  :root[data-perf="lite"] .liquid-glass-elevated,
+  :root[data-perf="lite"] .glass-sheet,
+  :root[data-perf="lite"] .glass-toast {
+    background-color: rgba(18, 12, 40, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-menu,
+  :root[data-perf="lite"] .liquid-glass-menu {
+    background-color: rgba(12, 8, 26, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-chip,
+  :root[data-perf="lite"] .glass-icon-button {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-icon-button {
+    background-color: rgba(30, 22, 56, 0.9);
+  }
+
+  :root[data-perf="lite"] .glass-overlay {
+    background-color: rgba(5, 2, 10, 0.78);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   @media (prefers-contrast: more) {
@@ -1404,6 +1483,44 @@ button, a[role="button"] {
     animation: none !important;
     will-change: auto;
   }
+}
+
+/* Lite / low-power mode (see the glass block in @layer components for the materials): no ambient light
+   layer (the theme gradient on body::before stays, so the colours do not change), short transitions,
+   static skeletons, short CSS entrance animations, no smooth scrolling. Spinners keep turning. */
+:root[data-perf="lite"] {
+  scroll-behavior: auto;
+}
+
+:root[data-perf="lite"] .ambient-layer {
+  display: none;
+}
+
+/* (With the OS reduce-motion setting the block above already makes these 0.01 ms.) */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-perf="lite"] *,
+  :root[data-perf="lite"] *::before,
+  :root[data-perf="lite"] *::after {
+    transition-duration: 0.12s !important;
+    transition-delay: 0s !important;
+  }
+
+  :root[data-perf="lite"] .animate-fade-in,
+  :root[data-perf="lite"] .animate-fade-out,
+  :root[data-perf="lite"] .animate-scale-in,
+  :root[data-perf="lite"] .animate-sheet-up,
+  :root[data-perf="lite"] .animate-slide-up {
+    animation-duration: 0.12s !important;
+  }
+}
+
+:root[data-perf="lite"] .glass-skeleton {
+  animation: none;
+}
+
+/* The sticky header hides / shows instantly in lite mode (StickyHeader). */
+:root[data-perf="lite"] .sticky-header {
+  transition: none !important;
 }
 
 [lang="su-Sund"] {

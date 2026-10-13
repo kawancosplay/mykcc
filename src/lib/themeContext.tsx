@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { db, describeFirestoreError } from './firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
@@ -53,6 +53,95 @@ export const DEFAULT_THEME: SiteTheme = {
   },
 };
 
+const BACKGROUND_GRADIENTS: Record<Exclude<BackgroundTheme, 'custom'>, string> = {
+  'bright-purple-fluent': 'linear-gradient(135deg, #2a1258 0%, #1b1442 45%, #11082a 100%)',
+  'cyber-purple': 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #581c87 100%)',
+  'cosmic-dark': 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #20133e 100%)',
+  'fluent-lavender': 'linear-gradient(135deg, #371b58 0%, #4c2a76 50%, #5c3b88 100%)',
+  'dark-onyx': 'linear-gradient(135deg, #0a0910 0%, #12101b 50%, #1a1727 100%)',
+};
+
+/** The page background gradient of a theme (App writes it to `--app-bg`; painted by `body::before`). */
+export function themeBackground(theme: SiteTheme): string {
+  if (theme.background === 'custom' && theme.customBgGradient) return theme.customBgGradient;
+  if (theme.background === 'custom') return BACKGROUND_GRADIENTS['bright-purple-fluent'];
+  return BACKGROUND_GRADIENTS[theme.background] ?? BACKGROUND_GRADIENTS['bright-purple-fluent'];
+}
+
+// ---------------------------------------------------------------------------------------------
+// Local cache: the last theme seen, so the first frame already has the right background (and the
+// Firestore snapshot only re-renders when something actually changed). index.html reads `appBg`.
+// ---------------------------------------------------------------------------------------------
+
+const THEME_CACHE_KEY = 'kcc_theme_v1';
+
+const BACKGROUNDS: readonly BackgroundTheme[] = ['bright-purple-fluent', 'cyber-purple', 'cosmic-dark', 'fluent-lavender', 'dark-onyx', 'custom'];
+const COLORS: readonly ColorTheme[] = ['purple', 'rose', 'indigo', 'emerald', 'amber', 'cyan', 'custom'];
+const WIDTHS: readonly LayoutWidth[] = ['7xl', '6xl', 'full'];
+const RADII: readonly CardRadius[] = ['rounded-3xl', 'rounded-2xl', 'rounded-xl', 'rounded-lg'];
+const NAVBARS: readonly NavbarStyle[] = ['glass-bar', 'floating-pill', 'minimal'];
+const EMBLEMS: readonly EmblemType[] = ['kitsune', 'crown', 'sparkle', 'shield', 'heart', 'custom_img'];
+
+function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
+function str(value: unknown, fallback: string | undefined, max = 2000): string | undefined {
+  return typeof value === 'string' && value.length <= max ? value : fallback;
+}
+
+/** Merges stored data over the defaults, keeping only known keys with valid values. */
+function normalizeTheme(raw: unknown): SiteTheme {
+  const data = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const logo = (data.logo && typeof data.logo === 'object' ? data.logo : {}) as Record<string, unknown>;
+  return {
+    background: pick(data.background, BACKGROUNDS, DEFAULT_THEME.background),
+    customBgGradient: str(data.customBgGradient, DEFAULT_THEME.customBgGradient, 400),
+    font: 'din-next',
+    colorScheme: pick(data.colorScheme, COLORS, DEFAULT_THEME.colorScheme),
+    customPrimaryColor: str(data.customPrimaryColor, DEFAULT_THEME.customPrimaryColor, 40),
+    layoutWidth: pick(data.layoutWidth, WIDTHS, DEFAULT_THEME.layoutWidth),
+    cardRadius: pick(data.cardRadius, RADII, DEFAULT_THEME.cardRadius),
+    navbarStyle: pick(data.navbarStyle, NAVBARS, DEFAULT_THEME.navbarStyle),
+    logo: {
+      title: str(logo.title, DEFAULT_THEME.logo.title, 120) ?? DEFAULT_THEME.logo.title,
+      subtitle: str(logo.subtitle, DEFAULT_THEME.logo.subtitle, 200) ?? '',
+      emblemType: pick(logo.emblemType, EMBLEMS, DEFAULT_THEME.logo.emblemType),
+      customLogoUrl: str(logo.customLogoUrl, DEFAULT_THEME.logo.customLogoUrl),
+    },
+  };
+}
+
+function readCachedTheme(): SiteTheme | null {
+  try {
+    const raw = window.localStorage.getItem(THEME_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { theme?: unknown } | null;
+    return parsed && parsed.theme ? normalizeTheme(parsed.theme) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedTheme(theme: SiteTheme): void {
+  try {
+    window.localStorage.setItem(THEME_CACHE_KEY, JSON.stringify({ v: 1, theme, appBg: themeBackground(theme) }));
+  } catch {
+    // Storage unavailable: the next visit simply starts from the defaults again.
+  }
+}
+
+/** Runs `fn` once the browser is idle after the first paint (2 s cap), so the theme listen never
+ *  competes with first-paint requests. */
+function afterFirstPaint(fn: () => void): () => void {
+  if (typeof window.requestIdleCallback === 'function') {
+    const id = window.requestIdleCallback(fn, { timeout: 2000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = window.setTimeout(fn, 1200);
+  return () => window.clearTimeout(id);
+}
+
 interface ThemeContextType {
   theme: SiteTheme;
   updateTheme: (partial: Partial<SiteTheme>) => void;
@@ -74,25 +163,39 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<SiteTheme>(DEFAULT_THEME);
+  const [theme, setTheme] = useState<SiteTheme>(() => readCachedTheme() ?? DEFAULT_THEME);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const themeRef = useRef(theme);
+  themeRef.current = theme;
 
   useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, 'siteSettings', 'theme'),
-      (doc) => {
-        if (doc.exists()) {
-          setTheme({ ...DEFAULT_THEME, ...doc.data() } as SiteTheme);
-        } else {
-          // No saved theme yet: use the defaults locally. Visitors never write on page load; the
-          // admin's first save in the Site Editor creates siteSettings/theme (admin-only per rules).
-          setTheme(DEFAULT_THEME);
-        }
-      },
-      (err) => console.warn('Theme subscription note:', err)
-    );
-    return () => unsub();
+    let unsub: (() => void) | null = null;
+    let disposed = false;
+    const cancelIdle = afterFirstPaint(() => {
+      if (disposed) return;
+      unsub = onSnapshot(
+        doc(db, 'siteSettings', 'theme'),
+        (snap) => {
+          // No saved theme yet: the defaults. Visitors never write on page load; the admin's first save in
+          // the Site Editor creates siteSettings/theme (admin-only per rules).
+          const next = snap.exists() ? normalizeTheme(snap.data()) : DEFAULT_THEME;
+          // Identical snapshot (the usual case thanks to the cache): no state change, no re-render.
+          if (JSON.stringify(next) === JSON.stringify(themeRef.current)) {
+            writeCachedTheme(next);
+            return;
+          }
+          setTheme(next);
+          writeCachedTheme(next);
+        },
+        (err) => console.warn('Theme subscription note:', err)
+      );
+    });
+    return () => {
+      disposed = true;
+      cancelIdle();
+      unsub?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -120,16 +223,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.documentElement.style.setProperty('--theme-primary', colorMap[theme.colorScheme] || '#8c52ff');
   }, [theme]);
 
-  const updateTheme = async (partial: Partial<SiteTheme>) => {
+  const updateTheme = useCallback(async (partial: Partial<SiteTheme>) => {
+    const current = themeRef.current;
     const newTheme = {
-      ...theme,
+      ...current,
       ...partial,
       logo: {
-        ...theme.logo,
+        ...current.logo,
         ...(partial.logo || {}),
       },
     };
-    
+
     // Save to Firestore (admin only per rules; failures are surfaced in the Site Editor)
     try {
       await setDoc(doc(db, 'siteSettings', 'theme'), newTheme, { merge: true });
@@ -138,27 +242,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error saving theme to Firestore:', error);
       setSaveError(describeFirestoreError(error, true));
     }
-  };
+  }, []);
 
-  const resetTheme = () => {
+  const resetTheme = useCallback(() => {
     updateTheme(DEFAULT_THEME);
-  };
+  }, [updateTheme]);
 
-  return (
-    <ThemeContext.Provider
-      value={{
-        theme,
-        updateTheme,
-        resetTheme,
-        isEditorOpen,
-        setIsEditorOpen,
-        saveError,
-        clearSaveError: () => setSaveError(null),
-      }}
-    >
-      {children}
-    </ThemeContext.Provider>
+  const clearSaveError = useCallback(() => setSaveError(null), []);
+
+  const value = useMemo<ThemeContextType>(
+    () => ({ theme, updateTheme, resetTheme, isEditorOpen, setIsEditorOpen, saveError, clearSaveError }),
+    [theme, updateTheme, resetTheme, isEditorOpen, saveError, clearSaveError]
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 export const useSiteTheme = () => useContext(ThemeContext);

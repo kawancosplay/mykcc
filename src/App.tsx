@@ -405,8 +405,18 @@ export default function App() {
       },
       (err) => {
         console.warn('Members subscribe note:', err);
-        setMembersError(classifyFirestoreError(err));
+        const kind = classifyFirestoreError(err);
+        setMembersError(kind);
         setMembersLoaded(false);
+        if (kind === 'permission-denied') {
+          // Admin access removed meanwhile (admins/{uid} deleted by another admin): leave admin mode, which
+          // also drops the member data held in this page, instead of showing the "rules" error screen
+          checkIsAdminUser(subscribedUser)
+            .then((ok) => {
+              if (!ok && authUidRef.current === subscribedUser.uid) setVerifiedAdminUid(null);
+            })
+            .catch(() => undefined);
+        }
       }
     );
 

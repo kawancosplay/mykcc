@@ -609,6 +609,31 @@ type ClaimOutcome =
   | { kind: 'existing'; member: Member }
   | { kind: 'created'; member: Member; kccId: string };
 
+// Two claims at the same moment: the rules evaluate the loser's write against the counter as it is NOW
+// (already moved by the winner), so it is DENIED (permission-denied) instead of failing the version check,
+// and the SDK only retries version conflicts (verified in the emulator). Such a denial is retried here
+// while the counter keeps moving; any other denial (counter unchanged) is rethrown.
+const CLAIM_CONTENTION_ATTEMPTS = 6;
+
+async function withClaimContentionRetry<T>(run: (seen: { last: number | null }) => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    const seen: { last: number | null } = { last: null };
+    try {
+      return await run(seen);
+    } catch (error) {
+      if (attempt >= CLAIM_CONTENTION_ATTEMPTS || seen.last === null || !isPermissionDeniedError(error)) throw error;
+      let current: KccCounter | null;
+      try {
+        current = await getKccCounter();
+      } catch {
+        throw error;
+      }
+      if (!current || current.last === seen.last) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 50 + Math.floor(Math.random() * 250)));
+    }
+  }
+}
+
 /**
  * Claim transaction (reads before writes): counter -> (onlyIfAbsent: member) -> memberCards/{last+1};
  * writes counter +1 (last, lastId, updatedAt only; planEnd stays), the new card and the member with
@@ -622,7 +647,7 @@ async function claimKccIdAndCreate(
   buildPayload: (kccId: string) => Record<string, unknown>,
   options?: { onlyIfAbsent?: boolean }
 ): Promise<ClaimOutcome> {
-  return runTransaction(db, async (tx): Promise<ClaimOutcome> => {
+  return withClaimContentionRetry((seen) => runTransaction(db, async (tx): Promise<ClaimOutcome> => {
     const counterSnap = await tx.get(counterRef());
     if (!counterSnap.exists()) return { kind: 'no-counter' };
     if (options?.onlyIfAbsent) {
@@ -632,6 +657,7 @@ async function claimKccIdAndCreate(
       }
     }
     const counter = parseCounter(counterSnap.data());
+    seen.last = counter.last;
     const next = counter.last + 1;
     if (next > MAX_KCC_NUMBER) throw new Error(translate('errors.kccIdsExhausted'));
     const kccId = kccIdFromNumber(next);
@@ -643,7 +669,7 @@ async function claimKccIdAndCreate(
     tx.set(cardRef(kccId), memberCardPayload(buildMemberCard(payload as unknown as Omit<Member, 'id'>)));
     tx.set(targetRef, payload);
     return { kind: 'created', member: normalizeMember(targetRef.id, payload as Partial<Omit<Member, 'id'>>), kccId };
-  });
+  }));
 }
 
 /**
@@ -971,10 +997,11 @@ function mergeIntoNewRow(target: Omit<Member, 'id'>, incoming: Omit<Member, 'id'
 async function claimKccIdsForNewMembers(
   entries: Array<{ docId: string; member: Omit<Member, 'id'> }>
 ): Promise<string[]> {
-  return runTransaction(db, async (tx) => {
+  return withClaimContentionRetry((seen) => runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef());
     if (!snap.exists()) throw new Error(translate('errors.kccCounterMissing'));
     const counter = parseCounter(snap.data());
+    seen.last = counter.last;
     if (counter.last + entries.length > MAX_KCC_NUMBER) throw new Error(translate('errors.kccIdsExhausted'));
     const ids = entries.map((_, k) => kccIdFromNumber(counter.last + 1 + k));
     const cards = await Promise.all(ids.map((id) => tx.get(cardRef(id))));
@@ -991,7 +1018,7 @@ async function claimKccIdsForNewMembers(
       tx.set(cardRef(ids[k]), memberCardPayload(buildMemberCard(payload as unknown as Omit<Member, 'id'>)));
     });
     return ids;
-  });
+  }));
 }
 
 /**
@@ -1428,14 +1455,17 @@ interface ExistingMemberClaim {
  * Admin claim transaction for an EXISTING member (after the switch): reads the counter, the member (and,
  * with `writeAlias`, the alias of its old 16-digit ID) and memberCards/{last+1}; writes counter +1, the
  * member's new userId16 (+ legacyUserId16 with `setLegacyId`), the new card, the alias when none exists yet
- * and, with `deleteOldCard`, the old card (<= 5 ops). Returns null when the member no longer exists or
- * (`skipIfKcc8`) already holds an 8-digit ID (two admins at once).
+ * and, with `deleteOldCard`, the old card (<= 5 ops). A member that already moved to an 8-digit ID keeps its
+ * old 16-digit ID working: the alias of its `legacyUserId16` is re-pointed to the new ID when it still points
+ * to the ID being replaced (otherwise the old ID would resolve to nothing, or to whoever keeps that 8-digit
+ * card). Returns null when the member no longer exists or (`skipIfKcc8`) already holds an 8-digit ID (two
+ * admins at once).
  */
 async function claimKccIdForExistingMember(
   memberId: string,
   options: { skipIfKcc8?: boolean; setLegacyId?: boolean; writeAlias?: boolean; deleteOldCard?: boolean }
 ): Promise<ExistingMemberClaim | null> {
-  return runTransaction(db, async (tx): Promise<ExistingMemberClaim | null> => {
+  return withClaimContentionRetry((seen) => runTransaction(db, async (tx): Promise<ExistingMemberClaim | null> => {
     const counterSnap = await tx.get(counterRef());
     if (!counterSnap.exists()) throw new Error(translate('errors.kccCounterMissing'));
     const memberSnap = await tx.get(memberRef(memberId));
@@ -1444,8 +1474,12 @@ async function claimKccIdForExistingMember(
     const oldId = typeof raw.userId16 === 'string' && raw.userId16 ? raw.userId16 : null;
     if (options.skipIfKcc8 && isKccId8(oldId)) return null;
     const aliasSnap = options.writeAlias && isLegacyKccId16(oldId) ? await tx.get(aliasRef(oldId as string)) : null;
+    const legacyId =
+      isKccId8(oldId) && isLegacyKccId16(raw.legacyUserId16) ? (raw.legacyUserId16 as string) : null;
+    const legacyAliasSnap = legacyId ? await tx.get(aliasRef(legacyId)) : null;
 
     const counter = parseCounter(counterSnap.data());
+    seen.last = counter.last;
     const next = counter.last + 1;
     if (next > MAX_KCC_NUMBER) throw new Error(translate('errors.kccIdsExhausted'));
     const kccId = kccIdFromNumber(next);
@@ -1461,10 +1495,13 @@ async function claimKccIdForExistingMember(
     if (aliasWritten) {
       tx.set(aliasRef(oldId as string), { kccId, createdAt: new Date().toISOString() });
     }
+    if (legacyId && legacyAliasSnap?.exists() && (legacyAliasSnap.data() as { kccId?: unknown }).kccId === oldId) {
+      tx.set(aliasRef(legacyId), { kccId, createdAt: new Date().toISOString() });
+    }
     const oldCardDeleted = !!options.deleteOldCard && isValidKccId(oldId) && oldId !== kccId;
     if (oldCardDeleted) tx.delete(cardRef(oldId as string));
     return { kccId, oldId, name: memberDisplayName(raw), aliasWritten, oldCardDeleted };
-  });
+  }));
 }
 
 /**
@@ -2280,11 +2317,18 @@ export async function applyKccIdMigration(
 
   // 4. Photos: userId16 old -> new
   if (options?.rewritePhotos !== false) {
+    // old ID -> new ID. An old ID shared by several members follows its alias (the earliest holder), unless
+    // the photo's memberId names the holder that uploaded it.
     const map = new Map<string, string>();
-    fresh.forEach((r) => {
-      const legacy = r.data.legacyUserId16;
-      if (isLegacyKccId16(legacy) && isKccId8(r.data.userId16)) map.set(legacy as string, r.data.userId16 as string);
-    });
+    const newIdByMember = new Map<string, { legacy: string; kccId: string }>();
+    [...fresh]
+      .sort((a, b) => compareByCreatedAtThenId(a.id, a.data.createdAt, b.id, b.data.createdAt))
+      .forEach((r) => {
+        const legacy = r.data.legacyUserId16;
+        if (!isLegacyKccId16(legacy) || !isKccId8(r.data.userId16)) return;
+        newIdByMember.set(r.id, { legacy, kccId: r.data.userId16 });
+        if (!map.has(legacy)) map.set(legacy, r.data.userId16);
+      });
     // Rows migrated in this run carry legacyUserId16 only on the server: add them from the plan
     plan.rows.forEach((r) => {
       if (r.kind !== 'done' && r.note !== 'late_claim' && isLegacyKccId16(r.fromId) && !map.has(r.fromId as string)) {
@@ -2310,12 +2354,18 @@ export async function applyKccIdMigration(
           break;
         }
         const updates = page.docs
-          .map((d) => ({ id: d.id, oldId: (d.data() as { userId16?: unknown }).userId16 }))
-          .filter((p): p is { id: string; oldId: string } => typeof p.oldId === 'string' && map.has(p.oldId));
+          .map((d) => {
+            const data = d.data() as { userId16?: unknown; memberId?: unknown };
+            const oldId = typeof data.userId16 === 'string' ? data.userId16 : '';
+            const owner = typeof data.memberId === 'string' ? newIdByMember.get(data.memberId) : undefined;
+            const newId = owner && owner.legacy === oldId ? owner.kccId : map.get(oldId);
+            return { id: d.id, newId };
+          })
+          .filter((p): p is { id: string; newId: string } => !!p.newId);
         for (let i = 0; i < updates.length; i += ADMIN_BATCH_SIZE) {
           const chunk = updates.slice(i, i + ADMIN_BATCH_SIZE);
           const batch = writeBatch(db);
-          chunk.forEach((p) => batch.update(doc(db, PHOTOS_COLLECTION, p.id), { userId16: map.get(p.oldId) }));
+          chunk.forEach((p) => batch.update(doc(db, PHOTOS_COLLECTION, p.id), { userId16: p.newId }));
           try {
             await batch.commit();
             report.photosUpdated += chunk.length;

@@ -8,6 +8,7 @@ import {
   browserPopupRedirectResolver,
   getRedirectResult,
   type Auth,
+  type PopupRedirectResolver,
   type User,
 } from 'firebase/auth';
 import {
@@ -43,7 +44,7 @@ function createFirestore(): Firestore {
 export const db = createFirestore();
 
 // Auth WITHOUT a popupRedirectResolver at start-up: getAuth() would load the auth iframe + gapi on every
-// page load. Every popup call passes browserPopupRedirectResolver itself (authService, googleAuth), and
+// page load. Every popup call passes `popupRedirectResolver` below itself (authService, googleAuth), and
 // warmAuthPopup() loads it ahead of a sign-in tap. Same persistence order as getAuth() in browsers.
 function createAuth(): Auth {
   try {
@@ -59,8 +60,21 @@ function createAuth(): Auth {
 
 export const auth = createAuth();
 
+// The SDK keeps ONE resolver instance per class and loads its auth iframe + gapi in `_initialize()`, which
+// every popup call awaits BEFORE window.open. getRedirectResult() alone does not load them when no redirect
+// is pending, so warming needs that exact instance: this subclass remembers it when the SDK creates it.
+type PopupResolverInternals = { _initialize?: (auth: Auth) => Promise<unknown> };
+let popupResolverInstance: PopupResolverInternals | null = null;
+const BrowserPopupResolverClass = browserPopupRedirectResolver as unknown as new () => PopupResolverInternals;
+class WarmablePopupRedirectResolver extends BrowserPopupResolverClass {
+  constructor() {
+    super();
+    popupResolverInstance = this;
+  }
+}
+
 /** Popup resolver for signInWithPopup / reauthenticateWithPopup (auth is created without one). */
-export const popupRedirectResolver = browserPopupRedirectResolver;
+export const popupRedirectResolver = WarmablePopupRedirectResolver as unknown as PopupRedirectResolver;
 
 let authPopupWarmed = false;
 
@@ -68,10 +82,14 @@ let authPopupWarmed = false;
 export function warmAuthPopup(): void {
   if (authPopupWarmed || typeof window === 'undefined') return;
   authPopupWarmed = true;
-  void getRedirectResult(auth, browserPopupRedirectResolver).catch(() => {
-    // Nothing to do: a failed warm-up only means the first popup loads the resolver itself
-    authPopupWarmed = false;
-  });
+  // getRedirectResult makes the SDK create (and cache) the resolver instance; then load its iframe
+  void getRedirectResult(auth, popupRedirectResolver)
+    .catch(() => null)
+    .then(() => popupResolverInstance?._initialize?.(auth))
+    .catch(() => {
+      // Nothing to do: a failed warm-up only means the first popup loads the resolver itself
+      authPopupWarmed = false;
+    });
 }
 
 export enum OperationType {

@@ -122,8 +122,9 @@ function makeRow(
  *   doc (authUid == mainUid, slot 00000000 only) or else the earliest keeps it, the others get a regular
  *   number ('reserved_conflict').
  * - Everyone else, ordered by createdAt then doc id, gets 00000101, 00000102, … (fresh start), or on resume
- *   (counter exists) the still-free numbers 101..planEnd in the same order; candidates beyond those are
- *   'late_claim' with a provisional number after counter.last.
+ *   (counter exists) the still-free numbers 101..planEnd above the highest number already migrated, in the
+ *   same order (a number freed by a deleted / renumbered migrated member is never reused); candidates beyond
+ *   those are 'late_claim' with a provisional number after counter.last.
  * - The first pending holder of an old 16-digit ID writes its alias (unless a done doc already carries it as
  *   legacyUserId16); the last pending holder deletes the old card.
  * `mainUid` = uid of the signed-in main account (or null).
@@ -224,8 +225,16 @@ export function planKccIdMigration(
         typeof counter.planEnd === 'number' && Number.isInteger(counter.planEnd)
           ? counter.planEnd
           : Math.min(counter.last, FIRST_MEMBER_NUMBER - 1);
+      // Every number below the highest one the migration already gave out (done rows that carry their old
+      // ID) was issued, because batches run in ascending order: a free number there belonged to a member
+      // that was deleted or renumbered since, and its old ID's alias still points to it -> never reused.
+      let maxMigrated = 0;
+      doneRows.forEach((r) => {
+        const n = kccNumber(r.toId);
+        if (r.fromId && n !== null && n <= planEnd && n > maxMigrated) maxMigrated = n;
+      });
       const free: number[] = [];
-      for (let n = FIRST_MEMBER_NUMBER; n <= planEnd; n++) {
+      for (let n = Math.max(FIRST_MEMBER_NUMBER, maxMigrated + 1); n <= planEnd; n++) {
         if (!held.has(n)) free.push(n);
       }
       candidates.forEach((c, i) => {
@@ -478,7 +487,9 @@ export function matchSheetRowsToMembers(
       return diff < 0 || (diff === 0 && row.sheetRow < best.sheetRow) ? row : best;
     });
 
-  const matches: Array<{ member: Member; row: SheetDateRow; by: MatchClass }> = [];
+  // phoneConflict: matched by email / Discord / social handle although both sides have WhatsApp numbers and
+  // none is shared (e.g. a placeholder like "tidak ada" / "none" typed by many people) -> never ticked by default
+  const matches: Array<{ member: Member; row: SheetDateRow; by: MatchClass; phoneConflict: boolean }> = [];
   for (const member of members || []) {
     if (!member) continue;
     const keys: Record<MatchClass, string[]> = {
@@ -514,7 +525,13 @@ export function matchSheetRowsToMembers(
         );
       }
       if (found.length > 0) {
-        matches.push({ member, row: earliest(found), by: cls });
+        const row = earliest(found);
+        const phoneConflict =
+          cls !== 'phone' &&
+          row.phones.length > 0 &&
+          memberPhones.length > 0 &&
+          !row.phones.some((p) => memberPhones.includes(p));
+        matches.push({ member, row, by: cls, phoneConflict });
         break;
       }
     }
@@ -525,7 +542,7 @@ export function matchSheetRowsToMembers(
 
   const rows: RegistrationDateFixRow[] = [];
   let unchanged = 0;
-  for (const { member, row, by } of matches) {
+  for (const { member, row, by, phoneConflict } of matches) {
     const sheetMs = (row.date as Date).getTime();
     const currentMs = createdAtMs(member.createdAt);
     const currentKnown = currentMs !== Number.MAX_SAFE_INTEGER;
@@ -546,7 +563,11 @@ export function matchSheetRowsToMembers(
       sheetRow: row.sheetRow,
       matchedBy: by,
       ambiguous,
-      selected: by !== 'name' && !ambiguous && (member.source !== 'web_form' || !currentKnown || sheetMs < currentMs),
+      selected:
+        by !== 'name' &&
+        !ambiguous &&
+        !phoneConflict &&
+        (member.source !== 'web_form' || !currentKnown || sheetMs < currentMs),
     });
   }
   rows.sort((a, b) => (a.sheetCreatedAt < b.sheetCreatedAt ? -1 : a.sheetCreatedAt > b.sheetCreatedAt ? 1 : a.sheetRow - b.sheetRow));

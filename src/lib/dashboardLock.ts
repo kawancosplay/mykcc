@@ -263,7 +263,13 @@ function recordStamp(record: DashboardLockRecord): string {
   return `${record.updatedAt ?? ''}|${record.salt}`;
 }
 
+// This page's own copy of the state. Read first, so a blocked or full sessionStorage does not re-lock the
+// dashboard 30 s after every correct password (the idle check would read "no state" = locked);
+// sessionStorage only restores the state after a reload of this tab.
+let memoryUnlockState: UnlockState | null = null;
+
 function readUnlockState(): UnlockState | null {
+  if (memoryUnlockState) return memoryUnlockState;
   const storage = getSessionStorage();
   if (!storage) return null;
   try {
@@ -285,18 +291,19 @@ function readUnlockState(): UnlockState | null {
 }
 
 function writeUnlockState(state: UnlockState): void {
+  memoryUnlockState = state;
   const storage = getSessionStorage();
   if (!storage) return;
   try {
     storage.setItem(UNLOCK_STORAGE_KEY, JSON.stringify(state));
   } catch {
-    // Storage blocked / full: the session simply stays locked on the next check
+    // Storage blocked / full: the in-memory copy still applies until this page is reloaded
   }
 }
 
 /**
  * True when no lock record exists, or this tab was unlocked by the same uid for the same record and the
- * last activity was less than 15 minutes ago. Missing/blocked storage = locked.
+ * last activity was less than 15 minutes ago. No state (new tab, blocked storage after a reload) = locked.
  */
 export function isDashboardUnlocked(uid: string, record: DashboardLockRecord | null): boolean {
   if (!record) return true;
@@ -330,6 +337,7 @@ export function touchDashboardActivity(): void {
 /** "Lock now": forgets this tab's unlocked state. */
 export function lockDashboardNow(): void {
   lastTouch = 0;
+  memoryUnlockState = null;
   const storage = getSessionStorage();
   if (!storage) return;
   try {

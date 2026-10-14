@@ -90,6 +90,11 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
     setNotice(null);
     try {
       await removeAdmin(entry, { allowSelf: isSelf });
+      if (isSelf) {
+        // Own access removed: leave the dashboard (and the member data loaded in this page) right away
+        window.location.reload();
+        return;
+      }
       onAdminsChange((admins || []).filter((a) => a.uid !== entry.uid));
       haptic('success');
       setNotice({ kind: 'success', text: t('admin.adminRemoved', { name }) });

@@ -219,13 +219,30 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
     setUnlocking(true);
     setUnlockError(null);
     try {
-      const ok = await verifyDashboardPassword(password, state.record);
+      let record = state.record;
+      let ok = await verifyDashboardPassword(password, record);
+      if (!ok) {
+        // The locked screen keeps the record it loaded: the main account may have changed or removed the
+        // password on another device since. Compare once with the current record before counting a wrong try.
+        const latest = await getDashboardLock().catch(() => null);
+        if (latest && latest.state !== 'set') {
+          setFailedAttempts(0);
+          setPassword('');
+          setState({ kind: 'open', lock: latest.state });
+          return;
+        }
+        if (latest && (latest.record.salt !== record.salt || latest.record.hash !== record.hash)) {
+          record = latest.record;
+          ok = await verifyDashboardPassword(password, record);
+          if (!ok) setState({ kind: 'locked', record });
+        }
+      }
       if (ok) {
-        markDashboardUnlocked(uid, state.record);
+        markDashboardUnlocked(uid, record);
         setFailedAttempts(0);
         setPassword('');
         haptic('success');
-        setState({ kind: 'unlocked', record: state.record });
+        setState({ kind: 'unlocked', record });
         return;
       }
       const failed = failedAttempts + 1;

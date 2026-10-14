@@ -347,6 +347,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
   };
 
   const handleDownload = async (photo: Photo) => {
+    // photoUrl is written by any signed-in user (the rules only check its length): never hand a
+    // javascript: (or any other) scheme to the anchor below, only image data URLs and http(s)
+    if (typeof photo.photoUrl !== 'string' || !/^(data:image\/|https?:\/\/)/i.test(photo.photoUrl)) return;
     try {
       const cleanTitle = (photo.title || photo.character || 'cosplay_photo')
         .replace(/[^a-zA-Z0-9_-]/g, '_')
@@ -354,7 +357,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       const filename = `KawanCosplay_${cleanTitle}.jpg`;
 
       // If data URL, download directly without fetching
-      if (photo.photoUrl.startsWith('data:')) {
+      if (photo.photoUrl.toLowerCase().startsWith('data:')) {
         const link = document.createElement('a');
         link.href = photo.photoUrl;
         link.download = filename;

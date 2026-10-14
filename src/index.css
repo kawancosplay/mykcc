@@ -1490,6 +1490,11 @@ button, a[role="button"] {
    static skeletons, short CSS entrance animations, no smooth scrolling. Spinners keep turning. */
 :root[data-perf="lite"] {
   scroll-behavior: auto;
+  /* Component transitions (pressable, segments, menus, ...) read these tokens */
+  --dur-press: 60ms;
+  --dur-release: 120ms;
+  --dur-fast: 100ms;
+  --dur-base: 120ms;
 }
 
 :root[data-perf="lite"] .ambient-layer {
@@ -1498,9 +1503,10 @@ button, a[role="button"] {
 
 /* (With the OS reduce-motion setting the block above already makes these 0.01 ms.) */
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-perf="lite"] *,
-  :root[data-perf="lite"] *::before,
-  :root[data-perf="lite"] *::after {
+  /* Only elements that already animate (Tailwind transition / duration utilities, image reveal). NEVER
+     a duration on every element: the default transition-property is `all`, so every style change on
+     every element (width, height, colours, ...) would start animating and cost frames. */
+  :root[data-perf="lite"] :is([class*="transition"], [class*="duration-"], .img-reveal) {
     transition-duration: 0.12s !important;
     transition-delay: 0s !important;
   }

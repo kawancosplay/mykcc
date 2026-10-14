@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Member } from '../types';
 import { useI18n } from '../i18n';
+import { formatKccId } from '../lib/idGenerator';
 import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 
 export interface DemoFormPreset {
@@ -92,7 +93,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         experience: '1 - 3 tahun',
         socialMedia: '@yukari.cosplay',
         portfolioUrl: 'https://instagram.com/yukari.cosplay',
-        reason: 'Uji coba pendaftaran demo member reguler dengan User ID berbasis timestamp terurut.',
+        reason: 'Uji coba pendaftaran demo member reguler dengan KCC ID nomor urut.',
         acceptedCodeOfConduct: true,
       },
     },
@@ -119,14 +120,14 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         experience: '> 3 tahun',
         socialMedia: '@kawancosplay.staff',
         portfolioUrl: 'https://kawancosplay.org/staff',
-        reason: 'Uji coba pendaftaran KCC Admin untuk slot UID terverifikasi 0000 0000 0000 0001 - 0100.',
+        reason: 'Uji coba pendaftaran KCC Admin untuk slot KCC ID terverifikasi 0000 0001 - 0000 0100.',
         acceptedCodeOfConduct: true,
       },
     },
     {
       id: 'main_account',
       name: t('demo.presetMainAccountName'),
-      badge: '0000 0000 0000 0000',
+      badge: '0000 0000',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
       expectedUidType: t('demo.presetMainAccountDesc'),
       icon: <Crown className="w-4 h-4 text-amber-400" />,
@@ -146,7 +147,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         experience: '> 3 tahun',
         socialMedia: '@rian_cosplays',
         portfolioUrl: 'https://instagram.com/rian_cosplays',
-        reason: 'Uji coba pendaftaran akun utama KCC ID 0000 0000 0000 0000.',
+        reason: 'Uji coba pendaftaran akun utama KCC ID 0000 0000.',
         acceptedCodeOfConduct: true,
       },
     },
@@ -243,7 +244,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
       name: t('demo.presetDuplicateName', { name: matchName }),
       badge: t('demo.presetDuplicateBadge'),
       badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-      expectedUidType: t('demo.presetDuplicateDesc', { id: existingWithPhone.userId16 || '' }),
+      expectedUidType: t('demo.presetDuplicateDesc', { id: formatKccId(existingWithPhone.userId16) }),
       icon: <CopyCheck className="w-4 h-4 text-cyan-400" />,
       data: {
         name: matchName,
@@ -272,7 +273,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
       name: t('demo.presetSecondaryPhoneName', { name: matchName }),
       badge: t('demo.presetSecondaryPhoneBadge'),
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      expectedUidType: t('demo.presetSecondaryPhoneDesc', { id: existingWithPhone.userId16 || '' }),
+      expectedUidType: t('demo.presetSecondaryPhoneDesc', { id: formatKccId(existingWithPhone.userId16) }),
       icon: <CopyCheck className="w-4 h-4 text-emerald-400" />,
       data: {
         name: matchName,
@@ -327,7 +328,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
       experience: '1 - 3 tahun',
       socialMedia: `@tester_${randomNum}`,
       portfolioUrl: '',
-      reason: 'Testing randomized demo submission for timestamp UID generation.',
+      reason: 'Testing randomized demo submission for running-number KCC ID generation.',
       acceptedCodeOfConduct: true,
     };
 
@@ -427,15 +428,15 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
                   </p>
                   <ul className="list-disc list-inside space-y-0.5 text-[11px] text-purple-300/80 mt-1 font-mono">
                     <li>
-                      <span className="text-amber-300 font-bold">0000 0000 0000 0000</span>:{' '}
+                      <span className="text-amber-300 font-bold">0000 0000</span>:{' '}
                       {t('demo.ruleMainAccount')}
                     </li>
                     <li>
-                      <span className="text-rose-300 font-bold">0000 0000 0000 0001 - 0100</span>:{' '}
+                      <span className="text-rose-300 font-bold">0000 0001 – 0000 0100</span>:{' '}
                       {t('demo.ruleAdminRange')}
                     </li>
                     <li>
-                      <span className="text-indigo-300 font-bold">YYYY MMDD HHmm ssSS</span>:{' '}
+                      <span className="text-indigo-300 font-bold">0000 0101 …</span>:{' '}
                       {t('demo.ruleTimestamp')}
                     </li>
                   </ul>

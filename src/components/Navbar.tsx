@@ -18,10 +18,12 @@ import {
 import { Member } from '../types';
 import { LANGUAGES, useI18n } from '../i18n';
 import type { LanguageCode } from '../i18n';
-import { KawanCosplayLogo } from './KawanCosplayLogo';
+import { KCC_HEADER_LOGO, KawanCosplayLogo } from './KawanCosplayLogo';
 import { useSiteTheme } from '../lib/themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
+import { PerfModeControl } from './PerfModeControl';
 import { haptic } from '../lib/haptic';
+import { warmAuthPopup } from '../lib/firebase';
 import {
   LAYOUT_IDS,
   SPRING,
@@ -37,7 +39,7 @@ import type { PresenceMotionProps } from '../lib/motion';
 
 type NavTab = 'form' | 'card' | 'gallery' | 'profile' | 'admin';
 
-interface NavbarProps {
+export interface NavbarProps {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
   user: User | null;
@@ -129,7 +131,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { t } = useI18n();
   const currentLangMeta = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
   const userFallbackName = t('common.userFallbackName');
-  const showProfileTab = Boolean(user || currentMember);
 
   // Motion
   const reducedMotion = useReducedMotion() === true;
@@ -142,12 +143,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isDesktopNav = useMediaQuery(DESKTOP_NAV_QUERY);
   useScrollLock(isMobileMenuOpen && !isDesktopNav);
 
+  // The profile has ONE desktop entry point: the avatar button on the right (no "Profile" text tab).
   const desktopTabs: Array<{ id: NavTab; label: string }> = [
     { id: 'form', label: t('common.navFormShort') },
     { id: 'card', label: t('common.navCardShort') },
     { id: 'gallery', label: t('common.navGalleryShort') },
-    ...(showProfileTab ? [{ id: 'profile' as NavTab, label: t('common.navProfile') }] : []),
   ];
+  const isProfileActive = activeTab === 'profile';
 
   const selectLang = (code: LanguageCode) => {
     if (code !== currentLang) haptic('selection');
@@ -204,8 +206,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <KawanCosplayLogo
               size="md"
               showText={false}
-              desktopLogoUrl="https://i.postimg.cc/sXbd1FgB/Logo-Kawan-Cosplay-Community-Redesigned-Alt.png"
-              mobileLogoUrl="https://i.postimg.cc/sXbd1FgB/Logo-Kawan-Cosplay-Community-Redesigned-Alt.png"
+              desktopLogoUrl={KCC_HEADER_LOGO.src}
+              mobileLogoUrl={KCC_HEADER_LOGO.src}
+              logoSrcSet={KCC_HEADER_LOGO.srcSet}
+              logoSizes={KCC_HEADER_LOGO.sizes}
+              fallbackLogoUrl={KCC_HEADER_LOGO.fallbackSrc}
             />
           </div>
 
@@ -279,7 +284,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <motion.div
                       key="lang-menu"
                       {...dropdownMotion}
-                      className="glass-menu absolute end-0 mt-4 w-52 max-h-[min(70vh,28rem)] overflow-y-auto z-50 origin-top text-sm"
+                      className="glass-menu absolute end-0 mt-4 w-72 max-h-[min(70vh,28rem)] overflow-y-auto z-50 origin-top text-sm"
                     >
                       {LANGUAGES.map((lang) => (
                         <button
@@ -295,6 +300,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <span className="truncate">{lang.nativeName}</span>
                         </button>
                       ))}
+                      {/* Display mode (lite / low-power): a small section under the language list */}
+                      <div className="border-t border-white/10 mt-1 px-3 pt-3 pb-2">
+                        <PerfModeControl />
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -318,23 +327,33 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {user || currentMember ? (
                 <div className="flex items-center gap-1">
+                  {/* The single desktop profile entry (no separate "Profile" text tab) */}
                   <button
                     type="button"
                     onClick={() => setActiveTab('profile')}
                     className="min-touch flex items-center justify-center rounded-full pressable hover:opacity-85"
                     aria-label={t('common.navProfile')}
+                    title={t('common.navProfile')}
+                    aria-current={isProfileActive ? 'page' : undefined}
                   >
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
-                        alt={avatarAlt}
+                        alt=""
                         width={32}
                         height={32}
                         decoding="async"
-                        className="w-8 h-8 rounded-full object-cover"
+                        className={`w-8 h-8 rounded-full object-cover ${
+                          isProfileActive ? 'ring-2 ring-rose-400 ring-offset-2 ring-offset-slate-950' : ''
+                        }`}
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white">
+                      <div
+                        aria-hidden="true"
+                        className={`w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold text-white ${
+                          isProfileActive ? 'ring-2 ring-rose-400 ring-offset-2 ring-offset-slate-950' : ''
+                        }`}
+                      >
                         {avatarInitial}
                       </div>
                     )}
@@ -354,6 +373,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={onOpenAuth}
+                  // Intent: start loading the sign-in popup resolver before the provider tap (iOS popup blocking)
+                  onPointerDown={warmAuthPopup}
+                  onFocus={warmAuthPopup}
                   className="min-h-11 bg-white hover:bg-slate-100 text-slate-900 font-medium text-sm px-4 py-2 rounded-full pressable"
                 >
                   {t('common.navLogin')}
@@ -522,6 +544,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </AnimatePresence>
                 </div>
 
+                {/* Display mode (lite / low-power), directly under the language selector */}
+                <div className="p-3.5 rounded-2xl glass-well">
+                  <PerfModeControl />
+                </div>
+
                 <a
                   href="https://wa.me/6285711032782"
                   target="_blank"
@@ -564,6 +591,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <button
                     type="button"
                     onClick={() => { onOpenAuth(); handleCloseMobileMenu(); }}
+                    onPointerDown={warmAuthPopup}
                     className="btn-primary w-full p-3.5 min-h-11 rounded-2xl pressable mt-1"
                   >
                     <UserIcon className="w-4 h-4" />

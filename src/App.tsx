@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useLayoutEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { User } from 'firebase/auth';
 // App shell + landing page (registration form) stay in the main bundle: they are the first paint.
-import { Navbar } from './components/Navbar';
-import { OfficialGovBanner } from './components/OfficialGovBanner';
+import { StickyHeader } from './components/StickyHeader';
 import { RegistrationForm } from './components/RegistrationForm';
+import { PerfLiteNotice, PerfModeFooterButton } from './components/PerfModeControl';
 
 // Heavy screens and modals load on demand. The loaders are kept separately so idle prefetch can warm them.
 const loadMemberCardModal = () => import('./components/MemberCardModal');
@@ -29,24 +29,36 @@ import {
 import {
   subscribeToMembers,
   subscribeToSyncLogs,
-  getMemberCard,
+  lookupMemberCard,
+  mainAccountKccId,
   memberCardToMember,
 } from './lib/firestoreService';
-import { subscribeToPhotos } from './lib/galleryService';
+import type { KccLookupSource } from './lib/firestoreService';
 import { ensureMemberForUser } from './lib/authService';
 import {
   checkIsAdminUser,
   isMainAdminUser,
   classifyFirestoreError,
   describeFirestoreError,
+  warmAuthPopup,
 } from './lib/firebase';
-import { format16DigitUserId, MAIN_ACCOUNT_UID } from './lib/idGenerator';
+import { MAIN_ACCOUNT_KCC_ID, formatKccId, isMainAccountKccId, parseKccIdInput } from './lib/idGenerator';
 import { useI18n } from './i18n';
-import { useSiteTheme } from './lib/themeContext';
+import { themeBackground, useSiteTheme } from './lib/themeContext';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { haptic } from './lib/haptic';
-import { MOTION_CONFIG, usePresenceMotion } from './lib/motion';
+import { getMotionConfig, usePresenceMotion } from './lib/motion';
+import { allowSpeculativeLoading, usePerfMode } from './lib/perfMode';
 import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-react';
+
+type AppTab = 'form' | 'card' | 'gallery' | 'profile' | 'admin';
+
+// The main account's display ID until mainAccountKccId() has answered: the legacy 16-digit main ID
+// (0000…0000), i.e. what it is before the 8-digit switch. After the switch it resolves to '00000000'.
+const LEGACY_MAIN_KCC_ID = MAIN_ACCOUNT_KCC_ID.padStart(16, '0');
+
+// Stable empty list for the registration form (memoized form: a new [] each render would re-render it).
+const NO_MEMBERS: Member[] = [];
 
 // Mounts a lazy modal on its first open and then keeps it mounted, so its internal state (typed form
 // fields, current mode) survives close/reopen exactly like before (the modals return null while closed).
@@ -56,7 +68,7 @@ function useOpenedOnce(open: boolean): boolean {
   return opened || open;
 }
 
-// Cheap ambient light: radial gradients from index.css instead of huge `blur()` filters.
+// Cheap ambient light: radial gradients from index.css instead of huge `blur()` filters (hidden in lite mode).
 const AmbientBackground: React.FC<{ blobs?: 2 | 3 }> = ({ blobs = 3 }) => (
   <div className="ambient-layer" aria-hidden="true">
     <div className="ambient-blob ambient-blob--1"></div>
@@ -116,14 +128,15 @@ const SheetSkeleton: React.FC<{ label: string }> = ({ label }) => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'form' | 'card' | 'gallery' | 'profile' | 'admin'>('form');
+  const [activeTab, setActiveTab] = useState<AppTab>('form');
   // Language state lives in <I18nProvider> (persisted in localStorage 'kcc_lang'); currentLang is kept as an alias.
   const { lang: currentLang, setLang, t, dir } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [currentMember, setCurrentMember] = useState<Member | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  // Last photo uploaded in this session: the gallery (which loads its own pages) prepends it once.
+  const [addedPhoto, setAddedPhoto] = useState<Photo | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
 
   // Admin status is resolved from the real Firebase identity (verified main email or admins/{uid}).
@@ -139,80 +152,41 @@ export default function App() {
   const [syncLogsError, setSyncLogsError] = useState<SubscriptionErrorKind | null>(null);
   const [memberLoadState, setMemberLoadState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [sheetsConnectError, setSheetsConnectError] = useState<string | null>(null);
-  const authUidRef = React.useRef<string | null>(null);
+  const authUidRef = useRef<string | null>(null);
 
-  const [isVisible, setIsVisible] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const prevScrollYRef = React.useRef(0);
+  // Latest values for stable callbacks (the memoized header / registration form keep the same props).
+  const userRef = useRef<User | null>(user);
+  userRef.current = user;
+  const activeTabRef = useRef<AppTab>(activeTab);
+  activeTabRef.current = activeTab;
 
-  // Optimized passive scroll listener with rAF throttling
-  useEffect(() => {
-    let ticking = false;
+  // The verified main account's own KCC ID in the current format (display override): 16 zeros before
+  // the 8-digit switch, '00000000' after it. Resolved once per main-account sign-in.
+  const [mainKccId, setMainKccId] = useState<string>(LEGACY_MAIN_KCC_ID);
+  const mainKccIdRef = useRef(mainKccId);
+  mainKccIdRef.current = mainKccId;
+  const withMainId = useCallback((member: Member): Member => ({ ...member, userId16: mainKccIdRef.current }), []);
 
-    const handleScroll = () => {
-      if (isMobileMenuOpen) return;
-      if (ticking) return;
-      ticking = true;
-
-      window.requestAnimationFrame(() => {
-        const currentScrollY = window.scrollY;
-        const prev = prevScrollYRef.current;
-
-        // If mobile menu is open, or user is near top: ALWAYS keep navbar visible
-        if (isMobileMenuOpen || currentScrollY <= 20) {
-          setIsVisible(true);
-        } else if (currentScrollY > prev + 15 && currentScrollY > 100) {
-          // Significant scroll down
-          setIsVisible(false);
-        } else if (currentScrollY < prev - 10) {
-          // Scroll up
-          setIsVisible(true);
-        }
-
-        prevScrollYRef.current = currentScrollY;
-        ticking = false;
-      });
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMobileMenuOpen]);
-
+  // Lite / low-power mode: framer-motion uses the reduced (fade-only) variants everywhere.
+  const perf = usePerfMode();
+  const motionConfig = getMotionConfig(perf.lite);
 
   // Every user-initiated screen change (navbar, mobile menu, footer links) goes through here: a light
-  // tick only when the screen actually changes.
-  const handleTabChange = (tab: 'form' | 'card' | 'gallery' | 'profile' | 'admin') => {
-    if (tab !== activeTab) haptic('light');
+  // tick only when the screen actually changes. Stable identity (memoized header).
+  const handleTabChange = useCallback((tab: AppTab) => {
+    if (tab !== activeTabRef.current) haptic('light');
     setActiveTab(tab);
-  };
+  }, []);
 
-  // Screen change: fade + small rise with the page spring (opacity-only with reduced motion).
+  // Screen change: short fade + small rise (opacity-only with reduced motion / lite mode).
   const pageMotion = usePresenceMotion('page');
 
   const { theme, isEditorOpen, setIsEditorOpen } = useSiteTheme();
 
-  const getBgStyle = () => {
-    if (theme.background === 'custom' && theme.customBgGradient) {
-      return { background: theme.customBgGradient };
-    }
-    if (theme.background === 'cyber-purple') {
-      return { background: 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #581c87 100%)' };
-    }
-    if (theme.background === 'cosmic-dark') {
-      return { background: 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #20133e 100%)' };
-    }
-    if (theme.background === 'fluent-lavender') {
-      return { background: 'linear-gradient(135deg, #371b58 0%, #4c2a76 50%, #5c3b88 100%)' };
-    }
-    if (theme.background === 'dark-onyx') {
-      return { background: 'linear-gradient(135deg, #0a0910 0%, #12101b 50%, #1a1727 100%)' };
-    }
-    return { background: 'linear-gradient(135deg, #2a1258 0%, #1b1442 45%, #11082a 100%)' };
-  };
-
   // The theme background is painted by the fixed `body::before` layer (index.css reads --app-bg), so it
-  // stays still while scrolling and never repaints the page. Layout effect: no flash of the default.
-  const appBackground = getBgStyle().background;
+  // stays still while scrolling and never repaints the page. Layout effect: no flash of the default (the
+  // inline script in index.html already applied the cached value before the CSS loaded).
+  const appBackground = themeBackground(theme);
   useLayoutEffect(() => {
     document.documentElement.style.setProperty('--app-bg', appBackground);
   }, [appBackground]);
@@ -224,11 +198,15 @@ export default function App() {
   const authModalMounted = useOpenedOnce(isAuthModalOpen);
   const uploadModalMounted = useOpenedOnce(isUploadPhotoModalOpen);
   const siteEditorMounted = useOpenedOnce(isEditorOpen);
+  const openAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
 
   // Warm the chunks people usually open next once the landing page is idle, so the first tap on
-  // "Sign in", a pass or the gallery opens instantly instead of waiting for the network.
+  // "Sign in", a pass or the gallery opens instantly instead of waiting for the network. Skipped in lite
+  // mode and on Save-Data / slow connections (no speculative downloads there).
   useEffect(() => {
+    if (!allowSpeculativeLoading()) return;
     const warm = () => {
+      if (!allowSpeculativeLoading()) return;
       loadAuthModal().catch(() => {});
       loadMemberCardModal().catch(() => {});
       loadPhotoGallery().catch(() => {});
@@ -241,9 +219,11 @@ export default function App() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  // KTA Lookup by 16-digit KCC ID only (public memberCards projection, privacy-safe)
+  // Member card lookup by KCC ID (8 digits, or an old 16-digit ID; public memberCards projection only)
   const [lookupQuery, setLookupQuery] = useState('');
   const [lookupResult, setLookupResult] = useState<Member | null>(null);
+  const [lookupResolvedFrom, setLookupResolvedFrom] = useState<KccLookupSource | null>(null);
+  const [lookupRequestedId, setLookupRequestedId] = useState<string>('');
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
 
@@ -259,6 +239,34 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
+  // Main account: resolve its ID format once per sign-in (counter exists → 8 digits). Errors keep the default.
+  useEffect(() => {
+    if (!user || !isMainAdminUser(user)) return;
+    let cancelled = false;
+    mainAccountKccId()
+      .then((id) => {
+        if (!cancelled) setMainKccId(id);
+      })
+      .catch((err) => console.warn('Main account KCC ID check failed:', err));
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, user?.email, user?.emailVerified]);
+
+  // Re-apply the override when the main ID format resolved after the profile was already shown.
+  useEffect(() => {
+    const u = userRef.current;
+    if (!u || !isMainAdminUser(u)) return;
+    setCurrentMember((prev) =>
+      prev && isMainAccountKccId(prev.userId16) && prev.userId16 !== mainKccId ? { ...prev, userId16: mainKccId } : prev
+    );
+    setSelectedMemberForCard((prev) =>
+      prev && prev.authUid === u.uid && isMainAccountKccId(prev.userId16) && prev.userId16 !== mainKccId
+        ? { ...prev, userId16: mainKccId }
+        : prev
+    );
+  }, [mainKccId]);
+
   // Load (or create, only when lookups definitively came back empty) the member profile of a signed-in user.
   // Results are ignored if the user signed out or switched accounts in the meantime.
   const loadMemberForUser = (u: User) => {
@@ -266,7 +274,7 @@ export default function App() {
     ensureMemberForUser(u)
       .then((m) => {
         if (authUidRef.current !== u.uid) return;
-        setCurrentMember(isMainAdminUser(u) ? { ...m, userId16: MAIN_ACCOUNT_UID } : m);
+        setCurrentMember(isMainAdminUser(u) ? withMainId(m) : m);
         setMemberLoadState('idle');
       })
       .catch((err) => {
@@ -301,10 +309,12 @@ export default function App() {
         setVerifiedAdminUid(null);
         setMemberLoadState('idle');
         setAuthReady(true);
+        setMainKccId(LEGACY_MAIN_KCC_ID);
       }
     );
 
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Resolve admin status for the CURRENT Firebase identity (re-checked whenever the account changes)
@@ -347,10 +357,10 @@ export default function App() {
       );
       if (matched) {
         // Copy instead of mutating the shared members list (the admin repair panel reads it)
-        setCurrentMember(isMainAdminUser(user) ? { ...matched, userId16: MAIN_ACCOUNT_UID } : matched);
+        setCurrentMember(isMainAdminUser(user) ? withMainId(matched) : matched);
       }
     }
-  }, [user, members, currentMember]);
+  }, [user, members, currentMember, withMainId]);
 
   // Members & sync logs hold private data: subscribe ONLY for a Firebase-authenticated admin,
   // and re-subscribe whenever the signed-in identity or its admin status changes.
@@ -382,8 +392,11 @@ export default function App() {
                   (prev.email && m.email && m.email.toLowerCase() === prev.email.toLowerCase())
               );
             if (!fresh) return prev;
-            if (isMainAdminUser(subscribedUser) && (fresh.authUid === subscribedUser.uid || prev.userId16 === MAIN_ACCOUNT_UID)) {
-              return { ...fresh, userId16: MAIN_ACCOUNT_UID };
+            if (
+              isMainAdminUser(subscribedUser) &&
+              (fresh.authUid === subscribedUser.uid || isMainAccountKccId(prev.userId16))
+            ) {
+              return withMainId(fresh);
             }
             return fresh;
           }
@@ -412,29 +425,18 @@ export default function App() {
       unsubMembers();
       unsubLogs();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid, user?.email, isAdmin]);
 
-  // Public photo gallery (no demo seeding from visitor page loads)
-  useEffect(() => {
-    const unsubPhotos = subscribeToPhotos(
-      (updatedPhotos) => {
-        setPhotos(updatedPhotos);
-      },
-      (err) => console.warn('Photos subscribe note:', err)
-    );
-
-    return () => {
-      unsubPhotos();
-    };
-  }, [user?.uid]);
+  // Photos are NOT loaded here any more: the gallery fetches its own pages when it is opened (perf F1).
 
   // Fallback author profile for photo uploads while the member profile is not loaded yet.
-  // Never fakes a reserved/admin KCC ID: only the verified main account gets 0000000000000000.
+  // Never fakes a reserved/admin KCC ID: only the verified main account gets its main ID.
   const uploadFallbackMember = useMemo<Member | null>(() => {
     if (!user) return null;
     return {
       id: user.uid,
-      userId16: isMainAdminUser(user) ? MAIN_ACCOUNT_UID : '',
+      userId16: isMainAdminUser(user) ? mainKccId : '',
       name: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
       cosplayName: user.displayName || user.email?.split('@')[0] || 'Cosplayer',
       fullName: user.displayName || 'Member',
@@ -448,10 +450,10 @@ export default function App() {
       status: 'verified',
       createdAt: new Date().toISOString(),
     };
-  }, [user]);
+  }, [user, mainKccId]);
   const uploadMember = currentMember || uploadFallbackMember;
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await logout();
     authUidRef.current = null;
     setUser(null);
@@ -460,16 +462,15 @@ export default function App() {
     setVerifiedAdminUid(null);
     setSheetsConnectError(null);
     setMemberLoadState('idle');
-    if (activeTab === 'profile') {
-      setActiveTab('form');
-    }
-  };
+    setMainKccId(LEGACY_MAIN_KCC_ID);
+    setActiveTab((tab) => (tab === 'profile' ? 'form' : tab));
+  }, []);
 
   // The Google token from AuthModal has basic scopes only, so it is NOT used for Sheets.
   const handleAuthSuccess = (authUser: User, memberProfile: Member | null, _token?: string) => {
     setUser(authUser);
     if (memberProfile) {
-      setCurrentMember(isMainAdminUser(authUser) ? { ...memberProfile, userId16: MAIN_ACCOUNT_UID } : memberProfile);
+      setCurrentMember(isMainAdminUser(authUser) ? withMainId(memberProfile) : memberProfile);
     }
   };
 
@@ -493,7 +494,8 @@ export default function App() {
         return;
       }
       if (isPopupBlockedError(err)) {
-        setSheetsConnectError(t('common.sheetsPopupBlocked'));
+        // GoogleSheetsSync warms the popup resolver on mount, so a second tap opens the window
+        setSheetsConnectError(t('auth.popupBlockedTapAgain'));
         return;
       }
       console.warn('Sheets connect failed:', err);
@@ -503,53 +505,115 @@ export default function App() {
     }
   };
 
-  const handleOpenCard = (member: Member) => {
-    // Display-only override on a copy (list items are never mutated; the admin repair panel reads them),
-    // and only for the VERIFIED main account's own profile. An email typed into the public form never
-    // turns a card into the main account.
-    if (user && isMainAdminUser(user) && member.authUid === user.uid) {
-      setSelectedMemberForCard({ ...member, userId16: MAIN_ACCOUNT_UID });
-      return;
-    }
-    setSelectedMemberForCard(member);
-  };
+  const handleOpenCard = useCallback(
+    (member: Member) => {
+      // Display-only override on a copy (list items are never mutated; the admin repair panel reads them),
+      // and only for the VERIFIED main account's own profile. An email typed into the public form never
+      // turns a card into the main account.
+      const u = userRef.current;
+      if (u && isMainAdminUser(u) && member.authUid === u.uid) {
+        setSelectedMemberForCard(withMainId(member));
+        return;
+      }
+      setSelectedMemberForCard(member);
+    },
+    [withMainId]
+  );
 
-  const handleLookupCard = async (e: React.FormEvent) => {
+  // Only the signed-in person's OWN registration becomes their profile. An admin who registers or
+  // merges someone else must not turn into that member (photo attribution).
+  const handleRegistered = useCallback((newMember: Member) => {
+    const u = userRef.current;
+    if (u && newMember.authUid === u.uid) setCurrentMember(newMember);
+    setSelectedMemberForCard(newMember);
+  }, []);
+
+  const runLookup = useCallback(
+    async (query: string, openOnSuccess = false) => {
+      setLookupError(null);
+      setLookupResult(null);
+      setLookupResolvedFrom(null);
+
+      const parsed = parseKccIdInput(query);
+      if (parsed.kind === 'invalid') {
+        setLookupError(t('common.lookupInvalidId'));
+        return;
+      }
+
+      setIsLookingUp(true);
+      try {
+        const res = await lookupMemberCard(parsed.id);
+        if (!res) {
+          setLookupError(t('common.lookupNotFound'));
+          return;
+        }
+        const found = memberCardToMember(res.card);
+        setLookupResult(found);
+        setLookupResolvedFrom(res.resolvedFrom);
+        setLookupRequestedId(res.requestedId);
+        if (openOnSuccess) handleOpenCard(found);
+      } catch (err) {
+        console.warn('KCC ID card lookup failed:', err);
+        if (classifyFirestoreError(err) === 'permission-denied') {
+          // describeFirestoreError's permission text is about saving; a lookup needs its own wording
+          setLookupError(t('common.lookupPermissionDenied'));
+        } else {
+          setLookupError(describeFirestoreError(err));
+        }
+      } finally {
+        setIsLookingUp(false);
+      }
+    },
+    [t, handleOpenCard]
+  );
+
+  const handleLookupCard = (e: React.FormEvent) => {
     e.preventDefault();
-    setLookupError(null);
-    setLookupResult(null);
-
-    const digits = lookupQuery.replace(/\D/g, '');
-    if (digits.length !== 16) {
-      setLookupError(t('common.lookupInvalidId'));
-      return;
-    }
-
-    setIsLookingUp(true);
-    try {
-      const card = await getMemberCard(digits);
-      if (card) {
-        setLookupResult(memberCardToMember(card));
-      } else {
-        setLookupError(t('common.lookupNotFound'));
-      }
-    } catch (err) {
-      console.warn('KCC ID card lookup failed:', err);
-      if (classifyFirestoreError(err) === 'permission-denied') {
-        // describeFirestoreError's permission text is about saving; a lookup needs its own wording
-        setLookupError(t('common.lookupPermissionDenied'));
-      } else {
-        setLookupError(describeFirestoreError(err, currentLang === 'id'));
-      }
-    } finally {
-      setIsLookingUp(false);
-    }
+    void runLookup(lookupQuery);
   };
+
+  // Card link deep link (`/?kcc=<8 or 16 digits>`, made by the admin "Copy card link"): open the card tab,
+  // prefill + run the lookup once and open the pass on success. The parameter is removed from the URL
+  // right away (hash kept); an invalid value is ignored silently.
+  const deepLinkHandledRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandledRef.current) return;
+    deepLinkHandledRef.current = true;
+    let raw: string | null = null;
+    try {
+      raw = new URLSearchParams(window.location.search).get('kcc');
+    } catch {
+      raw = null;
+    }
+    if (raw === null) return;
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('kcc');
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    } catch {
+      // URL / history unavailable: keep the parameter, nothing else breaks
+    }
+    const parsed = parseKccIdInput(raw);
+    if (parsed.kind === 'invalid') return;
+    setActiveTab('card');
+    setLookupQuery(formatKccId(parsed.id));
+    void runLookup(parsed.id, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A lookup by an old ID (alias / 00000000-padded 16 digits) that resolved to a different, current KCC ID.
+  const showOldIdNotice =
+    !!lookupResult &&
+    !!lookupResolvedFrom &&
+    lookupResolvedFrom !== 'kcc8' &&
+    lookupResult.userId16 !== lookupRequestedId;
+
+  const memberCount = isAdmin && membersLoaded ? members.length : null;
 
   // DEDICATED SEPARATE PAGE: ADMIN DASHBOARD (RESTRICTED: GOOGLE SIGN-IN AS A FIREBASE ADMIN)
   if (activeTab === 'admin') {
     return (
-      <MotionConfig {...MOTION_CONFIG}>
+      <MotionConfig {...motionConfig}>
       <div
         dir={dir}
         className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
@@ -628,7 +692,7 @@ export default function App() {
               syncLogsError={syncLogsError}
               currentLang={currentLang}
               onSelectMember={handleOpenCard}
-              onOpenAuth={() => setIsAuthModalOpen(true)}
+              onOpenAuth={openAuthModal}
               onConnectSheets={handleConnectSheets}
               sheetsConnectError={sheetsConnectError}
               onLogout={handleLogout}
@@ -669,7 +733,7 @@ export default function App() {
 
   // PUBLIC SITE LAYOUT (ZERO ACCESS TO MEMBER LIST FOR ALL MEMBERS)
   return (
-    <MotionConfig {...MOTION_CONFIG}>
+    <MotionConfig {...motionConfig}>
     <div
       dir={dir}
       className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
@@ -677,43 +741,30 @@ export default function App() {
       {/* Liquid Glass Background Caustics & Bright Purple-ish Fluent Ambient Light */}
       <AmbientBackground />
 
-      {/* Sticky Header Container: ONE glass surface (painted on ::before, so the mobile menu's fixed
-          overlay inside is not trapped) for gov banner + navbar, extended under the notch / status bar.
-          Hidden by translating it up; it is only translated while the mobile menu is closed. */}
-      <div
-        className={`sticky top-0 z-50 glass-bar pt-safe px-safe transition-[translate] duration-500 ease-ios ${
-          !isMobileMenuOpen && !isVisible ? '-translate-y-full' : ''
-        }`}
-      >
-        {/* Official Government-Style Verification Header */}
-        <OfficialGovBanner currentLang={currentLang} />
-
-        {/* Main Navbar */}
-        <Navbar
-          activeTab={activeTab}
-          setActiveTab={handleTabChange}
-          user={user}
-          currentMember={currentMember}
-          onOpenAuth={() => setIsAuthModalOpen(true)}
-          onLogout={handleLogout}
-          memberCount={isAdmin && membersLoaded ? members.length : null}
-          isAdmin={isAdmin}
-          currentLang={currentLang}
-          onSelectLang={setLang}
-          isVisible={isVisible}
-          isMobileMenuOpen={isMobileMenuOpen}
-          onMobileMenuToggle={(open) => setIsMobileMenuOpen(open)}
-        />
-      </div>
+      {/* Sticky header (gov banner + navbar). It owns the scroll listener, so scrolling never
+          re-renders App. */}
+      <StickyHeader
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        user={user}
+        currentMember={currentMember}
+        onOpenAuth={openAuthModal}
+        onLogout={handleLogout}
+        memberCount={memberCount}
+        isAdmin={isAdmin}
+        currentLang={currentLang}
+        onSelectLang={setLang}
+      />
 
       {/* Main Content Area. mode="wait": the old screen fades out (opacity only), then the new one
-          rises in with the page spring. The 8px rise is the only transform and ends at y = 0, where
-          framer-motion writes `transform: none`, so at rest nothing traps the `position: fixed`
-          lightboxes / sheets the tab screens render inside it (they only open on a later tap).
-          With reduced motion it is a plain cross-fade. No z-index: as its own stacking context it
-          would keep those sheets (z-60) underneath the sticky header (z-50). It still paints above
-          the ambient layer (positioned, later in the DOM). */}
-      <AnimatePresence mode="wait">
+          rises in with a short tween. initial={false}: the first screen is visible in the very first
+          paint (no entrance animation on page load; LCP / CLS). The 8px rise is the only transform and
+          ends at y = 0, where framer-motion writes `transform: none`, so at rest nothing traps the
+          `position: fixed` lightboxes / sheets the tab screens render inside it. With reduced motion
+          or lite mode it is a plain cross-fade. No z-index: as its own stacking context it would keep
+          those sheets (z-60) underneath the sticky header (z-50). It still paints above the ambient
+          layer (positioned, later in the DOM). */}
+      <AnimatePresence mode="wait" initial={false}>
       <motion.main
         key={activeTab}
         {...pageMotion}
@@ -723,14 +774,9 @@ export default function App() {
         {/* TAB 1: FORMULIR PENDAFTARAN (LEGACY GOOGLE FORM STYLE) */}
         {activeTab === 'form' && (
           <RegistrationForm
-            memberCount={isAdmin && membersLoaded ? members.length : null}
-            existingMembers={isAdmin ? members : []}
-            onRegistered={(newMember) => {
-              // Only the signed-in person's OWN registration becomes their profile. An admin who
-              // registers or merges someone else must not turn into that member (photo attribution).
-              if (user && newMember.authUid === user.uid) setCurrentMember(newMember);
-              setSelectedMemberForCard(newMember);
-            }}
+            memberCount={memberCount}
+            existingMembers={isAdmin ? members : NO_MEMBERS}
+            onRegistered={handleRegistered}
             onOpenCardModal={handleOpenCard}
             currentLang={currentLang}
             isAdmin={isAdmin}
@@ -760,7 +806,7 @@ export default function App() {
                     </span>
                     <h4 className="font-bold text-white text-base truncate">{currentMember.cosplayName}</h4>
                     <p className="text-xs font-mono text-purple-300">
-                      {t('common.kccIdValue', { id: format16DigitUserId(currentMember.userId16, currentMember.email) })}
+                      {t('common.kccIdValue', { id: formatKccId(currentMember.userId16) })}
                     </p>
                   </div>
                   <button
@@ -809,23 +855,30 @@ export default function App() {
 
               {/* Lookup result display */}
               {lookupResult && (
-                <div className="mt-6 p-4 rounded-2xl glass-well border-emerald-500/40 text-start max-w-md mx-auto flex items-center justify-between gap-3 animate-fade-in">
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
-                      {t('common.passFound')}
-                    </span>
-                    <h4 className="font-bold text-white text-sm truncate">{lookupResult.cosplayName}</h4>
-                    <p className="text-xs font-mono text-slate-400">
-                      {t('common.idValue', { id: format16DigitUserId(lookupResult.userId16, lookupResult.email) })}
-                    </p>
+                <div className="mt-6 p-4 rounded-2xl glass-well border-emerald-500/40 text-start max-w-md mx-auto animate-fade-in">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
+                        {t('common.passFound')}
+                      </span>
+                      <h4 className="font-bold text-white text-sm truncate">{lookupResult.cosplayName}</h4>
+                      <p className="text-xs font-mono text-slate-400">
+                        {t('common.idValue', { id: formatKccId(lookupResult.userId16) })}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCard(lookupResult)}
+                      className="px-4 py-2 min-h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md pressable shrink-0"
+                    >
+                      {t('common.openPass')}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenCard(lookupResult)}
-                    className="px-4 py-2 min-h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md pressable shrink-0"
-                  >
-                    {t('common.openPass')}
-                  </button>
+                  {showOldIdNotice && (
+                    <p className="mt-3 text-xs text-amber-200/90 leading-relaxed" role="note">
+                      {t('common.lookupOldIdNotice', { id: formatKccId(lookupResult.userId16) })}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -844,15 +897,15 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: PHOTO GALLERY */}
+        {/* TAB 3: PHOTO GALLERY (loads its own pages when opened) */}
         {activeTab === 'gallery' && (
           <PhotoGallery
-            photos={photos}
             currentMember={currentMember}
             user={user}
             onOpenUpload={() => setIsUploadPhotoModalOpen(true)}
-            onRequireLogin={() => setIsAuthModalOpen(true)}
+            onRequireLogin={openAuthModal}
             currentLang={currentLang}
+            addedPhoto={addedPhoto}
           />
         )}
 
@@ -863,8 +916,8 @@ export default function App() {
               onUpdateMember={(updated) => {
                 const isOwnMainProfile =
                   isMainAdminUser(user) &&
-                  (updated.authUid === user?.uid || currentMember?.userId16 === MAIN_ACCOUNT_UID);
-                setCurrentMember(isOwnMainProfile ? { ...updated, userId16: MAIN_ACCOUNT_UID } : updated);
+                  (updated.authUid === user?.uid || isMainAccountKccId(currentMember?.userId16));
+                setCurrentMember(isOwnMainProfile ? withMainId(updated) : updated);
               }}
               onOpenCardModal={handleOpenCard}
               currentLang={currentLang}
@@ -899,7 +952,12 @@ export default function App() {
           ) : (
             <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400">
                <p className="text-lg font-bold text-white mb-2">{t('common.pleaseSignIn')}</p>
-               <button type="button" onClick={() => setIsAuthModalOpen(true)} className="touch-target text-rose-400 font-bold hover:underline">
+               <button
+                 type="button"
+                 onClick={openAuthModal}
+                 onPointerDown={warmAuthPopup}
+                 className="touch-target text-rose-400 font-bold hover:underline"
+               >
                  {t('common.clickToSignIn')}
                </button>
             </div>
@@ -942,7 +1000,7 @@ export default function App() {
             onClose={() => setIsUploadPhotoModalOpen(false)}
             currentMember={uploadMember}
             onPhotoAdded={(newPhoto) => {
-              setPhotos((prev) => [newPhoto, ...prev]);
+              setAddedPhoto(newPhoto);
               setActiveTab('gallery');
             }}
           />
@@ -955,6 +1013,9 @@ export default function App() {
           <SiteEditorModal />
         </Suspense>
       )}
+
+      {/* One-time notice when Auto turned Lite mode on for this device */}
+      <PerfLiteNotice />
 
       {/* Global Footer */}
       <footer className="relative z-10 border-t border-white/10 bg-[var(--glass-fill-bar)] pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 lg:px-8 text-slate-400 text-xs">
@@ -1010,11 +1071,13 @@ export default function App() {
             </a>
           </div>
 
-          <div className="text-center md:text-end text-slate-500">
+          <div className="text-center md:text-end text-slate-500 flex flex-col items-center md:items-end gap-1">
             <p>{t('common.copyright')}</p>
             <p className="text-[10px] text-emerald-400/80 mt-0.5">
               ● {t('common.privacyShieldActive')}
             </p>
+            {/* Display mode (lite / low-power): reachable from every screen */}
+            <PerfModeFooterButton className="mt-1" />
           </div>
         </div>
       </footer>

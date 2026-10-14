@@ -14,6 +14,26 @@ const EMBLEM_TILE_CLASS = `w-full h-full rounded-2xl p-2 flex items-center justi
 // callout or start an image drag
 const NO_CALLOUT_CLASS = '[-webkit-touch-callout:none]';
 
+// Set by vite.config.ts (`define`): true when public/brand/kcc-logo-96.webp + -160.webp exist.
+declare const __KCC_LOCAL_LOGO__: boolean;
+
+const REMOTE_HEADER_LOGO_URL = 'https://i.postimg.cc/sXbd1FgB/Logo-Kawan-Cosplay-Community-Redesigned-Alt.png';
+const HAS_LOCAL_LOGO = typeof __KCC_LOCAL_LOGO__ !== 'undefined' && __KCC_LOCAL_LOGO__ === true;
+
+/**
+ * The header logo (square artwork). Self-hosted 96/160 px WebP (44 CSS px on phones, 56 px from `sm`)
+ * when the files are in public/brand/, else the original remote PNG. The remote PNG is also the fallback
+ * if a local file fails to load.
+ */
+export const KCC_HEADER_LOGO: { src: string; srcSet?: string; sizes?: string; fallbackSrc?: string } = HAS_LOCAL_LOGO
+  ? {
+      src: '/brand/kcc-logo-96.webp',
+      srcSet: '/brand/kcc-logo-96.webp 96w, /brand/kcc-logo-160.webp 160w',
+      sizes: '(min-width: 640px) 56px, 44px',
+      fallbackSrc: REMOTE_HEADER_LOGO_URL,
+    }
+  : { src: REMOTE_HEADER_LOGO_URL };
+
 interface KawanCosplayLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -21,6 +41,11 @@ interface KawanCosplayLogoProps {
   noContainer?: boolean;
   desktopLogoUrl?: string;
   mobileLogoUrl?: string;
+  /** Responsive candidates for the logo image (`srcset`), used with `logoSizes`. */
+  logoSrcSet?: string;
+  logoSizes?: string;
+  /** Tried once when the logo image fails, before falling back to the emblem. */
+  fallbackLogoUrl?: string;
 }
 
 export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
@@ -30,14 +55,21 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
   noContainer = false,
   desktopLogoUrl,
   mobileLogoUrl,
+  logoSrcSet,
+  logoSizes,
+  fallbackLogoUrl,
 }) => {
   const { theme } = useSiteTheme();
   const { t } = useI18n();
-  const [hasImageError, setHasImageError] = useState(false);
+  // 0 = primary image, 1 = fallback image, 2 = both failed (emblem)
+  const [imageStage, setImageStage] = useState<0 | 1 | 2>(0);
   // Same 768px breakpoint as before, but through matchMedia: it re-renders only when the breakpoint is
   // crossed (not on every resize event) and is already correct on the first render
   const isDesktop = useMediaQuery('(min-width: 768px)');
-  const logoSrc = isDesktop ? desktopLogoUrl : mobileLogoUrl || desktopLogoUrl;
+  const primarySrc = isDesktop ? desktopLogoUrl : mobileLogoUrl || desktopLogoUrl;
+  const logoSrc = imageStage === 0 ? primarySrc : imageStage === 1 ? fallbackLogoUrl : undefined;
+  const hasImageError = imageStage === 2 || !logoSrc;
+  const handleImageError = () => setImageStage((stage) => (stage === 0 && fallbackLogoUrl ? 1 : 2));
 
   const isImageActive = Boolean(logoSrc && !hasImageError);
 
@@ -57,13 +89,21 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
       {/* Official KawanCosplay Vector Emblem or Custom Logo */}
       <div className={`relative ${noContainer ? '' : iconDimensions} shrink-0 flex items-center justify-center`}>
         {logoSrc && !hasImageError ? (
+          // width/height reserve the (square) box before the image arrives: no header layout shift
           <img
+            key={logoSrc}
             src={logoSrc}
+            srcSet={imageStage === 0 ? logoSrcSet : undefined}
+            sizes={imageStage === 0 && logoSrcSet ? logoSizes : undefined}
+            width={44}
+            height={44}
             alt={t('common.logoAlt')}
             className={`h-11 sm:h-14 w-auto max-w-[210px] object-contain block ${NO_CALLOUT_CLASS}`}
             loading="eager"
+            decoding="async"
+            fetchPriority="high"
             draggable={false}
-            onError={() => setHasImageError(true)}
+            onError={handleImageError}
           />
         ) : customLogoUrl ? (
           <img

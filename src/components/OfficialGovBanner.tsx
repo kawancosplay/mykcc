@@ -54,7 +54,8 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
     <div className="relative border-b border-white/[0.06] text-slate-300 text-xs">
       {/* Top Banner Row - Gov style */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
-        <div className="flex flex-wrap items-center justify-between gap-1">
+        {/* Two lines reserved on phones: a language with longer copy cannot shift the page below (CLS). */}
+        <div className="flex flex-wrap items-center justify-between gap-1 min-h-[2.25rem] sm:min-h-0">
           {/* Left: Global Community Badge + Official Site Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm text-white">

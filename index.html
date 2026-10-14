@@ -64,10 +64,8 @@
          languages load no web font; script fonts (Javanese, Sundanese, Arabic, Tamil, Thai, CJK) add their
          own preconnect + stylesheet on demand (src/i18n/runtime.ts ensureLanguageFont). -->
     <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-    <!-- Header logo (self-hosted, 44 px phone / 56 px desktop): downloads in parallel with the JS. -->
-    <link rel="preload" as="image" href="/brand/kcc-logo-96.webp" type="image/webp"
-          imagesrcset="/brand/kcc-logo-96.webp 96w, /brand/kcc-logo-160.webp 160w"
-          imagesizes="(min-width: 640px) 56px, 44px" fetchpriority="high">
+    <!-- Header logo hint (preload of /brand/kcc-logo-96.webp, or a preconnect to the remote logo host
+         while the local files are missing) is injected by the kcc-logo-hints plugin in vite.config.ts. -->
   </head>
   <body>
     <div id="root"></div>

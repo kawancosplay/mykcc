@@ -88,6 +88,14 @@ export const DashboardPasswordCard: React.FC<DashboardPasswordCardProps> = ({ lo
             <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>{t('admin.lockRemoveButton')}</span>
           </button>
+          {/* Current password forgotten while this tab is still unlocked: Google re-auth, then a new one */}
+          <button
+            type="button"
+            onClick={() => setMode('forgot')}
+            className="touch-target px-2 text-xs font-semibold text-rose-300 hover:underline self-start sm:self-center"
+          >
+            {t('admin.lockForgot')}
+          </button>
         </div>
       )}
 

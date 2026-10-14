@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Sparkles,
@@ -23,13 +23,8 @@ import {
 import { Member } from '../types';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
 import { submitRegistration } from '../lib/authService';
-import { compressImage } from '../lib/imageUtils';
-import {
-  format16DigitUserId,
-  generate16DigitUserId,
-  findDuplicateMember,
-  mergeMemberPhones,
-} from '../lib/idGenerator';
+import { AVATAR_COMPRESS, compressImage } from '../lib/imageUtils';
+import { formatKccId, findDuplicateMember, mergeMemberPhones } from '../lib/idGenerator';
 import { describeFirestoreError } from '../lib/firebase';
 import {
   getAllCountriesList,
@@ -112,8 +107,13 @@ const AGE_CATEGORIES: LabeledOption[] = [
   { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
 ];
 
-// Minimum digits of a WhatsApp number (primary and backup)
+// Minimum digits of the WhatsApp number (extra numbers are added later in the profile)
 const MIN_PHONE_DIGITS = 8;
+
+// Long off-screen question cards: the browser skips their rendering work until they near the viewport
+// (`auto` remembers the real size after the first render, so later scroll estimates are exact). Not used
+// on cards with sticky content or open popovers.
+const CV_SECTION_CLASS = 'cv-auto [contain-intrinsic-size:auto_420px]';
 
 // Select values that switch to a free-text province / city input; the typed text is saved instead
 const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
@@ -122,7 +122,7 @@ const LEGACY_CUSTOM_CITY_OPTION = 'Other City / County';
 const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city === LEGACY_CUSTOM_CITY_OPTION;
 
 // Field a validation error points at: it gets aria-invalid (the red .glass-input border) until the next submit
-type ErrorField = 'name' | 'email' | 'phone' | 'phone2' | 'customCity' | 'codeOfConduct';
+type ErrorField = 'name' | 'email' | 'phone' | 'customCity' | 'codeOfConduct';
 
 // Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
 // control where it was while giving the tint some room.
@@ -152,13 +152,17 @@ export const ErrorFlash: React.FC<{ pulse: number }> = ({ pulse }) => {
   );
 };
 
-export const RegistrationForm: React.FC<RegistrationFormProps> = ({
+const NO_EXISTING_MEMBERS: Member[] = [];
+
+// Memoized (perf F8): App's auth / theme / header state changes no longer re-render this large form;
+// App passes stable callbacks and a stable empty member list.
+export const RegistrationForm = React.memo(function RegistrationForm({
   memberCount,
-  existingMembers = [],
+  existingMembers = NO_EXISTING_MEMBERS,
   onRegistered,
   onOpenCardModal,
   isAdmin = false,
-}) => {
+}: RegistrationFormProps) {
   const { t, lang, intlLocale, countryName } = useI18n();
   // DemoFormTester and describeFirestoreError still take an "Indonesian?" flag
   const isId = lang === 'id';
@@ -167,8 +171,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     name: '', // Primary required identity
     fullName: '', // Strictly optional for privacy
     email: '', // Strictly optional
-    phone: '', // Mandatory WhatsApp mobile number
-    phone2: '', // Optional secondary / additional WhatsApp number
+    phone: '', // Mandatory WhatsApp mobile number (extra numbers are added later in the profile)
     discordUsername: '', // Discord Username column
     ageCategory: 'Legal Age / Dewasa (18+ tahun)',
     age: '', // Optional exact age or birthdate
@@ -192,7 +195,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedMember, setSubmittedMember] = useState<Member | null>(null);
   const [isDuplicateShared, setIsDuplicateShared] = useState(false);
-  const [showPhone2, setShowPhone2] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<ErrorField | null>(null);
   const [errorPulse, setErrorPulse] = useState(0);
@@ -230,8 +232,33 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     return () => form.removeEventListener('invalid', onInvalid, true);
   }, []);
 
-  // All 250 countries worldwide (Indonesia prioritized at top); locations load on demand per country
-  const geoVersion = useWorldLocations(formData.country);
+  // All 250 countries worldwide (Indonesia prioritized at top); locations load on demand per country.
+  // Perf: the lists (/geo/*.json) are fetched only when the address card nears the viewport or one of
+  // its selects is touched / focused, not on page load.
+  const [geoActive, setGeoActive] = useState(false);
+  const addressSectionRef = useRef<HTMLDivElement>(null);
+  const activateGeo = useCallback(() => setGeoActive(true), []);
+  useEffect(() => {
+    if (geoActive) return;
+    const el = addressSectionRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setGeoActive(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setGeoActive(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '800px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [geoActive, submittedMember]);
+  const geoVersion = useWorldLocations(formData.country, geoActive);
   const allCountries = useMemo(() => getAllCountriesList(), [geoVersion]);
   // Country names in the selected language, sorted for that language (Indonesia stays first); the saved
   // value stays the English name
@@ -287,7 +314,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
 
     try {
-      const compressed = await compressImage(file, 800, 800, 0.82);
+      // 256 px WebP/JPEG ~0.75 (~10-15 KB): every public card lookup downloads this avatar
+      const compressed = await compressImage(file, AVATAR_COMPRESS);
       setFormData((prev) => ({ ...prev, avatarUrl: compressed }));
     } catch (err) {
       console.error('Failed to compress avatar:', err);
@@ -302,7 +330,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         fullName: '',
         email: '',
         phone: '',
-        phone2: '',
         discordUsername: '',
         ageCategory: 'Legal Age / Dewasa (18+ tahun)',
         age: '',
@@ -322,7 +349,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         reason: '',
         acceptedCodeOfConduct: false,
       });
-      setShowPhone2(false);
       setIsDemoMode(false);
       setIsDemoSubmission(false);
       setErrorMsg(null);
@@ -349,12 +375,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     const phoneDigits = dataToSubmit.phone.replace(/\D/g, '');
     if (!dataToSubmit.phone.trim() || phoneDigits.length < MIN_PHONE_DIGITS) {
       showError(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }), 'phone');
-      return;
-    }
-
-    const phone2Raw = (dataToSubmit.phone2 || '').trim();
-    if (phone2Raw && phone2Raw.replace(/\D/g, '').length < MIN_PHONE_DIGITS) {
-      showError(t('registration.backupPhoneTooShortError', { minDigits: MIN_PHONE_DIGITS }), 'phone2');
       return;
     }
 
@@ -402,10 +422,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       // If legal name is left blank to respect privacy, use name
       const resolvedFullName = dataToSubmit.fullName.trim() || dataToSubmit.name.trim();
 
-      // Members may hold more than one WhatsApp number (primary + optional backup number).
+      // The form asks for ONE WhatsApp number; members add extra numbers later in their profile.
       const primaryPhone = dataToSubmit.phone.trim().slice(0, MEMBER_FIELD_LIMITS.phone);
-      const secondaryPhone =
-        (dataToSubmit.phone2 || '').trim().slice(0, MEMBER_FIELD_LIMITS.phone2) || undefined;
 
       // KCC ID is NOT derived from form input or the client-side member list: registerMember assigns a
       // chronological ID (main account ID only for the authenticated KCC main account). Re-submissions by
@@ -417,7 +435,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         fullName: resolvedFullName,
         email: dataToSubmit.email.trim().toLowerCase(), // Empty string if omitted, as legacy form never asked for email
         phone: primaryPhone,
-        phone2: secondaryPhone,
         discordUsername: dataToSubmit.discordUsername.trim() || undefined,
         country: finalCountry,
         province: finalProvince,
@@ -446,7 +463,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             ? findDuplicateMember(existingMembers, {
                 email: newMemberPayload.email,
                 phone: primaryPhone,
-                phone2: secondaryPhone,
                 discordUsername: newMemberPayload.discordUsername,
                 name: newMemberPayload.name,
                 socialMedia: newMemberPayload.socialMedia,
@@ -463,8 +479,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               createdAt: matched.createdAt,
             }
           : {
+              // The demo never fakes a real-looking KCC ID: the card shows the '---- ----' placeholder
               id: demoId,
-              userId16: generate16DigitUserId(new Date()),
+              userId16: '',
               ...newMemberPayload,
             };
 
@@ -526,7 +543,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     const whatsappMessage = [
       t('registration.whatsappMessageIntro'),
       t('registration.whatsappMessageName', { name: memberName }),
-      t('registration.whatsappMessageKccId', { id: format16DigitUserId(submittedMember.userId16) }),
+      t('registration.whatsappMessageKccId', { id: formatKccId(submittedMember.userId16) }),
       t('registration.whatsappMessagePhone', { phone: submittedMember.phone || '-' }),
       submittedMember.phone2 ? t('registration.whatsappMessagePhone2', { phone: submittedMember.phone2 }) : null,
       submittedMember.discordUsername
@@ -568,13 +585,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               {t('registration.responseRecorded')}
             </p>
 
-            {/* 16-Digit Single KCC ID Account highlight */}
+            {/* Single KCC ID account highlight (8 digits; 16 before the 8-digit switch) */}
             <div className="glass-well border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
                 {t('registration.singleAccountIdTitle')}
               </span>
               <span className="font-mono font-black text-xl sm:text-2xl text-rose-400 tracking-wider">
-                {format16DigitUserId(submittedMember.userId16)}
+                {formatKccId(submittedMember.userId16)}
               </span>
               {isDuplicateShared ? (
                 <p className="text-xs text-emerald-400 mt-2 font-medium">
@@ -633,7 +650,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                 onClick={() => {
                   // New person, same location / role / fandom presets: every personal field is cleared
                   setSubmittedMember(null);
-                  setShowPhone2(false);
                   setIsDuplicateShared(false);
                   setErrorMsg(null);
                   setErrorField(null);
@@ -643,7 +659,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     fullName: '',
                     email: '',
                     phone: '',
-                    phone2: '',
                     discordUsername: '',
                     age: '',
                     customRole: '',
@@ -805,7 +820,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           />
         </div>
 
-        {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED) & OPTIONAL SECONDARY NUMBER */}
+        {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED). Extra numbers are
+            added later in the member profile (no second number field here). */}
         <div className="glass-card rounded-3xl p-5 sm:p-8 border border-emerald-500/25 space-y-4">
           <div>
             <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
@@ -827,55 +843,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="glass-input w-full text-base sm:text-sm font-mono"
             />
-          </div>
-
-          {/* Opsi memiliki lebih dari 1 nomor WhatsApp */}
-          <div className="pt-2 border-t border-white/10">
-            {!showPhone2 && !formData.phone2 ? (
-              <button
-                type="button"
-                onClick={() => setShowPhone2(true)}
-                className="pressable min-h-11 text-left text-sm text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>{t('registration.addBackupPhone')}</span>
-              </button>
-            ) : (
-              <div className="space-y-1.5 animate-fade-in">
-                <div className="flex items-center justify-between gap-3">
-                  <label className="block text-sm font-bold text-slate-200">
-                    {t('registration.backupPhoneLabel')}{' '}
-                    <span className="text-slate-400 font-normal">{t('registration.optionalTag')}</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, phone2: '' });
-                      setShowPhone2(false);
-                    }}
-                    className="touch-target pressable shrink-0 text-xs text-slate-400 hover:text-rose-400 cursor-pointer"
-                  >
-                    {t('registration.removeBackupPhone')}
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  {t('registration.backupPhoneNotice')}
-                </p>
-                <input
-                  type="tel"
-                  aria-invalid={errorField === 'phone2' || undefined}
-                  placeholder={t('registration.backupPhonePlaceholder')}
-                  maxLength={MEMBER_FIELD_LIMITS.phone2}
-                  value={formData.phone2}
-                  onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                  className="glass-input w-full text-base sm:text-sm font-mono"
-                />
-              </div>
-            )}
+            <p className="text-[11px] text-slate-400 mt-2">
+              {t('registration.extraPhonesInProfileHint')}
+            </p>
           </div>
         </div>
 
         {/* QUESTION 3: DISCORD USERNAME COLUMN */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.discordLabel')}{' '}
             <span className="text-xs text-slate-400 font-normal">{t('registration.optionalTag')}</span>
@@ -895,7 +870,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 4: EMAIL (REQUIRED) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.emailLabel')} <span className="text-rose-500">*</span>
           </label>
@@ -916,7 +891,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 4: AGE CATEGORY (MINOR VS LEGAL AGE) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1.5">
             <label className="block text-sm sm:text-base font-bold text-white">
               {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
@@ -963,7 +938,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.exactAgeOptional')}
           </label>
@@ -982,7 +957,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 6: LOCATION / DOMICILE (COUNTRY, PROVINCE, CITY) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div
+          ref={addressSectionRef}
+          onFocusCapture={activateGeo}
+          onPointerDownCapture={activateGeo}
+          className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}
+        >
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.locationTitle')} <span className="text-rose-500">*</span>
           </label>
@@ -1088,7 +1068,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 7: PRIMARY ROLE / INTEREST (INCLUSIVE) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.roleTitle')} <span className="text-rose-500">*</span>
           </label>
@@ -1134,7 +1114,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 8: FAVORITE FANDOM / IDOL GROUP / SERIES */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.fandomTitle')} <span className="text-rose-500">*</span>
           </label>
@@ -1157,7 +1137,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 9: EXPERIENCE (OPTIONAL) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.experienceTitle')}
           </label>
@@ -1184,7 +1164,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 10: SOCIAL MEDIA (OPTIONAL) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.socialMediaTitle')}
           </label>
@@ -1203,7 +1183,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 11: PORTFOLIO / DRIVE LINK (OPTIONAL) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.portfolioTitle')}
           </label>
@@ -1222,7 +1202,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 12: AVATAR / PROFILE PHOTO (OPTIONAL) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.avatarTitle')}
           </label>
@@ -1285,7 +1265,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 13: REASON & EXPECTATIONS (OPTIONAL) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
             {t('registration.reasonTitle')}
           </label>
@@ -1304,7 +1284,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 14: CODE OF CONDUCT (REQUIRED CHECKBOX) */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-3">
             {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
           </label>
@@ -1388,4 +1368,4 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       {submittedMember ? successView : formView}
     </AnimatePresence>
   );
-};
+});

@@ -193,8 +193,10 @@ export function getCitiesOfStateByName(countryNameOrCode: string, stateNameOrCod
 /**
  * Loads the country list and the given country's locations, and re-renders the component whenever
  * location data arrives. Returns a counter to use as a useMemo dependency.
+ * `enabled = false` defers the downloads (e.g. until the address section nears the viewport); the
+ * getters keep returning the defaults until then.
  */
-export function useWorldLocations(countryNameOrCode: string): number {
+export function useWorldLocations(countryNameOrCode: string, enabled = true): number {
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -206,6 +208,7 @@ export function useWorldLocations(countryNameOrCode: string): number {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     loadCountries()
       .catch(() => undefined)
@@ -215,7 +218,7 @@ export function useWorldLocations(countryNameOrCode: string): number {
     return () => {
       cancelled = true;
     };
-  }, [countryNameOrCode]);
+  }, [countryNameOrCode, enabled]);
 
   return version;
 }

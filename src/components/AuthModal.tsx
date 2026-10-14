@@ -16,6 +16,8 @@ import {
   loginWithGoogleOAuth,
   resetPassword,
 } from '../lib/authService';
+import { warmAuthPopup } from '../lib/firebase';
+import { isPopupBlockedError } from '../lib/googleAuth';
 import { useI18n } from '../i18n';
 import type { LanguageCode } from '../i18n';
 import {
@@ -67,6 +69,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Open: focus the sheet itself (no keyboard pops up on iOS), Escape closes, focus returns afterwards.
   useEffect(() => {
     if (!isOpen) return;
+    // Load the sign-in popup resolver now (auth iframe), so the provider tap ~1 s later can open the popup
+    // inside its user activation (iOS Safari blocks popups that open after an await).
+    warmAuthPopup();
     const previouslyFocused = document.activeElement as HTMLElement | null;
     dialogRef.current?.focus({ preventScroll: true });
     const onKeyDown = (e: KeyboardEvent) => {
@@ -129,7 +134,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClose();
     } catch (err: unknown) {
       console.warn('Google sign in note:', err);
-      setErrorMsg(t('auth.googleLoginFailed'));
+      // Blocked popup: the resolver is warm by now, so a second tap opens it.
+      setErrorMsg(isPopupBlockedError(err) ? t('auth.popupBlockedTapAgain') : t('auth.googleLoginFailed'));
     } finally {
       setIsLoading(false);
     }

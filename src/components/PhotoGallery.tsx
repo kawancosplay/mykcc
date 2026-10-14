@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useId } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
@@ -16,11 +16,15 @@ import {
   Share2,
   Tag,
   Download,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { Photo, Member } from '../types';
-import { toggleLikePhoto } from '../lib/galleryService';
-import { format16DigitUserId } from '../lib/idGenerator';
+import type { PhotoPageCursor } from '../types';
+import { PUBLIC_GALLERY_PAGE_SIZE, fetchPhotosPage, toggleLikePhoto } from '../lib/galleryService';
+import { formatKccId } from '../lib/idGenerator';
 import { haptic } from '../lib/haptic';
+import { getPerfState } from '../lib/perfMode';
 import {
   SPRING,
   TWEEN,
@@ -36,14 +40,59 @@ import type { LanguageCode } from '../i18n';
 import { OTHER_EVENT_VALUE, PHOTO_EVENT_OPTIONS } from './UploadPhotoModal';
 
 interface PhotoGalleryProps {
-  photos: Photo[];
   currentMember: Member | null;
   user: FirebaseUser | null;
   onOpenUpload: () => void;
   onRequireLogin: () => void;
   /** Kept for existing callers; the language comes from useI18n(). */
   currentLang: LanguageCode;
+  /** Last photo uploaded in this session (App passes it); prepended once (deduped by id). */
+  addedPhoto: Photo | null;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Feed: the gallery loads its photos page by page only while it is open (no app-wide listener; perf F1).
+// The loaded pages are kept for this visit, so switching tabs and back does not download them again;
+// "Refresh" starts over from the newest photos.
+// ---------------------------------------------------------------------------------------------
+
+interface GalleryFeed {
+  photos: Photo[];
+  cursor: PhotoPageCursor | null;
+  hasMore: boolean;
+}
+
+let galleryCache: GalleryFeed | null = null;
+// Optimistic likes of this visit (photo id -> extra likes), shown on top of the loaded counts until a
+// refresh brings the server numbers. Reverted when the write fails.
+let likeBumpCache: Record<string, number> = {};
+
+// Lite mode / Save-Data / slow connections: smaller pages (every photo is an inline image of up to ~1 MB).
+function galleryPageSize(): number {
+  const perf = getPerfState();
+  return perf.lite || perf.lowData ? 8 : PUBLIC_GALLERY_PAGE_SIZE;
+}
+
+function appendUnique(existing: Photo[], incoming: Photo[]): Photo[] {
+  const seen = new Set(existing.map((p) => p.id));
+  return [...existing, ...incoming.filter((p) => !seen.has(p.id))];
+}
+
+/** Loading placeholder: fixed-size cards like the real grid (no layout shift when the photos arrive). */
+const GallerySkeleton: React.FC<{ label: string; count?: number }> = ({ label, count = 6 }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" role="status" aria-busy="true">
+    <span className="sr-only">{label}</span>
+    {Array.from({ length: count }, (_, i) => (
+      <div key={i} className="glass-card rounded-3xl overflow-hidden" aria-hidden="true">
+        <div className="glass-skeleton h-64 sm:h-72 w-full rounded-none"></div>
+        <div className="p-4 space-y-2">
+          <div className="glass-skeleton h-3 w-2/3"></div>
+          <div className="glass-skeleton h-3 w-1/3"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 /** Renders a translated template with its "{placeholder}" replaced by a React node (e.g. a <strong>). */
 function renderWithNode(template: string, placeholder: string, node: React.ReactNode): React.ReactNode {
@@ -99,13 +148,96 @@ const LikeHeart: React.FC<{ pop: number; reduced: boolean; className: string }> 
 );
 
 export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
-  photos,
   currentMember,
   user,
   onOpenUpload,
   onRequireLogin,
+  addedPhoto,
 }) => {
   const { t, formatNumber, formatDate, intlLocale } = useI18n();
+
+  // ---- Paged feed ----
+  const [feed, setFeed] = useState<GalleryFeed>(() => galleryCache ?? { photos: [], cursor: null, hasMore: false });
+  const [status, setStatus] = useState<'loading' | 'ready' | 'loadingMore' | 'error'>(() =>
+    galleryCache ? 'ready' : 'loading'
+  );
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false);
+  const mountedRef = useRef(true);
+  const requestRef = useRef(0);
+  // A photo uploaded in this session shows at the top once (deduped: it may also arrive with a page).
+  const photos = useMemo(
+    () =>
+      addedPhoto && !feed.photos.some((p) => p.id === addedPhoto.id) ? [addedPhoto, ...feed.photos] : feed.photos,
+    [addedPhoto, feed.photos]
+  );
+
+  // Every feed change goes through here: the module cache survives the unmount (tab switch).
+  const commitFeed = useCallback((update: (prev: GalleryFeed) => GalleryFeed) => {
+    const base = galleryCache ?? { photos: [], cursor: null, hasMore: false };
+    const next = update(base);
+    galleryCache = next;
+    if (mountedRef.current) setFeed(next);
+  }, []);
+
+  const loadFirstPage = useCallback(async () => {
+    const request = ++requestRef.current;
+    setStatus('loading');
+    setLoadMoreFailed(false);
+    try {
+      const page = await fetchPhotosPage({ pageSize: galleryPageSize() });
+      if (request !== requestRef.current) return;
+      commitFeed(() => ({ photos: page.photos, cursor: page.cursor, hasMore: page.hasMore }));
+      if (mountedRef.current) setStatus('ready');
+    } catch (err) {
+      if (request !== requestRef.current) return;
+      console.warn('Gallery load failed:', err);
+      if (mountedRef.current) setStatus('error');
+    }
+  }, [commitFeed]);
+
+  const loadMore = useCallback(async () => {
+    const current = galleryCache;
+    if (!current || !current.hasMore || !current.cursor) return;
+    const request = ++requestRef.current;
+    setStatus('loadingMore');
+    setLoadMoreFailed(false);
+    try {
+      const page = await fetchPhotosPage({ pageSize: galleryPageSize(), cursor: current.cursor });
+      if (request !== requestRef.current) return;
+      commitFeed((prev) => ({ photos: appendUnique(prev.photos, page.photos), cursor: page.cursor, hasMore: page.hasMore }));
+    } catch (err) {
+      if (request !== requestRef.current) return;
+      console.warn('Gallery load more failed:', err);
+      if (mountedRef.current) setLoadMoreFailed(true);
+    } finally {
+      if (request === requestRef.current && mountedRef.current) setStatus('ready');
+    }
+  }, [commitFeed]);
+
+  const [likeBumps, setLikeBumps] = useState<Record<string, number>>(() => likeBumpCache);
+  const bumpLike = useCallback((photoId: string, delta: number) => {
+    likeBumpCache = { ...likeBumpCache, [photoId]: Math.max(0, (likeBumpCache[photoId] || 0) + delta) };
+    if (mountedRef.current) setLikeBumps(likeBumpCache);
+  }, []);
+  const likesOf = (photo: Photo) => (photo.likesCount || 0) + (likeBumps[photo.id] || 0);
+
+  const refresh = useCallback(() => {
+    galleryCache = null;
+    likeBumpCache = {};
+    setLikeBumps(likeBumpCache);
+    haptic('light');
+    void loadFirstPage();
+  }, [loadFirstPage]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    if (!galleryCache) void loadFirstPage();
+    return () => {
+      mountedRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState('ALL');
@@ -206,7 +338,12 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
     e.stopPropagation();
     haptic('light');
     setLikePops((prev) => ({ ...prev, [photo.id]: (prev[photo.id] || 0) + 1 }));
-    toggleLikePhoto(photo.id).catch((err) => console.warn('Like failed:', err));
+    // Optimistic +1 on the loaded item (no live listener any more); reverted if the write fails.
+    bumpLike(photo.id, 1);
+    toggleLikePhoto(photo.id).catch((err) => {
+      console.warn('Like failed:', err);
+      bumpLike(photo.id, -1);
+    });
   };
 
   const handleDownload = async (photo: Photo) => {
@@ -262,11 +399,25 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               <Camera className="w-3.5 h-3.5 text-pink-400" />
               <span>{t('gallery.title')}</span>
             </span>
-            <span className="text-xs text-slate-400">
-              {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
-                count: formatNumber(photos.length),
-              })}
-            </span>
+            {/* Counts the LOADED photos (no total-count query); "+ more" while older pages exist */}
+            {status !== 'loading' && status !== 'error' && (
+              <span className="text-xs text-slate-400">
+                {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
+                  count: formatNumber(photos.length),
+                })}
+                {feed.hasMore && <span className="ms-1">{t('gallery.morePhotosHint')}</span>}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={status === 'loading' || status === 'loadingMore'}
+              title={t('gallery.refresh')}
+              aria-label={t('gallery.refresh')}
+              className="touch-target inline-flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-40"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${status === 'loading' ? 'animate-spin' : ''}`} aria-hidden="true" />
+            </button>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
             {t('gallery.showcaseHeading')}
@@ -378,7 +529,32 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       </div>
 
       {/* Gallery Grid */}
-      {filteredPhotos.length === 0 ? (
+      {status === 'loading' ? (
+        <GallerySkeleton label={t('common.loadingApp')} />
+      ) : status === 'error' ? (
+        <div className="glass-card text-center py-14 px-4 rounded-3xl" role="alert">
+          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-3" aria-hidden="true" />
+          <p className="text-sm text-slate-300 max-w-sm mx-auto mb-4">{t('gallery.loadFailed')}</p>
+          <button type="button" onClick={() => void loadFirstPage()} className="btn-primary pressable text-xs">
+            {t('common.tryAgain')}
+          </button>
+        </div>
+      ) : filteredPhotos.length === 0 && photos.length > 0 && feed.hasMore ? (
+        // Filters only search the loaded pages: offer older photos
+        <div className="glass-card text-center py-14 px-4 rounded-3xl">
+          <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" aria-hidden="true" />
+          <p className="text-sm text-slate-300 max-w-sm mx-auto mb-4">{t('gallery.filterLoadMoreHint')}</p>
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={status === 'loadingMore'}
+            className="btn-primary pressable text-xs disabled:opacity-60"
+          >
+            {status === 'loadingMore' ? t('gallery.loadingMore') : t('gallery.loadMore')}
+          </button>
+          {loadMoreFailed && <p className="text-xs text-rose-400 mt-3" role="alert">{t('gallery.loadFailed')}</p>}
+        </div>
+      ) : filteredPhotos.length === 0 ? (
         <div className="glass-card text-center py-16 px-4 rounded-3xl">
           <Camera className="w-12 h-12 text-slate-600 mx-auto mb-3" />
           <h3 className="text-lg font-bold text-white mb-1">{t('gallery.emptyTitle')}</h3>
@@ -453,7 +629,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleLike(e, photo)}
-                        aria-label={t('gallery.likeWithCount', { count: formatNumber(photo.likesCount || 0) })}
+                        aria-label={t('gallery.likeWithCount', { count: formatNumber(likesOf(photo)) })}
                         className="glass-icon-button w-auto h-9 px-3 gap-1 hover:bg-rose-600 hover:text-white"
                       >
                         <LikeHeart
@@ -461,7 +637,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                           reduced={reducedMotion}
                           className="w-3.5 h-3.5 fill-current text-rose-400"
                         />
-                        <span className="text-[11px] font-bold">{formatNumber(photo.likesCount || 0)}</span>
+                        <span className="text-[11px] font-bold">{formatNumber(likesOf(photo))}</span>
                       </button>
                     </div>
 
@@ -511,6 +687,36 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               </div>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* Next page (button only: no automatic loading, every photo is a large inline image) */}
+      {(status === 'ready' || status === 'loadingMore') && feed.hasMore && filteredPhotos.length > 0 && (
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={status === 'loadingMore'}
+            aria-busy={status === 'loadingMore' || undefined}
+            className="glass-button min-h-11 px-5 rounded-2xl text-sm font-bold pressable disabled:opacity-60"
+          >
+            {status === 'loadingMore' ? (
+              <>
+                <span
+                  className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                  aria-hidden="true"
+                ></span>
+                <span>{t('gallery.loadingMore')}</span>
+              </>
+            ) : (
+              <span>{t('gallery.loadMore')}</span>
+            )}
+          </button>
+          {loadMoreFailed && (
+            <p className="text-xs text-rose-400 text-center" role="alert">
+              {t('gallery.loadFailed')}
+            </p>
+          )}
         </div>
       )}
 
@@ -587,7 +793,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                           <div className="flex justify-between gap-3">
                             <span className="text-slate-400">{t('gallery.detailKccId')}</span>
                             <span className="font-mono text-slate-300 text-right">
-                              {format16DigitUserId(activePhotoModal.userId16)}
+                              {formatKccId(activePhotoModal.userId16)}
                             </span>
                           </div>
                         )}
@@ -630,7 +836,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                             className="w-4 h-4 fill-current text-rose-400"
                           />
                           <span>
-                            {t('gallery.likeWithCount', { count: formatNumber(activePhotoModal.likesCount || 0) })}
+                            {t('gallery.likeWithCount', { count: formatNumber(likesOf(activePhotoModal)) })}
                           </span>
                         </button>
                         <button

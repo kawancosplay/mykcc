@@ -193,7 +193,7 @@ export function csvCell(value: unknown): string {
 
 /** Downloads CSV text as a file (Blob, UTF-8 with BOM so Excel reads the encoding; never a data: URI). */
 export function downloadCsv(filename: string, csv: string): void {
-  const body = csv.startsWith('﻿') ? csv : `﻿${csv}`;
+  const body = csv.startsWith('\uFEFF') ? csv : `\uFEFF${csv}`;
   const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

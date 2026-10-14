@@ -4,7 +4,6 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
-  onSnapshot,
   query,
   orderBy,
   limit,
@@ -48,37 +47,6 @@ export const PHOTO_FIELD_LIMITS = {
 // A photo write still pending after this long is treated as queued (it syncs when the connection
 // recovers), so the upload spinner never hangs and the user does not retry into a duplicate.
 const PHOTO_WRITE_TIMEOUT_MS = 15000;
-
-/**
- * @deprecated Live listener of the newest 100 photos (~320 KB on every page load). Use fetchPhotosPage
- * when the gallery is opened; kept until the last caller is removed.
- */
-export function subscribeToPhotos(
-  onUpdate: (photos: Photo[]) => void,
-  onError?: (error: Error) => void
-) {
-  const q = query(collection(db, PHOTOS_COLLECTION), orderBy('createdAt', 'desc'), limit(100));
-
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const photos: Photo[] = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...(docSnap.data() as Omit<Photo, 'id'>),
-      }));
-      onUpdate(photos);
-    },
-    (error) => {
-      console.error('Subscription error on photos collection:', error);
-      if (onError) onError(error as Error);
-      try {
-        handleFirestoreError(error, OperationType.LIST, PHOTOS_COLLECTION);
-      } catch (e) {
-        // Handled
-      }
-    }
-  );
-}
 
 /**
  * One-shot page of photos, newest first: orderBy('createdAt','desc') [+ startAfter(cursor)] +

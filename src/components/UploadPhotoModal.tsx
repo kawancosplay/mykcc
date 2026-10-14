@@ -4,7 +4,7 @@ import { X, Upload, Camera, Sparkles, Image as ImageIcon, AlertCircle } from 'lu
 import { Member, Photo } from '../types';
 import { addPhotoToFirestore, PHOTO_FIELD_LIMITS } from '../lib/galleryService';
 import { describeFirestoreError } from '../lib/firebase';
-import { compressImage } from '../lib/imageUtils';
+import { PHOTO_COMPRESS, compressImage } from '../lib/imageUtils';
 import { haptic } from '../lib/haptic';
 import { usePresenceMotion, useScrollLock, useSheetDrag } from '../lib/motion';
 import { useI18n } from '../i18n';
@@ -94,7 +94,8 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
     }
 
     try {
-      const compressed = await compressImage(file, 1200, 1200, 0.85);
+      // Long side <= 1600 px, WebP 0.75 (JPEG fallback), always under the 1,000,000-char rule limit
+      const compressed = await compressImage(file, PHOTO_COMPRESS);
       setPhotoUrl(compressed);
     } catch (err) {
       console.error('Failed to compress image:', err);

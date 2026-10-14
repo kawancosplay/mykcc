@@ -10,11 +10,14 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { Member } from '../types';
-import { format16DigitUserId } from '../lib/idGenerator';
+import { formatKccId, isKccId8, isValidKccId } from '../lib/idGenerator';
 import { KawanCosplayLogo } from './KawanCosplayLogo';
 import { useI18n } from '../i18n';
 import { haptic } from '../lib/haptic';
 import { usePresenceMotion, useScrollLock, useSheetDrag } from '../lib/motion';
+
+/** Public card link (contract with the admin "Copy card link"): App opens the pass for `?kcc=<digits>`. */
+const CARD_LINK_BASE = 'https://mykcc.vercel.app/?kcc=';
 
 interface MemberCardModalProps {
   member: Member | null;
@@ -73,8 +76,11 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
     window.print();
   };
 
+  const kccIdDigits = String(member.userId16 || '').replace(/\D/g, '');
+  const cardLink = isValidKccId(kccIdDigits) ? CARD_LINK_BASE + kccIdDigits : '';
+
   const handleShareCard = async () => {
-    const kccIdFormatted = format16DigitUserId(member.userId16);
+    const kccIdFormatted = formatKccId(member.userId16);
     const memberDisplayName = member.name || member.cosplayName || t('card.memberFallbackName');
     const text = t('card.shareText', { name: memberDisplayName, id: kccIdFormatted });
     if (navigator.share) {
@@ -82,14 +88,19 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
         await navigator.share({
           title: t('card.shareTitle'),
           text,
-          url: window.location.href,
+          // The card link opens this pass directly (a KCC ID is public data)
+          url: cardLink || window.location.origin,
         });
-      } catch (err) {
+      } catch {
         console.log('Share dismissed');
       }
-    } else {
-      navigator.clipboard.writeText(text);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(cardLink ? `${text} ${cardLink}` : text);
       alert(t('card.shareCopied'));
+    } catch (err) {
+      console.warn('Copy failed:', err);
     }
   };
 
@@ -179,8 +190,13 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                   <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 block">
                     {t('card.kccIdLabel')}
                   </span>
-                  <span className="font-mono font-black text-xs sm:text-sm text-rose-400 tracking-wider">
-                    {format16DigitUserId(member.userId16, member.email)}
+                  {/* 8-digit IDs are short enough to read larger; legacy 16-digit IDs stay compact */}
+                  <span
+                    className={`font-mono font-black text-rose-400 tracking-wider ${
+                      isKccId8(member.userId16) ? 'text-base sm:text-lg' : 'text-xs sm:text-sm'
+                    }`}
+                  >
+                    {formatKccId(member.userId16)}
                   </span>
                 </div>
               </div>

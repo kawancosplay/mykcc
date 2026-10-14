@@ -236,6 +236,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     () => (supportMemberId ? members.find((m) => m.id === supportMemberId) ?? null : null),
     [members, supportMemberId]
   );
+  // The member was deleted / merged elsewhere: forget the selection (the sheet already closed)
+  useEffect(() => {
+    if (supportMemberId && membersLoaded && !supportMember) setSupportMemberId(null);
+  }, [supportMemberId, membersLoaded, supportMember]);
+
+  // Runs every time the lock gate shows the dashboard (first open, after an unlock)
+  const handleDashboardShown = useCallback(() => {
+    // A sheet that was open when the dashboard locked does not pop up again after unlocking
+    setSupportMemberId(null);
+    void refreshCounter();
+  }, [refreshCounter]);
 
   // ----- Search, filters, sort, pagination -----
   const [searchQuery, setSearchQuery] = useState('');
@@ -517,7 +528,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   return (
     <>
       <DashboardLockGate user={user} onLogout={onLogout} busy={isBusy} onLockState={setLockInfo}>
-        <OnUnlocked onMount={() => void refreshCounter()} />
+        <OnUnlocked onMount={handleDashboardShown} />
         <div className="w-full mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8 animate-fade-in text-slate-100">
           {/* Top Admin Banner */}
           <div className="liquid-glass-card glass-raised rounded-3xl p-5 sm:p-8 mb-8 relative overflow-hidden">
@@ -886,20 +897,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {adminTab === 'analytics' && <StatsOverview members={members} />}
           </motion.div>
         </div>
-      </DashboardLockGate>
 
-      <MemberSupportModal
-        member={supportMember}
-        open={supportMember !== null}
-        onClose={() => setSupportMemberId(null)}
-        user={user}
-        admins={admins}
-        reloadAdmins={reloadAdmins}
-        onAdminsChange={setAdmins}
-        onViewCard={onSelectMember}
-        onDelete={handleDeleteFromSupport}
-        locked={isBusy}
-      />
+        {/* Inside the gate: a lock (idle / "Lock now") unmounts the sheet together with the dashboard, so
+            member data never stays on screen over the lock screen. Portaled, so the tab transform is safe. */}
+        <MemberSupportModal
+          member={supportMember}
+          open={supportMember !== null}
+          onClose={() => setSupportMemberId(null)}
+          user={user}
+          admins={admins}
+          reloadAdmins={reloadAdmins}
+          onAdminsChange={setAdmins}
+          onViewCard={onSelectMember}
+          onDelete={handleDeleteFromSupport}
+          locked={isBusy}
+        />
+      </DashboardLockGate>
     </>
   );
 };

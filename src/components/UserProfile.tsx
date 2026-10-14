@@ -16,13 +16,15 @@ import {
   Globe,
   ExternalLink,
   AlertTriangle,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { Member } from '../types';
-import { format16DigitUserId } from '../lib/idGenerator';
+import { MAX_ADDITIONAL_PHONES, formatKccId, isLegacyKccId16 } from '../lib/idGenerator';
 import { updateMemberProfileData } from '../lib/authService';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
 import { describeFirestoreError } from '../lib/firebase';
-import { compressImage } from '../lib/imageUtils';
+import { AVATAR_COMPRESS, compressImage } from '../lib/imageUtils';
 import {
   getAllCountriesList,
   getStatesOfCountryByName,
@@ -76,6 +78,20 @@ const AGE_CATEGORY_OPTIONS: LabeledOption[] = [
   { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
 ];
 
+// Extra WhatsApp numbers: phone2 + additionalPhones, edited as one list
+const MAX_EXTRA_PHONES = 1 + MAX_ADDITIONAL_PHONES;
+// Same minimum as the registration form's WhatsApp number
+const MIN_PHONE_DIGITS = 8;
+
+const phoneDigits = (value: string) => value.replace(/\D/g, '');
+
+/** [phone2, ...additionalPhones] without empty entries (at most MAX_EXTRA_PHONES). */
+function extraPhonesOf(member: Member): string[] {
+  return [member.phone2, ...(member.additionalPhones || [])]
+    .filter((p): p is string => typeof p === 'string' && p.trim().length > 0)
+    .slice(0, MAX_EXTRA_PHONES);
+}
+
 interface UserProfileProps {
   member: Member;
   onUpdateMember: (updated: Member) => void;
@@ -96,7 +112,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     fullName: member.fullName || '',
     cosplayName: initialName,
     phone: member.phone || '',
-    phone2: member.phone2 || '',
+    extraPhones: extraPhonesOf(member),
     discordUsername: member.discordUsername || '',
     ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
     age: member.age || '',
@@ -118,6 +134,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   // Bumped on every failed save so the highlight behind the error replays (no shake)
   const [errorPulse, setErrorPulse] = useState(0);
+  // Extra WhatsApp numbers: index -> inline error of that entry (too few digits); blocks the save
+  const [extraPhoneErrors, setExtraPhoneErrors] = useState<Record<number, string>>({});
 
   // "Saved" chip: scale + fade pop; error line: plain fade (both opacity-only with reduced motion)
   const popMotion = usePresenceMotion('dialog');
@@ -145,7 +163,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       fullName: member.fullName || '',
       cosplayName: currentName,
       phone: member.phone || '',
-      phone2: member.phone2 || '',
+      extraPhones: extraPhonesOf(member),
       discordUsername: member.discordUsername || '',
       ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
       age: member.age || '',
@@ -160,7 +178,55 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       avatarUrl: member.avatarUrl || '',
       reason: member.reason || '',
     });
+    setExtraPhoneErrors({});
   }, [member]);
+
+  // ---- Extra WhatsApp numbers (list editor) ----
+  const extraPhoneInputs = useRef<Array<HTMLInputElement | null>>([]);
+  const focusExtraPhoneRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const index = focusExtraPhoneRef.current;
+    if (index === null) return;
+    focusExtraPhoneRef.current = null;
+    extraPhoneInputs.current[index]?.focus();
+  });
+
+  const addExtraPhone = () => {
+    if (formData.extraPhones.length >= MAX_EXTRA_PHONES) return;
+    focusExtraPhoneRef.current = formData.extraPhones.length;
+    setFormData((prev) => ({ ...prev, extraPhones: [...prev.extraPhones, ''] }));
+    haptic('selection');
+  };
+
+  const updateExtraPhone = (index: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      extraPhones: prev.extraPhones.map((p, i) => (i === index ? value : p)),
+    }));
+    if (extraPhoneErrors[index]) {
+      setExtraPhoneErrors((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+    }
+  };
+
+  const removeExtraPhone = (index: number) => {
+    setFormData((prev) => ({ ...prev, extraPhones: prev.extraPhones.filter((_, i) => i !== index) }));
+    // Entries after the removed one move up: re-index their errors
+    setExtraPhoneErrors((prev) => {
+      const next: Record<number, string> = {};
+      for (const [key, message] of Object.entries(prev)) {
+        const i = Number(key);
+        if (i < index) next[i] = message;
+        else if (i > index) next[i - 1] = message;
+      }
+      return next;
+    });
+    haptic('selection');
+  };
 
   // Complete list of all 250 countries and dynamic state/cities (loaded on demand per country)
   const geoVersion = useWorldLocations(formData.country);
@@ -228,11 +294,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   }, [countryReady, availableProvinces, availableCities, isCustomProvince, isCustomCity, formData.country, formData.province, formData.city]);
 
   const handleCopyUserId = () => {
-    if (member.userId16) {
-      navigator.clipboard.writeText(member.userId16);
-      setCopiedId(true);
-      setTimeout(() => setCopiedId(false), 2000);
-    }
+    if (!member.userId16) return;
+    // The formatted ID ('0000 0101'), as it is shown and typed in the lookup
+    navigator.clipboard
+      .writeText(formatKccId(member.userId16))
+      .then(() => {
+        setCopiedId(true);
+        setTimeout(() => setCopiedId(false), 2000);
+      })
+      .catch((err) => console.warn('Copy failed:', err));
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -243,7 +313,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       return;
     }
     try {
-      const compressed = await compressImage(file, 600, 600, 0.8);
+      // 256 px WebP/JPEG ~0.75 (~10-15 KB): every public card lookup downloads this avatar
+      const compressed = await compressImage(file, AVATAR_COMPRESS);
       setFormData((prev) => ({ ...prev, avatarUrl: compressed }));
     } catch (err) {
       console.error('Failed to compress avatar:', err);
@@ -259,15 +330,46 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Extra numbers: trimmed; empty entries dropped; too short -> inline error (save blocked); duplicates of
+    // the primary number or of an earlier entry dropped (digits compared).
+    const tooShort: Record<number, string> = {};
+    formData.extraPhones.forEach((raw, index) => {
+      const value = raw.trim();
+      if (value && phoneDigits(value).length < MIN_PHONE_DIGITS) {
+        tooShort[index] = t('profile.extraPhoneTooShort', { minDigits: MIN_PHONE_DIGITS });
+      }
+    });
+    setExtraPhoneErrors(tooShort);
+    const firstInvalid = Object.keys(tooShort).map(Number).sort((a, b) => a - b)[0];
+    if (firstInvalid !== undefined) {
+      extraPhoneInputs.current[firstInvalid]?.focus();
+      haptic('error');
+      return;
+    }
+    const seenDigits = new Set<string>([phoneDigits(formData.phone)]);
+    const extraPhones: string[] = [];
+    for (const raw of formData.extraPhones) {
+      const value = raw.trim().slice(0, MEMBER_FIELD_LIMITS.phone);
+      const digits = phoneDigits(value);
+      if (!value || seenDigits.has(digits)) continue;
+      seenDigits.add(digits);
+      extraPhones.push(value);
+    }
+
     setIsSaving(true);
     setSaveSuccess(false);
     setErrorMsg(null);
 
     try {
-      const dataToSave = {
-        ...formData,
+      const { extraPhones: _list, ...fields } = formData;
+      // Always sent, so removing every extra number saves phone2 '' and additionalPhones []
+      const dataToSave: Partial<Member> = {
+        ...fields,
         name: formData.cosplayName,
         cosplayName: formData.cosplayName,
+        phone2: extraPhones[0] ?? '',
+        additionalPhones: extraPhones.slice(1),
       };
       const updated = await updateMemberProfileData(member, dataToSave);
       onUpdateMember(updated);
@@ -324,7 +426,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             </label>
           </div>
 
-          {/* Member Identity & 16-Digit Card */}
+          {/* Member Identity & KCC ID */}
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
               <span className="glass-chip max-w-full whitespace-normal leading-tight font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
@@ -341,15 +443,20 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             </h1>
             {member.email && <p className="text-xs text-slate-500 mt-0.5">{member.email}</p>}
 
-            {/* KCC ID (16 DIGIT) BOX */}
+            {/* KCC ID BOX (8 digits; 16 before the 8-digit switch) */}
             <div className="glass-well mt-4 inline-flex items-center gap-3 border-rose-500/30 rounded-2xl ps-4 pe-2 py-2">
               <div className="text-left">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
                   {t('profile.kccIdLabel')}
                 </span>
                 <span className="font-mono font-black text-sm sm:text-base text-rose-400 tracking-wider">
-                  {format16DigitUserId(member.userId16, member.email)}
+                  {formatKccId(member.userId16)}
                 </span>
+                {isLegacyKccId16(member.legacyUserId16) && member.legacyUserId16 !== member.userId16 && (
+                  <span className="block text-[10px] font-mono text-slate-500 mt-0.5">
+                    {t('profile.oldKccId', { id: formatKccId(member.legacyUserId16) })}
+                  </span>
+                )}
               </div>
 
               <button
@@ -473,21 +580,66 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               />
             </div>
 
-            {/* Nomor WhatsApp Kedua / Cadangan (Opsional) */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                {t('profile.backupPhoneLabel')}{' '}
-                <span className="text-slate-500 font-normal">{t('registration.optionalTag')}</span>
-              </label>
-              <input
-                type="tel"
-                placeholder={t('profile.backupPhonePlaceholder')}
-                maxLength={MEMBER_FIELD_LIMITS.phone2}
-                value={formData.phone2}
-                onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                className="glass-input w-full text-base sm:text-sm font-mono"
-              />
-            </div>
+            {/* Extra WhatsApp numbers (optional, up to 4): saved as phone2 + additionalPhones */}
+            <fieldset className="md:col-span-2 min-w-0">
+              <legend className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                {t('profile.extraPhonesLabel')}{' '}
+                <span className="text-slate-500 font-normal normal-case">{t('registration.optionalTag')}</span>
+              </legend>
+              <p className="text-[11px] text-slate-400 mb-2">{t('profile.extraPhonesHint')}</p>
+              <div className="space-y-2">
+                {formData.extraPhones.map((value, index) => {
+                  const error = extraPhoneErrors[index];
+                  const errorId = `extra-phone-error-${index}`;
+                  return (
+                    <div key={index}>
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={(el) => {
+                            extraPhoneInputs.current[index] = el;
+                          }}
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder={t('profile.backupPhonePlaceholder')}
+                          aria-label={`${t('profile.extraPhonesLabel')} ${index + 1}`}
+                          aria-invalid={error ? true : undefined}
+                          aria-describedby={error ? errorId : undefined}
+                          maxLength={MEMBER_FIELD_LIMITS.phone}
+                          value={value}
+                          onChange={(e) => updateExtraPhone(index, e.target.value)}
+                          className="glass-input flex-1 min-w-0 text-base sm:text-sm font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeExtraPhone(index)}
+                          title={t('profile.removeExtraPhone')}
+                          aria-label={t('profile.removeExtraPhone')}
+                          className="glass-icon-button pressable shrink-0 w-11 h-11 text-slate-300 hover:text-rose-300"
+                        >
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                      {error && (
+                        <p id={errorId} className="text-xs text-rose-400 mt-1 px-1" role="alert">
+                          {error}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {formData.extraPhones.length < MAX_EXTRA_PHONES && (
+                <button
+                  type="button"
+                  onClick={addExtraPhone}
+                  className="glass-button pressable w-full sm:w-auto min-h-11 mt-2 px-4 rounded-xl text-sm text-emerald-300"
+                >
+                  <Plus className="w-4 h-4" aria-hidden="true" />
+                  <span>{t('profile.addExtraPhone')}</span>
+                </button>
+              )}
+            </fieldset>
 
             {/* Username Discord */}
             <div>

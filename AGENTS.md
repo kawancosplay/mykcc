@@ -199,6 +199,13 @@ Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the 
   (audit log), `adminPlanning.ts` (pure planners), `memberRules.ts` (field limits); `galleryService.ts` paged
   listing + admin delete with log; `authService.sendMemberPasswordReset`; `firebase.ts` Auth without the popup
   resolver at start-up + `warmAuthPopup()`.
+- Integration (2026-10-14, not committed yet): admin UI (7 tabs, lock gate, admins, gallery moderation, audit
+  log, KCC ID tools, 8-digit switch, date fix, member support/edit, pagination) + public UI/perf (paged gallery,
+  lite mode, `?kcc=` card links, 8-digit display, profile extra numbers) wired to the data layer;
+  `subscribeToPhotos` removed. `npx tsc --noEmit`: only the expected 144 missing-key errors in the 18 other
+  locales (translation stage); `npx vite build` passes. Rules emulator (`tools/rules-test`): the sprint-3 write
+  shapes pass. Still open: `public/brand/kcc-logo-96.webp` / `-160.webp` (the remote 102 KB PNG is the
+  largest landing download), phone checks, admin smoke test with the main account after the rules are published.
 - Admin run order after deploy: merge duplicates → fix registration dates → switch to 8-digit IDs. Turn the
   Sheets auto-sync off while doing it.
 

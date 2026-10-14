@@ -1390,7 +1390,8 @@ async function deleteRefsInBatches(refs: DocumentReference[]): Promise<void> {
 }
 
 /**
- * Purges all member documents and the member cards of their KCC IDs (admin only)
+ * Purges all member documents and the member cards of their KCC IDs (admin only). Logs member_deleted
+ * (bulk, best effort), also when it stops part-way.
  */
 export async function purgeAllMembersFromFirestore(): Promise<number> {
   const snap = await getDocsFromServer(collection(db, MEMBERS_COLLECTION));
@@ -1405,8 +1406,20 @@ export async function purgeAllMembersFromFirestore(): Promise<number> {
   const memberRefs: DocumentReference[] = snap.docs.map((d) => doc(db, MEMBERS_COLLECTION, d.id));
   const cardRefs: DocumentReference[] = Array.from(cardIds).map((id) => doc(db, MEMBER_CARDS_COLLECTION, id));
 
-  await deleteRefsInBatches(memberRefs);
-  await deleteRefsInBatches(cardRefs);
+  let complete = false;
+  try {
+    await deleteRefsInBatches(memberRefs);
+    await deleteRefsInBatches(cardRefs);
+    complete = true;
+  } finally {
+    // The most destructive admin action must not be missing from the audit log
+    await writeAdminLog({
+      action: 'member_deleted',
+      targetType: 'bulk',
+      count: memberRefs.length,
+      details: `purge: all ${memberRefs.length} members and ${cardRefs.length} cards${complete ? '' : ' (stopped part-way)'}`,
+    });
+  }
   return memberRefs.length;
 }
 

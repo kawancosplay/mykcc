@@ -64,7 +64,9 @@ export async function listAdmins(): Promise<AdminEntry[]> {
   const mainUid = isMainAdminUser(me) ? me.uid : null;
   return snap.docs
     .map((d) => toAdminEntry(d.id, d.data() as Record<string, unknown>))
-    .filter((entry) => entry.uid !== mainUid && !isMainAccountEmail(entry.email))
+    // Only a console-created (legacy) doc of the main account is hidden by its email: the stored email is free
+    // text, so hiding rules-created entries by it would let an admin add a co-admin nobody sees in this list
+    .filter((entry) => entry.uid !== mainUid && !(entry.legacy && isMainAccountEmail(entry.email)))
     .sort((a, b) => {
       const aAt = a.addedAt ? Date.parse(a.addedAt) : -Infinity;
       const bAt = b.addedAt ? Date.parse(b.addedAt) : -Infinity;

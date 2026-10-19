@@ -5,12 +5,12 @@
  * Phones (< 768 px) get a card list built from the same data instead of the table.
  */
 import React from 'react';
-import { Clock, Crown, ExternalLink, FileSpreadsheet, Hash, Shield, ShieldCheck, Trash2, UserCog } from 'lucide-react';
+import { ChevronDown, Clock, Crown, ExternalLink, FileSpreadsheet, Hash, Shield, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import type { Member } from '../../types';
 import { formatKccId, isAdminRangeKccId, isKccId8, isLegacyKccId16, isMainAccountKccId } from '../../lib/idGenerator';
 import { useI18n } from '../../i18n';
 import type { TranslationKey } from '../../i18n';
-import { MEMBER_STATUSES, STATUS_LABEL_KEYS, digitsOnly, memberName, useMinWidth } from './adminUi';
+import { DATE_TIME_OPTIONS, MEMBER_STATUSES, SOURCE_LABEL_KEYS, STATUS_LABEL_KEYS, digitsOnly, memberName, useMinWidth } from './adminUi';
 import type { MemberStatus } from './adminUi';
 
 // ---------------------------------------------------------------------------------------------
@@ -305,6 +305,83 @@ const Avatar: React.FC<{ member: Member; size?: string }> = ({ member, size = 'w
 );
 
 // ---------------------------------------------------------------------------------------------
+// Expandable details (rendered only while open: 700+ members)
+// ---------------------------------------------------------------------------------------------
+
+const isHttpUrl = (v: string) => /^https?:\/\/\S+$/i.test(v.trim());
+
+const DetailsToggle: React.FC<{ open: boolean; panelId: string; onToggle: () => void; className?: string }> = ({
+  open,
+  panelId,
+  onToggle,
+  className = '',
+}) => {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-controls={panelId}
+      title={t('admin.detailsToggle')}
+      aria-label={t('admin.detailsToggle')}
+      className={`touch-target pressable inline-flex items-center justify-center p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200 pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${className}`}
+    >
+      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+    </button>
+  );
+};
+
+const DetailsPanel: React.FC<{ id: string; member: Member; showEmail: boolean }> = ({ id, member: m, showEmail }) => {
+  const { t, formatDate } = useI18n();
+  const extra = Array.isArray(m.additionalPhones) ? m.additionalPhones.filter((p) => typeof p === 'string') : [];
+  const link = (v: string): React.ReactNode =>
+    isHttpUrl(v) ? (
+      <a href={v.trim()} target="_blank" rel="noopener noreferrer" className="text-indigo-300 underline break-all">
+        {v}
+      </a>
+    ) : (
+      v
+    );
+  const rows: Array<[string, React.ReactNode]> = [
+    [t('admin.csvLegalName'), m.fullName],
+    [t('admin.csvEmail'), showEmail ? m.email : ''],
+    [t('admin.csvPrimaryWhatsapp'), m.phone],
+    [t('admin.csvBackupWhatsapp'), m.phone2],
+    [t('admin.extraPhonesLabel'), extra.join(', ')],
+    [t('admin.csvDiscord'), m.discordUsername],
+    [t('admin.csvProvince'), m.province],
+    [t('admin.csvCity'), m.city],
+    [t('admin.csvCountry'), m.country],
+    [t('admin.fieldBirthday'), m.birthday],
+    [t('admin.csvAge'), m.age],
+    [t('admin.csvAgeCategory'), m.ageCategory],
+    [t('admin.csvExperience'), m.experience],
+    [t('admin.csvFandom'), m.fandom],
+    [t('admin.fieldSocialMedia'), m.socialMedia ? link(m.socialMedia) : ''],
+    [t('admin.fieldPortfolio'), m.portfolioUrl ? link(m.portfolioUrl) : ''],
+    [t('admin.fieldReason'), m.reason],
+    [t('admin.detailsSource'), t(SOURCE_LABEL_KEYS[m.source] || 'admin.sourceWebForm')],
+    [t('admin.csvStatus'), t(STATUS_LABEL_KEYS[m.status || 'verified'])],
+    [t('admin.csvRegisteredAt'), m.createdAt ? formatDate(m.createdAt, DATE_TIME_OPTIONS) : ''],
+    [t('admin.detailsLogin'), m.authUid ? t('admin.loginLinked') : t('admin.loginNotLinked')],
+    [t('admin.csvOldKccId'), m.legacyUserId16 ? formatKccId(m.legacyUserId16) : ''],
+  ];
+  return (
+    <dl id={id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-[11px]">
+      {rows
+        .filter(([, v]) => v !== undefined && v !== null && v !== '')
+        .map(([label, value]) => (
+          <div key={label} className="min-w-0">
+            <dt className="text-slate-500 uppercase tracking-wider text-[10px]">{label}</dt>
+            <dd className="text-slate-200 break-words whitespace-pre-line">{value}</dd>
+          </div>
+        ))}
+    </dl>
+  );
+};
+
+// ---------------------------------------------------------------------------------------------
 // Table
 // ---------------------------------------------------------------------------------------------
 
@@ -363,6 +440,15 @@ export const MemberTable: React.FC<MemberTableProps> = ({
 }) => {
   const { t, formatDate } = useI18n();
   const isWide = useMinWidth(768);
+  const [openIds, setOpenIds] = React.useState<ReadonlySet<string>>(() => new Set());
+  // New page / filter / sort -> everything collapses
+  React.useEffect(() => setOpenIds(new Set()), [members, sortMode]);
+  const toggleOpen = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   const isAdminMember = (m: Member) => !!m.authUid && adminUids.has(m.authUid);
 
@@ -409,7 +495,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
               <button
                 type="button"
                 onClick={() => onViewCard(m)}
@@ -426,7 +512,9 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 <UserCog className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>{t('admin.manageMember')}</span>
               </button>
+              <DetailsToggle open={openIds.has(m.id)} panelId={`member-details-${m.id}`} onToggle={() => toggleOpen(m.id)} />
             </div>
+            {openIds.has(m.id) && <DetailsPanel id={`member-details-${m.id}`} member={m} showEmail />}
           </li>
         ))}
       </ul>
@@ -585,6 +673,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
         return (
           <td key={column} className="py-4 px-4 text-end">
             <div className="flex items-center justify-end gap-2">
+              <DetailsToggle open={openIds.has(m.id)} panelId={`member-details-${m.id}`} onToggle={() => toggleOpen(m.id)} />
               <button
                 type="button"
                 onClick={() => onViewCard(m)}
@@ -630,9 +719,18 @@ export const MemberTable: React.FC<MemberTableProps> = ({
           <tbody className="divide-y divide-white/[0.06]">
             {members.length > 0 ? (
               members.map((m) => (
-                <tr key={m.id} className="hover:bg-white/[0.04] transition-colors">
-                  {MEMBER_COLUMNS.map((column) => renderCell(column, m))}
-                </tr>
+                <React.Fragment key={m.id}>
+                  <tr className="hover:bg-white/[0.04] transition-colors">
+                    {MEMBER_COLUMNS.map((column) => renderCell(column, m))}
+                  </tr>
+                  {openIds.has(m.id) && (
+                    <tr className="bg-white/[0.02]">
+                      <td colSpan={MEMBER_COLUMNS.length} className="px-4 py-3">
+                        <DetailsPanel id={`member-details-${m.id}`} member={m} showEmail={false} />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <tr>

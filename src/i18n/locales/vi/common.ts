@@ -58,7 +58,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: "Cổng chỉ dành cho admin KCC (đăng nhập Google của admin)",
   sheetsPopupClosed: "Cửa sổ cấp quyền Google đã bị đóng trước khi hoàn tất.",
   sheetsWrongAccount: "Hãy chọn cùng tài khoản Google với tài khoản admin đang đăng nhập.",
-  sheetsPopupBlocked: "Trình duyệt đã chặn cửa sổ đăng nhập Google. Hãy cho phép cửa sổ bật lên (pop-up) cho trang này rồi thử lại.",
   sheetsConnectFailed: "Không thể kết nối Google Sheets. Hãy chọn tài khoản admin (cosplaysehat@gmail.com) và cho phép quyền đọc Google Sheets.",
   cardPageBadge: "Thẻ thành viên MyKCC",
   cardPageTitle: "Thẻ thành viên & KCC ID",

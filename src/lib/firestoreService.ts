@@ -1357,6 +1357,8 @@ export async function unlinkMemberLogin(member: Member): Promise<Member> {
   const authUid = typeof raw.authUid === 'string' ? raw.authUid : '';
   if (!authUid) throw new Error(translate('errors.memberNotLinked'));
   if (member.id === authUid) throw new Error(translate('errors.cannotUnlinkSignInProfile'));
+  if (isMainAccountKccId(String(raw.userId16 ?? '')) || (isMainAdminUser(auth.currentUser) && authUid === auth.currentUser?.uid))
+    throw new Error(translate('errors.adminIsMainAccount'));
 
   const { authUid: _removed, ...rest } = raw;
   const unlinked = rest as Partial<Omit<Member, 'id'>>;

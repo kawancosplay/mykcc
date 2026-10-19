@@ -58,7 +58,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: "KCC 관리자 전용 포털 (관리자 Google 로그인)",
   sheetsPopupClosed: "완료하기 전에 Google 인증 창이 닫혔어요.",
   sheetsWrongAccount: "로그인한 관리자 계정과 같은 Google 계정을 선택하세요.",
-  sheetsPopupBlocked: "브라우저가 Google 로그인 창을 차단했어요. 이 사이트의 팝업을 허용한 후 다시 시도하세요.",
   sheetsConnectFailed: "Google Sheets에 연결하지 못했어요. 관리자 계정(cosplaysehat@gmail.com)을 선택하고 Google Sheets 읽기 권한을 허용하세요.",
   cardPageBadge: "MyKCC 회원증",
   cardPageTitle: "회원증 & KCC ID",

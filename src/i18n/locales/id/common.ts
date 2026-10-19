@@ -66,7 +66,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: 'Portal Khusus Admin KCC (Login Google Admin)',
   sheetsPopupClosed: 'Jendela otorisasi Google ditutup sebelum selesai.',
   sheetsWrongAccount: 'Pilih akun Google yang sama dengan akun admin yang sedang masuk.',
-  sheetsPopupBlocked: 'Browser memblokir jendela login Google. Izinkan pop-up untuk situs ini, lalu coba lagi.',
   sheetsConnectFailed:
     'Gagal menghubungkan Google Sheets. Pastikan memilih akun admin (cosplaysehat@gmail.com) dan memberi izin baca Google Sheets.',
 

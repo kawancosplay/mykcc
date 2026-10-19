@@ -218,6 +218,9 @@ export default {
   sourceWebForm: 'Web registration form',
   sourceGoogleForm: 'Google Form sync',
   sourceSpreadsheet: 'Spreadsheet import',
+  detailsToggle: 'Details',
+  detailsSource: 'Source',
+  detailsLogin: 'Login',
 
   // Admins panel
   mainAccountRow: 'Main account',

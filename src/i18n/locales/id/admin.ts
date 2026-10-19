@@ -220,6 +220,9 @@ const admin: LocaleNamespace<'admin'> = {
   sourceWebForm: 'Formulir pendaftaran web',
   sourceGoogleForm: 'Sinkron Google Form',
   sourceSpreadsheet: 'Impor spreadsheet',
+  detailsToggle: 'Detail',
+  detailsSource: 'Sumber',
+  detailsLogin: 'Login',
 
   // Admins panel
   mainAccountRow: 'Akun utama',

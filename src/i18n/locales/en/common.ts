@@ -64,7 +64,6 @@ export default {
   adminPortalLinkTitle: 'KCC admin-only portal (admin Google sign-in)',
   sheetsPopupClosed: 'The Google authorization window was closed before finishing.',
   sheetsWrongAccount: 'Choose the same Google account as the signed-in admin account.',
-  sheetsPopupBlocked: 'The browser blocked the Google sign-in window. Allow pop-ups for this site and try again.',
   sheetsConnectFailed:
     'Could not connect Google Sheets. Choose the admin account (cosplaysehat@gmail.com) and allow read access to Google Sheets.',
 

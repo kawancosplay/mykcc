@@ -58,7 +58,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: "Portal husus admin KCC (asup nganggo Google admin)",
   sheetsPopupClosed: "Jandéla otorisasi Google ditutup sateuacan réngsé.",
   sheetsWrongAccount: "Pilih akun Google anu sami sareng akun admin anu nuju asup.",
-  sheetsPopupBlocked: "Panyungsi meungpeuk jandéla asup Google. Idinan pop-up kanggo loka ieu, teras cobian deui.",
   sheetsConnectFailed: "Google Sheets teu tiasa disambungkeun. Pilih akun admin (cosplaysehat@gmail.com) sareng idinan aksés maca Google Sheets.",
   cardPageBadge: "Kartu ID Anggota MyKCC",
   cardPageTitle: "Kartu ID Anggota & KCC ID",

@@ -29,6 +29,28 @@ const IDLE_CHECK_MS = 30 * 1000; // local idle check
 const MAX_FAILED_ATTEMPTS = 5;
 const RETRY_WAIT_MS = 30 * 1000;
 
+const LOCKOUT_KEY = 'mykcc.dashLockout';
+
+// Lockout survives a reload; storage can throw (blocked), then state alone applies.
+function readLockout(): { failed: number; retryAt: number | null } {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(LOCKOUT_KEY) || '{}');
+    const retryAt = typeof v.retryAt === 'number' && v.retryAt > Date.now() ? v.retryAt : null;
+    return { failed: retryAt === null && Number.isFinite(v.failed) ? Math.max(0, v.failed) : 0, retryAt };
+  } catch {
+    return { failed: 0, retryAt: null };
+  }
+}
+
+function writeLockout(failed: number, retryAt: number | null): void {
+  try {
+    if (failed === 0 && retryAt === null) sessionStorage.removeItem(LOCKOUT_KEY);
+    else sessionStorage.setItem(LOCKOUT_KEY, JSON.stringify({ failed, retryAt }));
+  } catch {
+    /* storage blocked: in-memory state only */
+  }
+}
+
 export type DashboardLockStatus = 'none' | 'set' | 'rules-missing' | 'unknown';
 
 /** What the shell (header "Lock now", admins tab card) needs to know about the lock. */
@@ -67,8 +89,9 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
   const [password, setPassword] = useState('');
   const [unlocking, setUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [retryAt, setRetryAt] = useState<number | null>(null);
+  const [initialLockout] = useState(readLockout);
+  const [failedAttempts, setFailedAttempts] = useState(initialLockout.failed);
+  const [retryAt, setRetryAt] = useState<number | null>(initialLockout.retryAt);
   const [now, setNow] = useState(() => Date.now());
   const [retrying, setRetrying] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -174,6 +197,7 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
       setNow(current);
       if (current >= retryAt) {
         setRetryAt(null);
+        writeLockout(0, null);
         setUnlockError(null);
       }
     }, 1000);
@@ -227,6 +251,7 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
         const latest = await getDashboardLock().catch(() => null);
         if (latest && latest.state !== 'set') {
           setFailedAttempts(0);
+          writeLockout(0, null);
           setPassword('');
           setState({ kind: 'open', lock: latest.state });
           return;
@@ -240,6 +265,7 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
       if (ok) {
         markDashboardUnlocked(uid, record);
         setFailedAttempts(0);
+        writeLockout(0, null);
         setPassword('');
         haptic('success');
         setState({ kind: 'unlocked', record });
@@ -253,8 +279,10 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
         const until = Date.now() + RETRY_WAIT_MS;
         setNow(Date.now());
         setRetryAt(until);
+        writeLockout(0, until);
       } else {
         setFailedAttempts(failed);
+        writeLockout(failed, null);
       }
       setUnlockError(t('errors.lockWrongPassword'));
       window.setTimeout(() => inputRef.current?.focus(), 0);

@@ -58,7 +58,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: "Portal para lang sa KCC admin (admin Google sign-in)",
   sheetsPopupClosed: "Naisara ang Google authorization window bago ito natapos.",
   sheetsWrongAccount: "Piliin ang parehong Google account na ginagamit ng naka-sign in na admin account.",
-  sheetsPopupBlocked: "Hinarangan ng browser ang Google sign-in window. Payagan ang mga pop-up para sa site na ito at subukang muli.",
   sheetsConnectFailed: "Hindi maikonekta ang Google Sheets. Piliin ang admin account (cosplaysehat@gmail.com) at payagan ang read access sa Google Sheets.",
   cardPageBadge: "ID Card ng Miyembro ng MyKCC",
   cardPageTitle: "ID Card ng Miyembro at KCC ID",

@@ -21,6 +21,7 @@ import {
 import type { User } from 'firebase/auth';
 import type { AdminEntry, Member } from '../../types';
 import { formatKccId, isMainAccountKccId } from '../../lib/idGenerator';
+import { isMainAdminUser } from '../../lib/firebase';
 import { unlinkMemberLogin } from '../../lib/firestoreService';
 import { sendMemberPasswordReset } from '../../lib/authService';
 import { addAdmin } from '../../lib/adminService';
@@ -128,6 +129,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
   const blockReason = makeAdminBlockReason(m, user, admins);
   const hasEmail = !!(m.email || '').trim();
   const isSignInProfile = !!m.authUid && m.id === m.authUid;
+  const isOwnLogin = isMainMember || (isMainAdminUser(user) && !!m.authUid && m.authUid === user.uid);
   const anyBusy = busyAction !== null;
 
   const showCopied = (which: 'id' | 'link') => {
@@ -177,7 +179,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
   };
 
   const handleUnlink = () => {
-    if (!m.authUid || isSignInProfile || locked) return;
+    if (!m.authUid || isSignInProfile || isOwnLogin || locked) return;
     if (!window.confirm(t('admin.unlinkConfirm', { name }))) return;
     void run('unlink', async () => {
       await unlinkMemberLogin(m);
@@ -330,7 +332,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
                 {!hasEmail && <p className="text-[11px] text-slate-400 px-1">{t('admin.passwordResetNoEmail')}</p>}
               </div>
 
-              {m.authUid && (
+              {m.authUid && !isOwnLogin && (
                 <div className="space-y-1">
                   <button
                     type="button"

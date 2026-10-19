@@ -58,7 +58,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: "ꦥꦺꦴꦂꦠꦭ꧀ ꦩ꧀ꦭꦶꦒꦶ ꦲꦢ꧀ꦩꦶꦤ꧀ KCC (ꦩ꧀ꦭꦼꦧꦼꦠ꧀ ꦔꦁꦒꦺꦴ Google ꦲꦢ꧀ꦩꦶꦤ꧀)",
   sheetsPopupClosed: "ꦗꦼꦤ꧀ꦝꦺꦭ ꦲꦺꦴꦠꦺꦴꦫꦶꦱꦱꦶ Google ꦏꦠꦸꦠꦸꦥ꧀ ꦱꦢꦺꦫꦺꦔꦶꦥꦸꦤ꧀ ꦫꦩ꧀ꦥꦸꦁ꧉",
   sheetsWrongAccount: "ꦥꦶꦭꦶꦃ ꦲꦏꦸꦤ꧀ Google ꦲꦶꦁꦏꦁ ꦱꦩꦶ ꦏꦭꦶꦪꦤ꧀ ꦲꦏꦸꦤ꧀ ꦲꦢ꧀ꦩꦶꦤ꧀ ꦲꦶꦁꦏꦁ ꦱꦮꦼꦒ꧀ ꦩ꧀ꦭꦼꦧꦼꦠ꧀꧉",
-  sheetsPopupBlocked: "ꦧꦿꦺꦴꦮ꧀ꦱꦼꦂ ꦔꦭꦔꦶ ꦗꦼꦤ꧀ꦝꦺꦭ ꦩ꧀ꦭꦼꦧꦼꦠ꧀ Google. ꦥꦫꦶꦔꦶ ꦲꦶꦢꦶꦤ꧀ ꦥꦺꦴꦥ꧀ꦲꦸꦥ꧀ ꦏꦁꦒꦺ ꦱꦶꦠꦸꦱ꧀ ꦥꦸꦤꦶꦏ꧈ ꦭꦗꦼꦁ ꦕꦺꦴꦧꦶ ꦩꦭꦶꦃ꧉",
   sheetsConnectFailed: "ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ ꦱꦒꦼꦢ꧀ ꦚꦩ꧀ꦧꦸꦔꦏꦼꦤ꧀ Google Sheets. ꦥꦶꦭꦶꦃ ꦲꦏꦸꦤ꧀ ꦲꦢ꧀ꦩꦶꦤ꧀ (cosplaysehat@gmail.com) ꦭꦤ꧀ ꦥꦫꦶꦔꦶ ꦲꦶꦢꦶꦤ꧀ ꦩꦲꦺꦴꦱ꧀ Google Sheets.",
   cardPageBadge: "ꦏꦼꦂꦠꦸ ID ꦲꦁꦒꦺꦴꦠ MyKCC",
   cardPageTitle: "ꦏꦼꦂꦠꦸ ID ꦲꦁꦒꦺꦴꦠ & KCC ID",

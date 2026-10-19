@@ -58,7 +58,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: "بوابة خاصة بمشرفي KCC فقط (تسجيل الدخول بحساب Google الخاص بالمشرف)",
   sheetsPopupClosed: "أُغلقت نافذة تفويض Google قبل اكتمال العملية.",
   sheetsWrongAccount: "اختر حساب Google نفسه المستخدم في حساب المشرف المسجَّل دخوله.",
-  sheetsPopupBlocked: "حظر المتصفح نافذة تسجيل الدخول إلى Google. اسمح بالنوافذ المنبثقة لهذا الموقع وحاول مرة أخرى.",
   sheetsConnectFailed: "تعذّر ربط Google Sheets. اختر حساب المشرف (cosplaysehat@gmail.com) واسمح بصلاحية القراءة في Google Sheets.",
   cardPageBadge: "بطاقة هوية العضو من MyKCC",
   cardPageTitle: "بطاقة هوية العضو و KCC ID",

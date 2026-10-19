@@ -58,7 +58,6 @@ const common: LocaleNamespace<'common'> = {
   adminPortalLinkTitle: "KCC நிர்வாகிகளுக்கு மட்டுமான போர்டல் (நிர்வாகி Google உள்நுழைவு)",
   sheetsPopupClosed: "செயல்முறை முடிவதற்கு முன்பே Google அங்கீகாரச் சாளரம் மூடப்பட்டது.",
   sheetsWrongAccount: "உள்நுழைந்துள்ள நிர்வாகிக் கணக்கின் அதே Google கணக்கைத் தேர்ந்தெடுக்கவும்.",
-  sheetsPopupBlocked: "உலாவி Google உள்நுழைவுச் சாளரத்தைத் தடுத்துவிட்டது. இந்தத் தளத்திற்கு பாப்-அப்களை அனுமதித்து மீண்டும் முயற்சிக்கவும்.",
   sheetsConnectFailed: "Google Sheets-ஐ இணைக்க முடியவில்லை. நிர்வாகிக் கணக்கை (cosplaysehat@gmail.com) தேர்ந்தெடுத்து, Google Sheets-ஐப் படிப்பதற்கான அனுமதியை வழங்கவும்.",
   cardPageBadge: "MyKCC உறுப்பினர் அடையாள அட்டை",
   cardPageTitle: "உறுப்பினர் அடையாள அட்டை & KCC ID",

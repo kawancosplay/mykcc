@@ -3,6 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Dark canvas before any CSS arrives: never a white frame on a slow connection. -->
+    <style>html,body{background:#05020a}</style>
+    <script>
+      // Lite / low-power mode, decided BEFORE the CSS loads so the first paint is already right (no
+      // glass-to-solid swap). Keep the rules in sync with detectSignals() in src/lib/perfMode.ts, which
+      // reads window.__KCC_PERF__ and owns every later change (manual toggle, connection changes).
+      (function () {
+        var d = document.documentElement, n = navigator, c = n.connection || {}, r = [], auto = false, low = false, pref = 'auto';
+        try { var s = localStorage.getItem('kcc_perf_mode'); if (s === 'lite' || s === 'full') pref = s; } catch (e) {}
+        var apple = /iPhone|iPad|iPod/.test(n.userAgent || '') || (n.platform === 'MacIntel' && n.maxTouchPoints > 1);
+        if (n.deviceMemory > 0 && n.deviceMemory <= 4) { r.push('deviceMemory'); auto = true; }
+        if (n.hardwareConcurrency > 0 && n.hardwareConcurrency <= 4 && !apple) { r.push('hardwareConcurrency'); auto = true; }
+        if (c.saveData === true) { r.push('saveData'); auto = true; low = true; }
+        var et = c.effectiveType;
+        if (et === 'slow-2g' || et === '2g') { r.push('effectiveType:' + et); auto = true; low = true; }
+        else if (et === '3g') { r.push('effectiveType:3g'); low = true; }
+        try { if (window.matchMedia && matchMedia('(prefers-reduced-transparency: reduce)').matches) { r.push('reducedTransparency'); auto = true; } } catch (e) {}
+        var lite = pref === 'lite' || (pref === 'auto' && auto);
+        d.setAttribute('data-perf', lite ? 'lite' : 'full');
+        if (low) d.setAttribute('data-lowdata', '1');
+        window.__KCC_PERF__ = { pref: pref, autoLite: auto, lowData: low, reasons: r };
+        // Cached site theme background (written by src/lib/themeContext.tsx): correct gradient in frame 1.
+        try {
+          var t = JSON.parse(localStorage.getItem('kcc_theme_v1') || 'null');
+          if (t && typeof t.appBg === 'string' && t.appBg.length < 400 && /^(linear|radial)-gradient\(/.test(t.appBg)) {
+            d.style.setProperty('--app-bg', t.appBg);
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script>
       // Suppress benign Vite dev server WebSocket HMR connection errors in cloud sandbox
       window.addEventListener('error', function(event) {
@@ -20,9 +50,9 @@
       });
     </script>
     <title>MyKCC - KawanCosplay Community Member Portal</title>
-    <meta name="description" content="MyKCC - KawanCosplay Community official registration, 16-digit User ID, digital member card, cosplay photo gallery, and Google Sheets sync." />
+    <meta name="description" content="MyKCC - KawanCosplay Community official registration, KCC ID, digital member card, cosplay photo gallery, and Google Sheets sync." />
     <meta property="og:title" content="MyKCC - KawanCosplay Community" />
-    <meta property="og:description" content="MyKCC - KawanCosplay Community official registration, 16-digit User ID, digital member card, cosplay photo gallery, and Google Sheets sync." />
+    <meta property="og:description" content="MyKCC - KawanCosplay Community official registration, KCC ID, digital member card, cosplay photo gallery, and Google Sheets sync." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#020617" />
@@ -30,14 +60,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="MyKCC" />
-    <!-- Localization Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Javanese&family=Noto+Sans+Sundanese&family=Noto+Sans+Arabic:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Firestore is the first API the page talks to (site theme). No Google Fonts preconnect: Latin
+         languages load no web font; script fonts (Javanese, Sundanese, Arabic, Tamil, Thai, CJK) add their
+         own preconnect + stylesheet on demand (src/i18n/runtime.ts ensureLanguageFont). -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <!-- Header logo hint (preload of /brand/kcc-logo-96.webp, or a preconnect to the remote logo host
+         while the local files are missing) is injected by the kcc-logo-hints plugin in vite.config.ts. -->
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

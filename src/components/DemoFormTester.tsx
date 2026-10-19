@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   FlaskConical,
   Sparkles,
@@ -15,6 +16,9 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Member } from '../types';
+import { useI18n } from '../i18n';
+import { formatKccId } from '../lib/idGenerator';
+import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 
 export interface DemoFormPreset {
   id: string;
@@ -50,26 +54,28 @@ export interface DemoFormPreset {
 interface DemoFormTesterProps {
   onFillDemo: (data: DemoFormPreset['data'], autoSubmit?: boolean) => void;
   existingMembers: Member[];
-  isId: boolean;
+  isId: boolean; // Kept for existing callers; the language comes from useI18n()
 }
 
 export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
   onFillDemo,
   existingMembers,
-  isId,
 }) => {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(true);
   const [lastFilledPreset, setLastFilledPreset] = useState<string | null>(null);
+  const titleId = useId();
+  const panelId = useId();
+  const reducedMotion = useReducedMotion() === true;
+  const fadeMotion = usePresenceMotion('overlay');
 
   const presets: DemoFormPreset[] = [
     {
       id: 'cosplayer_timestamp',
-      name: isId ? 'Demo Cosplayer (Timestamp UID)' : 'Demo Cosplayer (Timestamp UID)',
-      badge: 'Timestamp UID',
+      name: t('demo.presetCosplayerName'),
+      badge: t('demo.presetCosplayerBadge'),
       badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
-      expectedUidType: isId
-        ? 'UID 16-digit diatur berdasar tanggal & jam submit (YYYYMMDDHHmmssSeq)'
-        : '16-digit UID arranged by submission timestamp (YYYYMMDDHHmmssSeq)',
+      expectedUidType: t('demo.presetCosplayerDesc'),
       icon: <Sparkles className="w-4 h-4 text-indigo-400" />,
       data: {
         cosplayName: 'Yukari_Cos / Aoi',
@@ -87,18 +93,16 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         experience: '1 - 3 tahun',
         socialMedia: '@yukari.cosplay',
         portfolioUrl: 'https://instagram.com/yukari.cosplay',
-        reason: 'Uji coba pendaftaran demo member reguler dengan User ID berbasis timestamp terurut.',
+        reason: 'Uji coba pendaftaran demo member reguler dengan KCC ID nomor urut.',
         acceptedCodeOfConduct: true,
       },
     },
     {
       id: 'kcc_admin',
-      name: isId ? 'Demo KCC Admin (UID 0001-0100)' : 'Demo KCC Admin (UID 0001-0100)',
-      badge: 'Admin UID Range',
+      name: t('demo.presetAdminName'),
+      badge: t('demo.presetAdminBadge'),
       badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-      expectedUidType: isId
-        ? 'UID 0000 0000 0000 0001 s/d 0000 0000 0000 0100 khusus KCC Admin'
-        : 'UID 0000 0000 0000 0001 to 0000 0000 0000 0100 for KCC Admin',
+      expectedUidType: t('demo.presetAdminDesc'),
       icon: <Shield className="w-4 h-4 text-rose-400" />,
       data: {
         cosplayName: 'Admin_KCC_Staff',
@@ -116,18 +120,16 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         experience: '> 3 tahun',
         socialMedia: '@kawancosplay.staff',
         portfolioUrl: 'https://kawancosplay.org/staff',
-        reason: 'Uji coba pendaftaran KCC Admin untuk slot UID terverifikasi 0000 0000 0000 0001 - 0100.',
+        reason: 'Uji coba pendaftaran KCC Admin untuk slot KCC ID terverifikasi 0000 0001 - 0000 0100.',
         acceptedCodeOfConduct: true,
       },
     },
     {
       id: 'main_account',
-      name: isId ? 'Demo KCC Main Account (UID 0000)' : 'Demo KCC Main Account (UID 0000)',
-      badge: '0000 0000 0000 0000',
+      name: t('demo.presetMainAccountName'),
+      badge: '0000 0000',
       badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-      expectedUidType: isId
-        ? 'UID 0000 0000 0000 0000 khusus akun utama cosplaysehat@gmail.com'
-        : 'UID 0000 0000 0000 0000 strictly for main account cosplaysehat@gmail.com',
+      expectedUidType: t('demo.presetMainAccountDesc'),
       icon: <Crown className="w-4 h-4 text-amber-400" />,
       data: {
         cosplayName: 'KCC Leader / Ken',
@@ -145,18 +147,16 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
         experience: '> 3 tahun',
         socialMedia: '@rian_cosplays',
         portfolioUrl: 'https://instagram.com/rian_cosplays',
-        reason: 'Uji coba pendaftaran akun utama KCC ID 0000 0000 0000 0000.',
+        reason: 'Uji coba pendaftaran akun utama KCC ID 0000 0000.',
         acceptedCodeOfConduct: true,
       },
     },
     {
       id: 'prop_maker',
-      name: isId ? 'Demo Prop Maker / Crafter' : 'Demo Prop Maker / Crafter',
-      badge: 'Crafter (Timestamp)',
+      name: t('demo.presetPropMakerName'),
+      badge: t('demo.presetPropMakerBadge'),
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      expectedUidType: isId
-        ? 'Pengrajin kostum / prop dengan UID berbasis timestamp'
-        : 'Prop & armor artisan with timestamp-based UID',
+      expectedUidType: t('demo.presetPropMakerDesc'),
       icon: <Wrench className="w-4 h-4 text-emerald-400" />,
       data: {
         cosplayName: 'Vulcan Props Studio',
@@ -180,12 +180,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     },
     {
       id: 'photographer',
-      name: isId ? 'Demo Fotografer Cosplay' : 'Demo Cosplay Photographer',
-      badge: 'Photographer',
+      name: t('demo.presetPhotographerName'),
+      badge: t('demo.presetPhotographerBadge'),
       badgeColor: 'bg-pink-500/20 text-pink-300 border-pink-500/40',
-      expectedUidType: isId
-        ? 'Fotografer & videografer dengan UID berbasis timestamp'
-        : 'Photographer & videographer with timestamp-based UID',
+      expectedUidType: t('demo.presetPhotographerDesc'),
       icon: <Camera className="w-4 h-4 text-pink-400" />,
       data: {
         cosplayName: 'ShutterLens_ID',
@@ -209,12 +207,10 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     },
     {
       id: 'others_role',
-      name: isId ? 'Demo Peran Lainnya / Others' : 'Demo Others / Custom Role',
-      badge: 'Others Role',
+      name: t('demo.presetOthersName'),
+      badge: t('demo.presetOthersBadge'),
       badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
-      expectedUidType: isId
-        ? 'Peran kustom "Lainnya / Others" dengan spesialisasi Makeup & Wig Stylist'
-        : 'Custom role "Others" with specialized Cosplay Makeup & Wig Stylist',
+      expectedUidType: t('demo.presetOthersDesc'),
       icon: <Sparkles className="w-4 h-4 text-violet-400" />,
       data: {
         cosplayName: 'Miyu_MakeArt',
@@ -245,32 +241,28 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     const matchName = existingWithPhone.name || existingWithPhone.cosplayName || 'Member';
     presets.push({
       id: 'duplicate_test',
-      name: isId
-        ? `Uji Akun Tunggal (Duplikat: ${matchName})`
-        : `Single KCC ID Test (Match: ${matchName})`,
-      badge: 'Single KCC ID Check',
+      name: t('demo.presetDuplicateName', { name: matchName }),
+      badge: t('demo.presetDuplicateBadge'),
       badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-      expectedUidType: isId
-        ? `Memverifikasi nomor WA sama mempertahankan KCC ID: ${existingWithPhone.userId16}`
-        : `Verifies matching WhatsApp maintains KCC ID: ${existingWithPhone.userId16}`,
+      expectedUidType: t('demo.presetDuplicateDesc', { id: formatKccId(existingWithPhone.userId16) }),
       icon: <CopyCheck className="w-4 h-4 text-cyan-400" />,
       data: {
         name: matchName,
         cosplayName: matchName,
-        fullName: existingWithPhone.fullName || matchName,
-        email: existingWithPhone.email || 'updated.email@gmail.com',
+        fullName: 'Sample Name',
+        email: 'sample@example.com',
         phone: existingWithPhone.phone || '081234567890',
-        discordUsername: existingWithPhone.discordUsername || 'updated_discord',
-        ageCategory: existingWithPhone.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
-        age: existingWithPhone.age || '22',
-        country: existingWithPhone.country || 'Indonesia',
-        province: existingWithPhone.province || 'DKI Jakarta',
-        city: existingWithPhone.city || 'Jakarta Selatan',
-        primaryRole: existingWithPhone.primaryRole || 'Cosplayer / Crossplayer',
-        fandom: existingWithPhone.fandom || 'Anime & Pop Culture',
-        experience: existingWithPhone.experience || '1 - 3 tahun',
-        socialMedia: existingWithPhone.socialMedia || '@cosplay_updated',
-        portfolioUrl: existingWithPhone.portfolioUrl || '',
+        discordUsername: 'sample_discord',
+        ageCategory: 'Legal Age / Dewasa (18+ tahun)',
+        age: '22',
+        country: 'Indonesia',
+        province: 'DKI Jakarta',
+        city: 'Jakarta Selatan',
+        primaryRole: 'Cosplayer / Crossplayer',
+        fandom: 'Anime & Pop Culture',
+        experience: '1 - 3 tahun',
+        socialMedia: '@cosplay_updated',
+        portfolioUrl: '',
         reason: 'Mengisi form kedua kali untuk menguji sinkronisasi Single KCC ID akun tunggal.',
         acceptedCodeOfConduct: true,
       },
@@ -278,33 +270,29 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
 
     presets.push({
       id: 'secondary_phone_test',
-      name: isId
-        ? `Uji 2 Nomor (Cadangan: ${matchName})`
-        : `Secondary Phone Test (2 Numbers: ${matchName})`,
-      badge: '2 Nomor WA Check',
+      name: t('demo.presetSecondaryPhoneName', { name: matchName }),
+      badge: t('demo.presetSecondaryPhoneBadge'),
       badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-      expectedUidType: isId
-        ? `Menambah nomor WA cadangan & mempertahankan KCC ID: ${existingWithPhone.userId16}`
-        : `Adds secondary phone & preserves KCC ID: ${existingWithPhone.userId16}`,
+      expectedUidType: t('demo.presetSecondaryPhoneDesc', { id: formatKccId(existingWithPhone.userId16) }),
       icon: <CopyCheck className="w-4 h-4 text-emerald-400" />,
       data: {
         name: matchName,
         cosplayName: matchName,
-        fullName: existingWithPhone.fullName || matchName,
-        email: existingWithPhone.email || 'updated.email@gmail.com',
+        fullName: 'Sample Name',
+        email: 'sample@example.com',
         phone: existingWithPhone.phone || '081234567890',
         phone2: '089912345678',
-        discordUsername: existingWithPhone.discordUsername || 'updated_discord',
-        ageCategory: existingWithPhone.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
-        age: existingWithPhone.age || '22',
-        country: existingWithPhone.country || 'Indonesia',
-        province: existingWithPhone.province || 'DKI Jakarta',
-        city: existingWithPhone.city || 'Jakarta Selatan',
-        primaryRole: existingWithPhone.primaryRole || 'Cosplayer / Crossplayer',
-        fandom: existingWithPhone.fandom || 'Anime & Pop Culture',
-        experience: existingWithPhone.experience || '1 - 3 tahun',
-        socialMedia: existingWithPhone.socialMedia || '@cosplay_updated',
-        portfolioUrl: existingWithPhone.portfolioUrl || '',
+        discordUsername: 'sample_discord',
+        ageCategory: 'Legal Age / Dewasa (18+ tahun)',
+        age: '22',
+        country: 'Indonesia',
+        province: 'DKI Jakarta',
+        city: 'Jakarta Selatan',
+        primaryRole: 'Cosplayer / Crossplayer',
+        fandom: 'Anime & Pop Culture',
+        experience: '1 - 3 tahun',
+        socialMedia: '@cosplay_updated',
+        portfolioUrl: '',
         reason: 'Mengisi form kembali dengan nomor cadangan tambahan, menguji KCC ID tetap sama dan nomor kedua tersimpan.',
         acceptedCodeOfConduct: true,
       },
@@ -340,7 +328,7 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
       experience: '1 - 3 tahun',
       socialMedia: `@tester_${randomNum}`,
       portfolioUrl: '',
-      reason: 'Testing randomized demo submission for timestamp UID generation.',
+      reason: 'Testing randomized demo submission for running-number KCC ID generation.',
       acceptedCodeOfConduct: true,
     };
 
@@ -353,167 +341,193 @@ export const DemoFormTester: React.FC<DemoFormTesterProps> = ({
     onFillDemo(preset.data, autoSubmit);
   };
 
+  // In-flow card: .glass-card (no backdrop blur on in-flow surfaces, see index.css) with a purple tint
   return (
-    <div className="mb-6 rounded-3xl border border-purple-400/30 bg-purple-950/40 backdrop-blur-xl shadow-xl overflow-hidden animate-fade-in text-slate-100">
-      {/* Top Header Toggle Bar */}
+    <div className="glass-card mb-6 rounded-3xl border-purple-400/30 bg-purple-950/40 overflow-hidden animate-fade-in text-slate-100">
+      {/* Top Header Toggle Bar. The whole bar toggles on click; the chevron button is the keyboard /
+          screen-reader toggle (aria-expanded, named by the title). */}
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="px-5 py-3.5 bg-gradient-to-r from-purple-900/60 via-purple-950/80 to-slate-950/80 border-b border-purple-400/20 flex items-center justify-between cursor-pointer hover:bg-purple-900/70 transition-colors"
+        className="px-5 py-2.5 bg-gradient-to-r from-purple-900/60 via-purple-950/80 to-slate-950/80 border-b border-purple-400/20 flex items-center justify-between gap-3 cursor-pointer select-none hover:bg-purple-900/70 transition-colors"
       >
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 shrink-0 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300">
             <FlaskConical className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-xs sm:text-sm font-black text-white tracking-wide">
-                {isId ? 'Mode Pengujian Formulir Demo (Demo Form Testing)' : 'Demo Form Testing Sandbox'}
+              <h3 id={titleId} className="text-xs sm:text-sm font-black text-white tracking-wide">
+                {t('demo.title')}
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Sandbox Mode
+                {t('demo.sandboxBadge')}
               </span>
             </div>
             <p className="text-[11px] text-purple-200/80 hidden sm:block">
-              {isId
-                ? 'Klik 1-tombol untuk auto-fill data demo dan menguji pembuatan KCC ID (Timestamp UID, Admin UID 0001-0100, Main Account 0000).'
-                : '1-click preset auto-fill to test KCC ID generation (Timestamp UID, Admin UID 0001-0100, Main Account 0000).'}
+              {t('demo.description')}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               handleRandomize();
             }}
-            className="px-2.5 py-1 rounded-lg bg-purple-800/60 hover:bg-purple-700 text-purple-200 text-xs font-semibold inline-flex items-center gap-1 transition-all"
-            title="Generate Random Persona"
+            className="glass-button pressable gap-1 px-2.5 py-1 rounded-lg bg-purple-800/60 hover:bg-purple-700 border-purple-400/30 text-purple-200 text-xs"
+            title={t('demo.randomizeTitle')}
           >
             <Dices className="w-3.5 h-3.5 text-purple-300" />
-            <span className="hidden sm:inline">Acak Data</span>
+            <span className="hidden sm:inline">{t('demo.randomize')}</span>
           </button>
 
           <button
             type="button"
-            className="p-1 rounded-lg text-purple-300 hover:text-white transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen((open) => !open);
+            }}
+            aria-expanded={isOpen}
+            aria-controls={isOpen ? panelId : undefined}
+            aria-labelledby={titleId}
+            className="glass-icon-button pressable text-purple-300"
           >
             {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
-      {/* Preset Cards & Quick Fill Tools */}
-      {isOpen && (
-        <div className="p-4 sm:p-5 space-y-3.5">
-          {/* Information Pill */}
-          <div className="p-3 rounded-2xl bg-slate-950/60 border border-purple-500/20 flex items-start gap-2.5 text-xs text-purple-200/90">
-            <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-semibold text-white">
-                {isId ? 'Aturan Alokasi User ID KawanCosplay:' : 'KawanCosplay User ID Rules:'}
-              </p>
-              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-purple-300/80 mt-1 font-mono">
-                <li>
-                  <span className="text-amber-300 font-bold">0000 0000 0000 0000</span>:{' '}
-                  {isId ? 'KCC Main Account (cosplaysehat@gmail.com)' : 'KCC Main Account'}
-                </li>
-                <li>
-                  <span className="text-rose-300 font-bold">0000 0000 0000 0001 - 0100</span>:{' '}
-                  {isId ? 'KCC Admin (Pengurus Inti)' : 'KCC Admin Range'}
-                </li>
-                <li>
-                  <span className="text-indigo-300 font-bold">YYYY MMDD HHmm ssSS</span>:{' '}
-                  {isId ? 'Member Reguler berdasar Timestamp pengisian' : 'Timestamp-arranged Member UID'}
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Presets Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {presets.map((preset) => {
-              const isSelected = lastFilledPreset === preset.id;
-              return (
-                <div
-                  key={preset.id}
-                  className={`p-3 rounded-2xl border transition-all text-left flex flex-col justify-between ${
-                    isSelected
-                      ? 'bg-purple-900/50 border-purple-400 shadow-md ring-1 ring-purple-400/50'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-purple-500/40 hover:bg-purple-950/30'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        {preset.icon}
-                        <h4 className="font-bold text-white text-xs leading-tight">
-                          {preset.name}
-                        </h4>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border font-mono shrink-0 ${preset.badgeColor}`}>
-                        {preset.badge}
-                      </span>
-                    </div>
-
-                    <p className="text-[10px] text-slate-300 mb-2 leading-tight">
-                      {preset.expectedUidType}
-                    </p>
-
-                    <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800 text-[10px] font-mono text-slate-400 space-y-0.5 mb-2.5">
-                      <div className="truncate">
-                        <span className="text-slate-500">Nama:</span> <span className="text-slate-200">{preset.data.cosplayName}</span>
-                      </div>
-                      <div className="truncate">
-                        <span className="text-slate-500">WA:</span> <span className="text-emerald-400">{preset.data.phone}</span>
-                      </div>
-                      <div className="truncate">
-                        <span className="text-slate-500">DC:</span> <span className="text-indigo-300">{preset.data.discordUsername}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Preset Action Buttons */}
-                  <div className="grid grid-cols-2 gap-1.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectPreset(preset, false)}
-                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition-colors flex items-center justify-center gap-1"
-                    >
-                      <span>Isi Form</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectPreset(preset, true)}
-                      className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-purple-600 to-rose-600 hover:brightness-110 text-white text-[11px] font-bold shadow transition-all flex items-center justify-center gap-1"
-                    >
-                      <Zap className="w-3 h-3 text-amber-300" />
-                      <span>Kirim Tes</span>
-                    </button>
-                  </div>
+      {/* Preset Cards & Quick Fill Tools: height + fade disclosure (fade only with reduced motion) */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="panel"
+            id={panelId}
+            className="overflow-hidden"
+            initial={reducedMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            animate={
+              reducedMotion
+                ? { opacity: 1, transition: TWEEN.reducedIn }
+                : { height: 'auto', opacity: 1, transition: SPRING.sheet }
+            }
+            exit={
+              reducedMotion
+                ? { opacity: 0, transition: TWEEN.reducedOut }
+                : { height: 0, opacity: 0, transition: TWEEN.sheetExit }
+            }
+          >
+            <div className="p-4 sm:p-5 space-y-3.5">
+              {/* Information Pill */}
+              <div className="glass-well p-3 rounded-2xl border-purple-500/20 flex items-start gap-2.5 text-xs text-purple-200/90">
+                <Info className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-white">
+                    {t('demo.rulesTitle')}
+                  </p>
+                  <ul className="list-disc list-inside space-y-0.5 text-[11px] text-purple-300/80 mt-1 font-mono">
+                    <li>
+                      <span className="text-amber-300 font-bold">0000 0000</span>:{' '}
+                      {t('demo.ruleMainAccount')}
+                    </li>
+                    <li>
+                      <span className="text-rose-300 font-bold">0000 0001 – 0000 0100</span>:{' '}
+                      {t('demo.ruleAdminRange')}
+                    </li>
+                    <li>
+                      <span className="text-indigo-300 font-bold">0000 0101 …</span>:{' '}
+                      {t('demo.ruleTimestamp')}
+                    </li>
+                  </ul>
                 </div>
-              );
-            })}
-          </div>
+              </div>
 
-          {/* Quick random footer note */}
-          <div className="flex items-center justify-between text-[11px] text-purple-300/70 pt-1 border-t border-purple-500/20">
-            <span>
-              {isId
-                ? 'Tip: Tekan "Kirim Tes" untuk langsung mensimulasikan penyimpanan data & memeriksa kartu KCC ID serta unlock grup WA.'
-                : 'Tip: Click "Kirim Tes" to instantly simulate submission and view the generated KCC ID card and WhatsApp unlock.'}
-            </span>
-            {lastFilledPreset && (
-              <span className="text-emerald-300 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Preset dimuat</span>
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+              {/* Presets Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {presets.map((preset) => {
+                  const isSelected = lastFilledPreset === preset.id;
+                  return (
+                    <div
+                      key={preset.id}
+                      className={`glass-well p-3 rounded-2xl transition-colors text-left flex flex-col justify-between ${
+                        isSelected
+                          ? 'bg-purple-900/50 border-purple-400 ring-1 ring-purple-400/50'
+                          : 'border-slate-800 hover:border-purple-500/40 hover:bg-purple-950/30'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            {preset.icon}
+                            <h4 className="font-bold text-white text-xs leading-tight">
+                              {preset.name}
+                            </h4>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border font-mono shrink-0 ${preset.badgeColor}`}>
+                            {preset.badge}
+                          </span>
+                        </div>
+
+                        <p className="text-[10px] text-slate-300 mb-2 leading-tight">
+                          {preset.expectedUidType}
+                        </p>
+
+                        <div className="bg-slate-900/80 p-1.5 rounded-lg border border-slate-800 text-[10px] font-mono text-slate-400 space-y-0.5 mb-2.5">
+                          <div className="truncate">
+                            <span className="text-slate-500">{t('demo.previewName')}</span> <span className="text-slate-200">{preset.data.cosplayName}</span>
+                          </div>
+                          <div className="truncate">
+                            <span className="text-slate-500">{t('demo.previewWhatsapp')}</span> <span className="text-emerald-400">{preset.data.phone}</span>
+                          </div>
+                          <div className="truncate">
+                            <span className="text-slate-500">{t('demo.previewDiscord')}</span> <span className="text-indigo-300">{preset.data.discordUsername}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Preset Action Buttons */}
+                      <div className="grid grid-cols-2 gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectPreset(preset, false)}
+                          className="glass-button pressable gap-1 px-2 py-1.5 rounded-xl text-[11px]"
+                        >
+                          <span>{t('demo.fillForm')}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSelectPreset(preset, true)}
+                          className="glass-button pressable gap-1 px-2 py-1.5 rounded-xl border-white/20 bg-gradient-to-r from-purple-600 to-rose-600 hover:brightness-110 text-white text-[11px] font-bold"
+                        >
+                          <Zap className="w-3 h-3 text-amber-300" />
+                          <span>{t('demo.submitTest')}</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Quick random footer note */}
+              <div className="flex items-center justify-between text-[11px] text-purple-300/70 pt-1 border-t border-purple-500/20">
+                <span>
+                  {t('demo.tip', { action: t('demo.submitTest') })}
+                </span>
+                <AnimatePresence initial={false}>
+                  {lastFilledPreset && (
+                    <motion.span key="loaded" {...fadeMotion} className="text-emerald-300 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{t('demo.presetLoaded')}</span>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

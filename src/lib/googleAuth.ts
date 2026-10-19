@@ -1,35 +1,75 @@
 import {
   signInWithPopup,
+  reauthenticateWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
   User,
   signOut,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth, popupRedirectResolver, isMainAdminUser } from './firebase';
+import { MAIN_ACCOUNT_EMAIL } from './idGenerator';
+import { translate } from '../i18n';
 
-export const SCOPES = [
-  'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/spreadsheets',
-];
+/**
+ * Least-privilege scope of the admin Google Sheets sync. The sync only READS spreadsheet metadata (tab names)
+ * and cell values (sheetsService: spreadsheets.get + spreadsheets.values.get), so it needs no write access
+ * and no Drive scope. `https://www.googleapis.com/auth/drive` is a RESTRICTED scope that Google verification
+ * rejected and that was removed from the OAuth consent screen: never add a Drive scope back.
+ */
+export const SHEETS_READONLY_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 
-// Drive + Sheets provider, used ONLY by googleSignIn (the admin's "Connect Google Sheets" flow).
-// Member logins (authService.loginWithGoogleOAuth) use a plain provider with basic scopes.
-// - select_account: lets an admin switch to the right Google account.
-// - consent: forces Google to show the Drive/Sheets grant again, so a token with missing scopes is replaced.
-// (No access_type 'offline': popup sign-in never hands the web client a refresh token.)
-const provider = new GoogleAuthProvider();
-SCOPES.forEach((scope) => provider.addScope(scope));
-provider.setCustomParameters({ prompt: 'select_account consent' });
+export const SCOPES = [SHEETS_READONLY_SCOPE];
+
+/**
+ * Provider of the admin "Connect Google Sheets" flow ONLY (googleSignIn). Member logins
+ * (authService.loginWithGoogleOAuth) use a basic-scope provider and never request Sheets or Drive scopes.
+ * - include_granted_scopes: incremental authorization (the Sheets scope is added to the account's earlier grants).
+ * - login_hint: pre-selects the signed-in admin's Google account for the re-authentication popup.
+ * - select_account: only when nobody is signed in, so the admin can pick the right account.
+ * (No access_type 'offline': popup sign-in never hands the web client a refresh token.)
+ */
+function createSheetsProvider(loginHint: string | null): GoogleAuthProvider {
+  const sheetsProvider = new GoogleAuthProvider();
+  SCOPES.forEach((scope) => sheetsProvider.addScope(scope));
+  const params: Record<string, string> = { include_granted_scopes: 'true' };
+  if (loginHint) {
+    params.login_hint = loginHint;
+  } else {
+    params.prompt = 'select_account';
+  }
+  sheetsProvider.setCustomParameters(params);
+  return sheetsProvider;
+}
 
 const POPUP_CANCEL_CODES = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'];
+
+function getAuthErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== 'object' || !('code' in error)) return null;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : null;
+}
 
 /**
  * True when the user closed/cancelled the Google sign-in popup (not a real failure).
  */
 export function isPopupCancelledError(error: unknown): boolean {
-  if (!error || typeof error !== 'object' || !('code' in error)) return false;
-  const code = (error as { code?: unknown }).code;
-  return typeof code === 'string' && POPUP_CANCEL_CODES.includes(code);
+  const code = getAuthErrorCode(error);
+  return code !== null && POPUP_CANCEL_CODES.includes(code);
+}
+
+/**
+ * True when the browser blocked the Google popup (the user has to allow popups for this site).
+ */
+export function isPopupBlockedError(error: unknown): boolean {
+  return getAuthErrorCode(error) === 'auth/popup-blocked';
+}
+
+/**
+ * True when, during the Sheets re-authentication, the admin picked a different Google account than the
+ * signed-in Firebase user (the signed-in user is left unchanged).
+ */
+export function isUserMismatchError(error: unknown): boolean {
+  return getAuthErrorCode(error) === 'auth/user-mismatch';
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -161,30 +201,80 @@ export const initAuth = (
 };
 
 /**
- * Interactive Google sign-in with Drive + Sheets scopes (admin Sheets connection).
- * Stores the token for the signed-in uid. Rethrows every error, including a cancelled popup
- * (callers check isPopupCancelledError).
+ * Admin "Connect Google Sheets": on-demand (incremental) authorization of the read-only Sheets scope.
+ * - Someone is signed in: reauthenticateWithPopup for the SAME account (login_hint = their email). The
+ *   Firebase user never changes; picking another Google account rejects with auth/user-mismatch
+ *   (isUserMismatchError).
+ * - Nobody is signed in: falls back to signInWithPopup (signs in and grants the Sheets scope at once).
+ * Stores the token for the uid that obtained it (memory + sessionStorage, TTL below Google's 1 hour).
+ * Resolves null when a Sheets authorization popup is already open. Rethrows every error, including a
+ * cancelled popup (callers check isPopupCancelledError).
  */
 export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
+  if (isSigningIn) return null;
+  isSigningIn = true;
   try {
-    isSigningIn = true;
-    const result = await signInWithPopup(auth, provider);
+    const currentUser = auth.currentUser;
+    // auth is created without a popup resolver (firebase.ts), so every popup call passes it
+    const result = currentUser
+      ? await reauthenticateWithPopup(currentUser, createSheetsProvider(currentUser.email), popupRedirectResolver)
+      : await signInWithPopup(auth, createSheetsProvider(null), popupRedirectResolver);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
-      throw new Error('Failed to retrieve access token from Google sign in');
+      throw new Error(translate('errors.googleAccessTokenMissing'));
     }
 
     setAccessToken(credential.accessToken, result.user.uid);
     return { user: result.user, accessToken: credential.accessToken };
   } catch (error: unknown) {
     if (!isPopupCancelledError(error)) {
-      console.error('Google Sign-in error:', error);
+      console.error('Google Sheets authorization error:', error);
     }
     throw error;
   } finally {
     isSigningIn = false;
   }
 };
+
+// ---------------------------------------------------------------------------------------------
+// Dashboard lock "forgot password": Google re-authentication of the main account
+// ---------------------------------------------------------------------------------------------
+
+/** Re-authentication proof is accepted by dashboardLock.setDashboardPassword for this long. */
+export const MAIN_REAUTH_VALID_MS = 10 * 60 * 1000;
+let lastMainReauthAt = 0;
+
+/** Time (ms) of the last successful reauthenticateMainAccount in this page; 0 = never. */
+export function getLastMainReauthAt(): number {
+  return lastMainReauthAt;
+}
+
+/**
+ * Dashboard lock "forgot password": re-authenticates the signed-in MAIN account with a Google popup
+ * (basic scopes only, login_hint = the main account's email). The signed-in user never changes; picking
+ * another Google account fails with errors.lockReauthWrongAccount. A closed popup rethrows the original
+ * error (check isPopupCancelledError). Throws errors.lockMainOnly for any other signed-in user.
+ */
+export async function reauthenticateMainAccount(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user || !isMainAdminUser(user)) {
+    throw new Error(translate('errors.lockMainOnly'));
+  }
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ login_hint: MAIN_ACCOUNT_EMAIL, prompt: 'select_account' });
+  try {
+    const result = await reauthenticateWithPopup(user, provider, popupRedirectResolver);
+    if (!isMainAdminUser(result.user)) {
+      throw new Error(translate('errors.lockReauthWrongAccount'));
+    }
+    lastMainReauthAt = Date.now();
+  } catch (error: unknown) {
+    if (isUserMismatchError(error)) {
+      throw new Error(translate('errors.lockReauthWrongAccount'));
+    }
+    throw error;
+  }
+}
 
 export const logout = async (): Promise<void> => {
   try {

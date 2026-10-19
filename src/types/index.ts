@@ -1,6 +1,14 @@
+/**
+ * KCC ID as stored in the field `userId16` (name kept for compatibility, see AGENTS.md):
+ * 8 digits (current, running number; 00000000 = main account, 00000001-00000100 = admin range, members from
+ * 00000101) or 16 digits (legacy, before the 8-digit switch). Legacy IDs resolve through memberCardAliases.
+ */
+export type KccId = string;
+
 export interface Member {
   id: string;
-  userId16: string; // 16-digit KCC ID arranged by form submission timestamp (0000000000000000 for cosplaysehat@gmail.com)
+  userId16: KccId; // the KCC ID: 8 digits after the 8-digit switch, 16 digits before ('' = not assigned yet)
+  legacyUserId16?: string; // old 16-digit KCC ID, written only by the 8-digit migration (admin)
   authUid?: string; // Linked Firebase Auth UID
   fullName?: string; // Legacy compatibility only; form & database only ask for Name (name)
   name: string; // Nama (Name / Cosname / Stage Name / Alias)
@@ -23,7 +31,7 @@ export interface Member {
   portfolioUrl?: string; // Portofolio / Link Drive
   avatarUrl?: string; // Foto Profil / Avatar
   reason?: string; // Alasan Bergabung & Harapan
-  memberNumber?: string; // Legacy field replaced by 16-digit userId16
+  memberNumber?: string; // Legacy field replaced by the KCC ID (userId16)
   source: 'web_form' | 'google_form_sync' | 'spreadsheet_import';
   status: 'pending' | 'verified' | 'active';
   createdAt: string; // Timestamp pendaftaran (ISO string)
@@ -32,7 +40,7 @@ export interface Member {
 export interface Photo {
   id: string;
   memberId?: string;
-  userId16?: string;
+  userId16?: KccId; // uploader's KCC ID at upload time (rewritten to 8 digits by the migration photo pass)
   authorName: string;
   authorCosname?: string;
   authorNameAlias?: string;
@@ -51,7 +59,7 @@ export interface Photo {
 
 // Public, non-private projection of a member stored at memberCards/{userId16} (KCC ID card lookup)
 export interface MemberCard {
-  userId16: string; // == memberCards doc id, 16 digits
+  userId16: KccId; // == memberCards doc id, 8 digits (or 16 digits for a legacy card)
   cosplayName: string; // 1..80
   primaryRole: string; // <= 120
   city: string; // <= 80
@@ -69,6 +77,7 @@ export interface BulkImportResult {
   updated: number;
   unchanged: number;
   skipped: number;
+  issuedIds?: string[]; // KCC IDs given to new rows, in order
 }
 
 export interface MemberIdReassignment {
@@ -137,3 +146,168 @@ export interface ColumnMapping {
   portfolioUrl: number;
   reason: number;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Sprint 3: KCC ID counter, aliases, admins, dashboard lock, audit log, migrations
+// ---------------------------------------------------------------------------------------------
+
+/** counters/kccId. Exists = the 8-digit switch has started. `lastId` = `last` zero-padded to 8 digits. */
+export interface KccCounter {
+  last: number;
+  lastId: string;
+  planEnd?: number;
+  updatedAt?: string;
+}
+
+/** memberCardAliases/{old16}: a legacy 16-digit KCC ID -> the member's 8-digit KCC ID. */
+export interface MemberCardAlias {
+  kccId: string;
+  createdAt: string;
+}
+
+export interface AdminEntry {
+  uid: string;
+  memberId?: string;
+  email?: string;
+  name?: string;
+  addedBy?: string;
+  addedByEmail?: string;
+  addedAt: string | null; // ISO from the server Timestamp; null for console-created docs without it
+  legacy: boolean; // true when the doc does not have the sprint-3 schema (console-created)
+}
+
+export interface DashboardLockRecord {
+  algorithm: 'PBKDF2-SHA256';
+  hash: string; // base64, 32 bytes
+  salt: string; // base64, 16 bytes
+  iterations: number;
+  updatedAt: string | null; // ISO
+  updatedBy: string; // uid
+}
+
+/** == firestore.rules adminLogActions() */
+export type AdminLogAction =
+  | 'admin_added'
+  | 'admin_removed'
+  | 'photo_deleted'
+  | 'member_deleted'
+  | 'member_edited'
+  | 'member_unlinked'
+  | 'member_status_changed'
+  | 'password_reset_sent'
+  | 'kcc_id_migration'
+  | 'kcc_id_repair'
+  | 'registration_dates_fixed'
+  | 'duplicates_merged'
+  | 'sheets_import'
+  | 'dashboard_lock_set'
+  | 'dashboard_lock_cleared';
+
+export type AdminLogTargetType = 'member' | 'admin' | 'photo' | 'settings' | 'bulk';
+
+export interface AdminLogEntry {
+  id: string;
+  action: AdminLogAction;
+  actorUid: string;
+  actorEmail?: string;
+  at: string | null; // ISO from the server Timestamp (null while pending)
+  targetType?: AdminLogTargetType;
+  targetId?: string; // <= 128
+  targetLabel?: string; // <= 120 (name shown in the log; never phone/email of a member)
+  details?: string; // <= 1000
+  count?: number; // int >= 0 (bulk actions)
+}
+
+export type AdminLogInput = Omit<AdminLogEntry, 'id' | 'actorUid' | 'actorEmail' | 'at'>;
+
+// 8-digit migration ("Switch to 8-digit KCC IDs")
+export type KccIdMigrationKind = 'main' | 'admin' | 'member' | 'done';
+
+export type KccIdMigrationNote =
+  | 'duplicate_old_id'
+  | 'missing_old_id'
+  | 'unparsable_created_at'
+  | 'reserved_conflict'
+  | 'late_claim';
+
+export interface KccIdMigrationRow {
+  memberId: string;
+  name: string;
+  createdAt: string; // as stored (after the date fix)
+  fromId: string | null; // stored userId16 (16 digits) or null when missing/invalid
+  toId: string; // 8 digits; for note 'late_claim' a PROVISIONAL number (claimed at apply time)
+  kind: KccIdMigrationKind; // 'done' = already holds its 8-digit ID (resume / re-run)
+  writesAlias: boolean; // fromId gets memberCardAliases/{fromId} -> toId
+  deletesOldCard: boolean; // memberCards/{fromId} is deleted (false when another pending row still holds it)
+  note?: KccIdMigrationNote;
+}
+
+export interface KccIdMigrationPlan {
+  computedAt: string;
+  rows: KccIdMigrationRow[]; // ordered by toId
+  planEnd: number; // last number of the chronological block (100 + member rows)
+  counter: KccCounter | null; // counter as read (null = switch not started)
+  pending: number; // rows with kind !== 'done'
+  signature: string; // stable hash of the (memberId -> toId) pairs, to detect drift
+  warnings: string[];
+}
+
+export interface KccIdMigrationReport {
+  migrated: number;
+  aliasesWritten: number;
+  cardsWritten: number;
+  oldCardsDeleted: number;
+  lateClaimed: number; // 16-digit members found after the counter existed, given counter numbers
+  photosUpdated: number;
+  errors: string[];
+  complete: boolean; // no member holds a 16-digit or missing ID any more
+}
+
+// Registration dates from the spreadsheet ("Fix registration dates")
+export interface SheetTimeContext {
+  timeZone: string;
+  locale: string;
+}
+
+export interface RegistrationDateFixRow {
+  memberId: string;
+  name: string;
+  kccId: string;
+  source: Member['source'];
+  currentCreatedAt: string;
+  sheetCreatedAt: string;
+  deltaMs: number;
+  sheetRow: number; // 1-based row number in the sheet
+  matchedBy: 'phone' | 'email' | 'discord' | 'social' | 'name';
+  ambiguous: boolean; // the row matched more than one member
+  selected: boolean; // default tick in the preview
+}
+
+export interface RegistrationDateFixPlan {
+  rows: RegistrationDateFixRow[]; // only members whose date would change (> 1 s)
+  unchanged: number;
+  unmatchedRows: number;
+  unparsableRows: number;
+  context: SheetTimeContext;
+}
+
+export interface RegistrationDateFixReport {
+  updated: number;
+  cardsWritten: number;
+  errors: string[];
+}
+
+// Paged photos; the cursor is opaque to components
+export type PhotoPageCursor = { readonly __brand: 'PhotoPageCursor' };
+
+export interface PhotoPage {
+  photos: Photo[];
+  cursor: PhotoPageCursor | null;
+  hasMore: boolean;
+}
+
+// Audit log paging; the cursor is opaque to components (adminLogService.listAdminLogs)
+export type AdminLogCursor = { readonly __brand: 'AdminLogCursor' };
+
+/** How a public KCC ID lookup resolved (firestoreService.lookupMemberCard). */
+export type KccLookupSource = 'kcc8' | 'alias' | 'padded16' | 'legacy16';

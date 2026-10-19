@@ -1,5 +1,16 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, type User } from 'firebase/auth';
+import {
+  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  browserPopupRedirectResolver,
+  getRedirectResult,
+  type Auth,
+  type PopupRedirectResolver,
+  type User,
+} from 'firebase/auth';
 import {
   initializeFirestore,
   getFirestore,
@@ -11,6 +22,8 @@ import {
 import firebaseConfig from '../../firebase-applet-config.json';
 import { MAIN_ACCOUNT_EMAIL } from './idGenerator';
 import type { SubscriptionErrorKind } from '../types';
+import { translate } from '../i18n';
+import type { TranslationKey } from '../i18n';
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const customDbId = (firebaseConfig as Record<string, any>).firestoreDatabaseId;
@@ -29,7 +42,55 @@ function createFirestore(): Firestore {
 }
 
 export const db = createFirestore();
-export const auth = getAuth(app);
+
+// Auth WITHOUT a popupRedirectResolver at start-up: getAuth() would load the auth iframe + gapi on every
+// page load. Every popup call passes `popupRedirectResolver` below itself (authService, googleAuth), and
+// warmAuthPopup() loads it ahead of a sign-in tap. Same persistence order as getAuth() in browsers.
+function createAuth(): Auth {
+  try {
+    return initializeAuth(app, {
+      persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+    });
+  } catch (error) {
+    // Already initialized (e.g. Vite HMR re-ran this module): reuse the existing instance.
+    console.warn('Auth already initialized, reusing instance:', error);
+    return getAuth(app);
+  }
+}
+
+export const auth = createAuth();
+
+// The SDK keeps ONE resolver instance per class and loads its auth iframe + gapi in `_initialize()`, which
+// every popup call awaits BEFORE window.open. getRedirectResult() alone does not load them when no redirect
+// is pending, so warming needs that exact instance: this subclass remembers it when the SDK creates it.
+type PopupResolverInternals = { _initialize?: (auth: Auth) => Promise<unknown> };
+let popupResolverInstance: PopupResolverInternals | null = null;
+const BrowserPopupResolverClass = browserPopupRedirectResolver as unknown as new () => PopupResolverInternals;
+class WarmablePopupRedirectResolver extends BrowserPopupResolverClass {
+  constructor() {
+    super();
+    popupResolverInstance = this;
+  }
+}
+
+/** Popup resolver for signInWithPopup / reauthenticateWithPopup (auth is created without one). */
+export const popupRedirectResolver = WarmablePopupRedirectResolver as unknown as PopupRedirectResolver;
+
+let authPopupWarmed = false;
+
+/** Loads the popup resolver (auth iframe + gapi) ahead of a sign-in tap; safe to call repeatedly. */
+export function warmAuthPopup(): void {
+  if (authPopupWarmed || typeof window === 'undefined') return;
+  authPopupWarmed = true;
+  // getRedirectResult makes the SDK create (and cache) the resolver instance; then load its iframe
+  void getRedirectResult(auth, popupRedirectResolver)
+    .catch(() => null)
+    .then(() => popupResolverInstance?._initialize?.(auth))
+    .catch(() => {
+      // Nothing to do: a failed warm-up only means the first popup loads the resolver itself
+      authPopupWarmed = false;
+    });
+}
 
 export enum OperationType {
   CREATE = 'create',
@@ -89,7 +150,7 @@ export function isMainAdminUser(user: User | null | undefined): boolean {
 }
 
 /**
- * Admin = main account OR a console-created admins/{uid} document (same check as firestore.rules isAdmin()).
+ * Admin = main account OR an admins/{uid} document (same check as firestore.rules isAdmin()).
  */
 export async function checkIsAdminUser(user: User | null | undefined): Promise<boolean> {
   if (!user) return false;
@@ -101,6 +162,44 @@ export async function checkIsAdminUser(user: User | null | undefined): Promise<b
     console.warn('Admin check (admins/{uid}) failed:', error);
     return false;
   }
+}
+
+// The ID token's `email` claim per uid (getIdTokenResult). firestore.rules compare admins.addedByEmail and
+// adminLogs.actorEmail with request.auth.token.email byte for byte, so those fields are taken from here,
+// never from form input or member data.
+const tokenEmailCache = new Map<string, string | null>();
+
+/** The signed-in user's ID-token email claim (cached per uid for the session); null when absent/unreadable. */
+export async function getTokenEmail(user: User | null | undefined): Promise<string | null> {
+  if (!user) return null;
+  if (tokenEmailCache.has(user.uid)) return tokenEmailCache.get(user.uid) ?? null;
+  try {
+    const result = await user.getIdTokenResult();
+    const email = typeof result.claims.email === 'string' && result.claims.email ? result.claims.email : null;
+    tokenEmailCache.set(user.uid, email);
+    return email;
+  } catch (error) {
+    console.warn('Could not read the ID token email claim:', error);
+    return null;
+  }
+}
+
+/** Cached token email (see getTokenEmail); undefined when it was not loaded yet for this uid. */
+export function getCachedTokenEmail(uid: string): string | null | undefined {
+  return tokenEmailCache.has(uid) ? (tokenEmailCache.get(uid) ?? null) : undefined;
+}
+
+/**
+ * Throws a translated error unless the signed-in user is an admin (main account or admins/{uid}).
+ * Also loads the token email claim, so buildAdminLog / admin entries can use it synchronously.
+ */
+export async function requireAdminUser(errorKey: TranslationKey = 'errors.adminOnly'): Promise<User> {
+  const user = auth.currentUser;
+  if (!user || !(await checkIsAdminUser(user))) {
+    throw new Error(translate(errorKey));
+  }
+  await getTokenEmail(user);
+  return user;
 }
 
 function getErrorMessage(error: unknown): string {
@@ -147,29 +246,24 @@ export function classifyFirestoreError(error: unknown): SubscriptionErrorKind {
 }
 
 /**
- * Friendly bilingual (ID / EN) message for a failed Firestore read/write.
+ * Friendly message for a failed Firestore read/write, in the language selected in the I18nProvider.
+ * `_isId` is ignored; it is kept so existing callers still compile.
  */
-export function describeFirestoreError(error: unknown, isId: boolean = true): string {
+export function describeFirestoreError(error: unknown, _isId?: boolean): string {
   const code = getFirestoreErrorCode(error);
   if (code === 'permission-denied') {
-    return isId
-      ? 'Akses ditolak oleh database (permission denied). Data belum tersimpan. Pastikan semua isian tidak melebihi batas karakter, atau masuk dengan akun yang berwenang, lalu coba lagi.'
-      : 'Access denied by the database (permission denied). Nothing was saved. Make sure every field is within its character limit, or sign in with an authorized account, then try again.';
+    return translate('errors.firestorePermissionDenied');
   }
   if (code === 'unauthenticated') {
-    return isId ? 'Silakan login terlebih dahulu untuk melanjutkan.' : 'Please sign in first to continue.';
+    return translate('errors.signInRequired');
   }
   if (classifyFirestoreError(error) === 'unavailable') {
-    return isId
-      ? 'Koneksi ke database terputus. Periksa internet Anda lalu coba lagi.'
-      : 'Could not reach the database. Check your internet connection and try again.';
+    return translate('errors.databaseUnavailable');
   }
   if (error instanceof Error && error.message && !error.message.trim().startsWith('{')) {
     return error.message;
   }
-  return isId
-    ? 'Terjadi kendala saat menyimpan data. Silakan coba lagi.'
-    : 'Something went wrong while saving. Please try again.';
+  return translate('errors.saveFailed');
 }
 
 // Test connection on startup as mandated by security skill

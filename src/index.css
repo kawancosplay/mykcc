@@ -4,18 +4,213 @@
   --font-sans: 'DIN Next', sans-serif;
   --font-mono: 'DIN Next', monospace;
 
+  /* iOS UIKit-like curves, usable as `ease-ios` / `ease-out-soft` utilities */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
   /* Used across the app as `animate-fade-in` (not a Tailwind built-in).
      Opacity-only so it never creates a containing block for `fixed` children. */
   --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-fade-out: fade-out 0.16s ease-in both;
+  /* CSS-only fallbacks for surfaces not driven by framer-motion. Every keyframe ends on
+     `scale: none` / `translate: none`, so nothing is left behind that would trap `fixed` children. */
+  --animate-scale-in: scale-in 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-sheet-up: sheet-up 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-slide-up: slide-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
 
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
   }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  @keyframes scale-in {
+    from { opacity: 0; scale: 0.96; }
+    to { opacity: 1; scale: none; }
+  }
+
+  @keyframes sheet-up {
+    from { translate: 0 100%; }
+    to { translate: none; }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; translate: 0 8px; }
+    to { opacity: 1; translate: none; }
+  }
+
+  @keyframes shimmer {
+    from { background-position: 150% 0; }
+    to { background-position: -50% 0; }
+  }
 }
+
+/* =========================================================================
+   DESIGN TOKENS
+   ========================================================================= */
 
 :root {
   --font-din: 'DIN Next', sans-serif;
+
+  /* Brand (visual identity: purple -> mint on a deep violet night) */
+  --kcc-purple: #8c52ff;
+  --kcc-mint: #53ffc0;
+  --kcc-ink: #05020a;
+  --kcc-deep: #1a0f33;
+  --kcc-gradient: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
+  --theme-primary: #8c52ff; /* overwritten at runtime by themeContext */
+
+  /* Page background, painted by the fixed `body::before` layer. The app may override it at
+     runtime: document.documentElement.style.setProperty('--app-bg', gradient) */
+  --app-bg: linear-gradient(135deg, #05020a 0%, #1a0f33 50%, #05020a 100%);
+
+  /* Glass materials: tint painted under the blur */
+  --glass-fill-bar: rgba(12, 8, 26, 0.68);
+  --glass-fill-card: rgba(22, 14, 46, 0.6);
+  --glass-fill-raised: rgba(24, 15, 50, 0.7);
+  --glass-fill-elevated: rgba(18, 12, 40, 0.8);
+  --glass-fill-sheet: rgba(16, 10, 34, 0.86);
+  --glass-fill-menu: rgba(12, 8, 26, 0.85);
+  --glass-fill-well: rgba(5, 2, 10, 0.42);
+  --glass-fill-input: rgba(5, 2, 10, 0.45);
+  --glass-fill-control: rgba(255, 255, 255, 0.07);
+  --glass-fill-control-hover: rgba(255, 255, 255, 0.12);
+  --glass-fill-selected: rgba(140, 82, 255, 0.24);
+  --glass-fill-overlay: rgba(5, 2, 10, 0.6);
+  --glass-fill-solid: #120c26; /* reduced transparency / no backdrop-filter */
+
+  /* Strokes, specular highlight, focus */
+  --glass-stroke: rgba(255, 255, 255, 0.1);
+  --glass-stroke-strong: rgba(255, 255, 255, 0.16);
+  --glass-stroke-top: rgba(255, 255, 255, 0.2);
+  --glass-stroke-selected: rgba(140, 82, 255, 0.6);
+  --glass-stroke-focus: rgba(140, 82, 255, 0.75);
+  --glass-ring: 0 0 0 4px rgba(140, 82, 255, 0.28);
+  --glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  --glass-highlight-strong: inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 38%);
+
+  /* Elevation */
+  --glass-shadow-sm: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
+  --glass-shadow-md: 0 12px 32px -14px rgba(0, 0, 0, 0.7);
+  --glass-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.85), 0 0 40px -10px rgba(140, 82, 255, 0.22);
+  --glass-glow-primary: 0 8px 24px -10px rgba(140, 82, 255, 0.75);
+
+  /* Motion */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1); /* fallback; real spring curve below */
+  --dur-press: 90ms;
+  --dur-release: 420ms;
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+
+  /* Layout */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --nav-h: 5rem; /* gov banner + navbar, used for anchor scroll offset */
+  --tabbar-h: 3.75rem;
+  --touch-min: 44px;
+}
+
+/* Spring-like easing (slight overshoot) where `linear()` is supported. Defined through a custom
+   property inside @supports so the minifier can never collapse it into the fallback. */
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-spring: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
+      0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.6%, 1);
+  }
+}
+
+/* =========================================================================
+   iOS-FEEL GLOBALS (in `base`, so Tailwind utilities still override them)
+   ========================================================================= */
+
+@layer base {
+  :root {
+    color-scheme: dark; /* native selects, date pickers and scrollbars render dark */
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: calc(var(--nav-h) + var(--safe-top));
+  }
+
+  /* Installed app only: no rubber-band / pull-to-refresh behind the sticky nav. In a browser tab the
+     default stays, because pull-to-refresh is how phone users reload (e.g. to pick up a new build
+     after a deploy). Scroll areas inside sheets use `overscroll-behavior: contain` themselves. */
+  @media (display-mode: standalone), (display-mode: fullscreen) {
+    html,
+    body {
+      overscroll-behavior-y: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* No 300 ms double-tap delay / double-tap zoom on controls */
+  :where(a, button, input, select, textarea, label, summary, [role="button"], [role="tab"], [role="option"], [role="switch"]) {
+    touch-action: manipulation;
+  }
+
+  /* Long-press on a control should not select text or open the callout */
+  :where(button, [role="button"], [role="tab"]) {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Button labels wrap when they do not fit, so long translations never push a phone screen sideways
+     (`text-wrap: balance` splits a two-line label evenly). Controls that must stay on one line set it
+     themselves: .glass-segment, .glass-chip, .glass-tabbar-item, or a `whitespace-nowrap` / `truncate` utility. */
+  :where(button, a[role="button"]) {
+    text-wrap: balance;
+    overflow-wrap: break-word;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(83, 255, 192, 0.85);
+    outline-offset: 2px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  progress {
+    accent-color: var(--theme-primary, #8c52ff);
+  }
+
+  select option,
+  select optgroup {
+    background-color: #120c26;
+    color: #f8fafc;
+  }
+
+  /* Default press feedback for every button (utilities such as `active:scale-95` win).
+     Explicit `.pressable` (below) adds the spring release and covers non-button elements. */
+  @media (prefers-reduced-motion: no-preference) {
+    :where(button, [role="button"], [role="tab"]):not(:disabled) {
+      transition: scale var(--dur-release) var(--ease-spring);
+    }
+
+    :where(button, [role="button"], [role="tab"]):not(:disabled):active {
+      scale: 0.97;
+      transition-duration: var(--dur-press);
+    }
+  }
 }
 
 html, body, button, input, select, textarea {
@@ -28,21 +223,59 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #05020a;
-  background-image: linear-gradient(135deg, #05020a 0%, #1a0f33 50%, #05020a 100%);
-  background-attachment: fixed;
+  background-color: var(--kcc-ink);
   color: #f8fafc;
   min-height: 100vh;
+}
+
+/* Fixed background layer instead of `background-attachment: fixed` (ignored on iOS and repaints
+   the whole page on every scroll frame elsewhere). `lvh` keeps it still while Safari's toolbars
+   collapse. Paints above the canvas and below all page content. */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--app-bg);
+}
+
+@supports (height: 100lvh) {
+  body::before {
+    height: 100lvh;
+  }
+}
+
+/* Modal / sheet open: freeze the page behind (toggled by useSheetScrollLock in
+   src/components/UploadPhotoModal.tsx; move to src/lib/motion.ts when that module exists).
+   Lock the ROOT only. If body also gets `overflow: hidden` it becomes a scroll container, and the
+   sticky header then sticks to body (scrollTop 0) instead of the viewport: it jumps off screen
+   while a sheet is open on a scrolled page. */
+html.scroll-locked {
+  overflow: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Optimized Button Sizing & Ergonomics */
 button, a[role="button"] {
   line-height: 1.25;
-  white-space: nowrap;
+}
+
+/* iOS Safari zooms the page when a focused field is below 16px. Unlayered on purpose so it wins
+   over `text-xs` / `text-sm` utilities on phones and touch devices. */
+@media (max-width: 767px), (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
 }
 
 /* =========================================================================
-   LIQUID GLASS DESIGN LANGUAGE UTILITIES
+   LIQUID GLASS DESIGN LANGUAGE
    Translucent, refractive, specular highlight surfaces with depth & caustics
 
    Notes:
@@ -50,113 +283,1044 @@ button, a[role="button"] {
      production minifier (Lightning CSS) treats them as the same property and
      keeps only the last one; if the -webkit one is last it then strips it as
      an unneeded prefix, which removed the blur entirely on Vercel builds.
+     Blur values are literal (no var()) for the same reason.
    - Surfaces live in `@layer components` so Tailwind utilities on the same
-     element (border colors, padding, etc.) can still override them.
+     element (border colors, padding, radius, etc.) can still override them.
    - No `transform`/`will-change` hacks: they create a containing block that
      traps `position: fixed` children and fight Tailwind transform utilities.
+   - Bars (.liquid-glass, .glass-bar, .glass-pill, .glass-tabbar) paint their
+     glass on `::before`: they contain `fixed` children (mobile menu overlay)
+     and nested glass, and must not become a containing block / backdrop root.
+     Never fade bars with opacity (hide them with translate instead).
+   - Floating panels (.glass-elevated, .glass-sheet, .glass-menu) blur on the
+     element itself so opacity/scale/translate animations keep the blur. They
+     must not contain `position: fixed` children: portal those to <body>.
+   - The overlay/backdrop is a SIBLING of the panel, never its parent (a parent
+     with backdrop-filter or opacity < 1 would cut the panel's blur off).
+   - In-flow cards (.glass-card, .glass-well) have NO backdrop blur: they sit on
+     the smooth ambient background where a blur is invisible but costs a
+     re-blur on every scroll frame. Use .glass-card-frosted over photos.
+   - Hover styles only apply on real hover devices (no sticky hover on iOS).
+
+   Class map
+     .glass-bar / .liquid-glass   sticky top nav + gov banner (one surface)
+     .glass-tabbar (+ -item)      mobile bottom tab bar
+     .glass-pill                  floating capsule nav variant
+     .glass-card / .liquid-glass-card   in-flow content card
+     .glass-raised                modifier: hero card (stronger rim + shadow)
+     .glass-card-frosted          card floating over imagery (real blur)
+     .glass-card-interactive      clickable card (hover rim, use with .pressable)
+     .glass-well                  recessed panel inside a card
+     .glass-elevated / .liquid-glass-elevated   centered dialog panel
+     .glass-sheet (+ .sheet-grabber, .sheet-handle, .sheet-viewport)
+                                  bottom sheet on phones, dialog on >= 640px
+     .glass-scroll                the scrolling body inside a sheet/dialog
+     .glass-overlay               modal backdrop (dim; blur on >= 768px)
+     .glass-menu / .liquid-glass-menu   dropdowns, popovers, mobile menu
+     .glass-menu-item             row inside a menu
+     .liquid-glass-menu-item      legacy tile row (filled)
+     .glass-segmented / .glass-segment / .glass-segment-thumb   segmented control
+     .glass-chip                  badge / filter chip
+     .glass-input / .liquid-glass-input   text field, select, textarea
+     .btn-primary / .liquid-glass-button  brand gradient button
+     .glass-button                secondary glass button
+     .glass-icon-button           round icon button (close, like, download)
+     .glass-toast                 transient confirmation pill
+     .glass-skeleton              loading placeholder
+     .pressable / .pressable-soft spring press feedback (unlayered)
    ========================================================================= */
 
 @layer components {
-  /* Glass painted on a pseudo-element so the element itself is not a
-     containing block / backdrop root. This keeps `fixed` overlays inside the
-     navbar full-screen and lets nested glass (mobile menu) blur correctly. */
-  .liquid-glass {
+  /* ---------- Bars: glass on ::before ---------- */
+  .liquid-glass,
+  .glass-bar,
+  .glass-pill,
+  .glass-tabbar {
     position: relative;
     isolation: isolate;
-    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
-  .liquid-glass::before {
+  .liquid-glass {
+    border: 1px solid var(--glass-stroke);
+  }
+
+  .glass-bar {
+    border-bottom: 1px solid var(--glass-stroke);
+    box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  }
+
+  .glass-pill {
+    border: 1px solid var(--glass-stroke-strong);
+    border-top-color: var(--glass-stroke-top);
+    border-radius: 9999px;
+    box-shadow: var(--glass-shadow-md);
+  }
+
+  .liquid-glass::before,
+  .glass-bar::before,
+  .glass-pill::before,
+  .glass-tabbar::before {
     content: '';
     position: absolute;
     inset: 0;
     z-index: -1;
     border-radius: inherit;
     pointer-events: none;
-    background: rgba(14, 10, 30, 0.72);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
+    background-color: var(--glass-fill-bar);
+    background-image: var(--glass-sheen);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
   }
 
+  /* Mobile bottom tab bar (hide on desktop with `lg:hidden`) */
+  .glass-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+    padding: 0.375rem max(0.5rem, var(--safe-right)) calc(0.375rem + var(--safe-bottom)) max(0.5rem, var(--safe-left));
+    border-top: 1px solid var(--glass-stroke);
+    box-shadow: 0 -10px 30px -18px rgba(0, 0, 0, 0.8);
+  }
+
+  .glass-tabbar-item {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.125rem;
+    min-height: 3rem;
+    padding: 0.25rem 0.25rem;
+    border-radius: 1rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.1;
+    color: rgb(148 163 184);
+    transition: color var(--dur-fast) ease;
+  }
+
+  .glass-tabbar-item svg {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+
+  .glass-tabbar-item[aria-current="page"],
+  .glass-tabbar-item[aria-selected="true"],
+  .glass-tabbar-item.is-active {
+    color: #fff;
+  }
+
+  /* ---------- In-flow cards: no backdrop blur (see notes) ---------- */
+  .glass-card,
+  .liquid-glass-card {
+    background-color: var(--glass-fill-card);
+    background-image: var(--glass-sheen);
+    border: 1px solid var(--glass-stroke);
+    border-top-color: rgba(255, 255, 255, 0.14);
+    box-shadow: var(--glass-highlight), var(--glass-shadow-md);
+  }
+
+  .glass-raised {
+    background-color: var(--glass-fill-raised);
+    border-color: var(--glass-stroke-strong);
+    border-top-color: var(--glass-stroke-top);
+    box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
+  }
+
+  /* Card over imagery. Sprint 3: no live blur any more (it was unused and an in-flow blur costs a
+     re-blur per scroll frame); a denser tint keeps text readable over photos. */
+  .glass-card-frosted {
+    background-color: rgba(22, 14, 46, 0.86);
+    background-image: var(--glass-sheen);
+    border: 1px solid var(--glass-stroke-strong);
+    box-shadow: var(--glass-highlight), var(--glass-shadow-md);
+  }
+
+  .glass-card-interactive {
+    cursor: pointer;
+    transition: border-color var(--dur-base) ease, box-shadow var(--dur-base) ease, background-color var(--dur-base) ease;
+  }
+
+  .glass-well {
+    background-color: var(--glass-fill-well);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  /* ---------- Floating panels ---------- */
+  /* Centered dialog panel (legacy; unused since the sheet pattern). No blur of its own any more:
+     a near-opaque fill looks the same over the dimmed overlay. */
+  .glass-elevated,
+  .liquid-glass-elevated {
+    position: relative;
+    background-color: rgba(18, 12, 40, 0.95);
+    background-image: var(--glass-sheen);
+    border: 1px solid var(--glass-stroke-strong);
+    border-top-color: var(--glass-stroke-top);
+    box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
+  }
+
+  /* Positions the sheet: bottom-aligned on phones, centered on >= 640px. Clicks on the empty
+     area fall through to the sibling .glass-overlay (which closes the sheet). */
+  .sheet-viewport {
+    position: fixed;
+    inset: 0;
+    z-index: 61;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-top: calc(var(--safe-top) + 0.75rem);
+    pointer-events: none;
+  }
+
+  .sheet-viewport > * {
+    pointer-events: auto;
+  }
+
+  .glass-sheet {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-height: calc(100vh - var(--safe-top) - 0.75rem);
+    overflow: hidden;
+    color: rgb(241 245 249);
+    background-color: var(--glass-fill-sheet);
+    background-image: var(--glass-sheen);
+    border: 1px solid var(--glass-stroke-strong);
+    border-top-color: var(--glass-stroke-top);
+    border-bottom-width: 0;
+    border-radius: 1.75rem 1.75rem 0 0;
+    padding-bottom: var(--safe-bottom);
+    box-shadow: var(--glass-highlight-strong), 0 -18px 50px -20px rgba(0, 0, 0, 0.8);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+  }
+
+  @supports (height: 100dvh) {
+    .glass-sheet {
+      max-height: calc(100dvh - var(--safe-top) - 0.75rem);
+    }
+  }
+
+  @media (min-width: 640px) {
+    .sheet-viewport {
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    .glass-sheet {
+      max-height: calc(100vh - 3rem);
+      border-bottom-width: 1px;
+      border-radius: 1.75rem;
+      padding-bottom: 0;
+      box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
+    }
+  }
+
+  .sheet-grabber {
+    display: block;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 0.3125rem;
+    margin: 0.5rem auto 0.25rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.28);
+  }
+
+  /* Header area that starts the drag-to-dismiss gesture */
+  .sheet-handle {
+    flex-shrink: 0;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .sheet-handle:active {
+    cursor: grabbing;
+  }
+
+  @media (min-width: 640px) {
+    .sheet-grabber {
+      display: none;
+    }
+
+    .sheet-handle {
+      touch-action: auto;
+      cursor: auto;
+    }
+  }
+
+  /* Scrolling body of a sheet / dialog / menu (keep the glass element itself non-scrolling) */
+  .glass-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  }
+
+  /* Modal backdrop: render as a sibling of the panel / .sheet-viewport */
+  .glass-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background-color: var(--glass-fill-overlay);
+  }
+
+  @media (min-width: 768px) {
+    .glass-overlay {
+      -webkit-backdrop-filter: blur(8px) saturate(120%);
+      backdrop-filter: blur(8px) saturate(120%);
+    }
+  }
+
+  /* ---------- Menus & popovers ---------- */
+  .glass-menu,
   .liquid-glass-menu {
-    background: rgba(12, 8, 26, 0.85);
-    -webkit-backdrop-filter: blur(24px) saturate(190%);
-    backdrop-filter: blur(24px) saturate(190%);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background-color: var(--glass-fill-menu);
+    background-image: var(--glass-sheen);
+    border: 1px solid var(--glass-stroke-strong);
+    border-top-color: var(--glass-stroke-top);
     box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.85),
                 0 0 35px rgba(168, 85, 247, 0.18),
                 inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    backdrop-filter: blur(24px) saturate(190%);
+    overscroll-behavior: contain;
   }
 
+  .glass-menu {
+    border-radius: 1.25rem;
+    padding: 0.375rem;
+  }
+
+  .glass-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.875rem;
+    text-align: start;
+    color: rgb(226 232 240);
+    transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+  }
+
+  .glass-menu-item:active {
+    background-color: var(--glass-fill-control-hover);
+  }
+
+  .glass-menu-item[aria-current="true"],
+  .glass-menu-item[aria-current="page"],
+  .glass-menu-item[aria-selected="true"],
+  .glass-menu-item[aria-checked="true"],
+  .glass-menu-item.is-active {
+    background-color: var(--glass-fill-selected);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Legacy filled tile row (mobile menu). No own blur: the menu behind it is already glass. */
   .liquid-glass-menu-item {
-    background: rgba(255, 255, 255, 0.05);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
+    background-color: var(--glass-fill-control);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--glass-highlight);
+    transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
   }
 
-  .liquid-glass-menu-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+  .liquid-glass-menu-item:active {
+    background-color: var(--glass-fill-control-hover);
   }
 
-  .liquid-glass-elevated {
-    background: rgba(16, 11, 35, 0.85);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+  /* ---------- Segmented control (tab bars, mode toggles) ---------- */
+  .glass-segmented {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0.25rem;
+    max-width: 100%;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Full-width variant: segments share the width equally */
+  .glass-segmented-block {
+    display: flex;
+    width: 100%;
+  }
+
+  .glass-segmented-block > .glass-segment {
+    flex: 1 1 0%;
+  }
+
+  /* Many tabs on a narrow screen: scroll sideways instead of wrapping */
+  .glass-segmented-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .glass-segmented-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .glass-segment {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: rgb(203 213 225);
+    scroll-snap-align: center;
+    transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+  }
+
+  .glass-segment:focus-visible {
+    outline-offset: -2px;
+  }
+
+  .glass-segment[aria-selected="true"],
+  .glass-segment[aria-current="page"],
+  .glass-segment[aria-pressed="true"],
+  .glass-segment[data-active="true"],
+  .glass-segment.is-active {
+    color: #fff;
+  }
+
+  /* Active indicator. Animate it with a framer-motion `layoutId` (see LAYOUT_IDS in
+     src/lib/motion.ts); z-index -1 inside the isolated segment keeps it under the label. */
+  .glass-segment-thumb,
+  .glass-segment.is-active::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    background-color: rgba(255, 255, 255, 0.14);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%);
     border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                0 4px 14px -4px rgba(0, 0, 0, 0.55),
+                0 0 18px -6px rgba(140, 82, 255, 0.55);
   }
 
-  .liquid-glass-card {
-    background: rgba(18, 12, 38, 0.75);
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
+  /* CSS-only active state (no motion thumb element): add `.is-active` to the segment */
+  .glass-segment.is-active::before {
+    content: '';
+  }
+
+  /* ---------- Chips ---------- */
+  .glass-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 1.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    color: rgb(226 232 240);
+    background-color: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: var(--glass-highlight);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
   }
 
+  button.glass-chip,
+  .glass-chip[role="button"],
+  .glass-chip[role="radio"],
+  .glass-chip[role="checkbox"] {
+    min-height: 2.25rem;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
+  }
+
+  .glass-chip[aria-pressed="true"],
+  .glass-chip[aria-checked="true"],
+  .glass-chip[aria-selected="true"],
+  .glass-chip.is-active {
+    color: #fff;
+    background-color: var(--glass-fill-selected);
+    border-color: var(--glass-stroke-selected);
+  }
+
+  /* ---------- Inputs ---------- */
+  .glass-input,
+  .liquid-glass-input {
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.875rem;
+    color: #f8fafc;
+    background-color: var(--glass-fill-input);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+    caret-color: var(--kcc-mint);
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
+  }
+
+  .glass-input::placeholder,
+  .liquid-glass-input::placeholder {
+    color: rgb(100 116 139);
+    opacity: 1;
+  }
+
+  .glass-input:focus,
+  .liquid-glass-input:focus,
+  .glass-input:focus-within,
+  .liquid-glass-input:focus-within {
+    outline: none;
+    background-color: rgba(10, 6, 22, 0.6);
+    border-color: var(--glass-stroke-focus);
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35), var(--glass-ring);
+  }
+
+  .glass-input[aria-invalid="true"],
+  .liquid-glass-input[aria-invalid="true"] {
+    border-color: rgba(244, 63, 94, 0.7);
+  }
+
+  .glass-input[aria-invalid="true"]:focus,
+  .liquid-glass-input[aria-invalid="true"]:focus {
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(244, 63, 94, 0.25);
+  }
+
+  .glass-input:disabled,
+  .liquid-glass-input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  select.glass-input,
+  select.liquid-glass-input {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23cbd5e1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem 1rem;
+  }
+
+  [dir="rtl"] select.glass-input,
+  [dir="rtl"] select.liquid-glass-input {
+    background-position: left 0.75rem center;
+  }
+
+  textarea.glass-input,
+  textarea.liquid-glass-input {
+    resize: vertical;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn-primary,
+  .glass-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.625rem 1.125rem;
+    border-radius: 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    font-weight: 700;
+    color: #1a0f33; /* dark text: white fails contrast on the mint end */
+    background-color: #8c52ff;
+    background-image: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), var(--glass-glow-primary);
+    transition: filter var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
+  }
+
+  .glass-button {
+    font-weight: 600;
+    color: rgb(241 245 249);
+    background-color: var(--glass-fill-control);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: var(--glass-highlight);
+    transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
+  }
+
+  .glass-button:active {
+    background-color: var(--glass-fill-control-hover);
+  }
+
+  .btn-primary:disabled,
+  .btn-primary[aria-disabled="true"],
+  .glass-button:disabled,
+  .glass-button[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
+  }
+
+  /* Round icon button (close, like, download). Visual 40px, hit area >= 44px via ::after. */
+  .glass-icon-button {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    color: rgb(226 232 240);
+    background-color: rgba(20, 14, 40, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: var(--glass-highlight), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    cursor: pointer;
+    transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+  }
+
+  .glass-icon-button::after,
+  .touch-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+
+  .touch-target {
+    position: relative;
+  }
+
+  /* ---------- Feedback ---------- */
+  .glass-toast {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: min(92vw, 28rem);
+    padding: 0.625rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--glass-fill-elevated);
+    border: 1px solid var(--glass-stroke-strong);
+    border-top-color: var(--glass-stroke-top);
+    box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  .glass-skeleton {
+    border-radius: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0) 100%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Gallery / avatar images: fade in on load instead of animating blur + brightness filters.
+     Set data-loaded="true" in onLoad. */
+  .img-reveal {
+    opacity: 0;
+    transition: opacity 0.45s var(--ease-out-soft);
+  }
+
+  .img-reveal[data-loaded="true"] {
+    opacity: 1;
+  }
+
+  /* ---------- Hover (real pointer devices only: no sticky hover after a tap on iOS) ---------- */
+  @media (hover: hover) and (pointer: fine) {
+    .glass-card-interactive:hover {
+      border-color: var(--glass-stroke-strong);
+      box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
+    }
+
+    .glass-menu-item:hover {
+      background-color: var(--glass-fill-control);
+      color: #fff;
+    }
+
+    .liquid-glass-menu-item:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .glass-segment:hover {
+      color: #fff;
+    }
+
+    button.glass-chip:hover,
+    .glass-chip[role="button"]:hover {
+      background-color: var(--glass-fill-control-hover);
+    }
+
+    .glass-input:hover:not(:focus):not(:disabled),
+    .liquid-glass-input:hover:not(:focus):not(:disabled) {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.08) saturate(1.05);
+    }
+
+    .glass-button:hover:not(:disabled),
+    .glass-icon-button:hover {
+      background-color: var(--glass-fill-control-hover);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+  }
+
+  /* ---------- Touch devices: 44px minimum targets ---------- */
+  @media (pointer: coarse) {
+    .btn-primary,
+    .glass-button,
+    .glass-input,
+    .liquid-glass-input,
+    .glass-segment,
+    button.glass-chip,
+    .glass-chip[role="button"] {
+      min-height: var(--touch-min);
+    }
+
+    textarea.glass-input,
+    textarea.liquid-glass-input {
+      min-height: 5.5rem;
+    }
+  }
+
+  /* ---------- Phones: blur only on fixed surfaces ---------- */
+  /* Chips and icon buttons scroll WITH the content, so each one is an extra backdrop pass per scroll
+     frame while barely visible on the translucent cards they sit on: solid fill instead. Fixed /
+     overlay surfaces (sticky header, tab bar, sheets, menus, toast) keep their blur with a smaller
+     radius and saturate (the cost grows with the radius; saturate is a second filter pass). */
+  @media (max-width: 767px) {
+    .glass-chip {
+      background-color: rgba(255, 255, 255, 0.1);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass-icon-button {
+      background-color: rgba(20, 14, 40, 0.72);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .liquid-glass::before,
+    .glass-bar::before,
+    .glass-pill::before,
+    .glass-tabbar::before {
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      backdrop-filter: blur(14px) saturate(140%);
+    }
+
+    .glass-sheet,
+    .glass-menu,
+    .liquid-glass-menu,
+    .glass-toast {
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+      backdrop-filter: blur(18px) saturate(150%);
+    }
+  }
+
+  /* ---------- Fallbacks ---------- */
   /* Graceful translucent solid fallback when backdrop-filter is unsupported */
   @supports not ((-webkit-backdrop-filter: blur(10px)) or (backdrop-filter: blur(10px))) {
-    .liquid-glass::before {
-      background: rgba(15, 23, 42, 0.88);
+    .liquid-glass::before,
+    .glass-bar::before,
+    .glass-pill::before,
+    .glass-tabbar::before {
+      background-color: rgba(14, 10, 30, 0.94);
     }
-    .liquid-glass-elevated {
-      background: rgba(15, 23, 42, 0.94);
+
+    .glass-elevated,
+    .liquid-glass-elevated,
+    .glass-sheet,
+    .glass-toast {
+      background-color: rgba(18, 12, 40, 0.97);
     }
-    .liquid-glass-card {
-      background: rgba(15, 23, 42, 0.90);
+
+    .glass-menu,
+    .liquid-glass-menu {
+      background-color: rgba(12, 8, 26, 0.97);
+    }
+
+    .glass-card-frosted {
+      background-color: rgba(22, 14, 46, 0.92);
+    }
+
+    .glass-chip,
+    .glass-icon-button {
+      background-color: rgba(30, 22, 56, 0.9);
+    }
+
+    .glass-overlay {
+      background-color: rgba(5, 2, 10, 0.78);
+    }
+  }
+
+  /* OS "Reduce transparency": solid materials, no blur */
+  @media (prefers-reduced-transparency: reduce) {
+    .liquid-glass::before,
+    .glass-bar::before,
+    .glass-pill::before,
+    .glass-tabbar::before,
+    .glass-elevated,
+    .liquid-glass-elevated,
+    .glass-sheet,
+    .glass-menu,
+    .liquid-glass-menu,
+    .glass-card-frosted,
+    .glass-toast {
+      background-color: var(--glass-fill-solid);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass-chip,
+    .glass-icon-button,
+    .glass-overlay {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass-overlay {
+      background-color: rgba(5, 2, 10, 0.85);
+    }
+  }
+
+  /* Lite / low-power mode (src/lib/perfMode.ts; `html[data-perf="lite"]` is set by the inline script in
+     index.html before this CSS loads, so the first paint is already right). Same layout and colours:
+     live blur becomes the dense translucent fills of the no-backdrop-filter fallback above. */
+  :root[data-perf="lite"] .liquid-glass::before,
+  :root[data-perf="lite"] .glass-bar::before,
+  :root[data-perf="lite"] .glass-pill::before,
+  :root[data-perf="lite"] .glass-tabbar::before {
+    background-color: rgba(14, 10, 30, 0.94);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-elevated,
+  :root[data-perf="lite"] .liquid-glass-elevated,
+  :root[data-perf="lite"] .glass-sheet,
+  :root[data-perf="lite"] .glass-toast {
+    background-color: rgba(18, 12, 40, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-menu,
+  :root[data-perf="lite"] .liquid-glass-menu {
+    background-color: rgba(12, 8, 26, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-chip,
+  :root[data-perf="lite"] .glass-icon-button {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  :root[data-perf="lite"] .glass-icon-button {
+    background-color: rgba(30, 22, 56, 0.9);
+  }
+
+  :root[data-perf="lite"] .glass-overlay {
+    background-color: rgba(5, 2, 10, 0.78);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  @media (prefers-contrast: more) {
+    .glass-card,
+    .liquid-glass-card,
+    .glass-elevated,
+    .liquid-glass-elevated,
+    .glass-sheet,
+    .glass-menu,
+    .liquid-glass-menu,
+    .glass-input,
+    .liquid-glass-input,
+    .glass-button {
+      border-color: rgba(255, 255, 255, 0.35);
     }
   }
 }
 
-.liquid-glass-input {
-  background: rgba(0, 0, 0, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  transition: all 0.2s ease;
-}
-
-.liquid-glass-input:focus {
-  border-color: rgba(244, 63, 94, 0.5);
-  outline: none;
-}
-
+/* Brand gradient button (legacy name). Kept unlayered: its dark text intentionally wins over the
+   `text-white` utilities still present on older markup. New code: use `.btn-primary`. */
 .liquid-glass-button {
   background: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
   border: none;
   color: #1a0f33; /* Darker text for contrast on mint green */
   font-weight: 600;
-  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), var(--glass-glow-primary);
+  -webkit-user-select: none;
+  user-select: none;
+  transition: filter 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, scale var(--dur-release) var(--ease-spring);
 }
 
-.liquid-glass-button:hover {
-  filter: brightness(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .liquid-glass-button:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
 }
 
-/* Tailwind v4 already emits -webkit-backdrop-filter for backdrop-blur-*
-   utilities, so no manual overrides are needed (the old ones also clobbered
-   backdrop-saturate/brightness and transform utilities). */
+@media (pointer: coarse) {
+  .liquid-glass-button {
+    min-height: var(--touch-min);
+  }
+}
 
+/* Spring press feedback. Unlayered on purpose: it carries the complete transition list, so a
+   leftover `transition-*` utility on the same element cannot cancel the spring release.
+   On framer-motion elements use `whileTap` (src/lib/motion.ts) instead. */
+.pressable,
+.pressable-soft {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition-property: scale, opacity, background-color, border-color, color, box-shadow, filter;
+  transition-duration: var(--dur-release), 0.2s, 0.2s, 0.2s, 0.2s, 0.2s, 0.2s;
+  transition-timing-function: var(--ease-spring), ease, ease, ease, ease, ease, ease;
+}
+
+.pressable:active:not(:disabled):not([aria-disabled="true"]),
+.pressable-soft:active:not(:disabled):not([aria-disabled="true"]) {
+  transition-duration: var(--dur-press);
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pressable:active:not(:disabled):not([aria-disabled="true"]) {
+    scale: 0.97;
+  }
+
+  .pressable-soft:active:not(:disabled):not([aria-disabled="true"]) {
+    scale: 0.985;
+  }
+
+  .liquid-glass-button:active:not(:disabled) {
+    scale: 0.97;
+    transition-duration: var(--dur-press);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active:not(:disabled):not([aria-disabled="true"]),
+  .pressable-soft:active:not(:disabled):not([aria-disabled="true"]) {
+    opacity: 0.8;
+  }
+}
+
+/* =========================================================================
+   AMBIENT BACKGROUND
+   ========================================================================= */
+
+/* Preferred markup (cheap): radial gradients, no `filter: blur()`.
+   <div class="ambient-layer" aria-hidden="true">
+     <div class="ambient-blob ambient-blob--1"></div>
+     <div class="ambient-blob ambient-blob--2"></div>
+     <div class="ambient-blob ambient-blob--3"></div>
+   </div> */
+.ambient-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+@supports (height: 100lvh) {
+  .ambient-layer {
+    height: 100lvh;
+  }
+}
+
+.ambient-blob {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.ambient-blob--1 {
+  top: -22vmax;
+  left: -20vmax;
+  width: 70vmax;
+  height: 70vmax;
+  background: radial-gradient(closest-side, rgba(168, 85, 247, 0.34) 0%, rgba(217, 70, 239, 0.16) 55%, rgba(217, 70, 239, 0) 100%);
+}
+
+.ambient-blob--2 {
+  top: 28%;
+  right: -24vmax;
+  width: 75vmax;
+  height: 75vmax;
+  background: radial-gradient(closest-side, rgba(139, 92, 246, 0.32) 0%, rgba(99, 102, 241, 0.16) 55%, rgba(99, 102, 241, 0) 100%);
+}
+
+.ambient-blob--3 {
+  bottom: -28vmax;
+  left: 18%;
+  width: 80vmax;
+  height: 80vmax;
+  background: radial-gradient(closest-side, rgba(217, 70, 239, 0.22) 0%, rgba(140, 82, 255, 0.14) 55%, rgba(140, 82, 255, 0) 100%);
+}
+
+/* Optional brand accent (mint end of the gradient), very faint */
+.ambient-blob--mint {
+  top: 55%;
+  left: -12vmax;
+  width: 45vmax;
+  height: 45vmax;
+  background: radial-gradient(closest-side, rgba(83, 255, 192, 0.08) 0%, rgba(83, 255, 192, 0) 100%);
+}
+
+@keyframes ambient-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(3vmax, -2vmax, 0) scale(1.08); }
+  100% { transform: translate3d(-2vmax, 2vmax, 0) scale(1.03); }
+}
+
+/* Legacy blob markup (`blur-[140px]` + .animate-fluid-*), kept working but cheaper */
 /* Subtle continuous ambient fluid pulse animation - GPU accelerated transform only */
 @keyframes fluid-drift {
   0%, 100% {
@@ -170,20 +1334,120 @@ button, a[role="button"] {
   }
 }
 
-.animate-fluid-1 {
-  animation: fluid-drift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  will-change: transform;
-}
-
-.animate-fluid-2 {
-  animation: fluid-drift 28s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
-  will-change: transform;
-}
-
+.animate-fluid-1,
+.animate-fluid-2,
 .animate-fluid-3 {
-  animation: fluid-drift 32s cubic-bezier(0.4, 0, 0.2, 1) infinite 8s;
-  will-change: transform;
+  animation: none;
 }
+
+/* Blobs only drift on larger screens with motion allowed. On phones they stay still: a moving
+   backdrop forces every glass surface on screen to re-blur each frame (and drains battery). */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .ambient-blob--1 {
+    animation: ambient-drift 26s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  .ambient-blob--2 {
+    animation: ambient-drift 32s ease-in-out infinite alternate-reverse;
+    will-change: transform;
+  }
+
+  .ambient-blob--3 {
+    animation: ambient-drift 38s ease-in-out -12s infinite alternate;
+    will-change: transform;
+  }
+
+  .animate-fluid-1 {
+    animation: fluid-drift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform;
+  }
+
+  .animate-fluid-2 {
+    animation: fluid-drift 28s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+    will-change: transform;
+  }
+
+  .animate-fluid-3 {
+    animation: fluid-drift 32s cubic-bezier(0.4, 0, 0.2, 1) infinite 8s;
+    will-change: transform;
+  }
+}
+
+/* Fewer blobs on phones */
+@media (max-width: 767px) {
+  .ambient-blob--3,
+  .animate-fluid-3 {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   UTILITIES (real Tailwind utilities: variants like `lg:pb-16` work)
+   ========================================================================= */
+
+/* Safe areas (need viewport-fit=cover in the viewport meta to be non-zero) */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+@utility px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+@utility top-safe {
+  top: env(safe-area-inset-top, 0px);
+}
+
+@utility bottom-safe {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Bottom padding for pages when the mobile tab bar is visible (`pb-tabbar lg:pb-16`) */
+@utility pb-tabbar {
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
+/* Toasts / floating buttons sitting above the tab bar */
+@utility bottom-tabbar {
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+
+@utility min-touch {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Skip rendering off-screen cards until they scroll near (long forms, gallery grid) */
+@utility cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   RESPONSIVE / ACCESSIBILITY
+   ========================================================================= */
 
 /* Responsive tweaks */
 @media (max-width: 640px) {
@@ -195,6 +1459,76 @@ button, a[role="button"] {
   }
 }
 
+/* Reduce motion: no drifting background, no slides/springs; keep loading spinners turning. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .animate-fluid-1,
+  .animate-fluid-2,
+  .animate-fluid-3,
+  .ambient-blob,
+  .glass-skeleton {
+    animation: none !important;
+    will-change: auto;
+  }
+}
+
+/* Lite / low-power mode (see the glass block in @layer components for the materials): no ambient light
+   layer (the theme gradient on body::before stays, so the colours do not change), short transitions,
+   static skeletons, short CSS entrance animations, no smooth scrolling. Spinners keep turning. */
+:root[data-perf="lite"] {
+  scroll-behavior: auto;
+  /* Component transitions (pressable, segments, menus, ...) read these tokens */
+  --dur-press: 60ms;
+  --dur-release: 120ms;
+  --dur-fast: 100ms;
+  --dur-base: 120ms;
+}
+
+:root[data-perf="lite"] .ambient-layer {
+  display: none;
+}
+
+/* (With the OS reduce-motion setting the block above already makes these 0.01 ms.) */
+@media (prefers-reduced-motion: no-preference) {
+  /* Only elements that already animate (Tailwind transition / duration utilities, image reveal). NEVER
+     a duration on every element: the default transition-property is `all`, so every style change on
+     every element (width, height, colours, ...) would start animating and cost frames. */
+  :root[data-perf="lite"] :is([class*="transition"], [class*="duration-"], .img-reveal) {
+    transition-duration: 0.12s !important;
+    transition-delay: 0s !important;
+  }
+
+  :root[data-perf="lite"] .animate-fade-in,
+  :root[data-perf="lite"] .animate-fade-out,
+  :root[data-perf="lite"] .animate-scale-in,
+  :root[data-perf="lite"] .animate-sheet-up,
+  :root[data-perf="lite"] .animate-slide-up {
+    animation-duration: 0.12s !important;
+  }
+}
+
+:root[data-perf="lite"] .glass-skeleton {
+  animation: none;
+}
+
+/* The sticky header hides / shows instantly in lite mode (StickyHeader). */
+:root[data-perf="lite"] .sticky-header {
+  transition: none !important;
+}
+
 [lang="su-Sund"] {
   font-family: 'Noto Sans Sundanese', var(--font-din);
 }
@@ -202,4 +1536,10 @@ button, a[role="button"] {
 [dir="rtl"] {
   font-family: 'Noto Sans Arabic', var(--font-din);
   text-align: right;
+}
+
+/* Room for the custom chevron in glass selects. Unlayered so `px-*` utilities cannot remove it. */
+select.glass-input,
+select.liquid-glass-input {
+  padding-inline-end: 2.25rem;
 }

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Sparkles,
   User,
@@ -22,21 +23,20 @@ import {
 import { Member } from '../types';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
 import { submitRegistration } from '../lib/authService';
-import { compressImage } from '../lib/imageUtils';
-import {
-  format16DigitUserId,
-  generate16DigitUserId,
-  findDuplicateMember,
-  mergeMemberPhones,
-} from '../lib/idGenerator';
+import { AVATAR_COMPRESS, compressImage } from '../lib/imageUtils';
+import { formatKccId, findDuplicateMember, mergeMemberPhones } from '../lib/idGenerator';
 import { describeFirestoreError } from '../lib/firebase';
 import {
   getAllCountriesList,
   getStatesOfCountryByName,
   getCitiesOfStateByName,
+  useWorldLocations,
   CountryOption,
 } from '../lib/worldLocations';
-import { LanguageCode, TRANSLATIONS, getFormTranslation, FormSpecificTranslations } from '../lib/i18n';
+import { useI18n } from '../i18n';
+import type { LanguageCode, TranslationKey } from '../i18n';
+import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
+import { haptic } from '../lib/haptic';
 import { DemoFormTester } from './DemoFormTester';
 
 interface RegistrationFormProps {
@@ -44,7 +44,7 @@ interface RegistrationFormProps {
   existingMembers?: Member[]; // Only used by the admin DemoFormTester
   onRegistered: (newMember: Member) => void;
   onOpenCardModal: (member: Member) => void;
-  currentLang: LanguageCode;
+  currentLang: LanguageCode; // Kept for App; the component reads the language from useI18n()
   isAdmin?: boolean;
 }
 
@@ -56,95 +56,128 @@ const PRESET_AVATARS = [
   'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=300&auto=format&fit=crop&q=80',
 ];
 
-const getCommunityRoles = (isId: boolean, ft?: FormSpecificTranslations) => [
-  { val: 'Cosplayer / Crossplayer', label: 'Cosplayer / Crossplayer' },
-  {
-    val: 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
-    label: isId
-      ? 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)'
-      : 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)',
-  },
-  {
-    val: 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)',
-    label: isId
-      ? 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)'
-      : 'Anime, Manga & Gaming Otaku (Anime, games & pop-culture enthusiast)',
-  },
+// Option values are what gets saved to Firestore and are never translated; only labelKey is shown
+interface LabeledOption {
+  val: string;
+  labelKey: TranslationKey;
+}
+
+const COMMUNITY_ROLES: LabeledOption[] = [
+  { val: 'Cosplayer / Crossplayer', labelKey: 'registration.roleCosplayer' },
+  { val: 'Idol Fan / Wota (J-Pop, K-Pop, 48 Group, Chika Idol, VTuber)', labelKey: 'registration.roleIdolFan' },
+  { val: 'Anime, Manga & Gaming Otaku (Penikmat anime, game & pop culture)', labelKey: 'registration.roleOtaku' },
   {
     val: 'Sahabat Umum / General Enthusiast (Penikmat umum, teman pendukung & penonton gathering)',
-    label: isId
-      ? 'Sahabat Umum / Penikmat Acara (Teman pendukung, pengunjung & penikmat gathering)'
-      : 'General Enthusiast / Supporter (General friend, supporter & meetup attendee)',
+    labelKey: 'registration.roleGeneralEnthusiast',
   },
-  {
-    val: 'Prop Maker / Crafter / Pembuat Aksesori',
-    label: isId ? 'Prop Maker / Crafter / Pembuat Aksesori' : 'Prop Maker / Crafter (Weapons, armor & accessory creator)',
-  },
-  {
-    val: 'Fotografer / Videografer Cosplay',
-    label: isId ? 'Fotografer / Videografer Cosplay' : 'Cosplay Photographer / Videographer',
-  },
-  {
-    val: 'Costume Maker / Seamstress / Wig Stylist',
-    label: isId ? 'Costume Maker / Seamstress / Wig Stylist' : 'Costume Maker / Seamstress / Wig Stylist',
-  },
-  {
-    val: 'Event Crew, Stage Staff & Volunteer',
-    label: isId ? 'Event Crew, Stage Staff & Volunteer' : 'Event Crew, Stage Staff & Volunteer',
-  },
-  {
-    val: 'Kreator Konten / Streamer',
-    label: isId ? 'Kreator Konten / Streamer' : 'Content Creator / Streamer',
-  },
-  {
-    val: 'Lainnya / Others',
-    label: ft?.roleOthers || (isId ? 'Lainnya / Others (Peran Lainnya)' : 'Others / Custom Role'),
-  },
+  { val: 'Prop Maker / Crafter / Pembuat Aksesori', labelKey: 'registration.rolePropMaker' },
+  { val: 'Fotografer / Videografer Cosplay', labelKey: 'registration.rolePhotographer' },
+  { val: 'Costume Maker / Seamstress / Wig Stylist', labelKey: 'registration.roleCostumeMaker' },
+  { val: 'Event Crew, Stage Staff & Volunteer', labelKey: 'registration.roleEventCrew' },
+  { val: 'Kreator Konten / Streamer', labelKey: 'registration.roleContentCreator' },
+  { val: 'Lainnya / Others', labelKey: 'registration.roleOthers' },
 ];
 
-const getExperienceLevels = (isId: boolean) => [
-  { val: 'Pemula (< 1 tahun)', label: isId ? 'Pemula (< 1 tahun)' : 'Beginner (< 1 year)' },
-  { val: '1 - 3 tahun', label: isId ? '1 - 3 tahun' : '1 - 3 years' },
-  { val: '> 3 tahun', label: isId ? '> 3 tahun' : 'Veteran (> 3 years)' },
-  { val: 'Penikmat Santai / Casual', label: isId ? 'Penikmat Santai / Casual' : 'Casual / Enthusiast' },
+const EXPERIENCE_LEVELS: LabeledOption[] = [
+  { val: 'Pemula (< 1 tahun)', labelKey: 'registration.experienceBeginner' },
+  { val: '1 - 3 tahun', labelKey: 'registration.experienceOneToThreeYears' },
+  { val: '> 3 tahun', labelKey: 'registration.experienceVeteran' },
+  { val: 'Penikmat Santai / Casual', labelKey: 'registration.experienceCasual' },
 ];
 
-const FANDOMS = [
-  'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
-  'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
-  'Idol & Music (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)',
-  'Isekai & Fantasy (Frieren, Slime, Re:Zero, DanMachi)',
-  'Gaming & Esports (Valorant, League of Legends, MLBB, Elden Ring)',
-  'VTuber (Hololive, Nijisanji, Indie VTubers)',
-  'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)',
-  'Western Pop Culture (Marvel, DC, Star Wars, Disney)',
-  'Original Character (OC) & Creative Fantasy',
+const FANDOMS: LabeledOption[] = [
+  { val: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)', labelKey: 'registration.fandomHoyoverse' },
+  {
+    val: 'Anime & Manga Shonen / Seinen (JJK, Demon Slayer, Chainsaw Man, One Piece)',
+    labelKey: 'registration.fandomShonenSeinen',
+  },
+  { val: 'Idol & Music (Love Live!, 48 Group, Bang Dream, Idolmaster, K-Pop)', labelKey: 'registration.fandomIdolMusic' },
+  { val: 'Isekai & Fantasy (Frieren, Slime, Re:Zero, DanMachi)', labelKey: 'registration.fandomIsekaiFantasy' },
+  { val: 'Gaming & Esports (Valorant, League of Legends, MLBB, Elden Ring)', labelKey: 'registration.fandomGamingEsports' },
+  { val: 'VTuber (Hololive, Nijisanji, Indie VTubers)', labelKey: 'registration.fandomVtuber' },
+  { val: 'Tokusatsu & Mecha (Kamen Rider, Super Sentai, Gundam)', labelKey: 'registration.fandomTokusatsuMecha' },
+  { val: 'Western Pop Culture (Marvel, DC, Star Wars, Disney)', labelKey: 'registration.fandomWesternPopCulture' },
+  { val: 'Original Character (OC) & Creative Fantasy', labelKey: 'registration.fandomOriginalCharacter' },
+];
+const OTHER_FANDOM_OPTION = 'Lainnya / Multigenre';
+
+const AGE_CATEGORIES: LabeledOption[] = [
+  { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
+  { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
+  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
 ];
 
-export const RegistrationForm: React.FC<RegistrationFormProps> = ({
+// Minimum digits of the WhatsApp number (extra numbers are added later in the profile)
+const MIN_PHONE_DIGITS = 8;
+
+// Long off-screen question cards: the browser skips their rendering work until they near the viewport
+// (`auto` remembers the real size after the first render, so later scroll estimates are exact). Not used
+// on cards with sticky content or open popovers.
+const CV_SECTION_CLASS = 'cv-auto [contain-intrinsic-size:auto_420px]';
+
+// Select values that switch to a free-text province / city input; the typed text is saved instead
+const CUSTOM_PROVINCE_OPTION = 'Kustom / Wilayah Lainnya';
+const CUSTOM_CITY_OPTION = 'Kustom / Kota Lainnya';
+const LEGACY_CUSTOM_CITY_OPTION = 'Other City / County';
+const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city === LEGACY_CUSTOM_CITY_OPTION;
+
+// Field a validation error points at: it gets aria-invalid (the red .glass-input border) until the next submit
+type ErrorField = 'name' | 'email' | 'phone' | 'customCity' | 'codeOfConduct';
+
+// Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
+// control where it was while giving the tint some room.
+const CHOICE_ROW_CLASS =
+  'pressable-soft flex gap-3 -mx-2 px-2 rounded-xl cursor-pointer active:bg-white/[0.06]';
+
+// The file input is visually hidden (sr-only, still focusable), so its label shows the focus ring
+const FILE_PICKER_FOCUS_RING =
+  'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[rgba(83,255,192,0.85)]';
+
+/**
+ * One-shot highlight behind an error message: a rose tint that fades out (no shake, no movement). `pulse`
+ * changes on every failed attempt, which remounts the flash so it plays again. The parent needs
+ * `relative isolate` and a border radius. Also used by UserProfile's save bar.
+ */
+export const ErrorFlash: React.FC<{ pulse: number }> = ({ pulse }) => {
+  const reduced = useReducedMotion() === true;
+  return (
+    <motion.span
+      key={pulse}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-rose-500/30"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: reduced ? DURATION.base : 0.7, ease: EASE.outSoft }}
+    />
+  );
+};
+
+const NO_EXISTING_MEMBERS: Member[] = [];
+
+// Memoized (perf F8): App's auth / theme / header state changes no longer re-render this large form;
+// App passes stable callbacks and a stable empty member list.
+export const RegistrationForm = React.memo(function RegistrationForm({
   memberCount,
-  existingMembers = [],
+  existingMembers = NO_EXISTING_MEMBERS,
   onRegistered,
   onOpenCardModal,
-  currentLang,
   isAdmin = false,
-}) => {
-  const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
-  const ft = getFormTranslation(currentLang);
-  const isId = currentLang === 'id';
+}: RegistrationFormProps) {
+  const { t, lang, intlLocale, countryName } = useI18n();
+  // DemoFormTester and describeFirestoreError still take an "Indonesian?" flag
+  const isId = lang === 'id';
 
   const [formData, setFormData] = useState({
     name: '', // Primary required identity
     fullName: '', // Strictly optional for privacy
     email: '', // Strictly optional
-    phone: '', // Mandatory WhatsApp mobile number
-    phone2: '', // Optional secondary / additional WhatsApp number
+    phone: '', // Mandatory WhatsApp mobile number (extra numbers are added later in the profile)
     discordUsername: '', // Discord Username column
     ageCategory: 'Legal Age / Dewasa (18+ tahun)',
     age: '', // Optional exact age or birthdate
     country: 'Indonesia',
     province: 'DKI Jakarta',
-    city: 'Jakarta Selatan',
+    city: 'Kota Administrasi Jakarta Selatan',
     customCity: '',
     customProvince: '',
     customCountry: '',
@@ -162,56 +195,147 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedMember, setSubmittedMember] = useState<Member | null>(null);
   const [isDuplicateShared, setIsDuplicateShared] = useState(false);
-  const [showPhone2, setShowPhone2] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<ErrorField | null>(null);
+  const [errorPulse, setErrorPulse] = useState(0);
   const [showAgeExplainer, setShowAgeExplainer] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [isDemoSubmission, setIsDemoSubmission] = useState(false);
 
-  // All 250 countries worldwide (Indonesia prioritized at top)
-  const allCountries = useMemo(() => getAllCountriesList(), []);
+  // Form <-> success card cross-transition, plain fades for the error messages (both turn into quick
+  // opacity-only fades with reduced motion)
+  const pageMotion = usePresenceMotion('page');
+  const fadeMotion = usePresenceMotion('overlay');
+  const reducedMotion = useReducedMotion() === true;
+
+  // A failed submit: the message, the field it points at (red border through aria-invalid), a one-shot
+  // highlight behind the message (no shake) and an error haptic
+  const showError = (message: string, field: ErrorField | null = null) => {
+    setErrorMsg(message);
+    setErrorField(field);
+    setErrorPulse((n) => n + 1);
+    haptic('error');
+  };
+
+  // Native `required` validation stops the submit before handleSubmit runs: give it the same error haptic.
+  // The browser fires `invalid` once per invalid field (it does not bubble, hence the capture listener),
+  // so only the first one of an attempt vibrates. React 19 calls the returned cleanup on unmount.
+  const attachInvalidHaptic = useCallback((form: HTMLFormElement | null) => {
+    if (!form) return undefined;
+    let lastAt = 0;
+    const onInvalid = () => {
+      const now = Date.now();
+      if (now - lastAt > 500) haptic('error');
+      lastAt = now;
+    };
+    form.addEventListener('invalid', onInvalid, true);
+    return () => form.removeEventListener('invalid', onInvalid, true);
+  }, []);
+
+  // All 250 countries worldwide (Indonesia prioritized at top); locations load on demand per country.
+  // Perf: the lists (/geo/*.json) are fetched only when the address card nears the viewport or one of
+  // its selects is touched / focused, not on page load.
+  const [geoActive, setGeoActive] = useState(false);
+  const addressSectionRef = useRef<HTMLDivElement>(null);
+  const activateGeo = useCallback(() => setGeoActive(true), []);
+  useEffect(() => {
+    if (geoActive) return;
+    const el = addressSectionRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setGeoActive(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setGeoActive(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '800px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [geoActive, submittedMember]);
+  const geoVersion = useWorldLocations(formData.country, geoActive);
+  const allCountries = useMemo(() => getAllCountriesList(), [geoVersion]);
+  // Country names in the selected language, sorted for that language (Indonesia stays first); the saved
+  // value stays the English name
+  const countryOptions = useMemo(() => {
+    const collator = new Intl.Collator(intlLocale);
+    return allCountries
+      .map((c) => ({ ...c, label: countryName(c.isoCode, c.name) }))
+      .sort((a, b) => (a.isoCode === 'ID' ? -1 : b.isoCode === 'ID' ? 1 : collator.compare(a.label, b.label)));
+  }, [allCountries, countryName, intlLocale]);
+  // ~250 <option> elements: built once per language / list change, so React skips them on every keystroke
+  const countryOptionElements = useMemo(
+    () =>
+      countryOptions.map((c) => (
+        <option key={c.isoCode} value={c.name}>
+          {c.flag} {c.label} ({c.isoCode})
+        </option>
+      )),
+    [countryOptions]
+  );
   const availableProvinces = useMemo(
     () => getStatesOfCountryByName(formData.country),
-    [formData.country]
+    [formData.country, geoVersion]
   );
+  // A custom province has no city list: the city is typed as well
   const availableCities = useMemo(
-    () => getCitiesOfStateByName(formData.country, formData.province),
-    [formData.country, formData.province]
+    () =>
+      formData.province === CUSTOM_PROVINCE_OPTION ? [] : getCitiesOfStateByName(formData.country, formData.province),
+    [formData.country, formData.province, geoVersion]
   );
+
+  // Once a country's locations arrive (or after a country change made before they loaded), keep the
+  // province / city selections pointing at real list entries
+  useEffect(() => {
+    if (formData.province === CUSTOM_PROVINCE_OPTION) return;
+    if (availableProvinces.length > 0 && !availableProvinces.some((p) => p.name === formData.province)) {
+      const firstProv = availableProvinces[0].name;
+      const cities = getCitiesOfStateByName(formData.country, firstProv);
+      setFormData((prev) => ({ ...prev, province: firstProv, city: cities[0] || '' }));
+      return;
+    }
+    if (!isCustomCityValue(formData.city) && availableCities.length > 0 && !availableCities.includes(formData.city)) {
+      setFormData((prev) => ({ ...prev, city: availableCities[0] }));
+    }
+  }, [availableProvinces, availableCities, formData.country, formData.province, formData.city]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 15 * 1024 * 1024) {
-      alert(isId ? 'Ukuran foto maksimal 15MB untuk avatar profil.' : 'Max file size is 15MB for avatar.');
+      alert(t('registration.avatarTooLarge', { maxMb: 15 }));
       return;
     }
 
     try {
-      const compressed = await compressImage(file, 800, 800, 0.82);
+      // 256 px WebP/JPEG ~0.75 (~10-15 KB): every public card lookup downloads this avatar
+      const compressed = await compressImage(file, AVATAR_COMPRESS);
       setFormData((prev) => ({ ...prev, avatarUrl: compressed }));
     } catch (err) {
       console.error('Failed to compress avatar:', err);
-      alert(isId ? 'Gagal memproses foto.' : 'Failed to process photo.');
+      alert(t('registration.photoProcessFailed'));
     }
   };
 
   const handleClearForm = () => {
-    const confirmText = isId ? 'Kosongkan semua isian formulir?' : 'Clear all form inputs?';
-    if (window.confirm(confirmText)) {
+    if (window.confirm(t('registration.clearFormConfirm'))) {
       setFormData({
         name: '',
         fullName: '',
         email: '',
         phone: '',
-        phone2: '',
         discordUsername: '',
         ageCategory: 'Legal Age / Dewasa (18+ tahun)',
         age: '',
         country: 'Indonesia',
         province: 'DKI Jakarta',
-        city: 'Jakarta Selatan',
+        city: 'Kota Administrasi Jakarta Selatan',
         customCity: '',
         customProvince: '',
         customCountry: '',
@@ -225,62 +349,45 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         reason: '',
         acceptedCodeOfConduct: false,
       });
-      setShowPhone2(false);
       setIsDemoMode(false);
       setIsDemoSubmission(false);
       setErrorMsg(null);
+      setErrorField(null);
     }
   };
 
   const submitData = async (dataToSubmit: typeof formData, isSandbox: boolean = isDemoMode) => {
     setErrorMsg(null);
+    setErrorField(null);
     setIsDuplicateShared(false);
 
     // PRIVACY ENFORCEMENT: Name, Email, and WhatsApp Mobile Number are required (community is WhatsApp-based)
     if (!dataToSubmit.name.trim()) {
-      setErrorMsg(
-        isId
-          ? 'Mohon isi Nama Panggung / Cosname / Nama Samaran Anda.'
-          : 'Please provide your Cosplay Name / Alias / Stage Name.'
-      );
+      showError(t('registration.nameRequiredError'), 'name');
       return;
     }
 
     if (!dataToSubmit.email.trim()) {
-      setErrorMsg(
-        isId
-          ? 'Mohon isi alamat email aktif Anda.'
-          : 'Email address is required.'
-      );
+      showError(t('registration.emailRequiredError'), 'email');
       return;
     }
 
     const phoneDigits = dataToSubmit.phone.replace(/\D/g, '');
-    if (!dataToSubmit.phone.trim() || phoneDigits.length < 8) {
-      setErrorMsg(
-        isId
-          ? 'Nomor WhatsApp wajib diisi (minimal 8 digit) karena komunitas KawanCosplay berbasis grup WhatsApp.'
-          : 'A valid WhatsApp mobile number is required (minimum 8 digits) as KawanCosplay is a WhatsApp-based community.'
-      );
+    if (!dataToSubmit.phone.trim() || phoneDigits.length < MIN_PHONE_DIGITS) {
+      showError(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }), 'phone');
       return;
     }
 
-    const phone2Raw = (dataToSubmit.phone2 || '').trim();
-    if (phone2Raw && phone2Raw.replace(/\D/g, '').length < 8) {
-      setErrorMsg(
-        isId
-          ? 'Nomor WhatsApp cadangan minimal 8 digit (atau kosongkan).'
-          : 'The backup WhatsApp number needs at least 8 digits (or leave it empty).'
+    if (isCustomCityValue(dataToSubmit.city) && !(dataToSubmit.customCity || '').trim()) {
+      showError(
+        t('registration.customCityRequiredError', { option: t('registration.customCityOption') }),
+        'customCity'
       );
       return;
     }
 
     if (!dataToSubmit.acceptedCodeOfConduct) {
-      setErrorMsg(
-        isId
-          ? 'Mohon centang persetujuan Kode Etik Komunitas KawanCosplay.'
-          : 'Please check the agreement to the KawanCosplay Community Code of Conduct.'
-      );
+      showError(t('registration.codeOfConductRequiredError'), 'codeOfConduct');
       return;
     }
 
@@ -292,15 +399,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           ? dataToSubmit.customCountry.trim()
           : dataToSubmit.country;
 
+      // Custom province / city: the typed text is saved, never the select's placeholder value (an empty
+      // custom province is simply left out; an empty custom city was rejected above)
       const finalProvince =
-        dataToSubmit.province === 'Worldwide State / Province' && dataToSubmit.customProvince
-          ? dataToSubmit.customProvince.trim()
+        dataToSubmit.province === CUSTOM_PROVINCE_OPTION
+          ? (dataToSubmit.customProvince || '').trim().slice(0, MEMBER_FIELD_LIMITS.province)
           : dataToSubmit.province;
 
-      const finalCity =
-        (dataToSubmit.city === 'Other City / County' || dataToSubmit.city === 'Kustom / Kota Lainnya') && dataToSubmit.customCity
-          ? dataToSubmit.customCity.trim()
-          : dataToSubmit.city;
+      const finalCity = isCustomCityValue(dataToSubmit.city)
+        ? (dataToSubmit.customCity || '').trim().slice(0, MEMBER_FIELD_LIMITS.city)
+        : dataToSubmit.city;
 
       // Resolve role: If 'Lainnya / Others' was selected, append custom role if typed (capped so the
       // stored role stays within the database primaryRole limit):
@@ -314,10 +422,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       // If legal name is left blank to respect privacy, use name
       const resolvedFullName = dataToSubmit.fullName.trim() || dataToSubmit.name.trim();
 
-      // Members may hold more than one WhatsApp number (primary + optional backup number).
+      // The form asks for ONE WhatsApp number; members add extra numbers later in their profile.
       const primaryPhone = dataToSubmit.phone.trim().slice(0, MEMBER_FIELD_LIMITS.phone);
-      const secondaryPhone =
-        (dataToSubmit.phone2 || '').trim().slice(0, MEMBER_FIELD_LIMITS.phone2) || undefined;
 
       // KCC ID is NOT derived from form input or the client-side member list: registerMember assigns a
       // chronological ID (main account ID only for the authenticated KCC main account). Re-submissions by
@@ -329,7 +435,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         fullName: resolvedFullName,
         email: dataToSubmit.email.trim().toLowerCase(), // Empty string if omitted, as legacy form never asked for email
         phone: primaryPhone,
-        phone2: secondaryPhone,
         discordUsername: dataToSubmit.discordUsername.trim() || undefined,
         country: finalCountry,
         province: finalProvince,
@@ -358,7 +463,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             ? findDuplicateMember(existingMembers, {
                 email: newMemberPayload.email,
                 phone: primaryPhone,
-                phone2: secondaryPhone,
                 discordUsername: newMemberPayload.discordUsername,
                 name: newMemberPayload.name,
                 socialMedia: newMemberPayload.socialMedia,
@@ -375,14 +479,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               createdAt: matched.createdAt,
             }
           : {
+              // The demo never fakes a real-looking KCC ID: the card shows the '---- ----' placeholder
               id: demoId,
-              userId16: generate16DigitUserId(new Date()),
+              userId16: '',
               ...newMemberPayload,
             };
 
         setIsDuplicateShared(!!matched);
         setIsDemoSubmission(true);
         setSubmittedMember(createdMember);
+        haptic('success');
         onRegistered(createdMember);
         return;
       }
@@ -397,10 +503,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       setIsDuplicateShared(reusedExisting);
       setIsDemoSubmission(false);
       setSubmittedMember(createdMember);
+      haptic('success');
       onRegistered(createdMember);
     } catch (err: unknown) {
       console.error('Submit error:', err);
-      setErrorMsg(describeFirestoreError(err, isId));
+      showError(describeFirestoreError(err, isId));
     } finally {
       setIsSubmitting(false);
     }
@@ -413,9 +520,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   const handleFillDemo = (demoData: any, autoSubmit: boolean = false) => {
     setIsDemoMode(true);
-    const updated = {
+    // Demo presets name the person `cosplayName`; the form field is `name` (no stray cosplayName key)
+    const { cosplayName: demoCosplayName, ...demoFields } = demoData || {};
+    const updated: typeof formData = {
       ...formData,
-      ...demoData,
+      ...demoFields,
+      name: demoFields.name || demoCosplayName || formData.name,
     };
     setFormData(updated);
 
@@ -424,27 +534,47 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
     }
   };
 
-  // SUCCESS SCREEN: Google Form style response confirmation
+  // SUCCESS SCREEN: Google Form style response confirmation. Form and success card are swapped inside
+  // <AnimatePresence mode="wait"> (see the return below): the form fades out, then the card rises in.
+  let successView: React.ReactNode = null;
   if (submittedMember) {
-    return (
-      <div className="max-w-2xl mx-auto py-12 px-4 animate-fade-in text-slate-100">
-        <div className="liquid-glass-elevated border-emerald-500/30 rounded-3xl overflow-hidden shadow-2xl">
+    const memberName = submittedMember.name || submittedMember.cosplayName || '';
+    // Prefilled WhatsApp message to the admins; the backup number / Discord lines are left out when empty
+    const whatsappMessage = [
+      t('registration.whatsappMessageIntro'),
+      t('registration.whatsappMessageName', { name: memberName }),
+      t('registration.whatsappMessageKccId', { id: formatKccId(submittedMember.userId16) }),
+      t('registration.whatsappMessagePhone', { phone: submittedMember.phone || '-' }),
+      submittedMember.phone2 ? t('registration.whatsappMessagePhone2', { phone: submittedMember.phone2 }) : null,
+      submittedMember.discordUsername
+        ? t('registration.discordValue', { username: submittedMember.discordUsername })
+        : null,
+      t('registration.whatsappMessageRequest'),
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    successView = (
+      <motion.div key="success" {...pageMotion} className="max-w-2xl mx-auto py-12 px-4 text-slate-100">
+        <div className="glass-card glass-raised border-emerald-500/30 rounded-3xl overflow-hidden">
           {/* Top Google Form Purple/Accent bar */}
           <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
 
-          <div className="p-8 sm:p-10 text-center">
-            <div className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="p-6 sm:p-10 text-center">
+            {/* The check pops in on a spring just after the card (reduced motion: fade only) */}
+            <motion.div
+              initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={reducedMotion ? TWEEN.reducedIn : { ...SPRING.press, delay: 0.08 }}
+              className="w-16 h-16 bg-emerald-500/20 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-            </div>
+            </motion.div>
 
             {isDemoSubmission && (
-              <div className="mb-4 p-3 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-center gap-2">
+              <div className="glass-well mb-4 p-3 rounded-2xl border-amber-500/40 bg-amber-950/60 text-amber-200 text-xs flex items-center justify-center gap-2">
                 <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="font-semibold">
-                  {isId
-                    ? '🧪 Mode Sandbox Demo: Pengujian ini berjalan di memori lokal dan TIDAK disimpan ke database Firestore.'
-                    : '🧪 Sandboxed Demo Test: This test ran in local memory and was NOT saved to the database.'}
-                </span>
+                <span className="font-semibold">{t('registration.sandboxSubmissionNotice')}</span>
               </div>
             )}
 
@@ -452,64 +582,55 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               KawanCosplay Community
             </h2>
             <p className="text-slate-300 text-sm sm:text-base mb-6">
-              {t.responseRecorded}
+              {t('registration.responseRecorded')}
             </p>
 
-            {/* 16-Digit Single KCC ID Account highlight */}
-            <div className="liquid-glass border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
+            {/* Single KCC ID account highlight (8 digits; 16 before the 8-digit switch) */}
+            <div className="glass-well border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
               <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
-                {ft.singleAccountIdTitle}
+                {t('registration.singleAccountIdTitle')}
               </span>
               <span className="font-mono font-black text-xl sm:text-2xl text-rose-400 tracking-wider">
-                {format16DigitUserId(submittedMember.userId16)}
+                {formatKccId(submittedMember.userId16)}
               </span>
               {isDuplicateShared ? (
                 <p className="text-xs text-emerald-400 mt-2 font-medium">
-                  {isId
-                    ? '✓ Data Anda cocok dengan pendaftaran sebelumnya. Setiap anggota hanya memiliki 1 KCC ID — KCC ID Anda tetap sama dan data profil Anda telah diperbarui.'
-                    : '✓ Your details match an earlier registration. Each member holds a single KCC ID — your KCC ID stays the same and your profile has been updated.'}
+                  {t('registration.duplicateMergedNotice')}
                 </p>
               ) : (
                 <p className="text-[11px] text-slate-300 mt-1.5">
-                  {isId ? 'Anggota Terverifikasi: ' : 'Verified Member: '}
-                  <strong className="text-white">{submittedMember.name || submittedMember.cosplayName}</strong>
+                  {t('registration.verifiedMemberLabel')} <strong className="text-white">{memberName}</strong>
                   {submittedMember.discordUsername && (
-                    <span className="ml-2 text-indigo-300">• Discord: {submittedMember.discordUsername}</span>
+                    <span className="ml-2 text-indigo-300">
+                      • {t('registration.discordValue', { username: submittedMember.discordUsername })}
+                    </span>
                   )}
                 </p>
               )}
             </div>
 
             {/* UNLOCKED WHATSAPP COMMUNITY GROUP INVITE LINK */}
-            <div className="bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center shadow-lg">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
+            <div className="glass-well border-emerald-500/40 bg-emerald-950/60 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center">
+              <div className="glass-chip mb-2 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{ft.whatsappUnlockedBadge}</span>
+                <span>{t('registration.whatsappUnlockedBadge')}</span>
               </div>
               <h3 className="text-base sm:text-lg font-extrabold text-white mb-1">
-                {ft.whatsappUnlockedTitle}
+                {t('registration.whatsappUnlockedTitle')}
               </h3>
               <p className="text-xs text-emerald-200/90 mb-4 leading-relaxed">
-                {ft.whatsappUnlockedDesc}
+                {t('registration.whatsappUnlockedDesc')}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
                 <a
-                  href={`https://wa.me/6285711032782?text=${encodeURIComponent(
-                    `Halo Admin KawanCosplay! Saya sudah mengisi form pendaftaran anggota.\nNama: ${submittedMember.name || submittedMember.cosplayName}\nKCC ID: ${format16DigitUserId(
-                      submittedMember.userId16
-                    )}\nNo. WA: ${submittedMember.phone || '-'}${
-                      submittedMember.phone2 ? `\nNo. WA 2: ${submittedMember.phone2}` : ''
-                    }${
-                      submittedMember.discordUsername ? `\nDiscord: ${submittedMember.discordUsername}` : ''
-                    }\nMohon tautan undangan masuk ke Grup WhatsApp Komunitas KawanCosplay. Terima kasih!`
-                  )}`}
+                  href={`https://wa.me/6285711032782?text=${encodeURIComponent(whatsappMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 inline-flex items-center justify-center gap-2 transition-all"
+                  className="pressable w-full sm:w-auto min-h-11 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/30 inline-flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>{ft.joinWhatsappButton}</span>
+                  <span>{t('registration.joinWhatsappButton')}</span>
                 </a>
               </div>
             </div>
@@ -517,27 +638,30 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             {/* Action buttons */}
             <div className="flex flex-wrap items-center justify-center gap-2.5">
               <button
+                type="button"
                 onClick={() => onOpenCardModal(submittedMember)}
-                className="px-5 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-md transition-all inline-flex items-center justify-center gap-2"
+                className="btn-primary pressable px-5"
               >
                 <Eye className="w-4 h-4" />
-                <span>{t.viewMyKccId || t.viewMyKta}</span>
+                <span>{t('registration.viewMyKccId')}</span>
               </button>
 
               <button
                 onClick={() => {
+                  // New person, same location / role / fandom presets: every personal field is cleared
                   setSubmittedMember(null);
-                  setShowPhone2(false);
                   setIsDuplicateShared(false);
+                  setErrorMsg(null);
+                  setErrorField(null);
                   setFormData((prev) => ({
                     ...prev,
-                    cosplayName: '',
+                    name: '',
                     fullName: '',
                     email: '',
                     phone: '',
-                    phone2: '',
                     discordUsername: '',
                     age: '',
+                    customRole: '',
                     socialMedia: '',
                     portfolioUrl: '',
                     avatarUrl: '',
@@ -545,16 +669,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     acceptedCodeOfConduct: false,
                   }));
                 }}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition-colors"
+                className="glass-button pressable px-5"
               >
-                {t.submitAnother}
+                {t('registration.submitAnother')}
               </button>
             </div>
 
             {/* Hotline footer */}
-            <div className="mt-8 pt-6 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-center space-x-2">
+            <div className="mt-8 pt-6 border-t border-white/10 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-2">
               <MessageCircle className="w-4 h-4 text-emerald-400" />
-              <span>{isId ? 'Butuh bantuan? WhatsApp Hotline:' : 'Need assistance? WhatsApp Hotline:'}</span>
+              <span>{t('registration.needHelpHotline')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
@@ -566,52 +690,49 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  const communityRoles = getCommunityRoles(isId, ft);
-  const experienceLevels = getExperienceLevels(isId);
-
-  return (
-    <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
+  const formView = (
+    <motion.div key="form" {...pageMotion} className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
       {/* GOOGLE FORM HEADER CARD */}
-      <div className="liquid-glass-elevated rounded-3xl overflow-hidden shadow-2xl mb-6">
+      <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
         {/* Top Google Form Purple/Accent Header Band */}
         <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
 
-        <div className="p-6 sm:p-10">
+        <div className="p-5 sm:p-10">
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center space-x-1.5">
+            <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
               <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-              <span>{ft.officialFormTag}</span>
+              <span>{t('registration.officialFormTag')}</span>
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              {ft.safeCommunityTag}
+            <span className="glass-chip bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+              {t('registration.safeCommunityTag')}
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
-            {t.formTitle}
+            {t('registration.formTitle')}
           </h1>
 
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
-            {t.formDesc}
+            {t('registration.formDesc')}
           </p>
 
           {/* Inclusive Notice */}
-          <div className="p-3.5 bg-indigo-950/40 border border-indigo-500/30 rounded-2xl flex items-start space-x-3 text-xs text-indigo-200 mb-4">
+          <div className="glass-well p-3.5 border-indigo-500/30 bg-indigo-950/40 rounded-2xl flex items-start gap-3 text-xs text-indigo-200 mb-4">
             <Heart className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
             <div>
-              <strong>{t.inclusiveWelcome}</strong>
+              <strong>{t('registration.inclusiveWelcome')}</strong>
             </div>
           </div>
 
           {/* WhatsApp Hotline Callout */}
-          <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-white/10 text-xs text-slate-400">
+            <div className="flex flex-wrap items-center gap-2">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{isId ? 'WhatsApp Hotline Pengurus:' : 'Official WhatsApp Hotline:'}</span>
+              <span>{t('registration.officialHotlineLabel')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
@@ -622,17 +743,24 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               </a>
             </div>
 
-            <span className="text-rose-400 font-semibold">{t.requiredIndicator}</span>
+            <span className="text-rose-400 font-semibold">{t('registration.requiredIndicator')}</span>
           </div>
         </div>
       </div>
 
-      {errorMsg && (
-        <div className="mb-6 p-4 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-rose-400 shrink-0"></div>
-          <span>{errorMsg}</span>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {errorMsg && (
+          <motion.div
+            key="error"
+            {...fadeMotion}
+            className="glass-well relative isolate mb-6 p-4 rounded-2xl border-rose-500/50 bg-rose-950/60 text-rose-200 text-sm flex items-center gap-2"
+          >
+            <ErrorFlash pulse={errorPulse} />
+            <div className="w-2 h-2 rounded-full bg-rose-400 shrink-0"></div>
+            <span>{errorMsg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* DEMO FORM TESTING SANDBOX (RESTRICTED TO ADMINS) */}
       {isAdmin && (
@@ -645,14 +773,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
       {/* Sandbox Active Banner when filling demo */}
       {isDemoMode && (
-        <div className="mb-5 p-3.5 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between gap-3 shadow-md animate-fade-in">
+        <div className="glass-well mb-5 p-3.5 rounded-2xl border-amber-500/40 bg-amber-950/60 text-amber-200 text-xs flex items-center justify-between gap-3 animate-fade-in">
           <div className="flex items-center gap-2.5">
             <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>
-              {isId
-                ? 'Mode Sandbox Aktif: Data demo ini terisolasi dan TIDAK akan disimpan ke database Firestore.'
-                : 'Sandbox Mode Active: This demo test is isolated and will NOT be saved to Firestore database.'}
-            </span>
+            <span>{t('registration.sandboxActiveNotice')}</span>
           </div>
           <button
             type="button"
@@ -660,183 +784,153 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               setIsDemoMode(false);
               handleClearForm();
             }}
-            className="px-2.5 py-1 rounded-lg bg-amber-800/80 hover:bg-amber-700 text-white font-bold text-[10px] shrink-0 transition-colors"
+            className="glass-button pressable shrink-0 min-h-11 px-3 bg-amber-800/80 hover:bg-amber-700 border-amber-500/40 text-white font-bold text-xs"
           >
-            {isId ? 'Kembali ke Form Asli' : 'Exit Sandbox'}
+            {t('registration.exitSandbox')}
           </button>
         </div>
       )}
 
-      {/* FORM BODY - GOOGLE FORM STYLE QUESTION CARDS */}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      {/* FORM BODY - GOOGLE FORM STYLE QUESTION CARDS. Fields keep a bottom scroll margin so a field
+          scrolled into view on focus is not hidden behind the sticky submit bar. */}
+      <form
+        ref={attachInvalidHaptic}
+        onSubmit={handleSubmit}
+        className="space-y-5 [&_input]:scroll-mb-28 [&_select]:scroll-mb-28 [&_textarea]:scroll-mb-28"
+      >
         {/* QUESTION 1: NAME (JUST ASK NAME) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.nameLabel} <span className="text-rose-500">*</span>
+            {t('registration.nameLabel')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-rose-300/90 mb-4 flex items-start space-x-1.5">
             <ShieldCheck className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{ft.namePrivacyNotice}</span>
+            <span>{t('registration.namePrivacyNotice')}</span>
           </p>
 
           <input
             type="text"
             required
-            placeholder={ft.namePlaceholder}
+            aria-invalid={errorField === 'name' || undefined}
+            placeholder={t('registration.namePlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.name}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-medium"
+            className="glass-input w-full text-base sm:text-sm font-medium"
           />
         </div>
 
-        {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED) & OPTIONAL SECONDARY NUMBER */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-emerald-500/25 space-y-4">
+        {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED). Extra numbers are
+            added later in the member profile (no second number field here). */}
+        <div className="glass-card rounded-3xl p-5 sm:p-8 border border-emerald-500/25 space-y-4">
           <div>
             <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-              {ft.whatsappLabel}{' '}
+              {t('registration.whatsappLabel')}{' '}
               <span className="text-rose-500">*</span>
             </label>
             <p className="text-xs text-emerald-300/90 mb-3 flex items-start space-x-1.5">
               <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span>{ft.whatsappNotice}</span>
+              <span>{t('registration.whatsappNotice')}</span>
             </p>
 
             <input
               type="tel"
               required
-              placeholder={ft.whatsappPlaceholder}
+              aria-invalid={errorField === 'phone' || undefined}
+              placeholder={t('registration.whatsappPlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.phone}
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
+              className="glass-input w-full text-base sm:text-sm font-mono"
             />
-          </div>
-
-          {/* Opsi memiliki lebih dari 1 nomor WhatsApp */}
-          <div className="pt-2 border-t border-slate-800/80">
-            {!showPhone2 && !formData.phone2 ? (
-              <button
-                type="button"
-                onClick={() => setShowPhone2(true)}
-                className="text-xs text-emerald-400 hover:text-emerald-300 font-bold inline-flex items-center gap-1.5 transition-colors py-1 cursor-pointer"
-              >
-                <span>+ Punya lebih dari 1 nomor WhatsApp? Tambah Nomor Cadangan (Opsional)</span>
-              </button>
-            ) : (
-              <div className="space-y-1.5 animate-fade-in">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs sm:text-sm font-bold text-slate-200">
-                    Nomor WhatsApp Cadangan / Tambahan <span className="text-slate-400 font-normal">(Opsional)</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, phone2: '' });
-                      setShowPhone2(false);
-                    }}
-                    className="text-[11px] text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
-                  >
-                    Batal / Hapus
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Nomor ini disimpan sebagai nomor cadangan. Jika Anda mengisi formulir lagi saat masuk (login) dengan akun yang sama, KCC ID Anda tetap sama; pendaftaran ganda tanpa login akan digabungkan oleh admin.
-                </p>
-                <input
-                  type="tel"
-                  placeholder="Contoh: 08123456789 atau +62 857..."
-                  maxLength={MEMBER_FIELD_LIMITS.phone2}
-                  value={formData.phone2}
-                  onChange={(e) => setFormData({ ...formData, phone2: e.target.value })}
-                  className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
-                />
-              </div>
-            )}
+            <p className="text-[11px] text-slate-400 mt-2">
+              {t('registration.extraPhonesInProfileHint')}
+            </p>
           </div>
         </div>
 
         {/* QUESTION 3: DISCORD USERNAME COLUMN */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.discordLabel}{' '}
-            <span className="text-xs text-slate-400 font-normal">({isId ? 'Opsional' : 'Optional'})</span>
+            {t('registration.discordLabel')}{' '}
+            <span className="text-xs text-slate-400 font-normal">{t('registration.optionalTag')}</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.discordDesc}
+            {t('registration.discordDesc')}
           </p>
 
           <input
             type="text"
-            placeholder={ft.discordPlaceholder}
+            placeholder={t('registration.discordPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.discordUsername}
             value={formData.discordUsername}
             onChange={(e) => setFormData({ ...formData, discordUsername: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm font-mono"
+            className="glass-input w-full text-base sm:text-sm font-mono"
           />
         </div>
 
         {/* QUESTION 4: EMAIL (REQUIRED) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.emailLabel} <span className="text-rose-500">*</span>
+            {t('registration.emailLabel')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.emailRequiredNotice || 'Email is required for registration.'}
+            {t('registration.emailRequiredNotice')}
           </p>
 
           <input
             type="email"
             required
-            placeholder={ft.emailPlaceholder}
+            aria-invalid={errorField === 'email' || undefined}
+            placeholder={t('registration.emailPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.email}
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 4: AGE CATEGORY (MINOR VS LEGAL AGE) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
-          <div className="flex items-center justify-between mb-1.5">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1.5">
             <label className="block text-sm sm:text-base font-bold text-white">
-              {t.ageCategoryLabel} <span className="text-rose-500">*</span>
+              {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
             </label>
 
             <button
               type="button"
               onClick={() => setShowAgeExplainer(!showAgeExplainer)}
-              className="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1 underline"
+              aria-expanded={showAgeExplainer}
+              className="touch-target pressable min-w-0 text-left text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 underline"
             >
               <Info className="w-3.5 h-3.5" />
-              <span>{t.ageExplanationTitle}</span>
+              <span>{t('registration.ageExplanationTitle')}</span>
             </button>
           </div>
 
           {showAgeExplainer && (
-            <div className="p-3.5 bg-slate-950 border border-rose-500/30 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
-              <strong className="text-rose-300 block mb-1">{t.ageExplanationTitle}</strong>
-              <p>{t.ageExplanationDesc}</p>
+            <div className="glass-well p-3.5 border-rose-500/30 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
+              <strong className="text-rose-300 block mb-1">{t('registration.ageExplanationTitle')}</strong>
+              <p>{t('registration.ageExplanationDesc')}</p>
             </div>
           )}
 
-          <div className="space-y-3 mt-3">
-            {[
-              { val: 'Legal Age / Dewasa (18+ tahun)', label: t.legalAge },
-              { val: 'Minor / Di Bawah Umur (<18 tahun)', label: t.minorAge },
-              { val: 'Memilih untuk tidak menyebutkan', label: t.preferNotToSay },
-            ].map((opt) => (
-              <label key={opt.val} className="flex items-center space-x-3 cursor-pointer group">
+          <div className="space-y-1 mt-2">
+            {AGE_CATEGORIES.map((opt) => (
+              <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                 <input
                   type="radio"
                   name="ageCategory"
                   value={opt.val}
                   checked={formData.ageCategory === opt.val}
-                  onChange={(e) => setFormData({ ...formData, ageCategory: e.target.value })}
-                  className="w-4 h-4 text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
+                  onChange={(e) => {
+                    setFormData({ ...formData, ageCategory: e.target.value });
+                    haptic('selection');
+                  }}
+                  className="w-5 h-5 shrink-0 cursor-pointer"
                 />
-                <span className="text-xs sm:text-sm text-slate-200 group-hover:text-white">
-                  {opt.label}
+                <span className="text-sm text-slate-200 group-hover:text-white">
+                  {t(opt.labelKey)}
                 </span>
               </label>
             ))}
@@ -844,36 +938,43 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {t.exactAgeOptional}
+            {t('registration.exactAgeOptional')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.ageDesc}
+            {t('registration.ageDesc')}
           </p>
 
           <input
             type="text"
-            placeholder={ft.agePlaceholder}
+            placeholder={t('registration.agePlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.age}
             value={formData.age}
             onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 6: LOCATION / DOMICILE (COUNTRY, PROVINCE, CITY) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div
+          ref={addressSectionRef}
+          onFocusCapture={activateGeo}
+          onPointerDownCapture={activateGeo}
+          className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}
+        >
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.locationTitle} <span className="text-rose-500">*</span>
+            {t('registration.locationTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.locationNotice}
+            {t('registration.locationNotice')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">{t.country}</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+                {t('registration.countryLabel')}
+              </label>
               <select
                 value={formData.country}
                 onChange={(e) => {
@@ -890,18 +991,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     customProvince: '',
                   });
                 }}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
-                {allCountries.map((c) => (
-                  <option key={c.isoCode} value={c.name}>
-                    {c.flag} {c.name} ({c.isoCode})
-                  </option>
-                ))}
+                {countryOptionElements}
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">{t.province}</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+                {t('registration.provinceLabel')}
+              </label>
               <select
                 value={formData.province}
                 onChange={(e) => {
@@ -914,92 +1013,98 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
                     customCity: '',
                   });
                 }}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {availableProvinces.map((p) => (
                   <option key={p.isoCode || p.name} value={p.name}>
                     {p.name}
                   </option>
                 ))}
-                <option value="Kustom / Wilayah Lainnya">{isId ? 'Kustom / Wilayah Lainnya' : 'Custom / Other Region'}</option>
+                <option value={CUSTOM_PROVINCE_OPTION}>{t('registration.customProvinceOption')}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">{t.city}</label>
+              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+                {t('registration.cityLabel')}
+              </label>
               <select
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:border-purple-500"
+                className="glass-input w-full text-base sm:text-sm"
               >
                 {availableCities.map((city) => (
                   <option key={city} value={city}>
                     {city}
                   </option>
                 ))}
-                <option value="Kustom / Kota Lainnya">{isId ? 'Kustom / Kota Lainnya' : 'Custom / Other City'}</option>
+                <option value={CUSTOM_CITY_OPTION}>{t('registration.customCityOption')}</option>
               </select>
             </div>
           </div>
 
-          {formData.province === 'Kustom / Wilayah Lainnya' && (
+          {formData.province === CUSTOM_PROVINCE_OPTION && (
             <input
               type="text"
-              placeholder={isId ? 'Ketik nama provinsi / wilayah / negara bagian Anda...' : 'Enter your state / province / region...'}
+              placeholder={t('registration.customProvincePlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.province}
               value={formData.customProvince}
               onChange={(e) => setFormData({ ...formData, customProvince: e.target.value })}
-              className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
+              className="glass-input mt-3 w-full text-base sm:text-sm"
             />
           )}
 
-          {(formData.city === 'Other City / County' || formData.city === 'Kustom / Kota Lainnya') && (
+          {isCustomCityValue(formData.city) && (
             <input
               type="text"
-              placeholder={ft.customCityPlaceholder}
+              aria-invalid={errorField === 'customCity' || undefined}
+              placeholder={t('registration.customCityPlaceholder')}
               maxLength={MEMBER_FIELD_LIMITS.city}
               value={formData.customCity}
               onChange={(e) => setFormData({ ...formData, customCity: e.target.value })}
-              className="mt-3 w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
+              className="glass-input mt-3 w-full text-base sm:text-sm"
             />
           )}
         </div>
 
         {/* QUESTION 7: PRIMARY ROLE / INTEREST (INCLUSIVE) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.roleTitle} <span className="text-rose-500">*</span>
+            {t('registration.roleTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.roleDesc}
+            {t('registration.roleDesc')}
           </p>
 
-          <div className="space-y-3">
-            {communityRoles.map((role) => (
+          <div className="space-y-1">
+            {COMMUNITY_ROLES.map((role) => (
               <div key={role.val}>
-                <label className="flex items-center space-x-3 cursor-pointer group">
+                <label className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                   <input
                     type="radio"
                     name="primaryRole"
                     value={role.val}
                     checked={formData.primaryRole === role.val}
-                    onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })}
-                    className="w-4 h-4 text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
+                    onChange={(e) => {
+                      setFormData({ ...formData, primaryRole: e.target.value });
+                      haptic('selection');
+                    }}
+                    className="w-5 h-5 shrink-0 cursor-pointer"
                   />
-                  <span className="text-xs sm:text-sm text-slate-200 group-hover:text-white">
-                    {role.label}
+                  <span className="text-sm text-slate-200 group-hover:text-white">
+                    {t(role.labelKey)}
                   </span>
                 </label>
 
                 {role.val === 'Lainnya / Others' && formData.primaryRole === 'Lainnya / Others' && (
-                  <div className="mt-2.5 ml-7">
+                  <div className="mt-1.5 mb-2 ms-8">
                     <input
                       type="text"
-                      placeholder={ft.roleOthersPlaceholder}
+                      placeholder={t('registration.roleOthersPlaceholder')}
                       maxLength={MEMBER_FIELD_LIMITS.customRole}
                       value={formData.customRole}
                       onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
-                      className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-xs"
+                      className="glass-input w-full text-base sm:text-sm"
                     />
                   </div>
                 )}
@@ -1009,131 +1114,150 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 8: FAVORITE FANDOM / IDOL GROUP / SERIES */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.fandomTitle} <span className="text-rose-500">*</span>
+            {t('registration.fandomTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.fandomDesc}
+            {t('registration.fandomDesc')}
           </p>
 
           <select
             value={formData.fandom}
             onChange={(e) => setFormData({ ...formData, fandom: e.target.value })}
-            className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs sm:text-sm focus:outline-none focus:border-purple-500"
+            className="glass-input w-full text-base sm:text-sm"
           >
             {FANDOMS.map((f) => (
-              <option key={f} value={f}>
-                {f}
+              <option key={f.val} value={f.val}>
+                {t(f.labelKey)}
               </option>
             ))}
-            <option value="Lainnya / Multigenre">{ft.fandomOther}</option>
+            <option value={OTHER_FANDOM_OPTION}>{t('registration.fandomOther')}</option>
           </select>
         </div>
 
         {/* QUESTION 9: EXPERIENCE (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.experienceTitle}
+            {t('registration.experienceTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.experienceDesc}
+            {t('registration.experienceDesc')}
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {experienceLevels.map((exp) => (
+            {EXPERIENCE_LEVELS.map((exp) => (
               <button
                 type="button"
                 key={exp.val}
-                onClick={() => setFormData({ ...formData, experience: exp.val })}
-                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center ${
-                  formData.experience === exp.val
-                    ? 'bg-purple-600 text-white border-purple-500 shadow-md'
-                    : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700'
-                }`}
+                aria-pressed={formData.experience === exp.val}
+                onClick={() => {
+                  setFormData({ ...formData, experience: exp.val });
+                  haptic('selection');
+                }}
+                className="glass-chip pressable justify-center text-center whitespace-normal leading-tight rounded-xl min-h-11 px-3 py-2 text-xs sm:text-sm"
               >
-                {exp.label}
+                {t(exp.labelKey)}
               </button>
             ))}
           </div>
         </div>
 
         {/* QUESTION 10: SOCIAL MEDIA (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.socialMediaTitle}
+            {t('registration.socialMediaTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.socialMediaDesc}
+            {t('registration.socialMediaDesc')}
           </p>
 
           <input
             type="text"
-            placeholder={ft.socialMediaPlaceholder}
+            placeholder={t('registration.socialMediaPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.socialMedia}
             value={formData.socialMedia}
             onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 11: PORTFOLIO / DRIVE LINK (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.portfolioTitle}
+            {t('registration.portfolioTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.portfolioDesc}
+            {t('registration.portfolioDesc')}
           </p>
 
           <input
             type="url"
-            placeholder={ft.portfolioPlaceholder}
+            placeholder={t('registration.portfolioPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.portfolioUrl}
             value={formData.portfolioUrl}
             onChange={(e) => setFormData({ ...formData, portfolioUrl: e.target.value })}
-            className="w-full p-3 liquid-glass-input rounded-xl text-white placeholder-slate-500 focus:outline-none transition-colors text-sm"
+            className="glass-input w-full text-base sm:text-sm"
           />
         </div>
 
         {/* QUESTION 12: AVATAR / PROFILE PHOTO (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.avatarTitle}
+            {t('registration.avatarTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.avatarDesc}
+            {t('registration.avatarDesc')}
           </p>
 
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="glass-well w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
               {formData.avatarUrl ? (
-                <img src={formData.avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                <img
+                  src={formData.avatarUrl}
+                  alt={t('registration.avatarPreviewAlt')}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <Camera className="w-6 h-6 text-slate-600" />
               )}
             </div>
 
-            <label className="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700">
+            <label className={`glass-button pressable relative cursor-pointer min-h-11 px-4 text-sm ${FILE_PICKER_FOCUS_RING}`}>
               <Upload className="w-4 h-4 text-purple-400" />
-              <span>{ft.uploadButton}</span>
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              <span>{t('registration.uploadButton')}</span>
+              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="sr-only" />
             </label>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400 mb-2">{ft.presetAvatarLabel}</p>
-            <div className="flex space-x-2">
+            <p className="text-xs text-slate-400 mb-2">{t('registration.presetAvatarLabel')}</p>
+            <div className="flex flex-wrap gap-2">
               {PRESET_AVATARS.map((url, i) => (
                 <button
                   key={i}
                   type="button"
-                  onClick={() => setFormData({ ...formData, avatarUrl: url })}
-                  className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-all ${
-                    formData.avatarUrl === url ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60'
+                  aria-label={t('registration.presetAvatarAria', { number: i + 1 })}
+                  aria-pressed={formData.avatarUrl === url}
+                  onClick={() => {
+                    setFormData({ ...formData, avatarUrl: url });
+                    haptic('selection');
+                  }}
+                  className={`pressable w-11 h-11 shrink-0 rounded-xl overflow-hidden border-2 bg-black/30 ${
+                    formData.avatarUrl === url ? 'border-purple-500' : 'border-white/10 opacity-60'
                   }`}
                 >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={url}
+                    alt=""
+                    width={44}
+                    height={44}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -1141,82 +1265,107 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
 
         {/* QUESTION 13: REASON & EXPECTATIONS (OPTIONAL) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
-            {ft.reasonTitle}
+            {t('registration.reasonTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
-            {ft.reasonDesc}
+            {t('registration.reasonDesc')}
           </p>
 
           <textarea
             rows={3}
-            placeholder={ft.reasonPlaceholder}
+            placeholder={t('registration.reasonPlaceholder')}
             maxLength={MEMBER_FIELD_LIMITS.reason}
             value={formData.reason}
             onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-            className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 text-xs sm:text-sm resize-none"
+            className="glass-input w-full text-base sm:text-sm resize-none"
           />
         </div>
 
         {/* QUESTION 14: CODE OF CONDUCT (REQUIRED CHECKBOX) */}
-        <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-white mb-3">
-            {ft.codeOfConductTitle} <span className="text-rose-500">*</span>
+            {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
           </label>
 
-          <label className="flex items-start space-x-3 cursor-pointer">
+          <label className={`${CHOICE_ROW_CLASS} items-start py-1`}>
             <input
               type="checkbox"
               required
+              aria-invalid={errorField === 'codeOfConduct' || undefined}
               checked={formData.acceptedCodeOfConduct}
-              onChange={(e) => setFormData({ ...formData, acceptedCodeOfConduct: e.target.checked })}
-              className="mt-1 w-4 h-4 rounded text-purple-600 focus:ring-0 bg-slate-950 border-slate-700"
+              onChange={(e) => {
+                setFormData({ ...formData, acceptedCodeOfConduct: e.target.checked });
+                haptic('selection');
+              }}
+              className="mt-0.5 w-5 h-5 shrink-0 rounded cursor-pointer"
             />
-            <span className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-              {t.codeOfConduct}
+            <span className="text-sm text-slate-200 leading-relaxed">
+              {t('registration.codeOfConductAgreement')}
             </span>
           </label>
         </div>
 
-        {/* ACTION BUTTONS (GOOGLE FORM STYLE) */}
-        <div className="flex flex-col gap-3 pt-2">
-          {errorMsg && (
-            <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
+        {/* ACTION BUTTONS: a floating glass bar that stays above the bottom edge (and the iPhone home
+            indicator) while the form is on screen. Sticky, not fixed: it settles into place after the
+            last question. The wrapper ignores taps so only the glass bar itself is interactive. */}
+        <div className="sticky bottom-0 z-20 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none">
+          <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2">
+            <AnimatePresence initial={false}>
+              {errorMsg && (
+                <motion.div
+                  key="error"
+                  role="alert"
+                  {...fadeMotion}
+                  className="relative isolate flex items-start gap-2 rounded-xl px-2 py-1 text-sm text-rose-200"
+                >
+                  <ErrorFlash pulse={errorPulse} />
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{errorMsg}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm shadow-lg transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>{ft.submittingText}</span>
-              </>
-            ) : (
-              <>
-                <Send className="w-3.5 h-3.5" />
-                <span>{t.submitButton}</span>
-              </>
-            )}
-          </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary pressable w-full min-h-12 px-6 text-base sm:text-sm"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>{t('registration.submittingText')}</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  <span>{t('registration.submitButton')}</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
 
+        <div className="flex justify-center">
           <button
             type="button"
             onClick={handleClearForm}
-            className="px-3 py-1.5 rounded-lg text-xs text-rose-300 hover:text-white hover:bg-rose-500/15 transition-colors inline-flex items-center justify-center gap-1.5 font-semibold"
+            className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-300 hover:text-white hover:bg-rose-500/15 inline-flex items-center justify-center gap-1.5 font-semibold"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>{t.clearForm}</span>
+            <RotateCcw className="w-4 h-4" />
+            <span>{t('registration.clearForm')}</span>
           </button>
         </div>
-
       </form>
-    </div>
+    </motion.div>
   );
-};
+
+  // Both wrappers end at transform: none (opacity 1, y 0), and neither contains position: fixed children
+  // (the sticky submit bar is sticky, the card modal lives in App)
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {submittedMember ? successView : formView}
+    </AnimatePresence>
+  );
+});

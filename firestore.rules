@@ -10,10 +10,21 @@ rules_version = '2';
 // Privacy model:
 // - /members holds personal data (phone, email, age, birthday, discord, reason). Only the admin
 //   and the member themself can read a member document. There is NO public list.
-// - /memberCards/{userId16} is the PUBLIC, non-private projection used for the KCC ID card lookup
-//   (get by exact 16-digit ID only, list denied).
-// - KCC ID 0000000000000000 (main account) and 0000000000000001..0000000000000100 (admin range)
-//   can only be written by an admin.
+// - /memberCards/{kccId} is the PUBLIC, non-private projection used for the KCC ID card lookup
+//   (get by exact ID only, list denied). /memberCardAliases/{old16} maps a legacy 16-digit ID to
+//   the 8-digit ID (get only, list denied).
+//
+// KCC ID (stored in the field `userId16` for compatibility; see AGENTS.md):
+// - 8 digits (current): 00000000 = main account, 00000001..00000100 = admin range, members from
+//   00000101 issued by the counter /counters/kccId (claimed in the same write as the card + member).
+// - 16 digits (legacy): 0000000000000000 / 0000000000000001..0000000000000100 reserved.
+// - Reserved IDs can only be written by an admin.
+// - "The 8-digit switch": once /counters/kccId exists, nobody may write a NEW 16-digit KCC ID.
+//   Before that, public registrations use the legacy 16-digit path.
+//
+// Cost note: max 10 exists()/get()/getAfter() per operation and 20 per request. isAdmin() costs one
+// exists() for admins/{uid} admins (0 for the main account), so it is evaluated FIRST wherever the
+// non-admin branch makes document calls; admin batches stay <= 15 operations.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -44,7 +55,7 @@ service cloud.firestore {
       return isVerifiedEmailUser() && tokenEmail() == 'cosplaysehat@gmail.com';
     }
 
-    // Admin = verified cosplaysehat@gmail.com OR a console-created /admins/{uid} document.
+    // Admin = verified cosplaysehat@gmail.com OR an /admins/{uid} document.
     function isAdmin() {
       return isSignedIn()
         && (isMainAccountUser() || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
@@ -77,21 +88,62 @@ service cloud.firestore {
           && (data[key].size() < 3 || (data[key][2] is string && data[key][2].size() <= 30)));
     }
 
-    function isValidUserId16(id) {
+    // ---------------------------------------------------------------------------------------------
+    // KCC ID helpers
+    // ---------------------------------------------------------------------------------------------
+
+    function isKccId8(id) {
+      return id is string && id.matches('^[0-9]{8}$');
+    }
+
+    function isKccId16(id) {
       return id is string && id.matches('^[0-9]{16}$');
     }
 
-    // 0000000000000000 (main account) and 0000000000000001..0000000000000100 (KCC admin range).
-    // Valid IDs are exactly 16 digits, so lexicographic order equals numeric order.
-    function isReservedUserId16(id) {
-      return id <= '0000000000000100';
+    function isValidKccId(id) {
+      return isKccId8(id) || isKccId16(id);
+    }
+
+    // Main account + admin range, in both formats. Valid IDs have a fixed length per format, so
+    // lexicographic order equals numeric order.
+    function isReservedKccId(id) {
+      return (isKccId8(id) && id <= '00000100') || (isKccId16(id) && id <= '0000000000000100');
+    }
+
+    function kccCounterPath() {
+      return /databases/$(database)/documents/counters/kccId;
+    }
+
+    function memberCardPath(id) {
+      return /databases/$(database)/documents/memberCards/$(id);
+    }
+
+    // After the 8-digit switch (/counters/kccId exists) no NEW 16-digit KCC ID may be written, also
+    // not by an admin (stale clients would otherwise mix 16-digit IDs into the 8-digit era).
+    // Costs one exists() only for a non-8-digit ID.
+    function isNewKccIdAllowed(id) {
+      return isKccId8(id) || !exists(kccCounterPath());
+    }
+
+    // Non-admin KCC ID for a new member / card:
+    // - 8 digits: the counter moved to exactly this ID in this same write (getAfter + get, 2 calls);
+    // - 16 digits (legacy path, only before the switch): never 00000000xxxxxxxx (would shadow the
+    //   8-digit ID xxxxxxxx in the lookup; also covers the reserved range), no counter yet (1 call).
+    function isPublicKccIdClaim(id) {
+      return (isKccId8(id)
+          && getAfter(kccCounterPath()).data.lastId == id
+          && get(kccCounterPath()).data.lastId != id)
+        || (isKccId16(id)
+          && !id.matches('^00000000[0-9]{8}$')
+          && !exists(kccCounterPath()));
     }
 
     // ---------------------------------------------------------------------------------------------
     // Members (private personal data)
     // ---------------------------------------------------------------------------------------------
 
-    function memberKeys() {
+    // Keys a non-admin may write on create (legacyUserId16 is written by the admin migration only).
+    function memberPublicKeys() {
       return ['userId16', 'authUid', 'name', 'cosplayName', 'fullName', 'email', 'phone',
               'phone2', 'additionalPhones',
               'discordUsername', 'country', 'province', 'city', 'age', 'ageCategory', 'birthday',
@@ -99,8 +151,12 @@ service cloud.firestore {
               'reason', 'memberNumber', 'source', 'status', 'createdAt'];
     }
 
-    // Fields a member may change on their own profile. userId16, authUid, email, source, status,
-    // createdAt and memberNumber are locked for non-admins.
+    function memberKeys() {
+      return memberPublicKeys().concat(['legacyUserId16']);
+    }
+
+    // Fields a member may change on their own profile. userId16, legacyUserId16, authUid, email,
+    // source, status, createdAt and memberNumber are locked for non-admins.
     function memberOwnerEditableKeys() {
       return ['name', 'cosplayName', 'fullName', 'phone', 'phone2', 'additionalPhones',
               'discordUsername', 'country', 'province',
@@ -117,7 +173,8 @@ service cloud.firestore {
         && data.source in ['web_form', 'google_form_sync', 'spreadsheet_import']
         && data.status in ['pending', 'verified', 'active']
         && data.createdAt is string && data.createdAt.size() <= 40
-        && (!('userId16' in data) || isValidUserId16(data.userId16))
+        && (!('userId16' in data) || isValidKccId(data.userId16))
+        && (!('legacyUserId16' in data) || isKccId16(data.legacyUserId16))
         && optString(data, 'authUid', 128)
         && optString(data, 'name', 80)
         && optString(data, 'fullName', 100)
@@ -147,6 +204,15 @@ service cloud.firestore {
       return isVerifiedEmailUser() && data.get('email', '') == tokenEmail();
     }
 
+    // Admin member update: any change (status, edits, unlink, ID repair/migration), except giving a
+    // member a NEW 16-digit KCC ID after the 8-digit switch (one exists() only in that case).
+    function isAdminKccIdChangeAllowed() {
+      return !('userId16' in incoming())
+        || incoming().userId16 == existing().get('userId16', null)
+        || isKccId8(incoming().userId16)
+        || !exists(kccCounterPath());
+    }
+
     match /members/{memberId} {
       // members/{uid} may always be read by that uid (also when it does not exist yet, so the
       // login flow can check-then-create inside a transaction).
@@ -162,24 +228,30 @@ service cloud.firestore {
       allow list: if isSignedIn() && resource.data.authUid == request.auth.uid;
       allow list: if isVerifiedEmailUser() && resource.data.email == tokenEmail();
 
-      // Public registration (anonymous allowed) and first-login profile creation.
-      // Non-admins: doc id is "kc_..." or their own uid, KCC ID outside the reserved range,
-      // authUid absent or equal to their own uid.
+      // Admin: any schema-valid member with any KCC ID (incl. reserved), but no new 16-digit ID
+      // after the switch.
+      // Public registration (anonymous allowed) and first-login profile creation: doc id is "kc_..."
+      // or the writer's own uid, KCC ID not reserved and claimed (isPublicKccIdClaim), authUid absent
+      // or the writer's own uid, no legacyUserId16.
       allow create: if isValidId(memberId)
         && isValidMember(incoming())
-        && incoming().keys().hasOnly(memberKeys())
-        && isValidUserId16(incoming().get('userId16', ''))
+        && isValidKccId(incoming().get('userId16', ''))
         && (
-          (!isReservedUserId16(incoming().userId16)
+          (isAdmin()
+            && incoming().keys().hasOnly(memberKeys())
+            && isNewKccIdAllowed(incoming().userId16))
+          || (incoming().keys().hasOnly(memberPublicKeys())
+            && !isReservedKccId(incoming().userId16)
             && (memberId.matches('^kc_[a-zA-Z0-9_\\-]+$') || (isSignedIn() && memberId == request.auth.uid))
-            && (!('authUid' in incoming()) || (isSignedIn() && incoming().authUid == request.auth.uid)))
-          || isAdmin()
+            && (!('authUid' in incoming()) || (isSignedIn() && incoming().authUid == request.auth.uid))
+            && isPublicKccIdClaim(incoming().userId16))
         );
 
-      // Admin: any update (status changes, KCC ID repair, auto-heal).
+      // Admin: any update (status changes, edits, unlink, KCC ID repair/migration, auto-heal),
+      // except a NEW 16-digit KCC ID after the switch.
       // Owner (authUid == auth.uid): profile fields only, schema-valid.
       // Account link: a VERIFIED-email user whose email matches may set authUid to their own uid only.
-      allow update: if isAdmin()
+      allow update: if (isAdmin() && isAdminKccIdChangeAllowed())
         || (isMemberOwner(existing())
             && isValidMember(incoming())
             && incoming().diff(existing()).affectedKeys().hasOnly(memberOwnerEditableKeys()))
@@ -191,7 +263,7 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Member cards (PUBLIC, non-private projection; doc id == userId16)
+    // Member cards (PUBLIC, non-private projection; doc id == userId16 == KCC ID, 8 or 16 digits)
     // ---------------------------------------------------------------------------------------------
 
     function memberCardKeys() {
@@ -200,7 +272,7 @@ service cloud.firestore {
     }
 
     function isValidMemberCard(data, cardId) {
-      return isValidUserId16(cardId)
+      return isValidKccId(cardId)
         && data.keys().hasAll(['userId16', 'cosplayName', 'primaryRole', 'city', 'country', 'status', 'createdAt'])
         && data.keys().hasOnly(memberCardKeys())
         && data.userId16 == cardId
@@ -220,9 +292,10 @@ service cloud.firestore {
 
       allow create: if isValidMemberCard(incoming(), cardId)
         && (
-          (!isReservedUserId16(cardId)
-            && (!('ownerUid' in incoming()) || (isSignedIn() && incoming().ownerUid == request.auth.uid)))
-          || isAdmin()
+          (isAdmin() && isNewKccIdAllowed(cardId))
+          || (!isReservedKccId(cardId)
+            && (!('ownerUid' in incoming()) || (isSignedIn() && incoming().ownerUid == request.auth.uid))
+            && isPublicKccIdClaim(cardId))
         );
 
       // Owner (ownerUid == auth.uid) may refresh name/role/location/avatar; userId16 (doc id),
@@ -238,6 +311,64 @@ service cloud.firestore {
         );
 
       allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Legacy 16-digit KCC ID -> 8-digit KCC ID (written by the admin migration; public lookup)
+    // ---------------------------------------------------------------------------------------------
+
+    function isValidCardAlias(data) {
+      return data.keys().hasAll(['kccId', 'createdAt'])
+        && data.keys().hasOnly(['kccId', 'createdAt'])
+        && isKccId8(data.kccId)
+        && data.createdAt is string && data.createdAt.size() <= 40;
+    }
+
+    match /memberCardAliases/{legacyId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isKccId16(legacyId) && isValidCardAlias(incoming()) && isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // KCC ID counter: /counters/kccId { last: int, lastId: 8 digits == last zero-padded,
+    // planEnd?: int, updatedAt?: string }. Its existence marks the 8-digit switch.
+    // ---------------------------------------------------------------------------------------------
+
+    function isValidKccCounter(data) {
+      return data.keys().hasAll(['last', 'lastId'])
+        && data.keys().hasOnly(['last', 'lastId', 'planEnd', 'updatedAt'])
+        && data.last is int && data.last >= 100 && data.last <= 99999999
+        && isKccId8(data.lastId)
+        && data.lastId.matches('^0*' + string(data.last) + '$')
+        && (!('planEnd' in data) || (data.planEnd is int && data.planEnd >= 100 && data.planEnd <= data.last))
+        && optString(data, 'updatedAt', 40);
+    }
+
+    match /counters/{counterId} {
+      // Public get: the anonymous registration transaction reads the counter (reveals only the count).
+      allow get: if counterId == 'kccId';
+      allow list: if false;
+
+      // Created by the admin migration ("Switch to 8-digit KCC IDs").
+      allow create: if counterId == 'kccId' && isValidKccCounter(incoming()) && isAdmin();
+
+      // Admin: never backwards (claims for imports, migration bookkeeping).
+      // Everyone else: exactly +1 (last/lastId/updatedAt only), bound to the card of the new ID being
+      // created in this same write.
+      allow update: if counterId == 'kccId'
+        && isValidKccCounter(incoming())
+        && (
+          (isAdmin() && incoming().last >= existing().last)
+          || (incoming().diff(existing()).affectedKeys().hasOnly(['last', 'lastId', 'updatedAt'])
+            && incoming().last == existing().last + 1
+            && !exists(memberCardPath(incoming().lastId))
+            && existsAfter(memberCardPath(incoming().lastId)))
+        );
+
+      // Deleting the counter would reopen the 16-digit path: console only.
+      allow delete: if false;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -269,7 +400,7 @@ service cloud.firestore {
 
     match /photos/{photoId} {
       allow get: if true;
-      // The gallery query is orderBy('createdAt', 'desc') + limit(100).
+      // Gallery queries are orderBy('createdAt', 'desc') + limit(n) (+ startAfter for paging), n <= 100.
       allow list: if request.query.limit <= 100;
 
       allow create: if isSignedIn()
@@ -319,14 +450,91 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Admin registry: documents are created by the owner in the Firebase console only.
-    // A signed-in user may read their own entry (client-side admin check).
+    // Admin registry. Any admin may add or remove admins; the main account is admin by its verified
+    // email and cannot be removed. A new entry must point to a member doc whose authUid is the new
+    // admin's uid (the member signed in at least once). Entries are never edited (remove + re-add).
+    // Older console-created docs may have any shape; only new entries are validated.
     // ---------------------------------------------------------------------------------------------
 
+    function isValidAdminEntry(uid, data) {
+      return isValidId(uid)
+        && data.keys().hasAll(['memberId', 'addedBy', 'addedAt'])
+        && data.keys().hasOnly(['memberId', 'email', 'name', 'addedBy', 'addedByEmail', 'addedAt'])
+        && isValidId(data.memberId)
+        && optString(data, 'email', 120)
+        && optString(data, 'name', 80)
+        && data.addedBy == request.auth.uid
+        && (!('addedByEmail' in data) || data.addedByEmail == tokenEmail())
+        && data.addedAt == request.time;
+    }
+
     match /admins/{uid} {
-      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow get: if (isSignedIn() && request.auth.uid == uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && isValidAdminEntry(uid, incoming())
+        && get(/databases/$(database)/documents/members/$(incoming().memberId)).data.get('authUid', '') == uid;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Admin-only settings. adminSettings/dashboardLock = shared dashboard lock password as a
+    // PBKDF2-SHA256 hash (convenience lock; these rules remain the real protection).
+    // Readable by every admin, written by the main account only.
+    // ---------------------------------------------------------------------------------------------
+
+    function isValidDashboardLock(data) {
+      return data.keys().hasAll(['algorithm', 'hash', 'salt', 'iterations', 'updatedAt', 'updatedBy'])
+        && data.keys().hasOnly(['algorithm', 'hash', 'salt', 'iterations', 'updatedAt', 'updatedBy'])
+        && data.algorithm == 'PBKDF2-SHA256'
+        && data.hash is string && data.hash.matches('^[A-Za-z0-9+/]{43}=$')
+        && data.salt is string && data.salt.size() >= 24 && data.salt.size() <= 88
+        && data.salt.matches('^[A-Za-z0-9+/]+={0,2}$')
+        && data.iterations is int && data.iterations >= 100000 && data.iterations <= 2000000
+        && data.updatedAt == request.time
+        && data.updatedBy == request.auth.uid;
+    }
+
+    match /adminSettings/{settingId} {
+      allow get: if isAdmin();
       allow list: if false;
-      allow create, update, delete: if false;
+      allow create, update: if settingId == 'dashboardLock'
+        && isMainAccountUser()
+        && isValidDashboardLock(incoming());
+      allow delete: if settingId == 'dashboardLock' && isMainAccountUser();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Admin audit log: append-only, admin read. Written by the acting admin's client (best effort).
+    // ---------------------------------------------------------------------------------------------
+
+    function adminLogActions() {
+      return ['admin_added', 'admin_removed', 'photo_deleted', 'member_deleted', 'member_edited',
+              'member_unlinked', 'member_status_changed', 'password_reset_sent', 'kcc_id_migration',
+              'kcc_id_repair', 'registration_dates_fixed', 'duplicates_merged', 'sheets_import',
+              'dashboard_lock_set', 'dashboard_lock_cleared'];
+    }
+
+    function isValidAdminLog(data) {
+      return data.keys().hasAll(['action', 'actorUid', 'at'])
+        && data.keys().hasOnly(['action', 'actorUid', 'actorEmail', 'at', 'targetType', 'targetId',
+                                'targetLabel', 'details', 'count'])
+        && data.action in adminLogActions()
+        && data.actorUid == request.auth.uid
+        && data.at == request.time
+        && (!('actorEmail' in data) || data.actorEmail == tokenEmail())
+        && (!('targetType' in data) || data.targetType in ['member', 'admin', 'photo', 'settings', 'bulk'])
+        && optString(data, 'targetId', 128)
+        && optString(data, 'targetLabel', 120)
+        && optString(data, 'details', 1000)
+        && (!('count' in data) || (data.count is int && data.count >= 0));
+    }
+
+    match /adminLogs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidId(logId) && isValidAdminLog(incoming()) && isAdmin();
+      allow update, delete: if false;
     }
   }
 }

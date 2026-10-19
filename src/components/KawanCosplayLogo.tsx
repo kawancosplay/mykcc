@@ -1,6 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSiteTheme } from '../lib/themeContext';
+import { useI18n } from '../i18n';
+import { useMediaQuery } from '../lib/motion';
 import { Crown, Shield, Heart, Sparkles } from 'lucide-react';
+
+// Emblem tiles / custom logo: the glass rim (specular top highlight + soft drop shadow) used by the
+// .glass-* surfaces, instead of a flat `shadow-md`
+const GLASS_RIM_SHADOW =
+  'shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_4px_14px_-6px_rgba(0,0,0,0.55)]';
+const EMBLEM_TILE_CLASS = `w-full h-full rounded-2xl p-2 flex items-center justify-center border ${GLASS_RIM_SHADOW}`;
+
+// Long-press on the logo (it sits inside the tappable nav home link) must not open the iOS image
+// callout or start an image drag
+const NO_CALLOUT_CLASS = '[-webkit-touch-callout:none]';
+
+// Set by vite.config.ts (`define`): true when public/brand/kcc-logo-96.webp + -160.webp exist.
+declare const __KCC_LOCAL_LOGO__: boolean;
+
+const REMOTE_HEADER_LOGO_URL = 'https://i.postimg.cc/sXbd1FgB/Logo-Kawan-Cosplay-Community-Redesigned-Alt.png';
+const HAS_LOCAL_LOGO = typeof __KCC_LOCAL_LOGO__ !== 'undefined' && __KCC_LOCAL_LOGO__ === true;
+
+/**
+ * The header logo (square artwork). Self-hosted 96/160 px WebP (44 CSS px on phones, 56 px from `sm`)
+ * when the files are in public/brand/, else the original remote PNG. The remote PNG is also the fallback
+ * if a local file fails to load.
+ */
+export const KCC_HEADER_LOGO: { src: string; srcSet?: string; sizes?: string; fallbackSrc?: string } = HAS_LOCAL_LOGO
+  ? {
+      src: '/brand/kcc-logo-96.webp',
+      srcSet: '/brand/kcc-logo-96.webp 96w, /brand/kcc-logo-160.webp 160w',
+      sizes: '(min-width: 640px) 56px, 44px',
+      fallbackSrc: REMOTE_HEADER_LOGO_URL,
+    }
+  : { src: REMOTE_HEADER_LOGO_URL };
 
 interface KawanCosplayLogoProps {
   className?: string;
@@ -9,6 +41,11 @@ interface KawanCosplayLogoProps {
   noContainer?: boolean;
   desktopLogoUrl?: string;
   mobileLogoUrl?: string;
+  /** Responsive candidates for the logo image (`srcset`), used with `logoSizes`. */
+  logoSrcSet?: string;
+  logoSizes?: string;
+  /** Tried once when the logo image fails, before falling back to the emblem. */
+  fallbackLogoUrl?: string;
 }
 
 export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
@@ -18,23 +55,21 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
   noContainer = false,
   desktopLogoUrl,
   mobileLogoUrl,
+  logoSrcSet,
+  logoSizes,
+  fallbackLogoUrl,
 }) => {
   const { theme } = useSiteTheme();
-  const [logoSrc, setLogoSrc] = useState(desktopLogoUrl);
-  const [hasImageError, setHasImageError] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setLogoSrc(mobileLogoUrl || desktopLogoUrl);
-      } else {
-        setLogoSrc(desktopLogoUrl);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.removeEventListener('resize', handleResize);
-  }, [desktopLogoUrl, mobileLogoUrl]);
+  const { t } = useI18n();
+  // 0 = primary image, 1 = fallback image, 2 = both failed (emblem)
+  const [imageStage, setImageStage] = useState<0 | 1 | 2>(0);
+  // Same 768px breakpoint as before, but through matchMedia: it re-renders only when the breakpoint is
+  // crossed (not on every resize event) and is already correct on the first render
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const primarySrc = isDesktop ? desktopLogoUrl : mobileLogoUrl || desktopLogoUrl;
+  const logoSrc = imageStage === 0 ? primarySrc : imageStage === 1 ? fallbackLogoUrl : undefined;
+  const hasImageError = imageStage === 2 || !logoSrc;
+  const handleImageError = () => setImageStage((stage) => (stage === 0 && fallbackLogoUrl ? 1 : 2));
 
   const isImageActive = Boolean(logoSrc && !hasImageError);
 
@@ -54,33 +89,43 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
       {/* Official KawanCosplay Vector Emblem or Custom Logo */}
       <div className={`relative ${noContainer ? '' : iconDimensions} shrink-0 flex items-center justify-center`}>
         {logoSrc && !hasImageError ? (
+          // width/height reserve the (square) box before the image arrives: no header layout shift
           <img
+            key={logoSrc}
             src={logoSrc}
-            alt="KawanCosplay Logo"
-            className="h-11 sm:h-14 w-auto max-w-[210px] object-contain block"
+            srcSet={imageStage === 0 ? logoSrcSet : undefined}
+            sizes={imageStage === 0 && logoSrcSet ? logoSizes : undefined}
+            width={44}
+            height={44}
+            alt={t('common.logoAlt')}
+            className={`h-11 sm:h-14 w-auto max-w-[210px] object-contain block ${NO_CALLOUT_CLASS}`}
             loading="eager"
-            onError={() => setHasImageError(true)}
+            decoding="async"
+            fetchPriority="high"
+            draggable={false}
+            onError={handleImageError}
           />
         ) : customLogoUrl ? (
           <img
             src={customLogoUrl}
-            alt="Logo"
-            className={`${noContainer ? iconDimensions : 'w-full h-full'} object-contain ${noContainer ? '' : 'rounded-2xl border border-rose-500/40 shadow-md'}`}
+            alt={t('common.logoAlt')}
+            draggable={false}
+            className={`${noContainer ? iconDimensions : 'w-full h-full'} object-contain ${NO_CALLOUT_CLASS} ${noContainer ? '' : `rounded-2xl border border-rose-500/40 ${GLASS_RIM_SHADOW}`}`}
           />
         ) : emblemType === 'crown' ? (
-          <div className="w-full h-full rounded-2xl bg-gradient-to-tr from-amber-600 via-yellow-500 to-amber-300 p-2 flex items-center justify-center text-slate-950 shadow-md border border-amber-400">
+          <div className={`${EMBLEM_TILE_CLASS} bg-gradient-to-tr from-amber-600 via-yellow-500 to-amber-300 text-slate-950 border-amber-400`}>
             <Crown className="w-full h-full" />
           </div>
         ) : emblemType === 'shield' ? (
-          <div className="w-full h-full rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-2 flex items-center justify-center text-white shadow-md border border-indigo-400">
+          <div className={`${EMBLEM_TILE_CLASS} bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white border-indigo-400`}>
             <Shield className="w-full h-full" />
           </div>
         ) : emblemType === 'heart' ? (
-          <div className="w-full h-full rounded-2xl bg-gradient-to-tr from-rose-600 via-pink-500 to-rose-400 p-2 flex items-center justify-center text-white shadow-md border border-pink-400">
+          <div className={`${EMBLEM_TILE_CLASS} bg-gradient-to-tr from-rose-600 via-pink-500 to-rose-400 text-white border-pink-400`}>
             <Heart className="w-full h-full" />
           </div>
         ) : emblemType === 'sparkle' ? (
-          <div className="w-full h-full rounded-2xl bg-gradient-to-tr from-yellow-500 via-amber-400 to-purple-600 p-2 flex items-center justify-center text-white shadow-md border border-yellow-300">
+          <div className={`${EMBLEM_TILE_CLASS} bg-gradient-to-tr from-yellow-500 via-amber-400 to-purple-600 text-white border-yellow-300`}>
             <Sparkles className="w-full h-full" />
           </div>
         ) : (
@@ -209,7 +254,7 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
               {logoTitle}
             </span>
             <span className="px-1.5 py-0.5 text-[8px] sm:text-[9px] font-extrabold tracking-wider uppercase rounded-md bg-gradient-to-r from-rose-500/20 to-purple-500/20 text-rose-300 border border-rose-500/30 leading-none">
-              Official
+              {t('common.officialBadge')}
             </span>
           </div>
           <span className="text-[9px] sm:text-[11px] font-bold text-slate-400 tracking-wider uppercase mt-0.5 sm:mt-1 leading-none">

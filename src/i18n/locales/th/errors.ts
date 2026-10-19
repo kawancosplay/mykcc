@@ -1,43 +1,64 @@
 import type { LocaleNamespace } from '../../types';
 
-// User-facing messages produced in src/lib (translated there with translate(), not useI18n()).
 const errors: LocaleNamespace<'errors'> = {
-  // firebase.ts describeFirestoreError
-  firestorePermissionDenied:
-    'ฐานข้อมูลปฏิเสธการเข้าถึง (permission denied) ยังไม่มีการบันทึกข้อมูลใด ๆ โปรดตรวจสอบว่าทุกช่องไม่เกินจำนวนตัวอักษรที่กำหนด หรือเข้าสู่ระบบด้วยบัญชีที่ได้รับอนุญาต แล้วลองอีกครั้ง',
-  signInRequired: 'โปรดเข้าสู่ระบบก่อนเพื่อดำเนินการต่อ',
-  databaseUnavailable: 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง',
-  saveFailed: 'เกิดข้อผิดพลาดระหว่างบันทึก โปรดลองอีกครั้ง',
-
-  // firestoreService.ts
-  profilePhotoTooLarge: 'รูปโปรไฟล์มีขนาดใหญ่เกินไป โปรดเลือกรูปอื่น',
-  nameRequired: 'ต้องระบุชื่อ',
-  invalidCardId: 'KCC ID สำหรับบัตรสมาชิกไม่ถูกต้อง: {id}',
-  uniqueIdFailed: 'ไม่สามารถสร้าง KCC ID ที่ไม่ซ้ำได้ โปรดลองอีกครั้ง',
-  mergeAdminOnly: 'เฉพาะผู้ดูแลเท่านั้นที่รวมข้อมูลสมาชิกได้',
-  mergeSameRecord: 'ไม่สามารถรวมรายการเข้ากับตัวเองได้',
-  memberRecordMissing: 'ไม่มีข้อมูลสมาชิกนี้อีกต่อไป (อาจถูกรวมหรือลบไปแล้ว)',
-  mergeDifferentAccounts: 'ทั้งสองรายการเชื่อมโยงกับบัญชีเข้าสู่ระบบที่ต่างกัน จึงไม่สามารถรวมกันได้',
-  repairAdminOnly: 'เฉพาะผู้ดูแลเท่านั้นที่เรียกใช้การซ่อมแซมได้',
-  repairIdUpdateFailed: 'อัปเดต KCC ID ล้มเหลว ({ids}): {detail}',
-  repairCardWriteFailed: 'เขียนบัตรสมาชิกล้มเหลว ({ids}): {detail}',
-  repairCardDeleteFailed: 'ลบบัตรสมาชิกล้มเหลว ({ids}): {detail}',
-
-  // galleryService.ts
-  photoSignInRequired: 'โปรดเข้าสู่ระบบก่อนอัปโหลดรูป',
-  photoTooLarge: 'รูปมีขนาดใหญ่เกินไป โปรดเลือกรูปอื่น',
-
-  // googleAuth.ts
-  googleAccessTokenMissing: 'ไม่สามารถรับโทเค็นการเข้าถึงจากการเข้าสู่ระบบ Google ได้',
-
-  // sheetsService.ts ({label} is the API call: metadata / values; {detail} is Google's own message)
-  sheetsApiResponseError: 'ข้อผิดพลาด Sheets API {label} ({status}): {detail}',
-  sheetsApiRequestFailed: 'คำขอ Sheets API {label} ล้มเหลว: {detail}',
-
-  // idGenerator.ts getUserIdBadgeInfo
-  badgeMainAccount: 'บัญชีหลัก KCC (0000)',
-  badgeAdmin: 'ผู้ดูแล KCC #{number}',
-  badgeMember: 'สมาชิก (ตามเวลา)',
+  firestorePermissionDenied: "ฐานข้อมูลปฏิเสธการเข้าถึง (permission denied) ยังไม่มีการบันทึกข้อมูลใด ๆ โปรดตรวจสอบว่าทุกช่องไม่เกินจำนวนตัวอักษรที่กำหนด หรือเข้าสู่ระบบด้วยบัญชีที่ได้รับอนุญาต แล้วลองอีกครั้ง",
+  signInRequired: "โปรดเข้าสู่ระบบก่อนเพื่อดำเนินการต่อ",
+  databaseUnavailable: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง",
+  saveFailed: "เกิดข้อผิดพลาดระหว่างบันทึก โปรดลองอีกครั้ง",
+  profilePhotoTooLarge: "รูปโปรไฟล์มีขนาดใหญ่เกินไป โปรดเลือกรูปอื่น",
+  nameRequired: "ต้องระบุชื่อ",
+  invalidCardId: "KCC ID สำหรับบัตรสมาชิกไม่ถูกต้อง: {id}",
+  uniqueIdFailed: "ไม่สามารถสร้าง KCC ID ที่ไม่ซ้ำได้ โปรดลองอีกครั้ง",
+  mergeAdminOnly: "เฉพาะผู้ดูแลเท่านั้นที่รวมข้อมูลสมาชิกได้",
+  mergeSameRecord: "ไม่สามารถรวมรายการเข้ากับตัวเองได้",
+  memberRecordMissing: "ไม่มีข้อมูลสมาชิกนี้อีกต่อไป (อาจถูกรวมหรือลบไปแล้ว)",
+  mergeDifferentAccounts: "ทั้งสองรายการเชื่อมโยงกับบัญชีเข้าสู่ระบบที่ต่างกัน จึงไม่สามารถรวมกันได้",
+  repairAdminOnly: "เฉพาะผู้ดูแลเท่านั้นที่เรียกใช้การซ่อมแซมได้",
+  repairIdUpdateFailed: "อัปเดต KCC ID ล้มเหลว ({ids}): {detail}",
+  repairCardWriteFailed: "เขียนบัตรสมาชิกล้มเหลว ({ids}): {detail}",
+  repairCardDeleteFailed: "ลบบัตรสมาชิกล้มเหลว ({ids}): {detail}",
+  photoSignInRequired: "โปรดเข้าสู่ระบบก่อนอัปโหลดรูป",
+  photoTooLarge: "รูปมีขนาดใหญ่เกินไป โปรดเลือกรูปอื่น",
+  googleAccessTokenMissing: "ไม่สามารถรับโทเค็นการเข้าถึงจากการเข้าสู่ระบบ Google ได้",
+  sheetsApiResponseError: "ข้อผิดพลาด Sheets API {label} ({status}): {detail}",
+  sheetsApiRequestFailed: "คำขอ Sheets API {label} ล้มเหลว: {detail}",
+  sheetsNoTimestampColumn: "โปรดเลือกคอลัมน์เวลาประทับในการจับคู่คอลัมน์ก่อน",
+  badgeMainAccount: "บัญชีหลัก KCC (0000)",
+  badgeAdmin: "ผู้ดูแล KCC #{number}",
+  badgeMember: "สมาชิก",
+  adminOnly: "เฉพาะผู้ดูแลเท่านั้นที่ทำสิ่งนี้ได้",
+  invalidKccId: "KCC ID ไม่ถูกต้อง: {id}",
+  kccCounterBlocked: "ตัวนับ KCC ID ติดขัด โปรดลองอีกครั้งภายหลังหรือติดต่อผู้ดูแล KCC",
+  kccCounterMissing: "ยังไม่ได้เริ่มเปลี่ยนเป็น 8 หลัก (ยังไม่มีตัวนับ KCC ID)",
+  kccIdsExhausted: "ไม่มี KCC ID เหลือให้ใช้แล้ว",
+  migrationPlanChanged: "ข้อมูลสมาชิกเปลี่ยนไปตั้งแต่ดูตัวอย่าง (มีการลงทะเบียนใหม่หรือการแก้ไข) โปรดดูตัวอย่างอีกครั้งก่อนดำเนินการ",
+  migrationAlreadyStarted: "ผู้ดูแลคนอื่นเริ่มการเปลี่ยนไปแล้ว ดูตัวอย่างอีกครั้งเพื่อทำต่อ",
+  migrationBatchFailed: "การเปลี่ยนหยุดที่สมาชิก {ids}: {detail} ดูตัวอย่างอีกครั้งเพื่อทำต่อ",
+  migrationLateClaimFailed: "ให้ KCC ID ใหม่แก่ {name} ไม่ได้: {detail}",
+  migrationPhotosFailed: "อัปเดต KCC ID บนรูปภาพไม่ได้ ({ids}): {detail}",
+  migrationCancelled: "หยุดตามคำขอแล้ว ดูตัวอย่างอีกครั้งเพื่อทำต่อ",
+  migrationWarnDuplicateOldId: "สมาชิก {count} คนใช้ KCC ID เดิมซ้ำกับสมาชิกคนอื่น โปรดรวมข้อมูลซ้ำก่อน มิฉะนั้น ID เดิมจะชี้ไปยังสมาชิกที่ลงทะเบียนเร็วที่สุดในกลุ่มนั้น",
+  migrationWarnMissingOldId: "สมาชิก {count} คนยังไม่มี KCC ID ที่ถูกต้อง จะได้หมายเลขใหม่โดยไม่มีการเชื่อมโยงกับ ID เดิม",
+  migrationWarnUnparsableDates: "สมาชิก {count} คนไม่มีวันที่ลงทะเบียนที่อ่านได้ และจะได้หมายเลขท้ายสุด โปรดเรียกใช้ \"แก้ไขวันที่ลงทะเบียน\" ก่อน",
+  migrationWarnReservedConflict: "สมาชิก {count} คนถือ KCC ID สงวนที่สมาชิกคนอื่นยังคงใช้อยู่ จะได้หมายเลขปกติแทน",
+  migrationWarnLateClaims: "สมาชิก {count} คนลงทะเบียนด้วย ID เดิม 16 หลักหลังจากเริ่มการเปลี่ยน จะได้หมายเลขว่างถัดไปเมื่อคุณดำเนินการ",
+  migrationWarnUnusedNumbers: "หมายเลขที่วางแผนไว้ {count} หมายเลขไม่จำเป็นอีกต่อไป (มีสมาชิกถูกลบ) หมายเลขเหล่านี้จะไม่ถูกใช้",
+  dateFixBatchFailed: "บันทึกวันที่ลงทะเบียนของ {ids} ไม่ได้: {detail}",
+  adminNeedsSignIn: "สมาชิกคนนี้ยังไม่เคยเข้าสู่ระบบ MyKCC จึงยังตั้งเป็นผู้ดูแลไม่ได้",
+  adminIsMainAccount: "บัญชีหลักเป็นผู้ดูแลเสมอ",
+  adminAlreadyAdmin: "สมาชิกคนนี้เป็นผู้ดูแลอยู่แล้ว",
+  adminRemoveSelfNeedsConfirm: "คุณกำลังจะนำตัวเองออกจากการเป็นผู้ดูแล โปรดยืนยันอีกครั้งเพื่อดำเนินการต่อ",
+  lockMainOnly: "มีเพียงบัญชีหลักเท่านั้นที่เปลี่ยนรหัสผ่านแดชบอร์ดได้",
+  lockWrongPassword: "รหัสผ่านแดชบอร์ดไม่ถูกต้อง",
+  lockReauthWrongAccount: "โปรดยืนยันด้วยบัญชี Google หลัก",
+  lockPasswordTooShort: "รหัสผ่านแดชบอร์ดต้องมีอย่างน้อย {min} อักขระ",
+  lockCryptoUnavailable: "เบราว์เซอร์นี้ตรวจสอบรหัสผ่านแดชบอร์ดไม่ได้ (ไม่มี Web Crypto) โปรดใช้เบราว์เซอร์เวอร์ชันล่าสุดผ่าน HTTPS",
+  memberHasNoEmail: "สมาชิกคนนี้ไม่มีที่อยู่อีเมลที่บันทึกไว้",
+  memberNotLinked: "สมาชิกคนนี้ไม่ได้เชื่อมโยงกับการเข้าสู่ระบบ",
+  cannotUnlinkSignInProfile: "รายการนี้เป็นโปรไฟล์การเข้าสู่ระบบ โปรดรวมหรือลบแทนการยกเลิกการเชื่อมโยง",
+  authInvalidEmail: "ที่อยู่อีเมลที่บันทึกไว้ไม่ถูกต้อง",
+  authTooManyRequests: "มีคำขอมากเกินไป โปรดรอสักครู่แล้วลองอีกครั้ง",
+  authNetworkFailed: "เครือข่ายผิดพลาด โปรดตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง",
 };
 
 export default errors;

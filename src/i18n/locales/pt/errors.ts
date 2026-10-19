@@ -1,43 +1,64 @@
 import type { LocaleNamespace } from '../../types';
 
-// User-facing messages produced in src/lib (translated there with translate(), not useI18n()).
 const errors: LocaleNamespace<'errors'> = {
-  // firebase.ts describeFirestoreError
-  firestorePermissionDenied:
-    'Acesso negado pelo banco de dados (permissão negada). Nada foi salvo. Verifique se cada campo está dentro do limite de caracteres, ou entre com uma conta autorizada, e tente novamente.',
-  signInRequired: 'Faça login primeiro para continuar.',
-  databaseUnavailable: 'Não foi possível acessar o banco de dados. Verifique sua conexão com a internet e tente novamente.',
-  saveFailed: 'Algo deu errado ao salvar. Tente novamente.',
-
-  // firestoreService.ts
-  profilePhotoTooLarge: 'A foto de perfil é muito grande. Escolha outra foto.',
-  nameRequired: 'O nome é obrigatório.',
-  invalidCardId: 'KCC ID inválido para o cartão de membro: {id}',
-  uniqueIdFailed: 'Não foi possível criar um KCC ID único. Tente novamente.',
-  mergeAdminOnly: 'Somente admins podem mesclar registros de membros.',
-  mergeSameRecord: 'Um registro não pode ser mesclado com ele mesmo.',
-  memberRecordMissing: 'Este registro de membro não existe mais (pode ter sido mesclado ou excluído).',
-  mergeDifferentAccounts: 'Os dois registros estão vinculados a contas de login diferentes, por isso não podem ser mesclados.',
-  repairAdminOnly: 'Somente admins podem executar o reparo.',
-  repairIdUpdateFailed: 'Falha ao atualizar o KCC ID ({ids}): {detail}',
-  repairCardWriteFailed: 'Falha ao gravar o cartão de membro ({ids}): {detail}',
-  repairCardDeleteFailed: 'Falha ao excluir o cartão de membro ({ids}): {detail}',
-
-  // galleryService.ts
-  photoSignInRequired: 'Faça login primeiro para enviar uma foto.',
-  photoTooLarge: 'A foto é muito grande. Escolha outra foto.',
-
-  // googleAuth.ts
-  googleAccessTokenMissing: 'Não foi possível obter um token de acesso do login com Google.',
-
-  // sheetsService.ts ({label} is the API call: metadata / values; {detail} is Google's own message)
-  sheetsApiResponseError: 'Erro da Sheets API em {label} ({status}): {detail}',
-  sheetsApiRequestFailed: 'Falha na solicitação {label} da Sheets API: {detail}',
-
-  // idGenerator.ts getUserIdBadgeInfo
-  badgeMainAccount: 'Conta Principal do KCC (0000)',
-  badgeAdmin: 'Admin do KCC #{number}',
-  badgeMember: 'Membro (Data/Hora)',
+  firestorePermissionDenied: "Acesso negado pelo banco de dados (permissão negada). Nada foi salvo. Verifique se cada campo está dentro do limite de caracteres, ou entre com uma conta autorizada, e tente novamente.",
+  signInRequired: "Faça login primeiro para continuar.",
+  databaseUnavailable: "Não foi possível acessar o banco de dados. Verifique sua conexão com a internet e tente novamente.",
+  saveFailed: "Algo deu errado ao salvar. Tente novamente.",
+  profilePhotoTooLarge: "A foto de perfil é muito grande. Escolha outra foto.",
+  nameRequired: "O nome é obrigatório.",
+  invalidCardId: "KCC ID inválido para o cartão de membro: {id}",
+  uniqueIdFailed: "Não foi possível criar um KCC ID único. Tente novamente.",
+  mergeAdminOnly: "Somente admins podem mesclar registros de membros.",
+  mergeSameRecord: "Um registro não pode ser mesclado com ele mesmo.",
+  memberRecordMissing: "Este registro de membro não existe mais (pode ter sido mesclado ou excluído).",
+  mergeDifferentAccounts: "Os dois registros estão vinculados a contas de login diferentes, por isso não podem ser mesclados.",
+  repairAdminOnly: "Somente admins podem executar o reparo.",
+  repairIdUpdateFailed: "Falha ao atualizar o KCC ID ({ids}): {detail}",
+  repairCardWriteFailed: "Falha ao gravar o cartão de membro ({ids}): {detail}",
+  repairCardDeleteFailed: "Falha ao excluir o cartão de membro ({ids}): {detail}",
+  photoSignInRequired: "Faça login primeiro para enviar uma foto.",
+  photoTooLarge: "A foto é muito grande. Escolha outra foto.",
+  googleAccessTokenMissing: "Não foi possível obter um token de acesso do login com Google.",
+  sheetsApiResponseError: "Erro da Sheets API em {label} ({status}): {detail}",
+  sheetsApiRequestFailed: "Falha na solicitação {label} da Sheets API: {detail}",
+  sheetsNoTimestampColumn: "Escolha primeiro a coluna de carimbo de data/hora no mapeamento de colunas.",
+  badgeMainAccount: "Conta Principal do KCC (0000)",
+  badgeAdmin: "Admin do KCC #{number}",
+  badgeMember: "Membro",
+  adminOnly: "Só admins podem fazer isso.",
+  invalidKccId: "KCC ID inválido: {id}",
+  kccCounterBlocked: "O contador de KCC ID está bloqueado. Tente novamente mais tarde ou fale com um admin da KCC.",
+  kccCounterMissing: "A mudança para 8 dígitos ainda não começou (não há contador de KCC ID).",
+  kccIdsExhausted: "Não há mais KCC IDs disponíveis.",
+  migrationPlanChanged: "Os membros mudaram desde a prévia (nova inscrição ou edição). Gere a prévia de novo antes de aplicar.",
+  migrationAlreadyStarted: "Outro admin já iniciou a mudança. Gere a prévia de novo para retomá-la.",
+  migrationBatchFailed: "A mudança parou nos membros {ids}: {detail}. Gere a prévia de novo para retomar.",
+  migrationLateClaimFailed: "Não foi possível dar um novo KCC ID para {name}: {detail}",
+  migrationPhotosFailed: "Não foi possível atualizar os KCC IDs nas fotos ({ids}): {detail}",
+  migrationCancelled: "Interrompido a pedido. Gere a prévia de novo para retomar.",
+  migrationWarnDuplicateOldId: "{count} membros compartilham um KCC ID antigo com outro membro. Mescle as duplicatas primeiro; caso contrário, o ID antigo apontará para o mais antigo deles.",
+  migrationWarnMissingOldId: "{count} membros ainda não têm um KCC ID válido; eles recebem um número novo sem vínculo com um ID antigo.",
+  migrationWarnUnparsableDates: "{count} membros não têm data de inscrição legível e são numerados por último. Execute \"Corrigir datas de inscrição\" primeiro.",
+  migrationWarnReservedConflict: "{count} membros têm um KCC ID reservado que outro membro mantém; eles recebem um número comum.",
+  migrationWarnLateClaims: "{count} membros se inscreveram com um ID antigo de 16 dígitos após o início da mudança; eles recebem os próximos números livres quando você aplicar.",
+  migrationWarnUnusedNumbers: "{count} números planejados não são mais necessários (um membro foi excluído); eles ficam sem uso.",
+  dateFixBatchFailed: "Não foi possível salvar as datas de inscrição de {ids}: {detail}",
+  adminNeedsSignIn: "Este membro nunca fez login no MyKCC, então ainda não pode ser tornado admin.",
+  adminIsMainAccount: "A conta principal é sempre admin.",
+  adminAlreadyAdmin: "Este membro já é admin.",
+  adminRemoveSelfNeedsConfirm: "Você está prestes a remover a si mesmo como admin. Confirme novamente para continuar.",
+  lockMainOnly: "Só a conta principal pode alterar a senha do painel.",
+  lockWrongPassword: "Senha do painel incorreta.",
+  lockReauthWrongAccount: "Confirme com a conta Google principal.",
+  lockPasswordTooShort: "A senha do painel precisa ter pelo menos {min} caracteres.",
+  lockCryptoUnavailable: "Este navegador não consegue verificar a senha do painel (Web Crypto indisponível). Use um navegador atualizado via HTTPS.",
+  memberHasNoEmail: "Este membro não tem endereço de e-mail salvo.",
+  memberNotLinked: "Este membro não está vinculado a um login.",
+  cannotUnlinkSignInProfile: "Este registro é um perfil de login; mescle ou exclua-o em vez de desvincular.",
+  authInvalidEmail: "O endereço de e-mail salvo não é válido.",
+  authTooManyRequests: "Muitas solicitações. Aguarde alguns minutos e tente novamente.",
+  authNetworkFailed: "Erro de rede. Verifique sua conexão e tente novamente.",
 };
 
 export default errors;

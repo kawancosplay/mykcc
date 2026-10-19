@@ -1,43 +1,64 @@
 import type { LocaleNamespace } from '../../types';
 
 const errors: LocaleNamespace<'errors'> = {
-  // firebase.ts describeFirestoreError
-  firestorePermissionDenied:
-    'Zugriff von der Datenbank verweigert (permission denied). Es wurde nichts gespeichert. Achte darauf, dass jedes Feld innerhalb seiner Zeichengrenze bleibt, oder melde dich mit einem berechtigten Konto an, und versuche es dann erneut.',
-  signInRequired: 'Bitte melde dich zuerst an, um fortzufahren.',
-  databaseUnavailable: 'Die Datenbank ist nicht erreichbar. Prüfe deine Internetverbindung und versuche es erneut.',
-  saveFailed: 'Beim Speichern ist etwas schiefgelaufen. Bitte versuche es erneut.',
-
-  // firestoreService.ts
-  profilePhotoTooLarge: 'Das Profilfoto ist zu groß. Bitte wähle ein anderes Foto.',
-  nameRequired: 'Name ist erforderlich.',
-  invalidCardId: 'Ungültige KCC ID für den Mitgliedsausweis: {id}',
-  uniqueIdFailed: 'Es konnte keine eindeutige KCC ID erstellt werden. Bitte versuche es erneut.',
-  mergeAdminOnly: 'Nur Admins können Mitgliedseinträge zusammenführen.',
-  mergeSameRecord: 'Ein Eintrag kann nicht mit sich selbst zusammengeführt werden.',
-  memberRecordMissing: 'Dieser Mitgliedseintrag existiert nicht mehr (er wurde evtl. zusammengeführt oder gelöscht).',
-  mergeDifferentAccounts:
-    'Beide Einträge sind mit unterschiedlichen Anmeldekonten verknüpft und können daher nicht zusammengeführt werden.',
-  repairAdminOnly: 'Nur Admins können die Reparatur ausführen.',
-  repairIdUpdateFailed: 'Aktualisierung der KCC ID fehlgeschlagen ({ids}): {detail}',
-  repairCardWriteFailed: 'Speichern des Mitgliedsausweises fehlgeschlagen ({ids}): {detail}',
-  repairCardDeleteFailed: 'Löschen des Mitgliedsausweises fehlgeschlagen ({ids}): {detail}',
-
-  // galleryService.ts
-  photoSignInRequired: 'Bitte melde dich zuerst an, um ein Foto hochzuladen.',
-  photoTooLarge: 'Das Foto ist zu groß. Bitte wähle ein anderes Foto.',
-
-  // googleAuth.ts
-  googleAccessTokenMissing: 'Von der Google-Anmeldung konnte kein Zugriffstoken abgerufen werden.',
-
-  // sheetsService.ts ({label} is the API call: metadata / values; {detail} is Google's own message)
-  sheetsApiResponseError: 'Sheets-API-Fehler bei {label} ({status}): {detail}',
-  sheetsApiRequestFailed: 'Sheets-API-Anfrage {label} fehlgeschlagen: {detail}',
-
-  // idGenerator.ts getUserIdBadgeInfo
-  badgeMainAccount: 'KCC-Hauptkonto (0000)',
-  badgeAdmin: 'KCC-Admin #{number}',
-  badgeMember: 'Mitglied (Zeitstempel)',
+  firestorePermissionDenied: "Zugriff von der Datenbank verweigert (permission denied). Es wurde nichts gespeichert. Achte darauf, dass jedes Feld innerhalb seiner Zeichengrenze bleibt, oder melde dich mit einem berechtigten Konto an, und versuche es dann erneut.",
+  signInRequired: "Bitte melde dich zuerst an, um fortzufahren.",
+  databaseUnavailable: "Die Datenbank ist nicht erreichbar. Prüfe deine Internetverbindung und versuche es erneut.",
+  saveFailed: "Beim Speichern ist etwas schiefgelaufen. Bitte versuche es erneut.",
+  profilePhotoTooLarge: "Das Profilfoto ist zu groß. Bitte wähle ein anderes Foto.",
+  nameRequired: "Name ist erforderlich.",
+  invalidCardId: "Ungültige KCC ID für den Mitgliedsausweis: {id}",
+  uniqueIdFailed: "Es konnte keine eindeutige KCC ID erstellt werden. Bitte versuche es erneut.",
+  mergeAdminOnly: "Nur Admins können Mitgliedseinträge zusammenführen.",
+  mergeSameRecord: "Ein Eintrag kann nicht mit sich selbst zusammengeführt werden.",
+  memberRecordMissing: "Dieser Mitgliedseintrag existiert nicht mehr (er wurde evtl. zusammengeführt oder gelöscht).",
+  mergeDifferentAccounts: "Beide Einträge sind mit unterschiedlichen Anmeldekonten verknüpft und können daher nicht zusammengeführt werden.",
+  repairAdminOnly: "Nur Admins können die Reparatur ausführen.",
+  repairIdUpdateFailed: "Aktualisierung der KCC ID fehlgeschlagen ({ids}): {detail}",
+  repairCardWriteFailed: "Speichern des Mitgliedsausweises fehlgeschlagen ({ids}): {detail}",
+  repairCardDeleteFailed: "Löschen des Mitgliedsausweises fehlgeschlagen ({ids}): {detail}",
+  photoSignInRequired: "Bitte melde dich zuerst an, um ein Foto hochzuladen.",
+  photoTooLarge: "Das Foto ist zu groß. Bitte wähle ein anderes Foto.",
+  googleAccessTokenMissing: "Von der Google-Anmeldung konnte kein Zugriffstoken abgerufen werden.",
+  sheetsApiResponseError: "Sheets-API-Fehler bei {label} ({status}): {detail}",
+  sheetsApiRequestFailed: "Sheets-API-Anfrage {label} fehlgeschlagen: {detail}",
+  sheetsNoTimestampColumn: "Wähle zuerst in der Spaltenzuordnung die Zeitstempel-Spalte aus.",
+  badgeMainAccount: "KCC-Hauptkonto (0000)",
+  badgeAdmin: "KCC-Admin #{number}",
+  badgeMember: "Mitglied",
+  adminOnly: "Nur Admins können das tun.",
+  invalidKccId: "Ungültige KCC ID: {id}",
+  kccCounterBlocked: "Der Zähler für KCC IDs ist blockiert. Bitte versuch es später erneut oder kontaktiere einen KCC-Admin.",
+  kccCounterMissing: "Die Umstellung auf 8 Stellen hat noch nicht begonnen (es gibt keinen Zähler für KCC IDs).",
+  kccIdsExhausted: "Es sind keine KCC IDs mehr verfügbar.",
+  migrationPlanChanged: "Die Mitglieder haben sich seit der Vorschau geändert (neue Registrierung oder Bearbeitung). Erstelle vor dem Anwenden erneut eine Vorschau.",
+  migrationAlreadyStarted: "Ein anderer Admin hat die Umstellung bereits gestartet. Erstelle erneut eine Vorschau, um sie fortzusetzen.",
+  migrationBatchFailed: "Die Umstellung wurde bei den Mitgliedern {ids} angehalten: {detail}. Erstelle erneut eine Vorschau, um fortzufahren.",
+  migrationLateClaimFailed: "{name} konnte keine neue KCC ID erhalten: {detail}",
+  migrationPhotosFailed: "Die KCC IDs auf Fotos konnten nicht aktualisiert werden ({ids}): {detail}",
+  migrationCancelled: "Auf Wunsch angehalten. Erstelle erneut eine Vorschau, um fortzufahren.",
+  migrationWarnDuplicateOldId: "{count} Mitglieder teilen sich eine alte KCC ID mit einem anderen Mitglied. Führe zuerst Duplikate zusammen; sonst verweist die alte ID auf das früheste von ihnen.",
+  migrationWarnMissingOldId: "{count} Mitglieder haben noch keine gültige KCC ID; sie erhalten eine neue Nummer ohne Verknüpfung zu einer alten ID.",
+  migrationWarnUnparsableDates: "{count} Mitglieder haben kein lesbares Registrierungsdatum und werden zuletzt nummeriert. Führe zuerst „Registrierungsdatum korrigieren“ aus.",
+  migrationWarnReservedConflict: "{count} Mitglieder haben eine reservierte KCC ID, die ein anderes Mitglied behält; sie erhalten eine reguläre Nummer.",
+  migrationWarnLateClaims: "{count} Mitglieder haben sich nach Start der Umstellung mit einer alten 16-stelligen ID registriert; sie erhalten beim Anwenden die nächsten freien Nummern.",
+  migrationWarnUnusedNumbers: "{count} geplante Nummern werden nicht mehr benötigt (ein Mitglied wurde gelöscht); sie bleiben ungenutzt.",
+  dateFixBatchFailed: "Das Registrierungsdatum von {ids} konnte nicht gespeichert werden: {detail}",
+  adminNeedsSignIn: "Dieses Mitglied hat sich noch nie bei MyKCC angemeldet und kann daher noch nicht zum Admin gemacht werden.",
+  adminIsMainAccount: "Das Hauptkonto ist immer Admin.",
+  adminAlreadyAdmin: "Dieses Mitglied ist bereits Admin.",
+  adminRemoveSelfNeedsConfirm: "Du bist dabei, dich selbst als Admin zu entfernen. Bestätige es noch einmal, um fortzufahren.",
+  lockMainOnly: "Nur das Hauptkonto kann das Dashboard-Passwort ändern.",
+  lockWrongPassword: "Falsches Dashboard-Passwort.",
+  lockReauthWrongAccount: "Bitte bestätige mit dem Haupt-Google-Konto.",
+  lockPasswordTooShort: "Das Dashboard-Passwort muss mindestens {min} Zeichen haben.",
+  lockCryptoUnavailable: "Dieser Browser kann das Dashboard-Passwort nicht prüfen (Web Crypto ist nicht verfügbar). Verwende einen aktuellen Browser über HTTPS.",
+  memberHasNoEmail: "Für dieses Mitglied ist keine E-Mail-Adresse gespeichert.",
+  memberNotLinked: "Dieses Mitglied ist mit keinem Login verknüpft.",
+  cannotUnlinkSignInProfile: "Dieser Eintrag ist ein Anmeldeprofil; führe ihn zusammen oder lösche ihn, statt ihn zu trennen.",
+  authInvalidEmail: "Die gespeicherte E-Mail-Adresse ist ungültig.",
+  authTooManyRequests: "Zu viele Anfragen. Bitte warte ein paar Minuten und versuch es erneut.",
+  authNetworkFailed: "Netzwerkfehler. Prüfe deine Verbindung und versuch es erneut.",
 };
 
 export default errors;

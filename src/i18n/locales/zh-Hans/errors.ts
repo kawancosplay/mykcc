@@ -1,43 +1,64 @@
 import type { LocaleNamespace } from '../../types';
 
-// User-facing messages produced in src/lib (translated there with translate(), not useI18n()).
 const errors: LocaleNamespace<'errors'> = {
-  // firebase.ts describeFirestoreError
-  firestorePermissionDenied:
-    '数据库拒绝访问（permission denied），未保存任何内容。请确认每个字段都未超出字数限制，或使用已授权的账号登录，然后重试。',
-  signInRequired: '请先登录再继续。',
-  databaseUnavailable: '无法连接数据库。请检查网络连接后重试。',
-  saveFailed: '保存时出现问题，请重试。',
-
-  // firestoreService.ts
-  profilePhotoTooLarge: '头像照片太大，请选择其他照片。',
-  nameRequired: '请填写名称。',
-  invalidCardId: '会员证的 KCC ID 无效：{id}',
-  uniqueIdFailed: '无法生成唯一的 KCC ID，请重试。',
-  mergeAdminOnly: '只有管理员可以合并成员记录。',
-  mergeSameRecord: '不能将记录合并到其自身。',
-  memberRecordMissing: '该成员记录已不存在（可能已被合并或删除）。',
-  mergeDifferentAccounts: '这两条记录关联了不同的登录账号，因此无法合并。',
-  repairAdminOnly: '只有管理员可以执行修复。',
-  repairIdUpdateFailed: 'KCC ID 更新失败（{ids}）：{detail}',
-  repairCardWriteFailed: '会员证写入失败（{ids}）：{detail}',
-  repairCardDeleteFailed: '会员证删除失败（{ids}）：{detail}',
-
-  // galleryService.ts
-  photoSignInRequired: '请先登录再上传照片。',
-  photoTooLarge: '照片太大，请选择其他照片。',
-
-  // googleAuth.ts
-  googleAccessTokenMissing: '无法从 Google 登录中获取访问令牌。',
-
-  // sheetsService.ts ({label} is the API call: metadata / values; {detail} is Google's own message)
-  sheetsApiResponseError: 'Sheets API {label} 出错（{status}）：{detail}',
-  sheetsApiRequestFailed: 'Sheets API {label} 请求失败：{detail}',
-
-  // idGenerator.ts getUserIdBadgeInfo
-  badgeMainAccount: 'KCC 主账号（0000）',
-  badgeAdmin: 'KCC 管理员 #{number}',
-  badgeMember: '成员（时间戳）',
+  firestorePermissionDenied: "数据库拒绝访问（permission denied），未保存任何内容。请确认每个字段都未超出字数限制，或使用已授权的账号登录，然后重试。",
+  signInRequired: "请先登录再继续。",
+  databaseUnavailable: "无法连接数据库。请检查网络连接后重试。",
+  saveFailed: "保存时出现问题，请重试。",
+  profilePhotoTooLarge: "头像照片太大，请选择其他照片。",
+  nameRequired: "请填写名称。",
+  invalidCardId: "会员证的 KCC ID 无效：{id}",
+  uniqueIdFailed: "无法生成唯一的 KCC ID，请重试。",
+  mergeAdminOnly: "只有管理员可以合并成员记录。",
+  mergeSameRecord: "不能将记录合并到其自身。",
+  memberRecordMissing: "该成员记录已不存在（可能已被合并或删除）。",
+  mergeDifferentAccounts: "这两条记录关联了不同的登录账号，因此无法合并。",
+  repairAdminOnly: "只有管理员可以执行修复。",
+  repairIdUpdateFailed: "KCC ID 更新失败（{ids}）：{detail}",
+  repairCardWriteFailed: "会员证写入失败（{ids}）：{detail}",
+  repairCardDeleteFailed: "会员证删除失败（{ids}）：{detail}",
+  photoSignInRequired: "请先登录再上传照片。",
+  photoTooLarge: "照片太大，请选择其他照片。",
+  googleAccessTokenMissing: "无法从 Google 登录中获取访问令牌。",
+  sheetsApiResponseError: "Sheets API {label} 出错（{status}）：{detail}",
+  sheetsApiRequestFailed: "Sheets API {label} 请求失败：{detail}",
+  sheetsNoTimestampColumn: "请先在列映射中选择时间戳列。",
+  badgeMainAccount: "KCC 主账号（0000）",
+  badgeAdmin: "KCC 管理员 #{number}",
+  badgeMember: "成员",
+  adminOnly: "只有管理员可以执行此操作。",
+  invalidKccId: "无效的 KCC ID：{id}",
+  kccCounterBlocked: "KCC ID 计数器已阻塞。请稍后重试，或联系 KCC 管理员。",
+  kccCounterMissing: "8 位 ID 切换尚未开始（没有 KCC ID 计数器）。",
+  kccIdsExhausted: "已没有可用的 KCC ID。",
+  migrationPlanChanged: "自预览以来成员数据已发生变化（有新登记或编辑）。请在执行前再次预览。",
+  migrationAlreadyStarted: "另一位管理员已开始切换。再次预览即可继续。",
+  migrationBatchFailed: "切换在成员 {ids} 处停止：{detail}。再次预览即可继续。",
+  migrationLateClaimFailed: "无法为 {name} 分配新的 KCC ID：{detail}",
+  migrationPhotosFailed: "无法更新照片上的 KCC ID（{ids}）：{detail}",
+  migrationCancelled: "已按要求停止。再次预览即可继续。",
+  migrationWarnDuplicateOldId: "有 {count} 名成员与其他成员共用同一个旧 KCC ID。请先合并重复项；否则旧 ID 将指向其中最早登记的成员。",
+  migrationWarnMissingOldId: "有 {count} 名成员还没有有效的 KCC ID；他们将获得新编号，但不会关联旧 ID。",
+  migrationWarnUnparsableDates: "有 {count} 名成员的登记日期无法读取，将被排在最后编号。请先运行“修正登记日期”。",
+  migrationWarnReservedConflict: "有 {count} 名成员持有的保留 KCC ID 由另一名成员保留使用；他们将获得普通编号。",
+  migrationWarnLateClaims: "有 {count} 名成员在切换开始后使用旧的 16 位 ID 登记；执行时他们将获得下一个空闲编号。",
+  migrationWarnUnusedNumbers: "有 {count} 个计划编号已不再需要（有成员被删除）；这些编号将保持未使用。",
+  dateFixBatchFailed: "无法保存 {ids} 的登记日期：{detail}",
+  adminNeedsSignIn: "此成员从未登录过 MyKCC，因此暂时无法设为管理员。",
+  adminIsMainAccount: "主账号始终是管理员。",
+  adminAlreadyAdmin: "此成员已是管理员。",
+  adminRemoveSelfNeedsConfirm: "您即将移除自己的管理员身份。请再次确认以继续。",
+  lockMainOnly: "只有主账号可以更改后台密码。",
+  lockWrongPassword: "后台密码错误。",
+  lockReauthWrongAccount: "请使用主 Google 账号确认。",
+  lockPasswordTooShort: "后台密码至少需要 {min} 个字符。",
+  lockCryptoUnavailable: "此浏览器无法验证后台密码（Web Crypto 不可用）。请通过 HTTPS 使用最新版浏览器。",
+  memberHasNoEmail: "此成员未保存电子邮箱地址。",
+  memberNotLinked: "此成员未关联登录。",
+  cannotUnlinkSignInProfile: "此记录是登录资料；请合并或删除它，而不是解除关联。",
+  authInvalidEmail: "已保存的电子邮箱地址无效。",
+  authTooManyRequests: "请求过多。请等待几分钟后重试。",
+  authNetworkFailed: "网络错误。请检查网络连接后重试。",
 };
 
 export default errors;

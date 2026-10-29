@@ -7,6 +7,7 @@ export type LanguageCode =
   | 'ja'
   | 'ko'
   | 'ar'
+  | 'he'
   | 'ta'
   | 'fr'
   | 'es'
@@ -64,6 +65,13 @@ export const LANGUAGES: LanguageMeta[] = [
     isRtl: true,
     font: { family: 'Noto Sans Arabic', axes: 'wght@400;600;700' },
   },
+  {
+    code: 'he',
+    label: 'Hebrew',
+    nativeName: 'עברית',
+    isRtl: true,
+    font: { family: 'Noto Sans Hebrew', axes: 'wght@400;600;700' },
+  },
   { code: 'ta', label: 'Tamil', nativeName: 'தமிழ்', font: { family: 'Noto Sans Tamil', axes: 'wght@400;600;700' } },
   { code: 'fr', label: 'French', nativeName: 'Français' },
   { code: 'es', label: 'Spanish', nativeName: 'Español' },
@@ -119,6 +127,9 @@ export function matchLanguageTag(tag: string | null | undefined): LanguageCode |
       return 'zh-Hans';
     case 'ar':
       return 'ar';
+    case 'he':
+    case 'iw': // legacy code for Hebrew (older Java / Android)
+      return 'he';
     case 'ta':
       return 'ta';
     case 'fr':

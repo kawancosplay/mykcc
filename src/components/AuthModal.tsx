@@ -213,7 +213,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   aria-hidden="true"
                   layout
                   layoutDependency={mode}
-                  className={`glass-segment-thumb row-start-1 ${mode === 'signup' ? 'col-start-2' : 'col-start-1'}`}
+                  className={`glass-segment-thumb row-start-1 ${mode === 'signup' ? 'col-start-2 col-end-3' : 'col-start-1 col-end-2'}`}
                   transition={thumbTransition}
                 />
                 <button

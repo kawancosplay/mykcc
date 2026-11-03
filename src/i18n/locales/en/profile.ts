@@ -15,8 +15,6 @@ export default {
   infoDesc: 'You can change this information anytime; it is saved in real time to the MyKCC database.',
   savedRealtime: 'Saved in Real-Time!',
   ageCategoryLabel: 'Age Category',
-  ageLabel: 'Age / Birthday (Optional)',
-  agePlaceholder: 'e.g. 21 years old or May 15',
   whatsappLabel: 'Active WhatsApp Number',
   backupPhoneLabel: 'Second / Backup WhatsApp Number',
   extraPhonesLabel: 'Extra WhatsApp numbers',

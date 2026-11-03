@@ -13,8 +13,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: "Vous pouvez modifier ces informations à tout moment ; elles sont enregistrées en temps réel dans la base de données MyKCC.",
   savedRealtime: "Enregistré en temps réel !",
   ageCategoryLabel: "Tranche d’âge",
-  ageLabel: "Âge / Anniversaire (facultatif)",
-  agePlaceholder: "ex. : 21 ans ou 15 mai",
   whatsappLabel: "Numéro WhatsApp actif",
   backupPhoneLabel: "Deuxième numéro WhatsApp / de secours",
   extraPhonesLabel: "Numéros WhatsApp supplémentaires",

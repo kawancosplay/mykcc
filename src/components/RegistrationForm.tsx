@@ -35,6 +35,7 @@ import {
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
+import AgeBirthdayFields from './AgeBirthdayFields';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -105,7 +106,6 @@ const OTHER_FANDOM_OPTION = 'Lainnya / Multigenre';
 const AGE_CATEGORIES: LabeledOption[] = [
   { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
   { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
-  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
 ];
 
 // Minimum digits of the WhatsApp number (extra numbers are added later in the profile)
@@ -123,7 +123,7 @@ const LEGACY_CUSTOM_CITY_OPTION = 'Other City / County';
 const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city === LEGACY_CUSTOM_CITY_OPTION;
 
 // Field a validation error points at: it gets aria-invalid (the red .glass-input border) until the next submit
-type ErrorField = 'name' | 'email' | 'phone' | 'customCity' | 'codeOfConduct';
+type ErrorField = 'name' | 'email' | 'phone' | 'ageCategory' | 'customCity' | 'codeOfConduct';
 
 // Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
 // control where it was while giving the tint some room.
@@ -174,8 +174,9 @@ export const RegistrationForm = React.memo(function RegistrationForm({
     email: '', // Strictly optional
     phone: '', // Mandatory WhatsApp mobile number (extra numbers are added later in the profile)
     discordUsername: '', // Discord Username column
-    ageCategory: 'Legal Age / Dewasa (18+ tahun)',
-    age: '', // Optional exact age or birthdate
+    ageCategory: '', // Mandatory, nothing preselected: a minor must not pass as an adult by skipping the question
+    age: '', // Optional exact age, digits only
+    birthday: '', // Optional, YYYY-MM-DD
     country: 'Indonesia',
     province: 'DKI Jakarta',
     city: 'Kota Administrasi Jakarta Selatan',
@@ -332,8 +333,9 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         email: '',
         phone: '',
         discordUsername: '',
-        ageCategory: 'Legal Age / Dewasa (18+ tahun)',
+        ageCategory: '',
         age: '',
+        birthday: '',
         country: 'Indonesia',
         province: 'DKI Jakarta',
         city: 'Kota Administrasi Jakarta Selatan',
@@ -377,6 +379,11 @@ export const RegistrationForm = React.memo(function RegistrationForm({
     const phoneDigits = dataToSubmit.phone.replace(/\D/g, '');
     if (!dataToSubmit.phone.trim() || phoneDigits.length < MIN_PHONE_DIGITS) {
       showError(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }), 'phone');
+      return;
+    }
+
+    if (!dataToSubmit.ageCategory) {
+      showError(t('registration.ageCategoryRequiredError'), 'ageCategory');
       return;
     }
 
@@ -443,6 +450,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         city: finalCity,
         ageCategory: dataToSubmit.ageCategory,
         age: dataToSubmit.age.trim() || undefined,
+        birthday: dataToSubmit.birthday || undefined,
         primaryRole: resolvedRole,
         fandom: dataToSubmit.fandom,
         experience: dataToSubmit.experience,
@@ -662,7 +670,9 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                     email: '',
                     phone: '',
                     discordUsername: '',
+                    ageCategory: '',
                     age: '',
+                    birthday: '',
                     customRole: '',
                     socialMedia: '',
                     portfolioUrl: '',
@@ -914,12 +924,13 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
           )}
 
-          <div className="space-y-1 mt-2">
+          <div role="radiogroup" aria-invalid={errorField === 'ageCategory' || undefined} className="space-y-1 mt-2">
             {AGE_CATEGORIES.map((opt) => (
               <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                 <input
                   type="radio"
                   name="ageCategory"
+                  required
                   value={opt.val}
                   checked={formData.ageCategory === opt.val}
                   onChange={(e) => {
@@ -945,14 +956,15 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             {t('registration.ageDesc')}
           </p>
 
-          <input
-            type="text"
-            placeholder={t('registration.agePlaceholder')}
-            maxLength={MEMBER_FIELD_LIMITS.age}
-            value={formData.age}
-            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            className="glass-input w-full text-base sm:text-sm"
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <AgeBirthdayFields
+              age={formData.age}
+              birthday={formData.birthday}
+              onAgeChange={(age) => setFormData({ ...formData, age })}
+              onBirthdayChange={(birthday) => setFormData({ ...formData, birthday })}
+              labelClassName="block text-[11px] font-bold uppercase text-slate-400 mb-1"
+            />
+          </div>
         </div>
 
         {/* QUESTION 6: LOCATION / DOMICILE (COUNTRY, PROVINCE, CITY) */}

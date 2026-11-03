@@ -13,8 +13,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: "இந்தத் தகவலை எப்போது வேண்டுமானாலும் மாற்றலாம்; இது MyKCC தரவுத்தளத்தில் நிகழ்நேரத்தில் சேமிக்கப்படும்.",
   savedRealtime: "நிகழ்நேரத்தில் சேமிக்கப்பட்டது!",
   ageCategoryLabel: "வயதுப் பிரிவு",
-  ageLabel: "வயது / பிறந்தநாள் (விருப்பத்தேர்வு)",
-  agePlaceholder: "எ.கா. 21 வயது அல்லது மே 15",
   whatsappLabel: "செயலில் உள்ள WhatsApp எண்",
   backupPhoneLabel: "இரண்டாவது / மாற்று WhatsApp எண்",
   extraPhonesLabel: "கூடுதல் WhatsApp எண்கள்",

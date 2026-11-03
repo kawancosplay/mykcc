@@ -650,6 +650,11 @@ export const MemberTable: React.FC<MemberTableProps> = ({
           <td key={column} className="py-4 px-4">
             <span className="text-slate-300 font-medium">{m.ageCategory || (m.age ? `${m.age}` : '-')}</span>
             {m.age && m.ageCategory && <p className="text-[10px] text-slate-400">{m.age}</p>}
+            {m.birthday && (
+              <p className="text-[10px] text-slate-400">
+                {t('admin.fieldBirthday')}: {m.birthday}
+              </p>
+            )}
           </td>
         );
       case 'location':

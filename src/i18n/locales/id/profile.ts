@@ -17,8 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: 'Data ini dapat kamu ubah kapan saja dan tersimpan secara real-time ke database MyKCC',
   savedRealtime: 'Tersimpan Real-Time!',
   ageCategoryLabel: 'Kategori Usia',
-  ageLabel: 'Usia / Tanggal Lahir (Opsional)',
-  agePlaceholder: 'Contoh: 21 tahun atau 15 Mei',
   whatsappLabel: 'Nomor WhatsApp Aktif',
   backupPhoneLabel: 'Nomor WhatsApp Kedua / Cadangan',
   extraPhonesLabel: 'Nomor WhatsApp tambahan',

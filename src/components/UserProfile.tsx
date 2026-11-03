@@ -35,6 +35,7 @@ import {
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
+import AgeBirthdayFields from './AgeBirthdayFields';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -73,10 +74,11 @@ const ROLE_OPTIONS: LabeledOption[] = [
   { val: OTHER_ROLE, labelKey: 'registration.roleOthers' },
 ];
 
+const PREFER_NOT_TO_SAY = 'Memilih untuk tidak menyebutkan';
 const AGE_CATEGORY_OPTIONS: LabeledOption[] = [
   { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
   { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
-  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
+  { val: PREFER_NOT_TO_SAY, labelKey: 'registration.preferNotToSay' },
 ];
 
 // Extra WhatsApp numbers: phone2 + additionalPhones, edited as one list
@@ -117,6 +119,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     discordUsername: member.discordUsername || '',
     ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
     age: member.age || '',
+    birthday: member.birthday || '',
     country: member.country || 'Indonesia',
     province: member.province || 'DKI Jakarta',
     city: member.city || 'Jakarta Selatan',
@@ -168,6 +171,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       discordUsername: member.discordUsername || '',
       ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
       age: member.age || '',
+      birthday: member.birthday || '',
       country: member.country || 'Indonesia',
       province: member.province || 'DKI Jakarta',
       city: member.city || 'Jakarta Selatan',
@@ -542,7 +546,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 onChange={(e) => setFormData({ ...formData, ageCategory: e.target.value })}
                 className="glass-input w-full text-base sm:text-sm"
               >
-                {AGE_CATEGORY_OPTIONS.map((opt) => (
+                {/* No longer offered, only kept for members who registered with it */}
+                {AGE_CATEGORY_OPTIONS.filter((opt) => opt.val !== PREFER_NOT_TO_SAY || member.ageCategory === PREFER_NOT_TO_SAY).map((opt) => (
                   <option key={opt.val} value={opt.val}>
                     {t(opt.labelKey)}
                   </option>
@@ -550,20 +555,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               </select>
             </div>
 
-            {/* Usia Pasti */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                {t('profile.ageLabel')}
-              </label>
-              <input
-                type="text"
-                placeholder={t('profile.agePlaceholder')}
-                maxLength={MEMBER_FIELD_LIMITS.age}
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="glass-input w-full text-base sm:text-sm"
-              />
-            </div>
+            {/* Usia Pasti + Tanggal Lahir */}
+            <AgeBirthdayFields
+              age={formData.age}
+              birthday={formData.birthday}
+              onAgeChange={(age) => setFormData({ ...formData, age })}
+              onBirthdayChange={(birthday) => setFormData({ ...formData, birthday })}
+              labelClassName="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+            />
 
             {/* WhatsApp (Wajib) */}
             <div>

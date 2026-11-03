@@ -13,8 +13,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: "Informasi punika saged panjenengan gantos sawanci-wanci; langsung kasimpen ing database MyKCC.",
   savedRealtime: "Kasimpen Langsung!",
   ageCategoryLabel: "Kategori Umur",
-  ageLabel: "Umur / Tanggal Lair (Opsional)",
-  agePlaceholder: "tuladha: 21 taun utawi 15 Mei",
   whatsappLabel: "Nomer WhatsApp Aktif",
   backupPhoneLabel: "Nomer WhatsApp Kaping Kalih / Cadhangan",
   extraPhonesLabel: "Nomer WhatsApp tambahan",

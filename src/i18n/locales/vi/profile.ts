@@ -25,7 +25,6 @@ const profile: LocaleNamespace<'profile'> = {
   discordPlaceholder: "Ví dụ: alyachan_cos hoặc user#0001",
   roleLabel: "Vai trò chính trong cộng đồng",
   customRolePlaceholder: "Nhập vai trò / chuyên môn khác của bạn...",
-  socialMediaPlaceholder: "@tên_tài_khoản (Instagram / X / TikTok)",
   reasonLabel: "Lý do tham gia & ghi chú hồ sơ",
   roleIdolFan: "Fan idol / Wota",
   roleOtaku: "Otaku Anime, Manga & Game",

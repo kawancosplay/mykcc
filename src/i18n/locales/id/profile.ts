@@ -29,7 +29,6 @@ const profile: LocaleNamespace<'profile'> = {
   discordPlaceholder: 'Contoh: alyachan_cos atau user#0001',
   roleLabel: 'Peran Utama di Komunitas',
   customRolePlaceholder: 'Ketik peran / spesialisasi Anda lainnya...',
-  socialMediaPlaceholder: '@username (Instagram / X / TikTok)',
   reasonLabel: 'Alasan Bergabung & Catatan Profil',
 
   // Short primary role labels for the profile dropdown

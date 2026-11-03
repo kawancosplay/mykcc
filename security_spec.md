@@ -47,7 +47,7 @@ sprint-2 build after the switch (its registration is denied and its ID repair tr
    - `delete`: admin only.
    - Size bounds: `cosplayName/name <= 80`, `fullName <= 100`, `email <= 120`, `city/country/province <= 80`,
      `primaryRole <= 120`, `fandom <= 80`, `phone <= 30`, `phone2 <= 30`, `additionalPhones` a list of at
-     most 3 strings of `<= 30` each, `discordUsername <= 60`, `socialMedia <= 120`,
+     most 3 strings of `<= 30` each, `discordUsername <= 60`, `socialMedia <= 500`,
      `portfolioUrl <= 300`, `reason <= 500`, `age/ageCategory/experience <= 50`, `createdAt` ISO string,
      `userId16` 8 or 16 digits, `legacyUserId16` 16 digits (admin migration only).
      `phone2` and `additionalPhones` are owner-editable profile fields.

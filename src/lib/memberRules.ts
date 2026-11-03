@@ -23,7 +23,7 @@ export const MEMBER_FIELD_LIMITS = {
   customRole: 100,
   fandom: 80,
   experience: 50,
-  socialMedia: 120,
+  socialMedia: 500,
   portfolioUrl: 300,
   reason: 500,
   avatarUrl: 1000000,

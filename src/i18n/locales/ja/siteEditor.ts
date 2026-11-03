@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'サイトのフォント・文字',
-  fontDinNextName: 'DIN Next（公式）',
-  fontDinNextDesc: 'モダンで幾何学的な DIN タイポグラフィ — くっきり、すっきり、信頼感のある書体',
+  fontGoogleSansFlexName: 'Google Sans Flex（公式）',
+  fontGoogleSansFlexDesc: 'すっきりと親しみやすく、読みやすい書体',
   fontActive: '使用中',
   fontSample: 'いろはにほへと ちりぬるを わかよたれそ つねならむ • 0123456789 • KawanCosplay 2026',
 

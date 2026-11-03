@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: '網站字型與排版',
-  fontDinNextName: 'DIN Next（官方）',
-  fontDinNextDesc: '現代幾何風格的 DIN 字體——清晰、簡潔、穩重',
+  fontGoogleSansFlexName: 'Google Sans Flex（官方）',
+  fontGoogleSansFlexDesc: '簡潔、親切、易讀',
   fontActive: '使用中',
   fontSample: '敏捷的棕色狐狸跳過了懶狗 • The quick brown fox • 0123456789 • KawanCosplay 2026',
 

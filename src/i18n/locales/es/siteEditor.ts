@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Tipografía y fuente del sitio',
-  fontDinNextName: 'DIN Next (oficial)',
-  fontDinNextDesc: 'Tipografía DIN geométrica moderna: nítida, limpia y con autoridad',
+  fontGoogleSansFlexName: 'Google Sans Flex (oficial)',
+  fontGoogleSansFlexDesc: 'Limpia, cercana y fácil de leer',
   fontActive: 'Activa',
   fontSample: 'La cigüeña tocaba cada vez mejor el saxofón y el búho pedía kiwi y queso • 0123456789 • KawanCosplay 2026',
 

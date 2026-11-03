@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'ตัวอักษรและฟอนต์ของเว็บไซต์',
-  fontDinNextName: 'DIN Next (ทางการ)',
-  fontDinNextDesc: 'ตัวอักษร DIN แบบเรขาคณิตทันสมัย — คมชัด สะอาดตา และน่าเชื่อถือ',
+  fontGoogleSansFlexName: 'Google Sans Flex (ทางการ)',
+  fontGoogleSansFlexDesc: 'สะอาดตา เป็นมิตร และอ่านง่าย',
   fontActive: 'ใช้งานอยู่',
   fontSample: 'สุนัขจิ้งจอกสีน้ำตาลกระโดดข้ามสุนัขขี้เกียจ • 0123456789 • KawanCosplay 2026',
 

@@ -151,9 +151,9 @@ export const SiteEditorModal: React.FC = () => {
   }[] = [
     {
       id: 'din-next',
-      name: t('siteEditor.fontDinNextName'),
-      desc: t('siteEditor.fontDinNextDesc'),
-      family: "'DIN Next', sans-serif",
+      name: t('siteEditor.fontGoogleSansFlexName'),
+      desc: t('siteEditor.fontGoogleSansFlexDesc'),
+      family: "'Google Sans Flex', sans-serif",
     },
   ];
 

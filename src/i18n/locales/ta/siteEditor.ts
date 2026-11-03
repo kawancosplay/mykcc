@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'தள அச்சுக்கலை & எழுத்துரு',
-  fontDinNextName: 'DIN Next (அதிகாரப்பூர்வம்)',
-  fontDinNextDesc: 'நவீன வடிவியல் DIN அச்சுக்கலை — தெளிவானது, நேர்த்தியானது, கம்பீரமானது',
+  fontGoogleSansFlexName: 'Google Sans Flex (அதிகாரப்பூர்வம்)',
+  fontGoogleSansFlexDesc: 'தெளிவான, நட்பான, எளிதில் படிக்கக்கூடிய எழுத்துரு',
   fontActive: 'செயலில்',
   fontSample: 'விரைவான பழுப்பு நரி சோம்பேறி நாயின் மேல் தாவுகிறது • 0123456789 • KawanCosplay 2026',
 

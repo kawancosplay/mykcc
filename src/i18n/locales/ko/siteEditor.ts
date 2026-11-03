@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: '사이트 타이포그래피 & 글꼴',
-  fontDinNextName: 'DIN Next (공식)',
-  fontDinNextDesc: '모던한 기하학적 DIN 타이포그래피 — 선명하고 깔끔하며 신뢰감 있는 글꼴',
+  fontGoogleSansFlexName: 'Google Sans Flex (공식)',
+  fontGoogleSansFlexDesc: '깔끔하고 친근하며 읽기 쉬운 글꼴',
   fontActive: '사용 중',
   fontSample: '다람쥐 헌 쳇바퀴에 타고파 • 0123456789 • KawanCosplay 2026',
 

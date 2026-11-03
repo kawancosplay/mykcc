@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Tipografi & Font Situs',
-  fontDinNextName: 'DIN Next (Resmi)',
-  fontDinNextDesc: 'Tipografi DIN geometris modern — cetha, resik lan wibawa',
+  fontGoogleSansFlexName: 'Google Sans Flex (Resmi)',
+  fontGoogleSansFlexDesc: 'Resik, grapyak, lan gampil dipunwaos',
   fontActive: 'Aktif',
   fontSample: 'Kidang kencana mlumpat nglangkungi kali ingkang bening • 0123456789 • KawanCosplay 2026',
 

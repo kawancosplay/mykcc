@@ -2,7 +2,6 @@ import type { LocaleNamespace } from '../../types';
 
 const common: LocaleNamespace<'common'> = {
   appName: "MyKCC",
-  tagline: "مجتمع عالمي للثقافة الشعبية والكوسبلاي ومحبي الآيدول (wota) (100% SFW)",
   navForm: "استمارة التسجيل",
   navCard: "بطاقتي الرقمية",
   navGallery: "معرض الكوسبلاي",
@@ -90,7 +89,6 @@ const common: LocaleNamespace<'common'> = {
   preparingProfileDesc: "جارٍ ربط الحساب بهويتك الرقمية في KCC.",
   pleaseSignIn: "يُرجى تسجيل الدخول",
   clickToSignIn: "انقر هنا لتسجيل الدخول",
-  footerPlatform: "منصة دولية للثقافة الشعبية 100% SFW.",
   copyright: "© 2026 MyKCC. جميع الحقوق محفوظة.",
   privacyShieldActive: "نظام هوية KCC ID ودرع الخصوصية مفعّل",
 };

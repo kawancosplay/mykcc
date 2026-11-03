@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Typography at Font ng Site',
-  fontDinNextName: 'DIN Next (Opisyal)',
-  fontDinNextDesc: 'Moderno at heometrikong DIN typography — malinaw, malinis at may awtoridad',
+  fontGoogleSansFlexName: 'Google Sans Flex (Opisyal)',
+  fontGoogleSansFlexDesc: 'Malinis, magiliw, at madaling basahin',
   fontActive: 'Aktibo',
   fontSample: 'Mabilis na tumalon ang kayumangging soro sa ibabaw ng tamad na aso • 0123456789 • KawanCosplay 2026',
 

@@ -64,8 +64,8 @@ export default {
 
   // Font tab
   fontLabel: 'Site Typography & Font',
-  fontDinNextName: 'DIN Next (Official)',
-  fontDinNextDesc: 'Modern geometric DIN typography — crisp, clean and authoritative',
+  fontGoogleSansFlexName: 'Google Sans Flex (Official)',
+  fontGoogleSansFlexDesc: 'Clean, friendly and easy to read',
   fontActive: 'Active',
   fontSample: 'The quick brown fox jumps over the lazy dog • 0123456789 • KawanCosplay 2026',
 

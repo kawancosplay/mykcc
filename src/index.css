@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'DIN Next', sans-serif;
-  --font-mono: 'DIN Next', monospace;
+  --font-sans: 'Google Sans Flex', sans-serif;
+  --font-mono: 'Google Sans Flex', monospace;
 
   /* iOS UIKit-like curves, usable as `ease-ios` / `ease-out-soft` utilities */
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
@@ -55,7 +55,7 @@
    ========================================================================= */
 
 :root {
-  --font-din: 'DIN Next', sans-serif;
+  --font-site: 'Google Sans Flex', sans-serif;
 
   /* Brand (visual identity: purple -> mint on a deep violet night) */
   --kcc-purple: #8c52ff;
@@ -214,12 +214,12 @@
 }
 
 html, body, button, input, select, textarea {
-  font-family: var(--font-din) !important;
+  font-family: var(--font-site) !important;
   letter-spacing: 0.01em;
 }
 
 body {
-  font-family: var(--font-din) !important;
+  font-family: var(--font-site) !important;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -1530,11 +1530,11 @@ button, a[role="button"] {
 }
 
 [lang="su-Sund"] {
-  font-family: 'Noto Sans Sundanese', var(--font-din);
+  font-family: 'Noto Sans Sundanese', var(--font-site);
 }
 
 [dir="rtl"] {
-  font-family: 'Noto Sans Arabic', var(--font-din);
+  font-family: 'Noto Sans Arabic', var(--font-site);
   text-align: right;
 }
 

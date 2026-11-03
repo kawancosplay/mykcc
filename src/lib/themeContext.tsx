@@ -10,6 +10,7 @@ export type BackgroundTheme =
   | 'dark-onyx'
   | 'custom';
 
+// The id is stored in siteSettings/theme and predates the switch to Google Sans Flex.
 export type FontTheme = 'din-next';
 
 export type ColorTheme = 'purple' | 'rose' | 'indigo' | 'emerald' | 'amber' | 'cyan' | 'custom';
@@ -201,7 +202,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     // Apply font family globally
     const fontFamilies: Record<FontTheme, string> = {
-      'din-next': "'DIN Next', sans-serif",
+      'din-next': "'Google Sans Flex', sans-serif",
     };
 
     document.documentElement.style.setProperty(

@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Typografie & Schrift der Seite',
-  fontDinNextName: 'DIN Next (offiziell)',
-  fontDinNextDesc: 'Moderne geometrische DIN-Typografie – klar, sauber und souverän',
+  fontGoogleSansFlexName: 'Google Sans Flex (offiziell)',
+  fontGoogleSansFlexDesc: 'Klar, freundlich und gut lesbar',
   fontActive: 'Aktiv',
   fontSample: 'Victor jagt zwölf Boxkämpfer quer über den großen Sylter Deich • 0123456789 • KawanCosplay 2026',
 

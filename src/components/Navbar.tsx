@@ -88,7 +88,7 @@ const FADE_MOTION = presence(fadeVariants);
 const DESKTOP_NAV_QUERY = '(min-width: 64rem)';
 
 /*
- * Rendered inside App's sticky `.glass-bar` container (one glass surface for gov banner + navbar, with the
+ * Rendered inside StickyHeader's sticky `.glass-bar` container (below the gov banner, with the
  * safe-area top padding), so the header itself is transparent. The header and its rows never get a
  * transform or will-change: the mobile menu overlay below is `position: fixed`. Only leaf panels without
  * fixed children animate transforms (segment thumb, menu drawer, language popover).

@@ -19,7 +19,7 @@ interface OfficialGovBannerProps {
 }
 
 // Disclosure: the guide's height opens with the sheet spring and closes with the iOS curve, so the
-// navbar below glides instead of jumping. Height + opacity only (no transform inside the sticky header).
+// navbar below glides instead of jumping. Height + opacity only.
 const disclosureVariants: Variants = {
   initial: { opacity: 0, height: 0 },
   animate: { opacity: 1, height: 'auto', transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
@@ -42,8 +42,8 @@ const FADE_MOTION: PresenceMotionProps = {
 };
 
 /*
- * Top strip of the sticky header. App renders it inside the `.glass-bar` container together with the
- * navbar, so it has no glass of its own (one continuous surface, no seam, no double blur).
+ * Strip above the sticky navbar. StickyHeader renders it inside its own `.glass-bar` container (which draws
+ * the line under it), so it has no glass of its own.
  */
 export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,7 +51,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
   const disclosureMotion = useReducedMotion() === true ? FADE_MOTION : DISCLOSURE_MOTION;
 
   return (
-    <div className="relative border-b border-white/[0.06] text-slate-300 text-xs">
+    <div className="relative text-slate-300 text-xs">
       {/* Top Banner Row - Gov style */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
         {/* Two lines reserved on phones: a language with longer copy cannot shift the page below (CLS). */}
@@ -88,7 +88,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
       </div>
 
       {/* Expandable Verification Guide Drawer (scrolls on short phone screens instead of pushing the
-          whole sticky header past the viewport). The outer wrapper clips the height animation. */}
+          navbar past the viewport). The outer wrapper clips the height animation. */}
       <AnimatePresence initial={false}>
       {isOpen && (
         <motion.div key="gov-banner-guide" {...disclosureMotion} className="overflow-hidden">

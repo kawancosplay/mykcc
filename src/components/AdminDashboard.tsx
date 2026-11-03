@@ -22,6 +22,7 @@ import {
 import type { AdminEntry, KccCounter, Member, SyncLog, SubscriptionErrorKind } from '../types';
 import { formatKccId } from '../lib/idGenerator';
 import { updateMemberStatus, deleteMember, purgeAllMembersFromFirestore, getKccCounter } from '../lib/firestoreService';
+import { ageCategoryKey } from '../lib/memberRules';
 import { listAdmins } from '../lib/adminService';
 import { describeFirestoreError } from '../lib/firebase';
 import { haptic } from '../lib/haptic';
@@ -294,7 +295,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         memberMatchesQuery(m, searchQuery) &&
         (selectedRole === 'ALL' || m.primaryRole === selectedRole) &&
         (selectedCity === 'ALL' || m.city === selectedCity) &&
-        (selectedAgeCategory === 'ALL' || m.ageCategory === selectedAgeCategory)
+        (selectedAgeCategory === 'ALL' || ageCategoryKey(m.ageCategory) === ageCategoryKey(selectedAgeCategory))
     );
     return sortMembers(filtered, sortMode);
   }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, sortMode]);
@@ -749,7 +750,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllAges')}</option>
-                        {/* Values are the stored ageCategory strings; only the labels are translated */}
+                        {/* Matched through ageCategoryKey, so every stored spelling counts; only the labels are translated */}
                         <option value="Legal Age / Dewasa (18+)">{t('admin.filterLegalAge')}</option>
                         <option value="Minor / Di Bawah Umur (<18)">{t('admin.filterMinor')}</option>
                         <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>

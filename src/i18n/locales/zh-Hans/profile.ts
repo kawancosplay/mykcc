@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "例如 21 岁 或 5 月 15 日",
   whatsappLabel: "常用 WhatsApp 号码",
   backupPhoneLabel: "第二个 / 备用 WhatsApp 号码",
-  backupPhonePlaceholder: "例如 0812... 或 +62 857...",
   extraPhonesLabel: "其他 WhatsApp 号码",
   extraPhonesHint: "选填，最多 4 个号码。管理员可以通过其中任一号码联系您。",
   addExtraPhone: "添加号码",

@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "z. B. 21 Jahre oder 15. Mai",
   whatsappLabel: "Aktive WhatsApp-Nummer",
   backupPhoneLabel: "Zweite / Ersatz-WhatsApp-Nummer",
-  backupPhonePlaceholder: "z. B. 0812... oder +62 857...",
   extraPhonesLabel: "Weitere WhatsApp-Nummern",
   extraPhonesHint: "Optional, bis zu 4 Nummern. Admins können dich unter jeder davon erreichen.",
   addExtraPhone: "Nummer hinzufügen",

@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "Ví dụ: 21 tuổi hoặc 15 tháng 5",
   whatsappLabel: "Số WhatsApp đang hoạt động",
   backupPhoneLabel: "Số WhatsApp thứ hai / dự phòng",
-  backupPhonePlaceholder: "Ví dụ: 0812... hoặc +62 857...",
   extraPhonesLabel: "Số WhatsApp bổ sung",
   extraPhonesHint: "Không bắt buộc, tối đa 4 số. Quản trị viên có thể liên hệ bạn qua bất kỳ số nào.",
   addExtraPhone: "Thêm số",

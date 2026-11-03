@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "เช่น อายุ 21 ปี หรือ 15 พฤษภาคม",
   whatsappLabel: "เบอร์ WhatsApp ที่ใช้งานอยู่",
   backupPhoneLabel: "เบอร์ WhatsApp ที่สอง / สำรอง",
-  backupPhonePlaceholder: "เช่น 0812... หรือ +62 857...",
   extraPhonesLabel: "หมายเลข WhatsApp เพิ่มเติม",
   extraPhonesHint: "ไม่บังคับ สูงสุด 4 หมายเลข ผู้ดูแลสามารถติดต่อคุณได้ทางหมายเลขใดก็ได้",
   addExtraPhone: "เพิ่มหมายเลข",

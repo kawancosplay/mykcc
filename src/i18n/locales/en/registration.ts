@@ -14,7 +14,6 @@ export default {
   phoneLabel: 'WhatsApp / Mobile Number (Optional)',
   whatsappLabel: 'Active WhatsApp Mobile Number (Required)',
   whatsappNotice: 'Required because KawanCosplay is a WhatsApp-based community. Each member holds a single KCC ID account. The official WhatsApp group link will be unlocked immediately after submitting.',
-  whatsappPlaceholder: 'Your answer (e.g. +62 812 3456 7890 or 0812...)',
   extraPhonesInProfileHint: 'You can add more WhatsApp numbers later in your profile.',
   discordLabel: 'Discord Username',
   discordDesc: 'Enter your Discord username for role syncing on the KawanCosplay Discord server (e.g. alyachan or user#0001).',

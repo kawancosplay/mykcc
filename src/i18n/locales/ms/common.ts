@@ -36,6 +36,7 @@ const common: LocaleNamespace<'common'> = {
   themeEditor: "Penyunting Tema",
   whatsappCommunity: "Komuniti WhatsApp",
   whatsappContact: "WhatsApp: +62 857-1103-2782",
+  phoneCountryCode: "Kod negara",
   emailContact: "Emel: cosplaysehat@gmail.com",
   userFallbackName: "Pengguna",
   idValue: "ID: {id}",

@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "ꦠꦸꦭꦝ: 21 ꦠꦲꦸꦤ꧀ ꦲꦸꦠꦮꦶ 15 ꦩꦺꦲꦶ",
   whatsappLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp ꦲꦏ꧀ꦠꦶꦥ꦳꧀",
   backupPhoneLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp ꦏꦥꦶꦁ ꦏꦭꦶꦃ / ꦕꦝꦔꦤ꧀",
-  backupPhonePlaceholder: "ꦠꦸꦭꦝ: 0812... ꦲꦸꦠꦮꦶ +62 857...",
   extraPhonesLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp ꦠꦩ꧀ꦧꦲꦤ꧀",
   extraPhonesHint: "ꦩ꧀ꦧꦺꦴꦠꦼꦤ꧀ ꦮꦗꦶꦧ꧀, ꦥꦭꦶꦁ ꦏꦛꦃ 4 ꦤꦺꦴꦩꦼꦂ. ꦲꦢ꧀ꦩꦶꦤ꧀ ꦱꦒꦼꦢ꧀ ꦔꦸꦧꦸꦔꦶ ꦥꦤ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦭꦸꦩꦤ꧀ꦠꦂ ꦤꦺꦴꦩꦼꦂ ꦥꦸꦤ꧀ꦢꦶ ꦩꦮꦺꦴꦤ꧀.",
   addExtraPhone: "ꦠꦩ꧀ꦧꦃ ꦤꦺꦴꦩꦼꦂ",

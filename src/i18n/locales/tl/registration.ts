@@ -16,7 +16,6 @@ const registration: LocaleNamespace<'registration'> = {
   phoneLabel: "WhatsApp / Mobile Number (Opsyonal)",
   whatsappLabel: "Aktibong WhatsApp Mobile Number (Kailangan)",
   whatsappNotice: "Kailangan ito dahil ang KawanCosplay ay isang komunidad na nakabase sa WhatsApp. Iisang KCC ID account lang ang hawak ng bawat miyembro. Agad na mabubuksan ang link ng opisyal na WhatsApp group pagkatapos mag-submit.",
-  whatsappPlaceholder: "Ang sagot mo (hal. +62 812 3456 7890 o 0812...)",
   extraPhonesInProfileHint: "Maaari kang magdagdag ng iba pang WhatsApp number mamaya sa iyong profile.",
   discordLabel: "Username sa Discord",
   discordDesc: "Ilagay ang iyong Discord username para sa pag-sync ng role sa Discord server ng KawanCosplay (hal. alyachan o user#0001).",

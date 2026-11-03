@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Tipografi & Font Loka',
-  fontDinNextName: 'DIN Next (Resmi)',
-  fontDinNextDesc: 'Tipografi DIN géométris modéren — seukeut, beresih, sareng wibawa',
+  fontGoogleSansFlexName: 'Google Sans Flex (Resmi)',
+  fontGoogleSansFlexDesc: 'Bersih, someah, sareng gampil dibaca',
   fontActive: 'Aktif',
   fontSample: 'Sakadang kuya jeung sakadang monyét ngagugulung bal di sisi walungan • 0123456789 • KawanCosplay 2026',
 

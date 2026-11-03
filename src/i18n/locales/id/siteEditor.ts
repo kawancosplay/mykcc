@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Tipografi & Font Situs',
-  fontDinNextName: 'DIN Next (Resmi)',
-  fontDinNextDesc: 'Tipografi DIN geometris modern — tajam, bersih, dan berwibawa',
+  fontGoogleSansFlexName: 'Google Sans Flex (Resmi)',
+  fontGoogleSansFlexDesc: 'Bersih, ramah, dan mudah dibaca',
   fontActive: 'Aktif',
   fontSample: 'Muharjo seorang xenofobia universal yang takut pada warga jazirah, contohnya Qatar • 0123456789 • KawanCosplay 2026',
 

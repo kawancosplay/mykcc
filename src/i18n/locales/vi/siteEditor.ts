@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Kiểu chữ & phông chữ của trang',
-  fontDinNextName: 'DIN Next (Chính thức)',
-  fontDinNextDesc: 'Kiểu chữ DIN hình học hiện đại — sắc nét, gọn gàng và uy tín',
+  fontGoogleSansFlexName: 'Google Sans Flex (Chính thức)',
+  fontGoogleSansFlexDesc: 'Gọn gàng, thân thiện và dễ đọc',
   fontActive: 'Đang dùng',
   fontSample: 'Con cáo nâu nhanh nhẹn nhảy qua con chó lười • 0123456789 • KawanCosplay 2026',
 

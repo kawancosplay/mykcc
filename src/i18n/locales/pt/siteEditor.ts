@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Tipografia & Fonte do Site',
-  fontDinNextName: 'DIN Next (Oficial)',
-  fontDinNextDesc: 'Tipografia DIN geométrica e moderna — nítida, limpa e imponente',
+  fontGoogleSansFlexName: 'Google Sans Flex (Oficial)',
+  fontGoogleSansFlexDesc: 'Limpa, amigável e fácil de ler',
   fontActive: 'Ativa',
   fontSample: 'Um pequeno jabuti xereta viu dez cegonhas felizes • 0123456789 • KawanCosplay 2026',
 

@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'خطوط الموقع والطباعة',
-  fontDinNextName: 'DIN Next (الرسمي)',
-  fontDinNextDesc: 'طباعة DIN هندسية عصرية — واضحة ونظيفة ومهيبة',
+  fontGoogleSansFlexName: 'Google Sans Flex (الرسمي)',
+  fontGoogleSansFlexDesc: 'واضح وودود وسهل القراءة',
   fontActive: 'مُفعَّل',
   fontSample: 'أبجد هوز حطي كلمن سعفص قرشت ثخذ ضظغ • 0123456789 • KawanCosplay 2026',
 

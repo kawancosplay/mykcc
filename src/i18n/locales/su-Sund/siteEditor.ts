@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'ᮒᮤᮕᮧᮌᮢᮖᮤ & ᮖᮧᮔ᮪ᮒ᮪ ᮜᮧᮊ',
-  fontDinNextName: 'DIN Next (ᮛᮨᮞ᮪ᮙᮤ)',
-  fontDinNextDesc: 'ᮒᮤᮕᮧᮌᮢᮖᮤ DIN ᮌᮦᮇᮙᮦᮒᮢᮤᮞ᮪ ᮙᮧᮓᮦᮛᮨᮔ᮪ — ᮞᮩᮊᮩᮒ᮪, ᮘᮨᮛᮨᮞᮤᮂ, ᮞᮛᮨᮀ ᮝᮤᮘᮝ',
+  fontGoogleSansFlexName: 'Google Sans Flex (ᮛᮨᮞ᮪ᮙᮤ)',
+  fontGoogleSansFlexDesc: 'ᮘᮨᮁᮞᮤᮂ, ᮞᮧᮙᮦᮃᮂ, ᮞᮛᮨᮀ ᮌᮙ᮪ᮕᮤᮜ᮪ ᮓᮤᮘᮎ',
   fontActive: 'ᮃᮊ᮪ᮒᮤᮖ᮪',
   fontSample: 'ᮞᮊᮓᮀ ᮊᮥᮚ ᮏᮩᮀ ᮞᮊᮓᮀ ᮙᮧᮑᮦᮒ᮪ ᮍᮌᮥᮌᮥᮜᮥᮀ ᮘᮜ᮪ ᮓᮤ ᮞᮤᮞᮤ ᮝᮜᮥᮍᮔ᮪ • 0123456789 • KawanCosplay 2026',
 

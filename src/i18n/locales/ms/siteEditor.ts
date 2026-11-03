@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Tipografi & Fon Laman',
-  fontDinNextName: 'DIN Next (Rasmi)',
-  fontDinNextDesc: 'Tipografi DIN geometri moden — tajam, kemas dan berwibawa',
+  fontGoogleSansFlexName: 'Google Sans Flex (Rasmi)',
+  fontGoogleSansFlexDesc: 'Kemas, mesra dan mudah dibaca',
   fontActive: 'Aktif',
   fontSample: 'Zaki si cosplayer fasih menjahit kostum Qixi bervariasi warna dengan gaya • 0123456789 • KawanCosplay 2026',
 

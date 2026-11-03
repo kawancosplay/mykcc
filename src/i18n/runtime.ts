@@ -213,23 +213,6 @@ export function countryNameIn(locale: string, isoCode: string, fallback?: string
 
 // ---- Script fonts -----------------------------------------------------------------------------
 
-// Latin languages load no web font, so index.html no longer preconnects to Google Fonts (two wasted
-// early connections on a slow link). Script languages add the preconnects here, right before the CSS.
-function ensureFontPreconnects(): void {
-  const origins: Array<[string, boolean]> = [
-    ['https://fonts.googleapis.com', false],
-    ['https://fonts.gstatic.com', true],
-  ];
-  for (const [href, crossOrigin] of origins) {
-    if (document.head.querySelector(`link[rel="preconnect"][href="${href}"]`)) continue;
-    const link = document.createElement('link');
-    link.rel = 'preconnect';
-    link.href = href;
-    if (crossOrigin) link.crossOrigin = 'anonymous';
-    document.head.appendChild(link);
-  }
-}
-
 /** Adds the Google Fonts stylesheet a language needs (one <link> per family, created once). */
 export function ensureLanguageFont(lang: LanguageCode): void {
   if (typeof document === 'undefined') return;
@@ -239,7 +222,6 @@ export function ensureLanguageFont(lang: LanguageCode): void {
     (link) => link.dataset.i18nFont === font.family
   );
   if (existing) return;
-  ensureFontPreconnects();
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = googleFontHref(font);
@@ -248,16 +230,16 @@ export function ensureLanguageFont(lang: LanguageCode): void {
 }
 
 /**
- * index.css renders all text with `var(--font-din)` (marked !important), so a web font is only used if it is
- * part of that stack: append the language font after DIN Next (Latin keeps DIN, the script uses the Noto font).
+ * index.css renders all text with `var(--font-site)` (marked !important), so a web font is only used if it is
+ * part of that stack: append the language font after the site font (Latin keeps it, the script uses the Noto font).
  */
 export function applyLanguageFontStack(lang: LanguageCode): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   const font = getLanguageMeta(lang).font;
   if (font) {
-    root.style.setProperty('--font-din', `'DIN Next', '${font.family}', sans-serif`);
+    root.style.setProperty('--font-site', `'Google Sans Flex', '${font.family}', sans-serif`);
   } else {
-    root.style.removeProperty('--font-din');
+    root.style.removeProperty('--font-site');
   }
 }

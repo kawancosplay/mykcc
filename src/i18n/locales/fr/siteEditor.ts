@@ -66,8 +66,8 @@ const siteEditor: LocaleNamespace<'siteEditor'> = {
 
   // Font tab
   fontLabel: 'Typographie & police du site',
-  fontDinNextName: 'DIN Next (officielle)',
-  fontDinNextDesc: 'Typographie géométrique moderne DIN — nette, épurée et affirmée',
+  fontGoogleSansFlexName: 'Google Sans Flex (officielle)',
+  fontGoogleSansFlexDesc: 'Nette, conviviale et facile à lire',
   fontActive: 'Activée',
   fontSample: 'Voix ambiguë d’un cœur qui, au zéphyr, préfère les jattes de kiwis • 0123456789 • KawanCosplay 2026',
 

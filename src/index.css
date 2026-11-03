@@ -115,7 +115,7 @@
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
-  --nav-h: 5rem; /* gov banner + navbar, used for anchor scroll offset */
+  --nav-h: 5rem; /* navbar, used for anchor scroll offset */
   --tabbar-h: 3.75rem;
   --touch-min: 44px;
 }
@@ -303,7 +303,7 @@ button, a[role="button"] {
    - Hover styles only apply on real hover devices (no sticky hover on iOS).
 
    Class map
-     .glass-bar / .liquid-glass   sticky top nav + gov banner (one surface)
+     .glass-bar / .liquid-glass   sticky top nav, gov banner
      .glass-tabbar (+ -item)      mobile bottom tab bar
      .glass-pill                  floating capsule nav variant
      .glass-card / .liquid-glass-card   in-flow content card

@@ -6,8 +6,8 @@ import { OfficialGovBanner } from './OfficialGovBanner';
 export type StickyHeaderProps = Omit<NavbarProps, 'isVisible' | 'isMobileMenuOpen' | 'onMobileMenuToggle'>;
 
 /*
- * Public sticky header: ONE glass surface (painted on ::before, so the mobile menu's fixed overlay inside
- * is not trapped) for the gov banner + navbar, extended under the notch / status bar.
+ * Public header: the gov banner at the top of the page, then the sticky navbar (glass painted on ::before,
+ * so the mobile menu's fixed overlay inside is not trapped), extended under the notch / status bar.
  *
  * Perf (F8): the scroll listener, the hide/show state and the mobile-menu state live HERE, so a change
  * of scroll direction re-renders only the header, never App or the registration form. Hidden by
@@ -58,21 +58,26 @@ export const StickyHeader = React.memo(function StickyHeader(props: StickyHeader
   const hidden = !isMobileMenuOpen && !isVisible;
 
   return (
-    <div
-      className={`sticky-header sticky top-0 z-50 glass-bar pt-safe px-safe transition-[translate] duration-300 ease-ios ${
-        hidden ? '-translate-y-full' : ''
-      }`}
-    >
-      {/* Official Government-Style Verification Header */}
-      <OfficialGovBanner currentLang={props.currentLang} />
+    <>
+      {/* Official Government-Style Verification Header: not sticky, it scrolls away with the page.
+          shortcut: both bars carry the top inset, so a notch would add a gap between them at the top of the page; upgrade if index.html ever sets viewport-fit=cover */}
+      <div className="glass-bar pt-safe px-safe">
+        <OfficialGovBanner currentLang={props.currentLang} />
+      </div>
 
       {/* Main Navbar */}
-      <Navbar
-        {...props}
-        isVisible={isVisible}
-        isMobileMenuOpen={isMobileMenuOpen}
-        onMobileMenuToggle={handleMobileMenuToggle}
-      />
-    </div>
+      <div
+        className={`sticky-header sticky top-0 z-50 glass-bar pt-safe px-safe transition-[translate] duration-300 ease-ios ${
+          hidden ? '-translate-y-full' : ''
+        }`}
+      >
+        <Navbar
+          {...props}
+          isVisible={isVisible}
+          isMobileMenuOpen={isMobileMenuOpen}
+          onMobileMenuToggle={handleMobileMenuToggle}
+        />
+      </div>
+    </>
   );
 });

@@ -2,7 +2,6 @@ import type { LocaleNamespace } from '../../types';
 
 const common: LocaleNamespace<'common'> = {
   appName: "MyKCC",
-  tagline: "ᮊᮧᮙᮥᮔᮤᮒᮞ᮪ ᮕᮧᮕ᮪ ᮊᮥᮜ᮪ᮒᮥᮁ ᮞᮛᮨᮀ ᮎᮧᮞ᮪ᮕᮣᮚ᮪ ᮌᮣᮧᮘᮜ᮪ (100% SFW)",
   navForm: "ᮕᮨᮔ᮪ᮓᮕ᮪ᮒᮛᮔ᮪",
   navCard: "ᮊᮁᮒᮥ ᮃᮘ᮪ᮓᮤ",
   navGallery: "ᮌᮜᮨᮛᮤ",
@@ -90,7 +89,6 @@ const common: LocaleNamespace<'common'> = {
   preparingProfileDesc: "ᮑᮙ᮪ᮘᮥᮀᮊᮩᮔ᮪ ᮃᮊᮥᮔ᮪ ᮊ ᮄᮓᮦᮔ᮪ᮒᮤᮒᮞ᮪ ᮓᮤᮌᮤᮒᮜ᮪ KCC ᮃᮔ᮪ᮏᮩᮔ᮪.",
   pleaseSignIn: "ᮙᮀᮌ ᮃᮞᮥᮕ᮪ ᮠᮩᮜ",
   clickToSignIn: "ᮊᮣᮤᮊ᮪ ᮓᮤ ᮓᮤᮉ ᮕᮤᮊᮩᮔ᮪ ᮃᮞᮥᮕ᮪",
-  footerPlatform: "ᮕᮣᮒ᮪ᮖᮧᮁᮙ᮪ ᮕᮧᮕ᮪ ᮊᮥᮜ᮪ᮒᮥᮁ ᮄᮔ᮪ᮒᮨᮁᮔᮞᮤᮇᮔᮜ᮪ 100% SFW.",
   copyright: "© 2026 MyKCC. ᮞᮓᮚ ᮠᮊ᮪ ᮓᮤᮒᮀᮒᮚᮥᮍᮔ᮪.",
   privacyShieldActive: "ᮞᮤᮞ᮪ᮒᮨᮙ᮪ ᮄᮓᮦᮔ᮪ᮒᮤᮒᮞ᮪ KCC ID & ᮒᮙᮦᮀ ᮕᮢᮤᮗᮞᮤ ᮃᮊ᮪ᮒᮤᮖ᮪",
 };

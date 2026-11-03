@@ -1028,18 +1028,21 @@ export default function App() {
       <PerfLiteNotice />
 
       {/* Global Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-[var(--glass-fill-bar)] pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 lg:px-8 text-slate-400 text-xs">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center font-bold text-white text-sm shadow-md">
-              KC
-            </div>
-            <div>
-              <p className="font-bold text-white text-sm">MyKCC • KawanCosplay Community</p>
-              <p className="text-slate-500 text-[11px]">
-                {t('common.tagline')} • {t('common.footerPlatform')}
-              </p>
-            </div>
+      <footer className="relative z-10 border-t border-white/10 bg-[var(--glass-fill-bar)] pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 xl:px-8 text-slate-400 text-xs">
+        <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col items-center xl:items-start xl:shrink-0 gap-2">
+            <img
+              src="/brand/kcc-wordmark-768.webp"
+              alt="KawanCosplay"
+              width={768}
+              height={144}
+              loading="lazy"
+              decoding="async"
+              className="w-72 sm:w-96 h-auto"
+            />
+            <p className="text-slate-300 text-xs sm:text-sm font-semibold text-center xl:text-start">
+              The 100% SFW Cosplay Media and Community
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
@@ -1081,7 +1084,7 @@ export default function App() {
             </a>
           </div>
 
-          <div className="text-center md:text-end text-slate-500 flex flex-col items-center md:items-end gap-1">
+          <div className="text-center xl:text-end text-slate-500 flex flex-col items-center xl:items-end gap-1">
             <p>{t('common.copyright')}</p>
             <p className="text-[10px] text-emerald-400/80 mt-0.5">
               ● {t('common.privacyShieldActive')}

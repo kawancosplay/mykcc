@@ -21,7 +21,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: 'Contoh: 21 tahun atau 15 Mei',
   whatsappLabel: 'Nomor WhatsApp Aktif',
   backupPhoneLabel: 'Nomor WhatsApp Kedua / Cadangan',
-  backupPhonePlaceholder: 'Contoh: 0812... atau +62 857...',
   extraPhonesLabel: 'Nomor WhatsApp tambahan',
   extraPhonesHint: 'Opsional, maksimal 4 nomor. Admin dapat menghubungi Anda di nomor mana pun.',
   addExtraPhone: 'Tambah nomor',

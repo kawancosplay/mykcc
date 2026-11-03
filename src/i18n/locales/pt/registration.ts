@@ -16,7 +16,6 @@ const registration: LocaleNamespace<'registration'> = {
   phoneLabel: "WhatsApp / Número de Celular (Opcional)",
   whatsappLabel: "Número de WhatsApp Ativo (Obrigatório)",
   whatsappNotice: "Obrigatório porque a KawanCosplay é uma comunidade baseada no WhatsApp. Cada membro tem uma única conta de KCC ID. O link do grupo oficial de WhatsApp será liberado imediatamente após o envio.",
-  whatsappPlaceholder: "Sua resposta (ex.: +62 812 3456 7890 ou 0812...)",
   extraPhonesInProfileHint: "Você pode adicionar mais números de WhatsApp depois no seu perfil.",
   discordLabel: "Nome de Usuário do Discord",
   discordDesc: "Digite seu nome de usuário do Discord para sincronizar cargos no servidor de Discord da KawanCosplay (ex.: alyachan ou user#0001).",

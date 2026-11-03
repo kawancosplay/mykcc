@@ -34,6 +34,7 @@ import {
   CountryOption,
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
+import PhoneInput from './PhoneInput';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -372,6 +373,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       return;
     }
 
+    // shortcut: the minimum counts the country code too (+62 plus 5 digits passes), upgrade if short numbers must be rejected per country
     const phoneDigits = dataToSubmit.phone.replace(/\D/g, '');
     if (!dataToSubmit.phone.trim() || phoneDigits.length < MIN_PHONE_DIGITS) {
       showError(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }), 'phone');
@@ -833,15 +835,12 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               <span>{t('registration.whatsappNotice')}</span>
             </p>
 
-            <input
-              type="tel"
+            <PhoneInput
               required
-              aria-invalid={errorField === 'phone' || undefined}
-              placeholder={t('registration.whatsappPlaceholder')}
-              maxLength={MEMBER_FIELD_LIMITS.phone}
+              invalid={errorField === 'phone'}
+              placeholder="81234567890"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="glass-input w-full text-base sm:text-sm font-mono"
+              onChange={(phone) => setFormData({ ...formData, phone })}
             />
             <p className="text-[11px] text-slate-400 mt-2">
               {t('registration.extraPhonesInProfileHint')}

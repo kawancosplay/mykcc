@@ -16,7 +16,6 @@ const registration: LocaleNamespace<'registration'> = {
   phoneLabel: "Số WhatsApp / Di động (Tùy chọn)",
   whatsappLabel: "Số di động WhatsApp đang hoạt động (Bắt buộc)",
   whatsappNotice: "Bắt buộc vì KawanCosplay là cộng đồng hoạt động trên WhatsApp. Mỗi thành viên chỉ có một tài khoản KCC ID duy nhất. Liên kết nhóm WhatsApp chính thức sẽ được mở ngay sau khi gửi đơn.",
-  whatsappPlaceholder: "Câu trả lời của bạn (ví dụ: +62 812 3456 7890 hoặc 0812...)",
   extraPhonesInProfileHint: "Bạn có thể thêm số WhatsApp khác sau trong hồ sơ của mình.",
   discordLabel: "Tên người dùng Discord",
   discordDesc: "Nhập tên người dùng Discord của bạn để đồng bộ vai trò (role) trên máy chủ Discord của KawanCosplay (ví dụ: alyachan hoặc user#0001).",

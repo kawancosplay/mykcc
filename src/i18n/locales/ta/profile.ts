@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "எ.கா. 21 வயது அல்லது மே 15",
   whatsappLabel: "செயலில் உள்ள WhatsApp எண்",
   backupPhoneLabel: "இரண்டாவது / மாற்று WhatsApp எண்",
-  backupPhonePlaceholder: "எ.கா. 0812... அல்லது +62 857...",
   extraPhonesLabel: "கூடுதல் WhatsApp எண்கள்",
   extraPhonesHint: "விருப்பத்தேர்வு, அதிகபட்சம் 4 எண்கள். இவற்றில் எந்த எண்ணிலும் நிர்வாகிகள் உங்களைத் தொடர்புகொள்ளலாம்.",
   addExtraPhone: "எண்ணைச் சேர்",

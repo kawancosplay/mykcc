@@ -16,7 +16,6 @@ const registration: LocaleNamespace<'registration'> = {
   phoneLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)",
   whatsappLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp ꦲꦏ꧀ꦠꦶꦥ꦳꧀ (ꦮꦗꦶꦧ꧀)",
   whatsappNotice: "ꦮꦗꦶꦧ꧀ ꦢꦶꦥꦸꦤꦶꦱꦶ ꦲꦩꦂꦒꦶ KawanCosplay ꦥꦸꦤꦶꦏ ꦏꦺꦴꦩꦸꦤꦶꦠꦱ꧀ ꦲꦝꦼꦝꦱꦂ WhatsApp. ꦱꦧꦼꦤ꧀ ꦲꦁꦒꦺꦴꦠ ꦤꦩꦸꦁ ꦒꦝꦃ ꦱꦼꦠꦸꦁꦒꦭ꧀ ꦲꦏꦸꦤ꧀ KCC ID. ꦭꦶꦤ꧀ꦏ꧀ ꦒꦿꦸꦥ꧀ WhatsApp ꦉꦱ꧀ꦩꦶ ꦧꦝꦺ ꦭꦁꦱꦸꦁ ꦏꦧꦶꦏꦏ꧀ ꦱꦱꦩ꧀ꦥꦸꦤꦶꦥꦸꦤ꧀ ꦔꦶꦫꦶꦩ꧀ ꦥ꦳ꦺꦴꦂꦩꦸꦭꦶꦂ꧉",
-  whatsappPlaceholder: "ꦮꦁꦱꦸꦭꦤ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ (ꦠꦸꦭꦝ: +62 812 3456 7890 ꦲꦸꦠꦮꦶ 0812...)",
   extraPhonesInProfileHint: "ꦥꦤ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦱꦒꦼꦢ꧀ ꦤꦩ꧀ꦧꦲꦶ ꦤꦺꦴꦩꦼꦂ WhatsApp ꦱꦤꦺꦱꦶꦥꦸꦤ꧀ ꦩꦁꦏꦺ ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀ ꦥꦿꦺꦴꦥ꦳ꦶꦭ꧀ ꦥꦤ꧀ꦗꦼꦤꦼꦔꦤ꧀.",
   discordLabel: "ꦪꦸꦱꦼꦂꦤꦺꦩ꧀ Discord",
   discordDesc: "ꦊꦧꦼꦠꦏꦼꦤ꧀ ꦪꦸꦱꦼꦂꦤꦺꦩ꧀ Discord ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦏꦁꦒꦺ ꦱꦶꦤ꧀ꦏꦿꦺꦴꦤ꧀ ꦫꦺꦴꦭ꧀ ꦲꦶꦁ ꦱꦼꦂꦮ꦳ꦼꦂ Discord KawanCosplay (ꦠꦸꦭꦝ: alyachan ꦲꦸꦠꦮꦶ user#0001).",

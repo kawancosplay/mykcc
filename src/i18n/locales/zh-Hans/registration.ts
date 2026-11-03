@@ -16,7 +16,6 @@ const registration: LocaleNamespace<'registration'> = {
   phoneLabel: "WhatsApp / 手机号码（选填）",
   whatsappLabel: "常用 WhatsApp 手机号码（必填）",
   whatsappNotice: "必填，因为 KawanCosplay 是以 WhatsApp 为基础的社区。每位成员仅拥有一个 KCC ID 账号。提交后将立即解锁官方 WhatsApp 群组链接。",
-  whatsappPlaceholder: "您的回答（例如 +62 812 3456 7890 或 0812...）",
   extraPhonesInProfileHint: "您之后可以在个人资料中添加更多 WhatsApp 号码。",
   discordLabel: "Discord 用户名",
   discordDesc: "请输入您的 Discord 用户名，用于在 KawanCosplay Discord 服务器上同步身份组（例如 alyachan 或 user#0001）。",

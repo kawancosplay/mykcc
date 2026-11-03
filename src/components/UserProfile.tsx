@@ -20,7 +20,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Member } from '../types';
-import { MAX_ADDITIONAL_PHONES, formatKccId, isLegacyKccId16 } from '../lib/idGenerator';
+import { MAX_ADDITIONAL_PHONES, formatKccId, isLegacyKccId16, normalizePhoneDigits } from '../lib/idGenerator';
 import { updateMemberProfileData } from '../lib/authService';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
 import { describeFirestoreError } from '../lib/firebase';
@@ -34,6 +34,7 @@ import {
   useWorldLocations,
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
+import PhoneInput from './PhoneInput';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -347,11 +348,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       haptic('error');
       return;
     }
-    const seenDigits = new Set<string>([phoneDigits(formData.phone)]);
+    const seenDigits = new Set<string>([normalizePhoneDigits(formData.phone)]);
     const extraPhones: string[] = [];
     for (const raw of formData.extraPhones) {
       const value = raw.trim().slice(0, MEMBER_FIELD_LIMITS.phone);
-      const digits = phoneDigits(value);
+      const digits = normalizePhoneDigits(value);
       if (!value || seenDigits.has(digits)) continue;
       seenDigits.add(digits);
       extraPhones.push(value);
@@ -569,14 +570,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 {t('profile.whatsappLabel')} <span className="text-rose-400">*</span>
               </label>
-              <input
-                type="tel"
+              <PhoneInput
                 required
-                placeholder="+62 812..."
-                maxLength={MEMBER_FIELD_LIMITS.phone}
+                placeholder="81234567890"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="glass-input w-full text-base sm:text-sm font-mono"
+                onChange={(phone) => setFormData({ ...formData, phone })}
               />
             </div>
 
@@ -594,22 +592,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   return (
                     <div key={index}>
                       <div className="flex items-center gap-2">
-                        <input
-                          ref={(el) => {
-                            extraPhoneInputs.current[index] = el;
-                          }}
-                          type="tel"
-                          inputMode="tel"
-                          autoComplete="tel"
-                          placeholder={t('profile.backupPhonePlaceholder')}
-                          aria-label={`${t('profile.extraPhonesLabel')} ${index + 1}`}
-                          aria-invalid={error ? true : undefined}
-                          aria-describedby={error ? errorId : undefined}
-                          maxLength={MEMBER_FIELD_LIMITS.phone}
-                          value={value}
-                          onChange={(e) => updateExtraPhone(index, e.target.value)}
-                          className="glass-input flex-1 min-w-0 text-base sm:text-sm font-mono"
-                        />
+                        <div className="flex-1 min-w-0">
+                          <PhoneInput
+                            inputRef={(el) => {
+                              extraPhoneInputs.current[index] = el;
+                            }}
+                            placeholder="81234567890"
+                            ariaLabel={`${t('profile.extraPhonesLabel')} ${index + 1}`}
+                            invalid={!!error}
+                            value={value}
+                            onChange={(phone) => updateExtraPhone(index, phone)}
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeExtraPhone(index)}

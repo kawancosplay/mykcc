@@ -140,13 +140,15 @@ export const cardLink = (kccId: string): string => `${PUBLIC_SITE_URL}/?kcc=${di
 
 /**
  * wa.me link with a prefilled message. Non-digits are stripped; a leading 0 or 8 is read as an Indonesian
- * number (0812… / 812… → 62812…). Returns null when no digits are left.
+ * number (0812… / 812… → 62812…) unless the value starts with '+'. Returns null when no digits are left.
  */
 export function waLink(phone: string, text?: string): string | null {
   let digits = digitsOnly(phone);
   if (!digits) return null;
-  if (digits.startsWith('0')) digits = `62${digits.slice(1)}`;
-  else if (digits.startsWith('8')) digits = `62${digits}`;
+  if (!phone.trim().startsWith('+')) {
+    if (digits.startsWith('0')) digits = `62${digits.slice(1)}`;
+    else if (digits.startsWith('8')) digits = `62${digits}`;
+  }
   return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 }
 

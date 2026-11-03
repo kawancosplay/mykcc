@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "hal. 21 taong gulang o Mayo 15",
   whatsappLabel: "Aktibong WhatsApp Number",
   backupPhoneLabel: "Pangalawa / Backup na WhatsApp Number",
-  backupPhonePlaceholder: "hal. 0812... o +62 857...",
   extraPhonesLabel: "Karagdagang WhatsApp number",
   extraPhonesHint: "Opsyonal, hanggang 4 na numero. Maaari kang kontakin ng mga admin sa alinman sa mga ito.",
   addExtraPhone: "Magdagdag ng numero",

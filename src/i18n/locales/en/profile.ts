@@ -19,7 +19,6 @@ export default {
   agePlaceholder: 'e.g. 21 years old or May 15',
   whatsappLabel: 'Active WhatsApp Number',
   backupPhoneLabel: 'Second / Backup WhatsApp Number',
-  backupPhonePlaceholder: 'e.g. 0812... or +62 857...',
   extraPhonesLabel: 'Extra WhatsApp numbers',
   extraPhonesHint: 'Optional, up to 4 numbers. Admins can reach you on any of them.',
   addExtraPhone: 'Add number',

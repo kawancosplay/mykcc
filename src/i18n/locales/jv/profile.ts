@@ -17,7 +17,6 @@ const profile: LocaleNamespace<'profile'> = {
   agePlaceholder: "tuladha: 21 taun utawi 15 Mei",
   whatsappLabel: "Nomer WhatsApp Aktif",
   backupPhoneLabel: "Nomer WhatsApp Kaping Kalih / Cadhangan",
-  backupPhonePlaceholder: "tuladha: 0812... utawi +62 857...",
   extraPhonesLabel: "Nomer WhatsApp tambahan",
   extraPhonesHint: "Mboten wajib, paling kathah 4 nomer. Admin saged ngubungi panjenengan lumantar nomer pundi mawon.",
   addExtraPhone: "Tambah nomer",

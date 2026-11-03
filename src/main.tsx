@@ -32,3 +32,18 @@ function render(): void {
 }
 
 waitForInitialLocale().then(render, render);
+
+// A new deployment's service worker reloads the page, so a refresh never sticks on the old cached build.
+// Not while something is typed into a field (a second tab can trigger this): that page updates on its next load.
+void import('virtual:pwa-register').then(({ registerSW }) =>
+  registerSW({
+    immediate: true,
+    onNeedReload() {
+      const typed = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+        'input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]):not([type=range]):not([type=color]), textarea',
+      );
+      if (![...typed].some((field) => field.value)) window.location.reload();
+    },
+  }),
+);
+console.debug('sw-update-test-C');

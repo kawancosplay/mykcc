@@ -48,8 +48,9 @@ export default defineConfig(() => {
     },
     plugins: [react(), tailwindcss(), kccLogoHints(hasLocalLogo), VitePWA({
       registerType: 'autoUpdate',
-      // registerSW.js as a deferred script: no extra render-blocking request in <head>.
-      injectRegister: 'script-defer',
+      // Registered from src/main.tsx (virtual:pwa-register): the plain injected script never reloads an
+      // open page, so a refresh kept showing the old cached build after a deployment.
+      injectRegister: false,
       manifest: {
         id: '/',
         name: 'MyKCC - KawanCosplay Community Member Portal',
@@ -65,6 +66,10 @@ export default defineConfig(() => {
         enabled: true,
       },
       workbox: {
+        // The plugin only sets these for injectRegister 'auto': without them a new service worker waits
+        // until every tab is closed, and a refresh keeps showing the old build.
+        skipWaiting: true,
+        clientsClaim: true,
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
         // Real pages/endpoints that must not be answered with the SPA shell by the service worker.
         navigateFallbackDenylist: [/^\/privacy/, /^\/api\//, /^\/geo\//],

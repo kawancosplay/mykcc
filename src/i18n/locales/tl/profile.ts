@@ -13,8 +13,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: "Puwede mong baguhin ang impormasyong ito anumang oras; real-time itong sine-save sa database ng MyKCC.",
   savedRealtime: "Na-save nang Real-Time!",
   ageCategoryLabel: "Kategorya ng Edad",
-  ageLabel: "Edad / Kaarawan (Opsyonal)",
-  agePlaceholder: "hal. 21 taong gulang o Mayo 15",
   whatsappLabel: "Aktibong WhatsApp Number",
   backupPhoneLabel: "Pangalawa / Backup na WhatsApp Number",
   extraPhonesLabel: "Karagdagang WhatsApp number",

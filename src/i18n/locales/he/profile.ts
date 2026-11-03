@@ -13,8 +13,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: "אפשר לשנות את הפרטים האלה בכל עת; הם נשמרים בזמן אמת במסד הנתונים של MyKCC.",
   savedRealtime: "נשמר בזמן אמת!",
   ageCategoryLabel: "קטגוריית גיל",
-  ageLabel: "גיל / תאריך לידה (אופציונלי)",
-  agePlaceholder: "לדוגמה: 21 או 15 במאי",
   whatsappLabel: "מספר WhatsApp פעיל",
   backupPhoneLabel: "מספר WhatsApp שני / לגיבוי",
   extraPhonesLabel: "מספרי WhatsApp נוספים",

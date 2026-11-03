@@ -13,8 +13,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: "Bạn có thể thay đổi thông tin này bất cứ lúc nào; thông tin được lưu theo thời gian thực vào cơ sở dữ liệu MyKCC.",
   savedRealtime: "Đã lưu theo thời gian thực!",
   ageCategoryLabel: "Nhóm tuổi",
-  ageLabel: "Tuổi / Ngày sinh (Tùy chọn)",
-  agePlaceholder: "Ví dụ: 21 tuổi hoặc 15 tháng 5",
   whatsappLabel: "Số WhatsApp đang hoạt động",
   backupPhoneLabel: "Số WhatsApp thứ hai / dự phòng",
   extraPhonesLabel: "Số WhatsApp bổ sung",

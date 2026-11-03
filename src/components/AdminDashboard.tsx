@@ -417,7 +417,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         m.discordUsername || '',
         m.email || '',
         m.ageCategory || '',
-        m.age || '',
+        [m.age, m.birthday].filter(Boolean).join(' / '),
         m.country || '',
         m.province || '',
         m.city || '',

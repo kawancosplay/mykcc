@@ -13,8 +13,6 @@ const profile: LocaleNamespace<'profile'> = {
   infoDesc: "ꦲꦶꦤ꧀ꦥ꦳ꦺꦴꦂꦩꦱꦶ ꦥꦸꦤꦶꦏ ꦱꦒꦼꦢ꧀ ꦥꦚ꧀ꦗꦼꦤꦼꦔꦤ꧀ ꦒꦤ꧀ꦠꦺꦴꦱ꧀ ꦱꦮꦚ꧀ꦕꦶꦮꦚ꧀ꦕꦶ; ꦭꦁꦱꦸꦁ ꦏꦱꦶꦩ꧀ꦥꦼꦤ꧀ ꦲꦶꦁ ꦢꦠꦧꦺꦱ꧀ MyKCC.",
   savedRealtime: "ꦏꦱꦶꦩ꧀ꦥꦼꦤ꧀ ꦭꦁꦱꦸꦁ!",
   ageCategoryLabel: "ꦏꦠꦺꦒꦺꦴꦫꦶ ꦲꦸꦩꦸꦂ",
-  ageLabel: "ꦲꦸꦩꦸꦂ / ꦠꦁꦒꦭ꧀ ꦭꦲꦶꦂ (ꦲꦺꦴꦥ꧀ꦱꦶꦪꦺꦴꦤꦭ꧀)",
-  agePlaceholder: "ꦠꦸꦭꦝ: 21 ꦠꦲꦸꦤ꧀ ꦲꦸꦠꦮꦶ 15 ꦩꦺꦲꦶ",
   whatsappLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp ꦲꦏ꧀ꦠꦶꦥ꦳꧀",
   backupPhoneLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp ꦏꦥꦶꦁ ꦏꦭꦶꦃ / ꦕꦝꦔꦤ꧀",
   extraPhonesLabel: "ꦤꦺꦴꦩꦼꦂ WhatsApp ꦠꦩ꧀ꦧꦲꦤ꧀",

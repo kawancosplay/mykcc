@@ -1,5 +1,6 @@
 import type { Member } from '../types';
 import { translate } from '../i18n';
+import { firstSocialHandle } from './socialLinks';
 
 // =============================================================================================
 // KCC ID (stored in the field `userId16` for compatibility, see AGENTS.md section 5)
@@ -314,7 +315,8 @@ function normalizePhone(p?: string): string {
  */
 function normalizeSocial(s?: string): string {
   if (!s) return '';
-  return s
+  // shortcut: only the first account is compared, upgrade if a sheet's handle must match any of a member's accounts
+  return firstSocialHandle(s)
     .toLowerCase()
     .replace(/^https?:\/\/(www\.)?(instagram|tiktok|twitter|x)\.com\//, '')
     .replace(/^@/, '')

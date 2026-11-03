@@ -25,7 +25,6 @@ const profile: LocaleNamespace<'profile'> = {
   discordPlaceholder: "cth. alyachan_cos atau user#0001",
   roleLabel: "Peranan Utama dalam Komuniti",
   customRolePlaceholder: "Taip peranan / kepakaran lain anda...",
-  socialMediaPlaceholder: "@namapengguna (Instagram / X / TikTok)",
   reasonLabel: "Sebab Menyertai & Catatan Profil",
   roleIdolFan: "Peminat Idol / Wota",
   roleOtaku: "Otaku Anime, Manga & Permainan",

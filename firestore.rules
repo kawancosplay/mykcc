@@ -189,7 +189,7 @@ service cloud.firestore {
         && optString(data, 'ageCategory', 50)
         && optString(data, 'birthday', 30)
         && optString(data, 'experience', 50)
-        && optString(data, 'socialMedia', 120)
+        && optString(data, 'socialMedia', 500)
         && optString(data, 'portfolioUrl', 300)
         && optString(data, 'avatarUrl', 1000000)
         && optString(data, 'reason', 500)

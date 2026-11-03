@@ -2,7 +2,6 @@ import type { LocaleNamespace } from '../../types';
 
 const common: LocaleNamespace<'common'> = {
   appName: "MyKCC",
-  tagline: "உலகளாவிய பாப் கலாச்சார, காஸ்ப்ளே & Wota சமூகம் (100% SFW)",
   navForm: "பதிவுப் படிவம்",
   navCard: "என் டிஜிட்டல் பாஸ்",
   navGallery: "காஸ்ப்ளே கேலரி",
@@ -90,7 +89,6 @@ const common: LocaleNamespace<'common'> = {
   preparingProfileDesc: "உங்கள் கணக்கு டிஜிட்டல் KCC அடையாளத்துடன் இணைக்கப்படுகிறது.",
   pleaseSignIn: "தயவுசெய்து உள்நுழையவும்",
   clickToSignIn: "உள்நுழைய இங்கே கிளிக் செய்யவும்",
-  footerPlatform: "100% SFW சர்வதேச பாப் கலாச்சாரத் தளம்.",
   copyright: "© 2026 MyKCC. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
   privacyShieldActive: "KCC ID அடையாள & தனியுரிமைக் கவச அமைப்பு செயலில் உள்ளது",
 };

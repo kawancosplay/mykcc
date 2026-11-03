@@ -2,7 +2,6 @@ import type { LocaleNamespace } from '../../types';
 
 const common: LocaleNamespace<'common'> = {
   appName: 'MyKCC',
-  tagline: 'Komunitas Pop Culture, Cosplay & Wota Global (100% SFW)',
   navForm: 'Form Pendaftaran',
   navCard: 'KCC ID Saya',
   navGallery: 'Galeri Cosplay',
@@ -109,7 +108,6 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: 'Klik di sini untuk login',
 
   // Footer
-  footerPlatform: 'Platform Pop Culture Internasional 100% SFW.',
   copyright: '© 2026 MyKCC. Hak cipta dilindungi.',
   privacyShieldActive: 'Sistem Identitas KCC ID & Perisai Privasi Aktif',
 };

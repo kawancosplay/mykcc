@@ -2,7 +2,6 @@ import type { LocaleNamespace } from '../../types';
 
 const common: LocaleNamespace<'common'> = {
   appName: "MyKCC",
-  tagline: "קהילה עולמית לתרבות פופ, קוספליי ו-wota (100% SFW)",
   navForm: "טופס רישום",
   navCard: "הכרטיס הדיגיטלי שלי",
   navGallery: "גלריית קוספליי",
@@ -90,7 +89,6 @@ const common: LocaleNamespace<'common'> = {
   preparingProfileDesc: "מחברים את החשבון לזהות הדיגיטלית שלך ב-KCC.",
   pleaseSignIn: "יש להתחבר",
   clickToSignIn: "לחצו כאן להתחברות",
-  footerPlatform: "פלטפורמה בינלאומית לתרבות פופ, 100% SFW.",
   copyright: "© 2026 MyKCC. כל הזכויות שמורות.",
   privacyShieldActive: "מערכת הזהות של KCC ID ומגן הפרטיות פעילים",
 };

@@ -1,6 +1,5 @@
 export default {
   appName: 'MyKCC',
-  tagline: 'Global Pop-Culture, Cosplay & Wota Community (100% SFW)',
   navForm: 'Registration Form',
   navCard: 'My Digital Pass',
   navGallery: 'Cosplay Gallery',
@@ -107,7 +106,6 @@ export default {
   clickToSignIn: 'Click here to sign in',
 
   // Footer
-  footerPlatform: '100% SFW International Pop-Culture Platform.',
   copyright: '© 2026 MyKCC. All rights reserved.',
   privacyShieldActive: 'KCC ID Identity & Privacy Shield System Active',
 } as const;

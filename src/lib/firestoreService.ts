@@ -131,6 +131,7 @@ const CARD_AVATAR_MAX_LENGTH = 400000;
 // Phone numbers (phone, phone2, additionalPhones) are handled by mergeMemberPhones instead
 const OPTIONAL_MEMBER_STRING_FIELDS = [
   'fullName',
+  'country',
   'province',
   'discordUsername',
   'age',
@@ -302,9 +303,9 @@ export function buildMemberPayload(member: Omit<Member, 'id'>): Record<string, u
     cosplayName: memberName,
     email: isFakePlaceholderEmail(email) ? '' : email,
     city: clampString(member.city, L.city) || 'Worldwide',
-    country: clampString(member.country, L.country) || 'Worldwide',
-    primaryRole: clampString(member.primaryRole, L.primaryRole) || 'Cosplay Enthusiast',
-    fandom: clampString(member.fandom, L.fandom) || 'Anime & Pop Culture',
+    // The rules need both keys but allow them empty: a blank stays blank, never a made-up role or fandom
+    primaryRole: clampString(member.primaryRole, L.primaryRole),
+    fandom: clampString(member.fandom, L.fandom),
     source: pickSource(member.source),
     status: pickStatus(member.status),
     createdAt: normalizeCreatedAt(member.createdAt),
@@ -397,7 +398,7 @@ export function buildMemberCard(member: Member | Omit<Member, 'id'>): MemberCard
   const card: MemberCard = {
     userId16: member.userId16,
     cosplayName,
-    primaryRole: String(member.primaryRole || 'Cosplayer').slice(0, MEMBER_FIELD_LIMITS.primaryRole),
+    primaryRole: String(member.primaryRole || '').slice(0, MEMBER_FIELD_LIMITS.primaryRole),
     city: String(member.city || 'Worldwide').slice(0, MEMBER_FIELD_LIMITS.city),
     country: String(member.country || '').slice(0, MEMBER_FIELD_LIMITS.country),
     status: pickStatus(member.status),
@@ -944,7 +945,7 @@ const IMPORT_FILL_FIELDS = [...IMPORT_COMPARE_FIELDS, 'birthday'] as const;
  * phone numbers merged (the existing primary stays primary). Never userId16, createdAt, source, status,
  * authUid.
  */
-function buildImportUpdate(matched: Member, m: Omit<Member, 'id'>): Record<string, unknown> {
+export function buildImportUpdate(matched: Member, m: Omit<Member, 'id'>): Record<string, unknown> {
   const changes: Record<string, unknown> = {};
   for (const field of IMPORT_COMPARE_FIELDS) {
     let incoming = clampString(m[field], MEMBER_FIELD_LIMITS[field]);
@@ -1057,7 +1058,7 @@ export async function bulkImportMembers(
   (newMembers || []).forEach((row, index) => {
     if (!row) return;
     const m: Omit<Member, 'id'> = { ...row };
-    const mName = m.name || m.cosplayName || 'Member';
+    const mName = m.name || m.cosplayName || m.fullName || 'Member';
     const candidate = {
       phone: m.phone,
       phone2: m.phone2,
@@ -1091,6 +1092,8 @@ export async function bulkImportMembers(
       return;
     }
 
+    // Only a NEW member may go by the full name: later rows of this sheet still have to find them by name
+    if (!m.name && m.fullName) m.name = m.cosplayName = m.fullName;
     const sheetRow = (row as { sheetRow?: unknown }).sheetRow;
     creates.push({ member: m, order: typeof sheetRow === 'number' ? sheetRow : index });
   });

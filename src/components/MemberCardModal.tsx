@@ -225,9 +225,11 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
                 {/* Names & Role */}
                 <div className="min-w-0 flex-1">
-                  <div className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 mb-1.5 truncate max-w-full">
-                    {member.primaryRole}
-                  </div>
+                  {member.primaryRole && (
+                    <div className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 mb-1.5 truncate max-w-full">
+                      {member.primaryRole}
+                    </div>
+                  )}
                   <h4 className="text-xl sm:text-2xl font-black text-white truncate tracking-tight">
                     {member.name || member.cosplayName}
                   </h4>

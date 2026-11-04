@@ -529,6 +529,8 @@ function clampTo(value: string, maxLength: number): string | undefined {
  * Rows whose date cannot be parsed get createdAt = now AND are listed in `unparsableRows` (1-based sheet rows;
  * only when a timestamp column is mapped). userId16 is '' (KCC IDs are assigned by bulkImportMembers).
  * Values are clamped to MEMBER_FIELD_LIMITS. Blank rows (no name, phone, email or Discord) are skipped.
+ * A blank cell stays blank, so a re-import never overwrites a stored value (buildMemberPayload adds what the
+ * rules require on a new member).
  */
 export function parseSheetRows(
   rows: string[][],
@@ -566,7 +568,6 @@ export function parseSheetRows(
 
     // Legacy forms never asked for email; placeholder emails are dropped
     const email = rawEmail && !isFakePlaceholderEmail(rawEmail) ? rawEmail.toLowerCase() : '';
-    const resolvedName = rawName || fullName || 'Cosplayer';
 
     let createdAt: Date | null = null;
     if (mapping.timestamp >= 0) {
@@ -577,21 +578,21 @@ export function parseSheetRows(
 
     members.push({
       userId16: '',
-      name: resolvedName.slice(0, L.name),
-      cosplayName: resolvedName.slice(0, L.cosplayName),
-      fullName: (fullName || resolvedName).slice(0, L.fullName),
+      name: rawName.slice(0, L.name),
+      cosplayName: rawName.slice(0, L.cosplayName),
+      fullName: clampTo(fullName, L.fullName),
       email: email.slice(0, L.email),
       phone: clampTo(phone, L.phone),
       phone2: clampTo(phone2, L.phone2),
       discordUsername: clampTo(discordUsername, L.discordUsername),
-      country: (cell(row, mapping.country) || 'Indonesia').slice(0, L.country),
+      country: clampTo(cell(row, mapping.country), L.country),
       province: clampTo(cell(row, mapping.province), L.province),
-      city: (cell(row, mapping.city) || 'Worldwide').slice(0, L.city),
+      city: cell(row, mapping.city).slice(0, L.city),
       ageCategory: clampTo(cell(row, mapping.ageCategory), L.ageCategory),
       age: clampTo(cell(row, mapping.age), L.age),
-      primaryRole: (cell(row, mapping.primaryRole) || 'Cosplayer').slice(0, L.primaryRole),
-      fandom: (cell(row, mapping.fandom) || 'Anime & Games').slice(0, L.fandom),
-      experience: (cell(row, mapping.experience) || '1 - 3 tahun').slice(0, L.experience),
+      primaryRole: cell(row, mapping.primaryRole).slice(0, L.primaryRole),
+      fandom: cell(row, mapping.fandom).slice(0, L.fandom),
+      experience: clampTo(cell(row, mapping.experience), L.experience),
       socialMedia: clampTo(cell(row, mapping.socialMedia), L.socialMedia),
       portfolioUrl: clampTo(cell(row, mapping.portfolioUrl), L.portfolioUrl),
       reason: clampTo(cell(row, mapping.reason), L.reason),

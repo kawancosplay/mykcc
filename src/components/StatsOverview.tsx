@@ -10,14 +10,14 @@ interface StatsOverviewProps {
   members: Member[];
 }
 
-// Buckets for members without a role / city (OTHER_BUCKET) or fandom (DEFAULT_FANDOM_BUCKET). They are only
-// grouping keys (also matching stored values with the same text); their display labels are translated.
+// OTHER_BUCKET counts members without a role, city or fandom. Both are only grouping keys (also matching stored
+// values with the same text); their display labels are translated.
 const OTHER_BUCKET = 'Lainnya';
-const DEFAULT_FANDOM_BUCKET = 'Anime & Games';
+const ANIME_GAMES_FANDOM = 'Anime & Games';
 // A Map, not an object literal, so member-typed values like "constructor" never hit Object.prototype.
 const BUCKET_LABEL_KEYS = new Map<string, TranslationKey>([
   [OTHER_BUCKET, 'stats.otherLabel'],
-  [DEFAULT_FANDOM_BUCKET, 'stats.fandomAnimeGames'],
+  [ANIME_GAMES_FANDOM, 'stats.fandomAnimeGames'],
 ]);
 
 // Distribution bars grow from their start edge when the stats appear (one after another), then follow
@@ -87,7 +87,7 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
       cityCounts[c] = (cityCounts[c] || 0) + 1;
 
       // Fandom
-      const f = m.fandom || DEFAULT_FANDOM_BUCKET;
+      const f = m.fandom || OTHER_BUCKET;
       fandomCounts[f] = (fandomCounts[f] || 0) + 1;
 
       // Source

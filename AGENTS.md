@@ -91,6 +91,8 @@ client: an accountability aid, not tamper-proof auditing.
 - Delete `counters/kccId` in the console (it would reopen the 16-digit path), or roll production back to a
   pre-sprint-3 build after the switch (its registration is denied by the rules and it shows 8-digit IDs wrongly).
 - Swallow Firestore write errors and show "success" anyway.
+- Fill a blank member field (role, fandom, country, experience, …) with a made-up value on any write path. A blank
+  stays blank; only what the rules require non-empty gets a neutral value (`city` 'Worldwide', a name).
 - Publish rules to `(default)` — it has no effect on the live app.
 
 Admin batch writes must stay ≤ 15 operations per batch (`ADMIN_BATCH_SIZE`): each op costs one `exists()`
@@ -220,7 +222,7 @@ Open:
   the same timestamp + 127 import pairs 14 s apart); the owner approved the 74 so far and decides on the rest.
 - **Backlog (code):** a signed-in member who also submits the public form gets two member docs (sign-in profile +
   `kc_` registration; repair does not merge them); a changed Sheets import can overwrite in-app profile edits with
-  sheet values/defaults; fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
+  filled sheet cells (a blank cell no longer changes a stored value or invents one); fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
   else's email) needs a server-side endpoint with the Admin SDK; package.json still lists unused `motion`,
   `country-state-city` and the conflicting `esbuild ^0.25` (remove together with a `bun.lock` update).
 - **Google side (Gemini) — status reported by Gemini 2026-10-11, verified by Claude in the Cloud console:**

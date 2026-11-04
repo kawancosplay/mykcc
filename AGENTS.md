@@ -91,6 +91,8 @@ client: an accountability aid, not tamper-proof auditing.
 - Delete `counters/kccId` in the console (it would reopen the 16-digit path), or roll production back to a
   pre-sprint-3 build after the switch (its registration is denied by the rules and it shows 8-digit IDs wrongly).
 - Swallow Firestore write errors and show "success" anyway.
+- Fill a blank member field (role, fandom, country, experience, …) with a made-up value on any write path. A blank
+  stays blank; only what the rules require non-empty gets a neutral value (`city` 'Worldwide', a name).
 - Publish rules to `(default)` — it has no effect on the live app.
 
 Admin batch writes must stay ≤ 15 operations per batch (`ADMIN_BATCH_SIZE`): each op costs one `exists()`

@@ -202,10 +202,24 @@ export async function ensureMemberForUser(
     return member;
   }
 
-  const isMain = isMainAdminUser(user);
   // Only the main account asks for its main ID; everyone else gets the next running number (counter) or,
   // before the 8-digit switch, a legacy 16-digit ID (createMemberIfAbsent assigns it inside its transaction)
-  const mainId = isMain ? await mainAccountKccId() : undefined;
+  const mainId = isMainAdminUser(user) ? await mainAccountKccId() : undefined;
+
+  const result = await createMemberIfAbsent(user.uid, buildSignInProfile(user, overrides, mainId));
+  cacheMember(user.uid, result.member);
+  return result.member;
+}
+
+/**
+ * A new sign-in profile holds only what the account gives: country, role and fandom stay blank until the
+ * member fills them in. The rules need a non-empty city ('Worldwide' is the neutral value).
+ */
+export function buildSignInProfile(
+  user: User,
+  overrides?: { name?: string; fullName?: string },
+  mainId?: string
+): Omit<Member, 'id' | 'userId16'> & { userId16?: string } {
   const name =
     (overrides?.name || user.displayName?.split(' ')[0] || user.email?.split('@')[0] || 'Cosplayer')
       .trim()
@@ -213,7 +227,7 @@ export async function ensureMemberForUser(
   const fullName =
     (overrides?.fullName || user.displayName || name).trim().slice(0, MEMBER_FIELD_LIMITS.fullName) || name;
 
-  const payload: Omit<Member, 'id' | 'userId16'> & { userId16?: string } = {
+  return {
     userId16: mainId,
     authUid: user.uid,
     name,
@@ -222,17 +236,12 @@ export async function ensureMemberForUser(
     email: (user.email || '').toLowerCase().trim(),
     avatarUrl: user.photoURL || undefined,
     city: 'Worldwide',
-    country: 'Indonesia',
-    primaryRole: isMain ? 'KCC Founder & Core Organizer' : 'Cosplayer',
-    fandom: 'Anime & Games',
+    primaryRole: isMainAdminUser(user) ? 'KCC Founder & Core Organizer' : '',
+    fandom: '',
     source: 'web_form',
     status: 'verified',
     createdAt: new Date().toISOString(),
   };
-
-  const result = await createMemberIfAbsent(user.uid, payload);
-  cacheMember(user.uid, result.member);
-  return result.member;
 }
 
 async function ensureMemberSafely(

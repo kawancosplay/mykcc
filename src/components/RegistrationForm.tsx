@@ -105,7 +105,6 @@ const OTHER_FANDOM_OPTION = 'Lainnya / Multigenre';
 const AGE_CATEGORIES: LabeledOption[] = [
   { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
   { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
-  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
 ];
 
 // Minimum digits of the WhatsApp number (extra numbers are added later in the profile)
@@ -174,7 +173,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
     email: '', // Strictly optional
     phone: '', // Mandatory WhatsApp mobile number (extra numbers are added later in the profile)
     discordUsername: '', // Discord Username column
-    ageCategory: 'Legal Age / Dewasa (18+ tahun)',
+    ageCategory: '', // Must be chosen: nothing preselected, so an untouched form never saves a minor as Legal Age
     age: '', // Optional exact age or birthdate
     country: 'Indonesia',
     province: 'DKI Jakarta',
@@ -332,7 +331,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         email: '',
         phone: '',
         discordUsername: '',
-        ageCategory: 'Legal Age / Dewasa (18+ tahun)',
+        ageCategory: '',
         age: '',
         country: 'Indonesia',
         province: 'DKI Jakarta',
@@ -662,6 +661,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                     email: '',
                     phone: '',
                     discordUsername: '',
+                    ageCategory: '',
                     age: '',
                     customRole: '',
                     socialMedia: '',
@@ -919,6 +919,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                 <input
                   type="radio"
+                  required
                   name="ageCategory"
                   value={opt.val}
                   checked={formData.ageCategory === opt.val}

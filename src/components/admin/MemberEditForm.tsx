@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, X } from 'lucide-react';
 import type { Member } from '../../types';
 import { adminUpdateMember } from '../../lib/firestoreService';
-import { MEMBER_FIELD_LIMITS } from '../../lib/memberRules';
+import { MEMBER_FIELD_LIMITS, isPreferNotToSayAge } from '../../lib/memberRules';
 import { MAX_ADDITIONAL_PHONES } from '../../lib/idGenerator';
 import { describeFirestoreError } from '../../lib/firebase';
 import { haptic } from '../../lib/haptic';
@@ -17,11 +17,10 @@ import type { TranslationKey } from '../../i18n';
 import { MEMBER_STATUSES, NoticeBanner, STATUS_LABEL_KEYS, Spinner } from './adminUi';
 import type { AdminNotice } from './adminUi';
 
-// Stored ageCategory values (same as the member-list filter); only the labels are translated
+// Stored ageCategory values to choose from; only the labels are translated
 const AGE_CATEGORY_OPTIONS: ReadonlyArray<{ value: string; label: TranslationKey }> = [
   { value: 'Legal Age / Dewasa (18+)', label: 'admin.filterLegalAge' },
   { value: 'Minor / Di Bawah Umur (<18)', label: 'admin.filterMinor' },
-  { value: 'Memilih untuk tidak menyebutkan', label: 'admin.filterPreferNotToSay' },
 ];
 
 // Plain string fields of the form (additionalPhones is a list, handled separately)
@@ -257,7 +256,8 @@ export const MemberEditForm: React.FC<MemberEditFormProps> = ({
   };
 
   const knownAgeValues = AGE_CATEGORY_OPTIONS.map((o) => o.value);
-  const extraAgeValue = form.ageCategory && !knownAgeValues.includes(form.ageCategory) ? form.ageCategory : null;
+  // From the stored value, so a misclick on a status no longer offered can be undone before saving
+  const extraAgeValue = initial.ageCategory && !knownAgeValues.includes(initial.ageCategory) ? initial.ageCategory : null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -351,7 +351,7 @@ export const MemberEditForm: React.FC<MemberEditFormProps> = ({
             ))}
             {extraAgeValue && (
               <option value={extraAgeValue} className="bg-slate-900 text-white">
-                {extraAgeValue}
+                {isPreferNotToSayAge(extraAgeValue) ? t('admin.filterPreferNotToSay') : extraAgeValue}
               </option>
             )}
           </select>

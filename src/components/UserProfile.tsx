@@ -23,6 +23,7 @@ import { Member } from '../types';
 import { MAX_ADDITIONAL_PHONES, formatKccId, isLegacyKccId16, normalizePhoneDigits } from '../lib/idGenerator';
 import { updateMemberProfileData } from '../lib/authService';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
+import { changedAgeCategory, unlistedAgeCategory } from '../lib/memberRules';
 import { describeFirestoreError } from '../lib/firebase';
 import { AVATAR_COMPRESS, compressImage } from '../lib/imageUtils';
 import { storedProfileFields } from '../lib/memberRules';
@@ -116,7 +117,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     phone: member.phone || '',
     extraPhones: extraPhonesOf(member),
     discordUsername: member.discordUsername || '',
-    ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
+    ageCategory: member.ageCategory || '',
     age: member.age || '',
     ...storedProfileFields(member),
     socialMedia: member.socialMedia || '',
@@ -162,7 +163,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       phone: member.phone || '',
       extraPhones: extraPhonesOf(member),
       discordUsername: member.discordUsername || '',
-      ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
+      ageCategory: member.ageCategory || '',
       age: member.age || '',
       ...storedProfileFields(member),
       socialMedia: member.socialMedia || '',
@@ -322,6 +323,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     ? t(knownRole.labelKey)
     : formData.primaryRole.replace(CUSTOM_ROLE_PATTERN, '$1');
 
+  const unlistedAge = unlistedAgeCategory(member.ageCategory, AGE_CATEGORY_OPTIONS.map((opt) => opt.val));
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -360,6 +363,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       // Always sent, so removing every extra number saves phone2 '' and additionalPhones []
       const dataToSave: Partial<Member> = {
         ...fields,
+        ageCategory: changedAgeCategory(member.ageCategory, formData.ageCategory),
         name: formData.cosplayName,
         cosplayName: formData.cosplayName,
         phone2: extraPhones[0] ?? '',
@@ -542,6 +546,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     {t(opt.labelKey)}
                   </option>
                 ))}
+                {/* shortcut: the stored text is not translated and can sit beside its listed twin, map it with ageCategoryKey once that fix is on main */}
+                {unlistedAge !== null && <option value={unlistedAge}>{unlistedAge || '—'}</option>}
               </select>
             </div>
 

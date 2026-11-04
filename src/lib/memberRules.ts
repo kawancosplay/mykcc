@@ -155,3 +155,20 @@ export function memberDisplayName(data: Partial<Member> | null | undefined): str
   const value = data?.name || data?.cosplayName || data?.fullName;
   return typeof value === 'string' && value.trim() ? value.trim() : 'Member';
 }
+
+/**
+ * The extra option the profile's age status needs, because a select whose value matches no option shows its first
+ * one (Legal Age): a blank status ('') or another spelling (admin form, Sheets). null when the options list it.
+ */
+export function unlistedAgeCategory(stored: string | undefined, listed: readonly string[]): string | null {
+  const value = stored || '';
+  return listed.includes(value) ? null : value;
+}
+
+/**
+ * Profile save: the age status is written only once the member changed it, so a blank stays blank and a stored
+ * spelling is never rewritten. undefined = not written (sanitizeMemberProfileUpdate skips it).
+ */
+export function changedAgeCategory(stored: string | undefined, chosen: string): string | undefined {
+  return chosen === (stored || '') ? undefined : chosen;
+}

@@ -25,6 +25,7 @@ import { updateMemberProfileData } from '../lib/authService';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
 import { describeFirestoreError } from '../lib/firebase';
 import { AVATAR_COMPRESS, compressImage } from '../lib/imageUtils';
+import { storedProfileFields } from '../lib/memberRules';
 import {
   getAllCountriesList,
   getStatesOfCountryByName,
@@ -117,12 +118,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     discordUsername: member.discordUsername || '',
     ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
     age: member.age || '',
-    country: member.country || 'Indonesia',
-    province: member.province || 'DKI Jakarta',
-    city: member.city || 'Jakarta Selatan',
-    primaryRole: member.primaryRole || 'Cosplayer / Crossplayer',
-    fandom: member.fandom || 'Anime & Games',
-    experience: member.experience || '1 - 3 tahun',
+    ...storedProfileFields(member),
     socialMedia: member.socialMedia || '',
     portfolioUrl: member.portfolioUrl || '',
     avatarUrl: member.avatarUrl || '',
@@ -168,12 +164,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       discordUsername: member.discordUsername || '',
       ageCategory: member.ageCategory || 'Legal Age / Dewasa (18+ tahun)',
       age: member.age || '',
-      country: member.country || 'Indonesia',
-      province: member.province || 'DKI Jakarta',
-      city: member.city || 'Jakarta Selatan',
-      primaryRole: member.primaryRole || 'Cosplayer / Crossplayer',
-      fandom: member.fandom || 'Anime & Games',
-      experience: member.experience || '1 - 3 tahun',
+      ...storedProfileFields(member),
       socialMedia: member.socialMedia || '',
       portfolioUrl: member.portfolioUrl || '',
       avatarUrl: member.avatarUrl || '',
@@ -231,7 +222,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
   // Complete list of all 250 countries and dynamic state/cities (loaded on demand per country)
   const geoVersion = useWorldLocations(formData.country);
-  const countryReady = isCountryLoaded(formData.country);
+  // A blank country has no location file to wait for
+  const countryReady = !formData.country || isCountryLoaded(formData.country);
   const allCountries = useMemo(() => getAllCountriesList(), [geoVersion]);
   // Country names in the selected language, sorted for that language (Indonesia stays first); the saved
   // value stays the English name
@@ -282,9 +274,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [member.id, countryReady]);
 
-  // After a country change made before its locations loaded, pick the first province / city once they arrive
+  // After a country change made before its locations loaded, pick the first province / city once they arrive.
+  // Only after that change: a province / city that is blank on the member's record stays blank.
   useEffect(() => {
-    if (isCustomProvince || !countryReady) return;
+    if (isCustomProvince || !countryReady || formData.country === (member.country || '')) return;
     if (!formData.province && availableProvinces.length > 0) {
       const firstProv = availableProvinces[0].name;
       const cities = getCitiesOfStateByName(formData.country, firstProv);
@@ -292,7 +285,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     } else if (!isCustomCity && !formData.city && availableCities.length > 0) {
       setFormData((prev) => ({ ...prev, city: availableCities[0] }));
     }
-  }, [countryReady, availableProvinces, availableCities, isCustomProvince, isCustomCity, formData.country, formData.province, formData.city]);
+  }, [countryReady, availableProvinces, availableCities, isCustomProvince, isCustomCity, formData.country, formData.province, formData.city, member.country]);
 
   const handleCopyUserId = () => {
     if (!member.userId16) return;
@@ -430,9 +423,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           {/* Member Identity & KCC ID */}
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
-              <span className="glass-chip max-w-full whitespace-normal leading-tight font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
-                {roleBadge}
-              </span>
+              {roleBadge && (
+                <span className="glass-chip max-w-full whitespace-normal leading-tight font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
+                  {roleBadge}
+                </span>
+              )}
               <span className="glass-chip bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>{t('profile.verifiedActive')}</span>
@@ -660,6 +655,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 onChange={(e) => setFormData({ ...formData, primaryRole: e.target.value })}
                 className="glass-input w-full text-base sm:text-sm"
               >
+                {!formData.primaryRole && <option value="">—</option>}
                 {ROLE_OPTIONS.map((role) => (
                   <option key={role.val} value={role.val}>
                     {t(role.labelKey)}
@@ -708,6 +704,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 }}
                 className="glass-input w-full text-base sm:text-sm"
               >
+                {!formData.country && <option value="">—</option>}
                 {countryOptionElements}
               </select>
             </div>
@@ -740,6 +737,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   }}
                   className="glass-input w-full text-base sm:text-sm"
                 >
+                  {!isCustomProvince && !formData.province && <option value="">—</option>}
                   {availableProvinces.map((p) => (
                     <option key={p.isoCode || p.name} value={p.name}>
                       {p.name}
@@ -781,6 +779,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     }}
                     className="glass-input w-full text-base sm:text-sm"
                   >
+                    {/* Blank, or the 'Worldwide' a blank city was just saved as: a select shows its first option otherwise */}
+                    {!isCustomCity && !availableCities.includes(formData.city) && (
+                      <option value={formData.city}>{formData.city || '—'}</option>
+                    )}
                     {availableCities.map((city) => (
                       <option key={city} value={city}>
                         {city}

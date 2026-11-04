@@ -61,6 +61,21 @@ export const MEMBER_OWNER_EDITABLE_FIELDS: readonly string[] = [
  */
 export const MEMBER_ADMIN_EDITABLE_FIELDS: readonly string[] = [...MEMBER_OWNER_EDITABLE_FIELDS, 'email', 'status'];
 
+/**
+ * Profile form values of the location, role and fandom fields, as stored: the form writes them back on every save,
+ * so a default here would land on the member's record. firestore.rules accepts them blank, except city
+ * (sanitizeMemberProfileUpdate saves a blank city as 'Worldwide').
+ */
+export function storedProfileFields(member: Partial<Member>) {
+  return {
+    country: member.country || '',
+    province: member.province || '',
+    city: member.city || '',
+    primaryRole: member.primaryRole || '',
+    fandom: member.fandom || '',
+  };
+}
+
 export const MEMBER_SOURCES: readonly Member['source'][] = ['web_form', 'google_form_sync', 'spreadsheet_import'];
 export const MEMBER_STATUSES: readonly Member['status'][] = ['pending', 'verified', 'active'];
 export const CREATED_AT_MAX_LENGTH = 40;

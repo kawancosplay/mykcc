@@ -220,7 +220,7 @@ Open:
   the same timestamp + 127 import pairs 14 s apart); the owner approved the 74 so far and decides on the rest.
 - **Backlog (code):** a signed-in member who also submits the public form gets two member docs (sign-in profile +
   `kc_` registration; repair does not merge them); a changed Sheets import can overwrite in-app profile edits with
-  sheet values/defaults; fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
+  filled sheet cells (a blank cell no longer changes a stored value or invents one); fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
   else's email) needs a server-side endpoint with the Admin SDK; package.json still lists unused `motion`,
   `country-state-city` and the conflicting `esbuild ^0.25` (remove together with a `bun.lock` update).
 - **Google side (Gemini) — status reported by Gemini 2026-10-11, verified by Claude in the Cloud console:**

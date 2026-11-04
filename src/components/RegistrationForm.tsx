@@ -919,8 +919,8 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                 <input
                   type="radio"
-                  required
                   name="ageCategory"
+                  required
                   value={opt.val}
                   checked={formData.ageCategory === opt.val}
                   onChange={(e) => {

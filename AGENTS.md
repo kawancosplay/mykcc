@@ -169,6 +169,13 @@ all IDs unique, `memberCards` built, public lookup verified).
 
 Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the OAuth Branding page).
 
+Done (2026-11-04, live, PR #7): the member's profile form no longer shows or saves a blank or differently spelled
+age status as Legal Age; it writes the status only when the member changes it (`changedAgeCategory`,
+`unlistedAgeCategory` in `memberRules.ts`). Not tried with a real signed-in account. A stored status over 50
+characters now gets a save error until the member picks a listed one (it used to be cut short). Still open: other
+spellings show untranslated beside their listed option; use `ageCategoryKey` (PR #8) once it is on `main` (the
+`shortcut:` comment in `UserProfile.tsx`).
+
 **Sprint 2 — branch `claude/sprint-2`, PR #1 into `main` (NOT merged / NOT live yet, 2026-10-13):**
 - A `785f6f5`: admin Sheets scope = `spreadsheets.readonly` only, requested on demand for the signed-in admin
   (no Drive scope, no Drive file list — paste the sheet URL/ID, last ID remembered); member Google sign-in asks

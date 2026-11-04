@@ -152,6 +152,8 @@ Code: `type KccId = string`; use `isValidKccId` (8 or 16) for "is this a stored 
 - **Motion:** import from `framer-motion` only (never `motion/react`), use the presets/hooks in `src/lib/motion.ts`
   (`usePresenceMotion`, `useScrollLock`, `useSheetDrag`, `LAYOUT_IDS`) and `src/lib/haptic.ts`. Everything must
   fall back to plain fades with reduced motion. Variants end at `transform: none` so fixed children are not trapped.
+- **Registration form:** nothing is preselected (`EMPTY_REGISTRATION_FORM`), and picking a country or province never
+  picks the next list for the member. Every question with a star uses native `required`; experience stays optional.
 
 ## 7. Build & verify
 

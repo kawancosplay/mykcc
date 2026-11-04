@@ -76,6 +76,35 @@ export function storedProfileFields(member: Partial<Member>) {
   };
 }
 
+/**
+ * Starting values of the public registration form. Nothing is preselected: an answer the visitor skipped must not
+ * land on their record (a minor would pass as an adult). The form requires what it marks with a star.
+ */
+export const EMPTY_REGISTRATION_FORM = {
+  name: '', // Primary required identity
+  fullName: '', // Strictly optional for privacy
+  email: '', // Strictly optional
+  phone: '', // Mandatory WhatsApp mobile number (extra numbers are added later in the profile)
+  discordUsername: '', // Discord Username column
+  ageCategory: '',
+  age: '', // Optional exact age or birthdate
+  country: '',
+  province: '',
+  city: '',
+  customCity: '',
+  customProvince: '',
+  customCountry: '',
+  primaryRole: '',
+  customRole: '', // Specialty / custom role when 'Lainnya / Others' is selected
+  fandom: '',
+  experience: '', // Optional
+  socialMedia: '',
+  portfolioUrl: '',
+  avatarUrl: '',
+  reason: '',
+  acceptedCodeOfConduct: false,
+};
+
 export const MEMBER_SOURCES: readonly Member['source'][] = ['web_form', 'google_form_sync', 'spreadsheet_import'];
 export const MEMBER_STATUSES: readonly Member['status'][] = ['pending', 'verified', 'active'];
 export const CREATED_AT_MAX_LENGTH = 40;

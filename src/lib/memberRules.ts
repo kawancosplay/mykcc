@@ -96,6 +96,14 @@ export function isMemberStatus(value: unknown): value is Member['status'] {
   return typeof value === 'string' && (MEMBER_STATUSES as readonly string[]).includes(value);
 }
 
+/**
+ * Compare age statuses by this key, not the full text: the website stores 'Minor / Di Bawah Umur (<18 tahun)',
+ * the admin form 'Minor / Di Bawah Umur (<18)', and Sheets imports keep the cell text as typed.
+ */
+export function ageCategoryKey(value: unknown): string {
+  return String(value ?? '').split(/[/(]/)[0].trim().toLowerCase();
+}
+
 /** Legacy placeholder emails (memberxxx@kawancosplay.id, member12@…) are treated as no email. */
 export function isFakePlaceholderEmail(email?: string): boolean {
   if (!email || typeof email !== 'string') return false;

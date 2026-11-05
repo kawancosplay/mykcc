@@ -175,6 +175,10 @@ Done (2026-11-04): 'Prefer not to say' is no longer offered for the age status (
 form starts blank and requires a choice. Members who already have the old value keep it (label via
 `isPreferNotToSayAge`); the admin filter keeps it. Still open: sign-in profiles are never asked; the rules do not enforce it.
 
+Done (2026-11-05): cancelling the admin demo sandbox's exit button now stays in the sandbox; only a confirmed clear leaves it
+(Cancel used to drop the banner but keep the preset data, so the next Submit was a live save). Checked in a local preview with
+the tester forced visible and `window.confirm` stubbed; not tried with a real admin account.
+
 Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the OAuth Branding page).
 
 Done (2026-11-04, live, PR #7): the member's profile form no longer shows or saves a blank or differently spelled

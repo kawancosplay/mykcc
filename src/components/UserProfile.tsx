@@ -37,6 +37,7 @@ import {
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
+import SocialLinksInput from './SocialLinksInput';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -833,13 +834,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 {t('registration.socialMediaTitle')}
               </label>
-              <input
-                type="text"
-                placeholder={t('profile.socialMediaPlaceholder')}
-                maxLength={MEMBER_FIELD_LIMITS.socialMedia}
+              <SocialLinksInput
                 value={formData.socialMedia}
-                onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
-                className="glass-input w-full text-base sm:text-sm"
+                onChange={(socialMedia) => setFormData({ ...formData, socialMedia })}
               />
             </div>
 

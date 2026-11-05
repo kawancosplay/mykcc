@@ -25,7 +25,6 @@ const profile: LocaleNamespace<'profile'> = {
   discordPlaceholder: "ex. : alyachan_cos ou user#0001",
   roleLabel: "Rôle principal dans la communauté",
   customRolePlaceholder: "Saisissez votre autre rôle / spécialité...",
-  socialMediaPlaceholder: "@pseudo (Instagram / X / TikTok)",
   reasonLabel: "Raison de l’adhésion & notes de profil",
   roleIdolFan: "Fan d’idols / Wota",
   roleOtaku: "Otaku anime, manga & jeux vidéo",

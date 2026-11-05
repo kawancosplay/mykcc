@@ -25,7 +25,6 @@ const profile: LocaleNamespace<'profile'> = {
   discordPlaceholder: "எ.கா. alyachan_cos அல்லது user#0001",
   roleLabel: "முதன்மைச் சமூகப் பங்கு",
   customRolePlaceholder: "உங்கள் பிற பங்கு / சிறப்புத் திறனை உள்ளிடவும்...",
-  socialMediaPlaceholder: "@பயனர்பெயர் (Instagram / X / TikTok)",
   reasonLabel: "சேர்வதற்கான காரணம் & சுயவிவரக் குறிப்புகள்",
   roleIdolFan: "ஐடல் ரசிகர் / Wota",
   roleOtaku: "அனிமே, மாங்கா & கேமிங் ஒட்டாகு",

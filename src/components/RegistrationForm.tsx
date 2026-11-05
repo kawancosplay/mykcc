@@ -33,6 +33,7 @@ import {
   useWorldLocations,
   CountryOption,
 } from '../lib/worldLocations';
+import { EMPTY_REGISTRATION_FORM } from '../lib/memberRules';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
 import type { LanguageCode, TranslationKey } from '../i18n';
@@ -167,30 +168,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
   // DemoFormTester and describeFirestoreError still take an "Indonesian?" flag
   const isId = lang === 'id';
 
-  const [formData, setFormData] = useState({
-    name: '', // Primary required identity
-    fullName: '', // Strictly optional for privacy
-    email: '', // Strictly optional
-    phone: '', // Mandatory WhatsApp mobile number (extra numbers are added later in the profile)
-    discordUsername: '', // Discord Username column
-    ageCategory: '', // Must be chosen: nothing preselected, so an untouched form never saves a minor as Legal Age
-    age: '', // Optional exact age or birthdate
-    country: 'Indonesia',
-    province: 'DKI Jakarta',
-    city: 'Kota Administrasi Jakarta Selatan',
-    customCity: '',
-    customProvince: '',
-    customCountry: '',
-    primaryRole: 'Cosplayer / Crossplayer',
-    customRole: '', // Specialty / custom role when 'Lainnya / Others' is selected
-    fandom: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
-    experience: 'Pemula (< 1 tahun)',
-    socialMedia: '',
-    portfolioUrl: '',
-    avatarUrl: '',
-    reason: '',
-    acceptedCodeOfConduct: false,
-  });
+  const [formData, setFormData] = useState(EMPTY_REGISTRATION_FORM);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedMember, setSubmittedMember] = useState<Member | null>(null);
@@ -278,31 +256,31 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       )),
     [countryOptions]
   );
+  // Nothing to list before a country / province is chosen (the getters would answer with placeholder entries)
   const availableProvinces = useMemo(
-    () => getStatesOfCountryByName(formData.country),
+    () => (formData.country ? getStatesOfCountryByName(formData.country) : []),
     [formData.country, geoVersion]
   );
   // A custom province has no city list: the city is typed as well
   const availableCities = useMemo(
     () =>
-      formData.province === CUSTOM_PROVINCE_OPTION ? [] : getCitiesOfStateByName(formData.country, formData.province),
+      !formData.province || formData.province === CUSTOM_PROVINCE_OPTION
+        ? []
+        : getCitiesOfStateByName(formData.country, formData.province),
     [formData.country, formData.province, geoVersion]
   );
 
-  // Once a country's locations arrive (or after a country change made before they loaded), keep the
-  // province / city selections pointing at real list entries
+  // A province / city that is not in the lists (a demo preset) is cleared, never swapped for the first entry
   useEffect(() => {
     if (formData.province === CUSTOM_PROVINCE_OPTION) return;
-    if (availableProvinces.length > 0 && !availableProvinces.some((p) => p.name === formData.province)) {
-      const firstProv = availableProvinces[0].name;
-      const cities = getCitiesOfStateByName(formData.country, firstProv);
-      setFormData((prev) => ({ ...prev, province: firstProv, city: cities[0] || '' }));
+    if (formData.province && availableProvinces.length > 0 && !availableProvinces.some((p) => p.name === formData.province)) {
+      setFormData((prev) => ({ ...prev, province: '', city: '' }));
       return;
     }
-    if (!isCustomCityValue(formData.city) && availableCities.length > 0 && !availableCities.includes(formData.city)) {
-      setFormData((prev) => ({ ...prev, city: availableCities[0] }));
+    if (formData.city && !isCustomCityValue(formData.city) && availableCities.length > 0 && !availableCities.includes(formData.city)) {
+      setFormData((prev) => ({ ...prev, city: '' }));
     }
-  }, [availableProvinces, availableCities, formData.country, formData.province, formData.city]);
+  }, [availableProvinces, availableCities, formData.province, formData.city]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -325,30 +303,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
   const handleClearForm = () => {
     if (window.confirm(t('registration.clearFormConfirm'))) {
-      setFormData({
-        name: '',
-        fullName: '',
-        email: '',
-        phone: '',
-        discordUsername: '',
-        ageCategory: '',
-        age: '',
-        country: 'Indonesia',
-        province: 'DKI Jakarta',
-        city: 'Kota Administrasi Jakarta Selatan',
-        customCity: '',
-        customProvince: '',
-        customCountry: '',
-        primaryRole: 'Cosplayer / Crossplayer',
-        customRole: '',
-        fandom: 'HoYoverse (Genshin Impact, Honkai: Star Rail, ZZZ)',
-        experience: 'Pemula (< 1 tahun)',
-        socialMedia: '',
-        portfolioUrl: '',
-        avatarUrl: '',
-        reason: '',
-        acceptedCodeOfConduct: false,
-      });
+      setFormData(EMPTY_REGISTRATION_FORM);
       setIsDemoMode(false);
       setIsDemoSubmission(false);
       setErrorMsg(null);
@@ -654,22 +609,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                   setIsDuplicateShared(false);
                   setErrorMsg(null);
                   setErrorField(null);
-                  setFormData((prev) => ({
-                    ...prev,
-                    name: '',
-                    fullName: '',
-                    email: '',
-                    phone: '',
-                    discordUsername: '',
-                    ageCategory: '',
-                    age: '',
-                    customRole: '',
-                    socialMedia: '',
-                    portfolioUrl: '',
-                    avatarUrl: '',
-                    reason: '',
-                    acceptedCodeOfConduct: false,
-                  }));
+                  setFormData(EMPTY_REGISTRATION_FORM);
                 }}
                 className="glass-button pressable px-5"
               >
@@ -976,23 +916,21 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                 {t('registration.countryLabel')}
               </label>
               <select
+                required
                 value={formData.country}
-                onChange={(e) => {
-                  const newCountry = e.target.value;
-                  const provs = getStatesOfCountryByName(newCountry);
-                  const firstProv = provs[0]?.name || '';
-                  const cities = getCitiesOfStateByName(newCountry, firstProv);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    country: newCountry,
-                    province: firstProv,
-                    city: cities[0] || '',
+                    country: e.target.value,
+                    province: '',
+                    city: '',
                     customCity: '',
                     customProvince: '',
-                  });
-                }}
+                  })
+                }
                 className="glass-input w-full text-base sm:text-sm"
               >
+                {!formData.country && <option value="">—</option>}
                 {countryOptionElements}
               </select>
             </div>
@@ -1002,19 +940,13 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                 {t('registration.provinceLabel')}
               </label>
               <select
+                required={availableProvinces.length > 0}
+                disabled={!formData.country}
                 value={formData.province}
-                onChange={(e) => {
-                  const newProv = e.target.value;
-                  const cities = getCitiesOfStateByName(formData.country, newProv);
-                  setFormData({
-                    ...formData,
-                    province: newProv,
-                    city: cities[0] || '',
-                    customCity: '',
-                  });
-                }}
+                onChange={(e) => setFormData({ ...formData, province: e.target.value, city: '', customCity: '' })}
                 className="glass-input w-full text-base sm:text-sm"
               >
+                {!formData.province && <option value="">—</option>}
                 {availableProvinces.map((p) => (
                   <option key={p.isoCode || p.name} value={p.name}>
                     {p.name}
@@ -1029,10 +961,13 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                 {t('registration.cityLabel')}
               </label>
               <select
+                required={availableProvinces.length > 0}
+                disabled={!formData.province}
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 className="glass-input w-full text-base sm:text-sm"
               >
+                {!formData.city && <option value="">—</option>}
                 {availableCities.map((city) => (
                   <option key={city} value={city}>
                     {city}
@@ -1083,6 +1018,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                   <input
                     type="radio"
                     name="primaryRole"
+                    required
                     value={role.val}
                     checked={formData.primaryRole === role.val}
                     onChange={(e) => {
@@ -1123,10 +1059,12 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </p>
 
           <select
+            required
             value={formData.fandom}
             onChange={(e) => setFormData({ ...formData, fandom: e.target.value })}
             className="glass-input w-full text-base sm:text-sm"
           >
+            {!formData.fandom && <option value="">—</option>}
             {FANDOMS.map((f) => (
               <option key={f.val} value={f.val}>
                 {t(f.labelKey)}

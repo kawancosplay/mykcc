@@ -23,7 +23,7 @@ import { Member } from '../types';
 import { MAX_ADDITIONAL_PHONES, formatKccId, isLegacyKccId16, normalizePhoneDigits } from '../lib/idGenerator';
 import { updateMemberProfileData } from '../lib/authService';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
-import { changedAgeCategory, unlistedAgeCategory } from '../lib/memberRules';
+import { changedAgeCategory, isPreferNotToSayAge, unlistedAgeCategory } from '../lib/memberRules';
 import { describeFirestoreError } from '../lib/firebase';
 import { AVATAR_COMPRESS, compressImage } from '../lib/imageUtils';
 import { storedProfileFields } from '../lib/memberRules';
@@ -78,7 +78,6 @@ const ROLE_OPTIONS: LabeledOption[] = [
 const AGE_CATEGORY_OPTIONS: LabeledOption[] = [
   { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
   { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
-  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
 ];
 
 // Extra WhatsApp numbers: phone2 + additionalPhones, edited as one list
@@ -547,7 +546,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                   </option>
                 ))}
                 {/* shortcut: the stored text is not translated and can sit beside its listed twin, map it with ageCategoryKey once that fix is on main */}
-                {unlistedAge !== null && <option value={unlistedAge}>{unlistedAge || '—'}</option>}
+                {unlistedAge !== null && (
+                  <option value={unlistedAge}>
+                    {isPreferNotToSayAge(unlistedAge) ? t('registration.preferNotToSay') : unlistedAge || '—'}
+                  </option>
+                )}
               </select>
             </div>
 

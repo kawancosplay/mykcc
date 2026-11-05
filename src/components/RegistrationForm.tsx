@@ -106,7 +106,6 @@ const OTHER_FANDOM_OPTION = 'Lainnya / Multigenre';
 const AGE_CATEGORIES: LabeledOption[] = [
   { val: 'Legal Age / Dewasa (18+ tahun)', labelKey: 'registration.legalAge' },
   { val: 'Minor / Di Bawah Umur (<18 tahun)', labelKey: 'registration.minorAge' },
-  { val: 'Memilih untuk tidak menyebutkan', labelKey: 'registration.preferNotToSay' },
 ];
 
 // Minimum digits of the WhatsApp number (extra numbers are added later in the profile)

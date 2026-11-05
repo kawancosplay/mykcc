@@ -133,6 +133,11 @@ export function ageCategoryKey(value: unknown): string {
   return String(value ?? '').split(/[/(]/)[0].trim().toLowerCase();
 }
 
+/** 'Prefer not to say' is no longer offered, but members who already have it keep it: forms show it with its label. */
+export function isPreferNotToSayAge(value: unknown): boolean {
+  return ageCategoryKey(value) === 'memilih untuk tidak menyebutkan';
+}
+
 /** Legacy placeholder emails (memberxxx@kawancosplay.id, member12@…) are treated as no email. */
 export function isFakePlaceholderEmail(email?: string): boolean {
   if (!email || typeof email !== 'string') return false;

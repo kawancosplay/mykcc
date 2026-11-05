@@ -753,6 +753,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {/* Matched through ageCategoryKey, so every stored spelling counts; only the labels are translated */}
                         <option value="Legal Age / Dewasa (18+)">{t('admin.filterLegalAge')}</option>
                         <option value="Minor / Di Bawah Umur (<18)">{t('admin.filterMinor')}</option>
+                        {/* No longer offered to anyone; stays here so admins can find the members who already have it */}
                         <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
                       </select>
 

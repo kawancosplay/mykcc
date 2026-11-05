@@ -171,6 +171,10 @@ secure rules + `memberCards` + chronological KCC IDs + admin auth (commit `42ae5
 phone2/additionalPhones, Sheets OAuth and upload fixes (`6694589`); rules published; repair run (762 members,
 all IDs unique, `memberCards` built, public lookup verified).
 
+Done (2026-11-04): 'Prefer not to say' is no longer offered for the age status (public form, profile, admin edit). The public
+form starts blank and requires a choice. Members who already have the old value keep it (label via
+`isPreferNotToSayAge`); the admin filter keeps it. Still open: sign-in profiles are never asked; the rules do not enforce it.
+
 Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the OAuth Branding page).
 
 Done (2026-11-04, live, PR #7): the member's profile form no longer shows or saves a blank or differently spelled

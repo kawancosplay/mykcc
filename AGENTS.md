@@ -24,6 +24,9 @@ dashboard with Google Sheets sync.
   "Database '(default)' not found" and the whole site breaks (this happened once).
 - `server.ts` (Express) only runs locally. On Vercel, `/api/health` and `/api/sync-form` are the serverless
   functions in `api/`. `vercel.json` rewrites every non-`/api` path to `index.html`.
+- Hosting is Vercel only; Cloudflare Workers is no longer used (owner, 2026-11-13). The leftover Worker still
+  reports a `Workers Builds: mykcc` check that fails in 0 s on every PR branch and passes on `main`: ignore it,
+  judge a PR by the Vercel checks. Removing the Worker in the Cloudflare dashboard is the owner's call.
 
 ## 2. Division of labour between agents
 
@@ -175,14 +178,21 @@ Done (2026-11-04): 'Prefer not to say' is no longer offered for the age status (
 form starts blank and requires a choice. Members who already have the old value keep it (label via
 `isPreferNotToSayAge`); the admin filter keeps it. Still open: sign-in profiles are never asked; the rules do not enforce it.
 
+Done (2026-11-05): cancelling the admin demo sandbox's exit button now stays in the sandbox; only a confirmed clear leaves it
+(Cancel used to drop the banner but keep the preset data, so the next Submit was a live save). Checked in a local preview with
+the tester forced visible and `window.confirm` stubbed; not tried with a real admin account.
+
 Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the OAuth Branding page).
 
 Done (2026-11-04, live, PR #7): the member's profile form no longer shows or saves a blank or differently spelled
 age status as Legal Age; it writes the status only when the member changes it (`changedAgeCategory`,
 `unlistedAgeCategory` in `memberRules.ts`). Not tried with a real signed-in account. A stored status over 50
-characters now gets a save error until the member picks a listed one (it used to be cut short). Still open: other
-spellings show untranslated beside their listed option; map them with `ageCategoryKey` (on `main` since PR #8), see
-the `shortcut:` comment in `UserProfile.tsx`.
+characters now gets a save error until the member picks a listed one (it used to be cut short).
+
+Done (2026-11-05): in that form another spelling of a listed status shows as that option with its translated label
+and stays stored as it is until the member changes it (`listedAgeCategory`, matched through `ageCategoryKey`). Legal
+Age maps only from its own spellings: 'Legal Age (17 tahun)' shares the key but shows as stored, like any text that
+is no listed status. Not tried with a real signed-in account.
 
 Done (2026-11-05): a Sheets import or auto-sync no longer replaces a stored age status; the sheet only fills a blank one
 (`buildImportUpdate`). It cannot tell a status changed in the app from an old cell, which can be the retired value. So a
@@ -229,6 +239,8 @@ cell text as typed, the retired value included. Checked on the emulator (real im
   largest landing download), phone checks, admin smoke test with the main account after the rules are published.
 - Admin run order after deploy: merge duplicates → fix registration dates → switch to 8-digit IDs. Turn the
   Sheets auto-sync off while doing it.
+
+Social media question (2026-11-04): a platform dropdown + username/link per account, stored in the existing `socialMedia` string as `Instagram: @a | TikTok: @b` (`src/lib/socialLinks.ts`, `SocialLinksInput`). An `Other` account has no prefix, so older free text stays as it is. The whole string keeps the 120-character limit of the published rules. At least one account is required on registration only. A Sheets cell never replaces a member's list of accounts, and a shared handle no longer counts as the same person when both sides have phone numbers (none shared) or the handle is a placeholder like 'tidak ada'.
 
 Open:
 - **Before merging PR #1:** visual check on a phone-size and a desktop-size window (sheets, drag-to-dismiss,

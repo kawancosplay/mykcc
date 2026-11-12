@@ -27,7 +27,6 @@ export default {
   discordPlaceholder: 'e.g. alyachan_cos or user#0001',
   roleLabel: 'Primary Community Role',
   customRolePlaceholder: 'Type your other role / specialty...',
-  socialMediaPlaceholder: '@username (Instagram / X / TikTok)',
   reasonLabel: 'Reason for Joining & Profile Notes',
 
   // Short primary role labels for the profile dropdown (the stored primaryRole values are unchanged)

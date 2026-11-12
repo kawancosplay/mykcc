@@ -23,7 +23,7 @@ import { Member } from '../types';
 import { MAX_ADDITIONAL_PHONES, formatKccId, isLegacyKccId16, normalizePhoneDigits } from '../lib/idGenerator';
 import { updateMemberProfileData } from '../lib/authService';
 import { MEMBER_FIELD_LIMITS } from '../lib/firestoreService';
-import { changedAgeCategory, isPreferNotToSayAge, unlistedAgeCategory } from '../lib/memberRules';
+import { changedAgeCategory, isPreferNotToSayAge, listedAgeCategory, unlistedAgeCategory } from '../lib/memberRules';
 import { describeFirestoreError } from '../lib/firebase';
 import { AVATAR_COMPRESS, compressImage } from '../lib/imageUtils';
 import { storedProfileFields } from '../lib/memberRules';
@@ -37,6 +37,7 @@ import {
 } from '../lib/worldLocations';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
+import SocialLinksInput from './SocialLinksInput';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -322,7 +323,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     ? t(knownRole.labelKey)
     : formData.primaryRole.replace(CUSTOM_ROLE_PATTERN, '$1');
 
-  const unlistedAge = unlistedAgeCategory(member.ageCategory, AGE_CATEGORY_OPTIONS.map((opt) => opt.val));
+  const listedAges = AGE_CATEGORY_OPTIONS.map((opt) => opt.val);
+  const unlistedAge = unlistedAgeCategory(member.ageCategory, listedAges);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -536,7 +538,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 {t('profile.ageCategoryLabel')}
               </label>
               <select
-                value={formData.ageCategory}
+                value={listedAgeCategory(formData.ageCategory, listedAges)}
                 onChange={(e) => setFormData({ ...formData, ageCategory: e.target.value })}
                 className="glass-input w-full text-base sm:text-sm"
               >
@@ -545,7 +547,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     {t(opt.labelKey)}
                   </option>
                 ))}
-                {/* shortcut: the stored text is not translated and can sit beside its listed twin, map it with ageCategoryKey once that fix is on main */}
                 {unlistedAge !== null && (
                   <option value={unlistedAge}>
                     {isPreferNotToSayAge(unlistedAge) ? t('registration.preferNotToSay') : unlistedAge || '—'}
@@ -833,13 +834,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 {t('registration.socialMediaTitle')}
               </label>
-              <input
-                type="text"
-                placeholder={t('profile.socialMediaPlaceholder')}
-                maxLength={MEMBER_FIELD_LIMITS.socialMedia}
+              <SocialLinksInput
                 value={formData.socialMedia}
-                onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
-                className="glass-input w-full text-base sm:text-sm"
+                onChange={(socialMedia) => setFormData({ ...formData, socialMedia })}
               />
             </div>
 

@@ -55,11 +55,11 @@ export const DEFAULT_THEME: SiteTheme = {
 };
 
 const BACKGROUND_GRADIENTS: Record<Exclude<BackgroundTheme, 'custom'>, string> = {
-  'bright-purple-fluent': 'linear-gradient(135deg, #2a1258 0%, #1b1442 45%, #11082a 100%)',
-  'cyber-purple': 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #581c87 100%)',
-  'cosmic-dark': 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #20133e 100%)',
-  'fluent-lavender': 'linear-gradient(135deg, #371b58 0%, #4c2a76 50%, #5c3b88 100%)',
-  'dark-onyx': 'linear-gradient(135deg, #0a0910 0%, #12101b 50%, #1a1727 100%)',
+  'bright-purple-fluent': 'linear-gradient(180deg, #16141c 0%, #0e0d12 60%)',
+  'cyber-purple': 'linear-gradient(180deg, #1b1624 0%, #100e15 60%)',
+  'cosmic-dark': 'linear-gradient(180deg, #121420 0%, #0b0c12 60%)',
+  'fluent-lavender': 'linear-gradient(180deg, #1d1a26 0%, #131218 60%)',
+  'dark-onyx': 'linear-gradient(180deg, #131316 0%, #0c0c0f 60%)',
 };
 
 /** The page background gradient of a theme (App writes it to `--app-bg`; painted by `body::before`). */

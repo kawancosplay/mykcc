@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Sparkles,
   User,
   Mail,
   Phone,
@@ -36,6 +35,8 @@ import {
 import { EMPTY_REGISTRATION_FORM } from '../lib/memberRules';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
+import FloatingGlass from './FloatingGlass';
+import KccBadgePreview from './KccBadgePreview';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -513,9 +514,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
     successView = (
       <motion.div key="success" {...pageMotion} className="max-w-2xl mx-auto py-12 px-4 text-slate-100">
-        <div className="glass-card glass-raised border-emerald-500/30 rounded-3xl overflow-hidden">
-          {/* Top Google Form Purple/Accent bar */}
-          <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
+        <div className="glass-card glass-raised rounded-3xl overflow-hidden">
 
           <div className="p-6 sm:p-10 text-center">
             {/* The check pops in on a spring just after the card (reduced motion: fade only) */}
@@ -535,7 +534,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               </div>
             )}
 
-            <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
               KawanCosplay Community
             </h2>
             <p className="text-slate-300 text-sm sm:text-base mb-6">
@@ -543,22 +542,22 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </p>
 
             {/* Single KCC ID account highlight (8 digits; 16 before the 8-digit switch) */}
-            <div className="glass-well border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+            <div className="glass-well rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
+              <span className="text-xs text-slate-400 block mb-1">
                 {t('registration.singleAccountIdTitle')}
               </span>
-              <span className="font-mono font-black text-xl sm:text-2xl text-rose-400 tracking-wider">
+              <span className="font-mono font-medium text-2xl sm:text-3xl text-white tabular-nums tracking-wide">
                 {formatKccId(submittedMember.userId16)}
               </span>
               {isDuplicateShared ? (
-                <p className="text-xs text-emerald-400 mt-2 font-medium">
+                <p className="text-xs text-slate-300 mt-2">
                   {t('registration.duplicateMergedNotice')}
                 </p>
               ) : (
                 <p className="text-[11px] text-slate-300 mt-1.5">
                   {t('registration.verifiedMemberLabel')} <strong className="text-white">{memberName}</strong>
                   {submittedMember.discordUsername && (
-                    <span className="ml-2 text-indigo-300">
+                    <span className="ml-2 text-slate-400">
                       • {t('registration.discordValue', { username: submittedMember.discordUsername })}
                     </span>
                   )}
@@ -567,15 +566,15 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
 
             {/* UNLOCKED WHATSAPP COMMUNITY GROUP INVITE LINK */}
-            <div className="glass-well border-emerald-500/40 bg-emerald-950/60 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center">
-              <div className="glass-chip mb-2 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="glass-well rounded-2xl p-5 mb-6 max-w-md mx-auto text-center">
+              <div className="glass-chip mb-2">
+                <MessageCircle className="w-3.5 h-3.5 text-slate-300" />
                 <span>{t('registration.whatsappUnlockedBadge')}</span>
               </div>
-              <h3 className="text-base sm:text-lg font-extrabold text-white mb-1">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
                 {t('registration.whatsappUnlockedTitle')}
               </h3>
-              <p className="text-xs text-emerald-200/90 mb-4 leading-relaxed">
+              <p className="text-xs text-slate-300 mb-4 leading-relaxed">
                 {t('registration.whatsappUnlockedDesc')}
               </p>
 
@@ -584,7 +583,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                   href={`https://wa.me/6285711032782?text=${encodeURIComponent(whatsappMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="pressable w-full sm:w-auto min-h-11 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-600/30 inline-flex items-center justify-center gap-2"
+                  className="btn-primary pressable w-full sm:w-auto min-h-11 px-5"
                 >
                   <MessageCircle className="w-4 h-4" />
                   <span>{t('registration.joinWhatsappButton')}</span>
@@ -597,7 +596,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               <button
                 type="button"
                 onClick={() => onOpenCardModal(submittedMember)}
-                className="btn-primary pressable px-5"
+                className="glass-button pressable px-5"
               >
                 <Eye className="w-4 h-4" />
                 <span>{t('registration.viewMyKccId')}</span>
@@ -620,13 +619,13 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
             {/* Hotline footer */}
             <div className="mt-8 pt-6 border-t border-white/10 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-2">
-              <MessageCircle className="w-4 h-4 text-emerald-400" />
+              <MessageCircle className="w-4 h-4 text-slate-400" />
               <span>{t('registration.needHelpHotline')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-emerald-400 font-bold hover:underline"
+                className="text-slate-200 font-semibold hover:underline"
               >
                 +62 857-1103-2782
               </a>
@@ -641,21 +640,13 @@ export const RegistrationForm = React.memo(function RegistrationForm({
     <motion.div key="form" {...pageMotion} className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
       {/* GOOGLE FORM HEADER CARD */}
       <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
-        {/* Top Google Form Purple/Accent Header Band */}
-        <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
-
         <div className="p-5 sm:p-10">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
-              <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-              <span>{t('registration.officialFormTag')}</span>
-            </span>
-            <span className="glass-chip bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-              {t('registration.safeCommunityTag')}
-            </span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
+          {/* Floats so the welcome text wraps around the badge instead of leaving a gap under the title */}
+          <KccBadgePreview className="hidden sm:block float-right ml-8 mb-4 -mt-2 mr-1" />
+          <p className="text-xs text-slate-400 mb-2">
+            {t('registration.officialFormTag')} · {t('registration.safeCommunityTag')}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-3">
             {t('registration.formTitle')}
           </h1>
 
@@ -664,29 +655,29 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </p>
 
           {/* Inclusive Notice */}
-          <div className="glass-well p-3.5 border-indigo-500/30 bg-indigo-950/40 rounded-2xl flex items-start gap-3 text-xs text-indigo-200 mb-4">
-            <Heart className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
+          <div className="glass-well p-3.5 rounded-2xl flex items-start gap-3 text-xs text-slate-300 mb-4">
+            <Heart className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             <div>
-              <strong>{t('registration.inclusiveWelcome')}</strong>
+              <strong className="font-medium text-slate-200">{t('registration.inclusiveWelcome')}</strong>
             </div>
           </div>
 
           {/* WhatsApp Hotline Callout */}
           <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-white/10 text-xs text-slate-400">
             <div className="flex flex-wrap items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <MessageCircle className="w-4 h-4 text-slate-400 shrink-0" />
               <span>{t('registration.officialHotlineLabel')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-emerald-400 hover:underline"
+                className="font-semibold text-slate-200 hover:underline"
               >
                 +62 857-1103-2782
               </a>
             </div>
 
-            <span className="text-rose-400 font-semibold">{t('registration.requiredIndicator')}</span>
+            <span className="text-slate-400">{t('registration.requiredIndicator')}</span>
           </div>
         </div>
       </div>
@@ -724,7 +715,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           <button
             type="button"
             onClick={handleClearForm}
-            className="glass-button pressable shrink-0 min-h-11 px-3 bg-amber-800/80 hover:bg-amber-700 border-amber-500/40 text-white font-bold text-xs"
+            className="glass-button pressable shrink-0 min-h-11 px-3 bg-amber-800/80 hover:bg-amber-700 border-amber-500/40 text-white font-semibold text-xs"
           >
             {t('registration.exitSandbox')}
           </button>
@@ -740,11 +731,11 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       >
         {/* QUESTION 1: NAME (JUST ASK NAME) */}
         <div className="glass-card rounded-3xl p-5 sm:p-8">
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.nameLabel')} <span className="text-rose-500">*</span>
           </label>
-          <p className="text-xs text-rose-300/90 mb-4 flex items-start space-x-1.5">
-            <ShieldCheck className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-400 mb-4 flex items-start space-x-1.5">
+            <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             <span>{t('registration.namePrivacyNotice')}</span>
           </p>
 
@@ -762,14 +753,14 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 2: WHATSAPP MOBILE NUMBER (MANDATORY - COMMUNITY IS WHATSAPP BASED). Extra numbers are
             added later in the member profile (no second number field here). */}
-        <div className="glass-card rounded-3xl p-5 sm:p-8 border border-emerald-500/25 space-y-4">
+        <div className="glass-card rounded-3xl p-5 sm:p-8 space-y-4">
           <div>
-            <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+            <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
               {t('registration.whatsappLabel')}{' '}
               <span className="text-rose-500">*</span>
             </label>
-            <p className="text-xs text-emerald-300/90 mb-3 flex items-start space-x-1.5">
-              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-slate-400 mb-3 flex items-start space-x-1.5">
+              <MessageCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
               <span>{t('registration.whatsappNotice')}</span>
             </p>
 
@@ -788,7 +779,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 3: DISCORD USERNAME COLUMN */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.discordLabel')}{' '}
             <span className="text-xs text-slate-400 font-normal">{t('registration.optionalTag')}</span>
           </label>
@@ -808,7 +799,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 4: EMAIL (REQUIRED) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.emailLabel')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -830,7 +821,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         {/* QUESTION 4: AGE CATEGORY (MINOR VS LEGAL AGE) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1.5">
-            <label className="block text-sm sm:text-base font-bold text-white">
+            <label className="block text-sm sm:text-base font-semibold text-white">
               {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
             </label>
 
@@ -838,7 +829,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               type="button"
               onClick={() => setShowAgeExplainer(!showAgeExplainer)}
               aria-expanded={showAgeExplainer}
-              className="touch-target pressable min-w-0 text-left text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 underline"
+              className="touch-target pressable min-w-0 text-left text-xs text-slate-300 hover:text-white flex items-center gap-1 underline underline-offset-2"
             >
               <Info className="w-3.5 h-3.5" />
               <span>{t('registration.ageExplanationTitle')}</span>
@@ -846,8 +837,8 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </div>
 
           {showAgeExplainer && (
-            <div className="glass-well p-3.5 border-rose-500/30 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
-              <strong className="text-rose-300 block mb-1">{t('registration.ageExplanationTitle')}</strong>
+            <div className="glass-well p-3.5 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
+              <strong className="font-medium text-white block mb-1">{t('registration.ageExplanationTitle')}</strong>
               <p>{t('registration.ageExplanationDesc')}</p>
             </div>
           )}
@@ -877,7 +868,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.exactAgeOptional')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -901,7 +892,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           onPointerDownCapture={activateGeo}
           className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}
         >
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.locationTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -910,7 +901,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1">
                 {t('registration.countryLabel')}
               </label>
               <select
@@ -934,7 +925,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1">
                 {t('registration.provinceLabel')}
               </label>
               <select
@@ -955,7 +946,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-xs font-medium text-slate-400 mb-1">
                 {t('registration.cityLabel')}
               </label>
               <select
@@ -1002,7 +993,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 7: PRIMARY ROLE / INTEREST (INCLUSIVE) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.roleTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -1049,7 +1040,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 8: FAVORITE FANDOM / IDOL GROUP / SERIES */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.fandomTitle')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -1074,7 +1065,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 9: EXPERIENCE (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.experienceTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -1101,7 +1092,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 10: SOCIAL MEDIA (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.socialMediaTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -1120,7 +1111,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 11: PORTFOLIO / DRIVE LINK (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.portfolioTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -1139,7 +1130,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 12: AVATAR / PROFILE PHOTO (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.avatarTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -1202,7 +1193,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 13: REASON & EXPECTATIONS (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.reasonTitle')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
@@ -1221,7 +1212,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 14: CODE OF CONDUCT (REQUIRED CHECKBOX) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-3">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-3">
             {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
           </label>
 
@@ -1247,7 +1238,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             indicator) while the form is on screen. Sticky, not fixed: it settles into place after the
             last question. The wrapper ignores taps so only the glass bar itself is interactive. */}
         <div className="sticky bottom-0 z-20 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none">
-          <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2">
+          <FloatingGlass className="pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2">
             <AnimatePresence initial={false}>
               {errorMsg && (
                 <motion.div
@@ -1280,14 +1271,14 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                 </>
               )}
             </button>
-          </div>
+          </FloatingGlass>
         </div>
 
         <div className="flex justify-center">
           <button
             type="button"
             onClick={handleClearForm}
-            className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-300 hover:text-white hover:bg-rose-500/15 inline-flex items-center justify-center gap-1.5 font-semibold"
+            className="pressable min-h-11 px-4 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 inline-flex items-center justify-center gap-1.5 font-medium"
           >
             <RotateCcw className="w-4 h-4" />
             <span>{t('registration.clearForm')}</span>

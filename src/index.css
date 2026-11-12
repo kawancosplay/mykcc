@@ -2,7 +2,8 @@
 
 @theme {
   --font-sans: 'Google Sans Flex', sans-serif;
-  --font-mono: 'Google Sans Flex', monospace;
+  /* KCC IDs and phone codes: a real fixed-width face, like a printed badge number */
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
 
   /* iOS UIKit-like curves, usable as `ease-ios` / `ease-out-soft` utilities */
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
@@ -57,32 +58,32 @@
 :root {
   --font-site: 'Google Sans Flex', sans-serif;
 
-  /* Brand (visual identity: purple -> mint on a deep violet night) */
+  /* Brand: the logo purple is the one accent; every surface is graphite */
   --kcc-purple: #8c52ff;
   --kcc-mint: #53ffc0;
-  --kcc-ink: #05020a;
-  --kcc-deep: #1a0f33;
+  --kcc-ink: #0c0c0f;
+  --kcc-deep: #17171c;
   --kcc-gradient: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
   --theme-primary: #8c52ff; /* overwritten at runtime by themeContext */
 
   /* Page background, painted by the fixed `body::before` layer. The app may override it at
      runtime: document.documentElement.style.setProperty('--app-bg', gradient) */
-  --app-bg: linear-gradient(135deg, #05020a 0%, #1a0f33 50%, #05020a 100%);
+  --app-bg: linear-gradient(180deg, #131316 0%, #0c0c0f 60%);
 
   /* Glass materials: tint painted under the blur */
-  --glass-fill-bar: rgba(12, 8, 26, 0.68);
-  --glass-fill-card: rgba(22, 14, 46, 0.6);
-  --glass-fill-raised: rgba(24, 15, 50, 0.7);
-  --glass-fill-elevated: rgba(18, 12, 40, 0.8);
-  --glass-fill-sheet: rgba(16, 10, 34, 0.86);
-  --glass-fill-menu: rgba(12, 8, 26, 0.85);
-  --glass-fill-well: rgba(5, 2, 10, 0.42);
-  --glass-fill-input: rgba(5, 2, 10, 0.45);
+  --glass-fill-bar: rgba(16, 16, 20, 0.68);
+  --glass-fill-card: rgba(28, 28, 34, 0.6);
+  --glass-fill-raised: rgba(32, 32, 38, 0.7);
+  --glass-fill-elevated: rgba(22, 22, 27, 0.8);
+  --glass-fill-sheet: rgba(20, 20, 25, 0.86);
+  --glass-fill-menu: rgba(16, 16, 20, 0.85);
+  --glass-fill-well: rgba(0, 0, 0, 0.42);
+  --glass-fill-input: rgba(0, 0, 0, 0.45);
   --glass-fill-control: rgba(255, 255, 255, 0.07);
   --glass-fill-control-hover: rgba(255, 255, 255, 0.12);
   --glass-fill-selected: rgba(140, 82, 255, 0.24);
-  --glass-fill-overlay: rgba(5, 2, 10, 0.6);
-  --glass-fill-solid: #120c26; /* reduced transparency / no backdrop-filter */
+  --glass-fill-overlay: rgba(0, 0, 0, 0.6);
+  --glass-fill-solid: #18181d; /* reduced transparency / no backdrop-filter */
 
   /* Strokes, specular highlight, focus */
   --glass-stroke: rgba(255, 255, 255, 0.1);
@@ -98,8 +99,8 @@
   /* Elevation */
   --glass-shadow-sm: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
   --glass-shadow-md: 0 12px 32px -14px rgba(0, 0, 0, 0.7);
-  --glass-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.85), 0 0 40px -10px rgba(140, 82, 255, 0.22);
-  --glass-glow-primary: 0 8px 24px -10px rgba(140, 82, 255, 0.75);
+  --glass-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.85);
+  --glass-glow-primary: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
 
   /* Motion */
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
@@ -182,7 +183,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgba(83, 255, 192, 0.85);
+    outline: 2px solid rgba(177, 140, 255, 0.9);
     outline-offset: 2px;
   }
 
@@ -195,7 +196,7 @@
 
   select option,
   select optgroup {
-    background-color: #120c26;
+    background-color: #18181d;
     color: #f8fafc;
   }
 
@@ -437,7 +438,7 @@ button, a[role="button"] {
   /* Card over imagery. Sprint 3: no live blur any more (it was unused and an in-flow blur costs a
      re-blur per scroll frame); a denser tint keeps text readable over photos. */
   .glass-card-frosted {
-    background-color: rgba(22, 14, 46, 0.86);
+    background-color: rgba(28, 28, 34, 0.86);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     box-shadow: var(--glass-highlight), var(--glass-shadow-md);
@@ -460,7 +461,7 @@ button, a[role="button"] {
   .glass-elevated,
   .liquid-glass-elevated {
     position: relative;
-    background-color: rgba(18, 12, 40, 0.95);
+    background-color: rgba(22, 22, 27, 0.95);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     border-top-color: var(--glass-stroke-top);
@@ -724,8 +725,7 @@ button, a[role="button"] {
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%);
     border: 1px solid rgba(255, 255, 255, 0.16);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
-                0 4px 14px -4px rgba(0, 0, 0, 0.55),
-                0 0 18px -6px rgba(140, 82, 255, 0.55);
+                0 4px 14px -4px rgba(0, 0, 0, 0.55);
   }
 
   /* CSS-only active state (no motion thumb element): add `.is-active` to the segment */
@@ -780,7 +780,7 @@ button, a[role="button"] {
     background-color: var(--glass-fill-input);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
-    caret-color: var(--kcc-mint);
+    caret-color: var(--theme-primary, #8c52ff);
     -webkit-appearance: none;
     appearance: none;
     transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
@@ -797,7 +797,7 @@ button, a[role="button"] {
   .glass-input:focus-within,
   .liquid-glass-input:focus-within {
     outline: none;
-    background-color: rgba(10, 6, 22, 0.6);
+    background-color: rgba(14, 14, 18, 0.6);
     border-color: var(--glass-stroke-focus);
     box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35), var(--glass-ring);
   }
@@ -853,12 +853,11 @@ button, a[role="button"] {
   }
 
   .btn-primary {
-    font-weight: 700;
-    color: #1a0f33; /* dark text: white fails contrast on the mint end */
-    background-color: #8c52ff;
-    background-image: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), var(--glass-glow-primary);
+    font-weight: 600;
+    color: #121216;
+    background-color: #f4f4f5;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--glass-glow-primary);
     transition: filter var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
   }
 
@@ -896,7 +895,7 @@ button, a[role="button"] {
     height: 2.5rem;
     border-radius: 9999px;
     color: rgb(226 232 240);
-    background-color: rgba(20, 14, 40, 0.55);
+    background-color: rgba(24, 24, 29, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: var(--glass-highlight), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
@@ -991,7 +990,7 @@ button, a[role="button"] {
     }
 
     .btn-primary:hover:not(:disabled) {
-      filter: brightness(1.08) saturate(1.05);
+      background-color: #ffffff;
     }
 
     .glass-button:hover:not(:disabled),
@@ -1033,7 +1032,7 @@ button, a[role="button"] {
     }
 
     .glass-icon-button {
-      background-color: rgba(20, 14, 40, 0.72);
+      background-color: rgba(24, 24, 29, 0.72);
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
@@ -1069,16 +1068,16 @@ button, a[role="button"] {
     .liquid-glass-elevated,
     .glass-sheet,
     .glass-toast {
-      background-color: rgba(18, 12, 40, 0.97);
+      background-color: rgba(22, 22, 27, 0.97);
     }
 
     .glass-menu,
     .liquid-glass-menu {
-      background-color: rgba(12, 8, 26, 0.97);
+      background-color: rgba(16, 16, 20, 0.97);
     }
 
     .glass-card-frosted {
-      background-color: rgba(22, 14, 46, 0.92);
+      background-color: rgba(28, 28, 34, 0.92);
     }
 
     .glass-chip,
@@ -1087,7 +1086,7 @@ button, a[role="button"] {
     }
 
     .glass-overlay {
-      background-color: rgba(5, 2, 10, 0.78);
+      background-color: rgba(0, 0, 0, 0.78);
     }
   }
 
@@ -1117,7 +1116,7 @@ button, a[role="button"] {
     }
 
     .glass-overlay {
-      background-color: rgba(5, 2, 10, 0.85);
+      background-color: rgba(0, 0, 0, 0.85);
     }
   }
 
@@ -1137,14 +1136,14 @@ button, a[role="button"] {
   :root[data-perf="lite"] .liquid-glass-elevated,
   :root[data-perf="lite"] .glass-sheet,
   :root[data-perf="lite"] .glass-toast {
-    background-color: rgba(18, 12, 40, 0.97);
+    background-color: rgba(22, 22, 27, 0.97);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 
   :root[data-perf="lite"] .glass-menu,
   :root[data-perf="lite"] .liquid-glass-menu {
-    background-color: rgba(12, 8, 26, 0.97);
+    background-color: rgba(16, 16, 20, 0.97);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -1160,7 +1159,7 @@ button, a[role="button"] {
   }
 
   :root[data-perf="lite"] .glass-overlay {
-    background-color: rgba(5, 2, 10, 0.78);
+    background-color: rgba(0, 0, 0, 0.78);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -1184,9 +1183,9 @@ button, a[role="button"] {
 /* Brand gradient button (legacy name). Kept unlayered: its dark text intentionally wins over the
    `text-white` utilities still present on older markup. New code: use `.btn-primary`. */
 .liquid-glass-button {
-  background: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
+  background: #f4f4f5;
   border: none;
-  color: #1a0f33; /* Darker text for contrast on mint green */
+  color: #121216;
   font-weight: 600;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), var(--glass-glow-primary);
   -webkit-user-select: none;
@@ -1247,140 +1246,6 @@ button, a[role="button"] {
   }
 }
 
-/* =========================================================================
-   AMBIENT BACKGROUND
-   ========================================================================= */
-
-/* Preferred markup (cheap): radial gradients, no `filter: blur()`.
-   <div class="ambient-layer" aria-hidden="true">
-     <div class="ambient-blob ambient-blob--1"></div>
-     <div class="ambient-blob ambient-blob--2"></div>
-     <div class="ambient-blob ambient-blob--3"></div>
-   </div> */
-.ambient-layer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100vh;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  contain: strict;
-}
-
-@supports (height: 100lvh) {
-  .ambient-layer {
-    height: 100lvh;
-  }
-}
-
-.ambient-blob {
-  position: absolute;
-  border-radius: 9999px;
-  pointer-events: none;
-}
-
-.ambient-blob--1 {
-  top: -22vmax;
-  left: -20vmax;
-  width: 70vmax;
-  height: 70vmax;
-  background: radial-gradient(closest-side, rgba(168, 85, 247, 0.34) 0%, rgba(217, 70, 239, 0.16) 55%, rgba(217, 70, 239, 0) 100%);
-}
-
-.ambient-blob--2 {
-  top: 28%;
-  right: -24vmax;
-  width: 75vmax;
-  height: 75vmax;
-  background: radial-gradient(closest-side, rgba(139, 92, 246, 0.32) 0%, rgba(99, 102, 241, 0.16) 55%, rgba(99, 102, 241, 0) 100%);
-}
-
-.ambient-blob--3 {
-  bottom: -28vmax;
-  left: 18%;
-  width: 80vmax;
-  height: 80vmax;
-  background: radial-gradient(closest-side, rgba(217, 70, 239, 0.22) 0%, rgba(140, 82, 255, 0.14) 55%, rgba(140, 82, 255, 0) 100%);
-}
-
-/* Optional brand accent (mint end of the gradient), very faint */
-.ambient-blob--mint {
-  top: 55%;
-  left: -12vmax;
-  width: 45vmax;
-  height: 45vmax;
-  background: radial-gradient(closest-side, rgba(83, 255, 192, 0.08) 0%, rgba(83, 255, 192, 0) 100%);
-}
-
-@keyframes ambient-drift {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(3vmax, -2vmax, 0) scale(1.08); }
-  100% { transform: translate3d(-2vmax, 2vmax, 0) scale(1.03); }
-}
-
-/* Legacy blob markup (`blur-[140px]` + .animate-fluid-*), kept working but cheaper */
-/* Subtle continuous ambient fluid pulse animation - GPU accelerated transform only */
-@keyframes fluid-drift {
-  0%, 100% {
-    transform: translate3d(0px, 0px, 0) scale(1) rotate(0deg);
-  }
-  33% {
-    transform: translate3d(40px, -25px, 0) scale(1.12) rotate(4deg);
-  }
-  66% {
-    transform: translate3d(-25px, 25px, 0) scale(1.05) rotate(-4deg);
-  }
-}
-
-.animate-fluid-1,
-.animate-fluid-2,
-.animate-fluid-3 {
-  animation: none;
-}
-
-/* Blobs only drift on larger screens with motion allowed. On phones they stay still: a moving
-   backdrop forces every glass surface on screen to re-blur each frame (and drains battery). */
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .ambient-blob--1 {
-    animation: ambient-drift 26s ease-in-out infinite alternate;
-    will-change: transform;
-  }
-
-  .ambient-blob--2 {
-    animation: ambient-drift 32s ease-in-out infinite alternate-reverse;
-    will-change: transform;
-  }
-
-  .ambient-blob--3 {
-    animation: ambient-drift 38s ease-in-out -12s infinite alternate;
-    will-change: transform;
-  }
-
-  .animate-fluid-1 {
-    animation: fluid-drift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    will-change: transform;
-  }
-
-  .animate-fluid-2 {
-    animation: fluid-drift 28s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
-    will-change: transform;
-  }
-
-  .animate-fluid-3 {
-    animation: fluid-drift 32s cubic-bezier(0.4, 0, 0.2, 1) infinite 8s;
-    will-change: transform;
-  }
-}
-
-/* Fewer blobs on phones */
-@media (max-width: 767px) {
-  .ambient-blob--3,
-  .animate-fluid-3 {
-    display: none;
-  }
-}
 
 /* =========================================================================
    UTILITIES (real Tailwind utilities: variants like `lg:pb-16` work)
@@ -1475,18 +1340,13 @@ button, a[role="button"] {
     animation-iteration-count: infinite !important;
   }
 
-  .animate-fluid-1,
-  .animate-fluid-2,
-  .animate-fluid-3,
-  .ambient-blob,
   .glass-skeleton {
     animation: none !important;
     will-change: auto;
   }
 }
 
-/* Lite / low-power mode (see the glass block in @layer components for the materials): no ambient light
-   layer (the theme gradient on body::before stays, so the colours do not change), short transitions,
+/* Lite / low-power mode (see the glass block in @layer components for the materials): short transitions,
    static skeletons, short CSS entrance animations, no smooth scrolling. Spinners keep turning. */
 :root[data-perf="lite"] {
   scroll-behavior: auto;
@@ -1495,10 +1355,6 @@ button, a[role="button"] {
   --dur-release: 120ms;
   --dur-fast: 100ms;
   --dur-base: 120ms;
-}
-
-:root[data-perf="lite"] .ambient-layer {
-  display: none;
 }
 
 /* (With the OS reduce-motion setting the block above already makes these 0.01 ms.) */

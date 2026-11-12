@@ -304,6 +304,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
   const handleClearForm = () => {
     if (window.confirm(t('registration.clearFormConfirm'))) {
       setFormData(EMPTY_REGISTRATION_FORM);
+      // The only way out of the sandbox: leaving it with data still in the form makes the next Submit a live save
       setIsDemoMode(false);
       setIsDemoSubmission(false);
       setErrorMsg(null);
@@ -722,10 +723,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </div>
           <button
             type="button"
-            onClick={() => {
-              setIsDemoMode(false);
-              handleClearForm();
-            }}
+            onClick={handleClearForm}
             className="glass-button pressable shrink-0 min-h-11 px-3 bg-amber-800/80 hover:bg-amber-700 border-amber-500/40 text-white font-bold text-xs"
           >
             {t('registration.exitSandbox')}

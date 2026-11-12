@@ -18,11 +18,11 @@ function parseEntry(entry: string): SocialLink {
     : { platform: 'Other', handle: entry.trim() };
 }
 
-/** The accounts in a stored value; an empty value gives one empty row to fill in. */
+/** The accounts in a stored value; an empty value gives one empty row with no platform picked (nothing is preselected). */
 export function parseSocialLinks(value: unknown): SocialLink[] {
   // Raw / legacy documents may hold non-string values
   const rows = String(value ?? '').split(SEPARATOR).filter((entry) => entry.trim()).map(parseEntry);
-  return rows.length ? rows : [{ platform: SOCIAL_PLATFORMS[0], handle: '' }];
+  return rows.length ? rows : [{ platform: '', handle: '' }];
 }
 
 /** The stored value for these rows: rows without a handle are left out, '' if none is filled in. */
@@ -31,7 +31,8 @@ export function joinSocialLinks(rows: SocialLink[]): string {
     // Only a '|' that could form the separator goes: 'a|b' and a link containing one stay as typed
     .map((row) => ({ platform: row.platform, handle: row.handle.trim().replace(/(^|\s)\|(?=\s|$)/g, ' ').trim() }))
     .filter((row) => row.handle)
-    .map((row) => (row.platform === 'Other' ? row.handle : `${row.platform}: ${row.handle}`))
+    // No platform picked (the form's native required asks for one) is kept like an 'Other' account, never dropped
+    .map((row) => (!row.platform || row.platform === 'Other' ? row.handle : `${row.platform}: ${row.handle}`))
     .join(SEPARATOR);
 }
 

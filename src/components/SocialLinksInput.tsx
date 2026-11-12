@@ -51,16 +51,18 @@ export default function SocialLinksInput({ value, onChange, required, invalid }:
         {rows.map((row, index) => (
           <div key={index} className="flex flex-wrap sm:flex-nowrap gap-2">
             <div className="glass-input relative min-w-0 flex-1 sm:flex-none sm:w-36 flex items-center justify-between gap-1 px-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[rgba(83,255,192,0.85)]">
-              <span aria-hidden="true" className="text-base sm:text-sm truncate">
-                {platformLabel(row.platform)}
+              <span aria-hidden="true" className={`text-base sm:text-sm truncate ${row.platform ? '' : 'text-slate-400'}`}>
+                {row.platform ? platformLabel(row.platform) : t('common.socialPlatform')}
               </span>
               <ChevronDown className="w-4 h-4 shrink-0 text-slate-400" aria-hidden="true" />
               <select
                 aria-label={t('common.socialPlatform')}
                 value={row.platform}
+                required={!!row.handle.trim()}
                 onChange={(e) => updateRow(index, { platform: e.target.value })}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
               >
+                {!row.platform && <option value="">—</option>}
                 {SOCIAL_PLATFORMS.map((platform) => (
                   <option key={platform} value={platform}>
                     {platformLabel(platform)}
@@ -103,12 +105,7 @@ export default function SocialLinksInput({ value, onChange, required, invalid }:
       {rows.length < MAX_ROWS && (
         <button
           type="button"
-          onClick={() =>
-            update([
-              ...rows,
-              { platform: SOCIAL_PLATFORMS.find((p) => !rows.some((row) => row.platform === p)) ?? 'Other', handle: '' },
-            ])
-          }
+          onClick={() => update([...rows, { platform: '', handle: '' }])}
           className="glass-button pressable w-full sm:w-auto min-h-11 mt-2 px-4 rounded-xl text-sm text-emerald-300"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />

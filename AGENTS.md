@@ -24,6 +24,9 @@ dashboard with Google Sheets sync.
   "Database '(default)' not found" and the whole site breaks (this happened once).
 - `server.ts` (Express) only runs locally. On Vercel, `/api/health` and `/api/sync-form` are the serverless
   functions in `api/`. `vercel.json` rewrites every non-`/api` path to `index.html`.
+- Hosting is Vercel only; Cloudflare Workers is no longer used (owner, 2026-11-13). The leftover Worker still
+  reports a `Workers Builds: mykcc` check that fails in 0 s on every PR branch and passes on `main`: ignore it,
+  judge a PR by the Vercel checks. Removing the Worker in the Cloudflare dashboard is the owner's call.
 
 ## 2. Division of labour between agents
 

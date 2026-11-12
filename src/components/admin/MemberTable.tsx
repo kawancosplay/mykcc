@@ -8,6 +8,7 @@ import React from 'react';
 import { ChevronDown, Clock, Crown, ExternalLink, FileSpreadsheet, Hash, Shield, ShieldCheck, Trash2, UserCog } from 'lucide-react';
 import type { Member } from '../../types';
 import { formatKccId, isAdminRangeKccId, isKccId8, isLegacyKccId16, isMainAccountKccId } from '../../lib/idGenerator';
+import { parseSocialLinks } from '../../lib/socialLinks';
 import { useI18n } from '../../i18n';
 import type { TranslationKey } from '../../i18n';
 import { DATE_TIME_OPTIONS, MEMBER_STATUSES, SOURCE_LABEL_KEYS, STATUS_LABEL_KEYS, digitsOnly, memberName, useMinWidth } from './adminUi';
@@ -358,7 +359,17 @@ const DetailsPanel: React.FC<{ id: string; member: Member; showEmail: boolean }>
     [t('admin.csvAgeCategory'), m.ageCategory],
     [t('admin.csvExperience'), m.experience],
     [t('admin.csvFandom'), m.fandom],
-    [t('admin.fieldSocialMedia'), m.socialMedia ? link(m.socialMedia) : ''],
+    [
+      t('admin.fieldSocialMedia'),
+      String(m.socialMedia ?? '').trim()
+        ? parseSocialLinks(m.socialMedia).map(({ platform, handle }, i) => (
+            <div key={i}>
+              {platform !== 'Other' && `${platform}: `}
+              {link(handle)}
+            </div>
+          ))
+        : '',
+    ],
     [t('admin.fieldPortfolio'), m.portfolioUrl ? link(m.portfolioUrl) : ''],
     [t('admin.fieldReason'), m.reason],
     [t('admin.detailsSource'), t(SOURCE_LABEL_KEYS[m.source] || 'admin.sourceWebForm')],

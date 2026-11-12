@@ -1,5 +1,6 @@
 import type { Member } from '../types';
 import { translate } from '../i18n';
+import { firstSocialHandle } from './socialLinks';
 
 // =============================================================================================
 // KCC ID (stored in the field `userId16` for compatibility, see AGENTS.md section 5)
@@ -314,13 +315,21 @@ function normalizePhone(p?: string): string {
  */
 function normalizeSocial(s?: string): string {
   if (!s) return '';
-  return s
+  // shortcut: only the first account is compared, upgrade if a sheet's handle must match any of a member's accounts
+  return firstSocialHandle(s)
     .toLowerCase()
     .replace(/^https?:\/\/(www\.)?(instagram|tiktok|twitter|x)\.com\//, '')
     .replace(/^@/, '')
     .replace(/\/+$/, '')
     .trim();
 }
+
+// shortcut: common spellings only, another spelling still matches when one side has no phone number, upgrade if the
+// duplicate scan shows such matches
+const NO_ACCOUNT_ANSWERS = new Set([
+  'tidak ada', 'tidak punya', 'belum ada', 'belum punya', 'ga ada', 'gak ada', 'nggak ada',
+  'none', 'nope', 'nothing', 'n/a', 'null', 'kosong',
+]);
 
 /** Social media handle for comparison (URL prefix, '@' and trailing slashes removed, lowercase). */
 export function normalizeSocialHandle(s?: string): string {
@@ -464,10 +473,12 @@ export function findDuplicateMember(
       }
     }
 
-    // 4. Social media handle match
-    if (candSocial && candSocial.length >= 3) {
+    // 4. Social media handle match, unless both sides have phone numbers (step 1 found none shared): handles are
+    // compared without their platform, and the question is required, so people with no account type a placeholder
+    if (candSocial && candSocial.length >= 3 && !NO_ACCOUNT_ANSWERS.has(candSocial)) {
       const existingSocial = normalizeSocial(text(m.socialMedia));
-      if (existingSocial && existingSocial === candSocial) {
+      const bothHavePhones = candPhones.length > 0 && existingPhones.length > 0;
+      if (!bothHavePhones && existingSocial && existingSocial === candSocial) {
         return m;
       }
     }

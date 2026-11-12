@@ -25,7 +25,6 @@ const profile: LocaleNamespace<'profile'> = {
   discordPlaceholder: "לדוגמה: alyachan_cos או user#0001",
   roleLabel: "תפקיד ראשי בקהילה",
   customRolePlaceholder: "אפשר להקליד תפקיד / התמחות אחרים...",
-  socialMediaPlaceholder: "@username (Instagram / X / TikTok)",
   reasonLabel: "סיבת ההצטרפות והערות לפרופיל",
   roleIdolFan: "חובבי אידולים / Wota",
   roleOtaku: "אוטאקו של אנימה, מנגה וגיימינג",

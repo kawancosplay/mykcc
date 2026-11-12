@@ -24,6 +24,9 @@ dashboard with Google Sheets sync.
   "Database '(default)' not found" and the whole site breaks (this happened once).
 - `server.ts` (Express) only runs locally. On Vercel, `/api/health` and `/api/sync-form` are the serverless
   functions in `api/`. `vercel.json` rewrites every non-`/api` path to `index.html`.
+- Hosting is Vercel only; Cloudflare Workers is no longer used (owner, 2026-11-13). The leftover Worker still
+  reports a `Workers Builds: mykcc` check that fails in 0 s on every PR branch and passes on `main`: ignore it,
+  judge a PR by the Vercel checks. Removing the Worker in the Cloudflare dashboard is the owner's call.
 
 ## 2. Division of labour between agents
 
@@ -227,6 +230,8 @@ the `shortcut:` comment in `UserProfile.tsx`.
   largest landing download), phone checks, admin smoke test with the main account after the rules are published.
 - Admin run order after deploy: merge duplicates → fix registration dates → switch to 8-digit IDs. Turn the
   Sheets auto-sync off while doing it.
+
+Social media question (2026-11-04): a platform dropdown + username/link per account, stored in the existing `socialMedia` string as `Instagram: @a | TikTok: @b` (`src/lib/socialLinks.ts`, `SocialLinksInput`). An `Other` account has no prefix, so older free text stays as it is. The whole string keeps the 120-character limit of the published rules. At least one account is required on registration only. A Sheets cell never replaces a member's list of accounts, and a shared handle no longer counts as the same person when both sides have phone numbers (none shared) or the handle is a placeholder like 'tidak ada'.
 
 Open:
 - **Before merging PR #1:** visual check on a phone-size and a desktop-size window (sheets, drag-to-dismiss,

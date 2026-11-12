@@ -187,9 +187,12 @@ Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the 
 Done (2026-11-04, live, PR #7): the member's profile form no longer shows or saves a blank or differently spelled
 age status as Legal Age; it writes the status only when the member changes it (`changedAgeCategory`,
 `unlistedAgeCategory` in `memberRules.ts`). Not tried with a real signed-in account. A stored status over 50
-characters now gets a save error until the member picks a listed one (it used to be cut short). Still open: other
-spellings show untranslated beside their listed option; map them with `ageCategoryKey` (on `main` since PR #8), see
-the `shortcut:` comment in `UserProfile.tsx`.
+characters now gets a save error until the member picks a listed one (it used to be cut short).
+
+Done (2026-11-05): in that form another spelling of a listed status shows as that option with its translated label
+and stays stored as it is until the member changes it (`listedAgeCategory`, matched through `ageCategoryKey`). Legal
+Age maps only from its own spellings: 'Legal Age (17 tahun)' shares the key but shows as stored, like any text that
+is no listed status. Not tried with a real signed-in account.
 
 **Sprint 2 — branch `claude/sprint-2`, PR #1 into `main` (NOT merged / NOT live yet, 2026-10-13):**
 - A `785f6f5`: admin Sheets scope = `spreadsheets.readonly` only, requested on demand for the signed-in admin

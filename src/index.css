@@ -58,32 +58,32 @@
 :root {
   --font-site: 'Google Sans Flex', sans-serif;
 
-  /* Brand: the logo purple is the one accent; every surface is graphite */
+  /* Brand (from the KawanCosplay posters): purple night, white cards and type, the logo purple as the one accent */
   --kcc-purple: #8c52ff;
   --kcc-mint: #53ffc0;
-  --kcc-ink: #0c0c0f;
-  --kcc-deep: #17171c;
+  --kcc-ink: #05020a;
+  --kcc-deep: #1a0f33;
   --kcc-gradient: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
   --theme-primary: #8c52ff; /* overwritten at runtime by themeContext */
 
   /* Page background, painted by the fixed `body::before` layer. The app may override it at
      runtime: document.documentElement.style.setProperty('--app-bg', gradient) */
-  --app-bg: linear-gradient(180deg, #131316 0%, #0c0c0f 60%);
+  --app-bg: linear-gradient(135deg, #05020a 0%, #1a0f33 50%, #05020a 100%);
 
   /* Glass materials: tint painted under the blur */
-  --glass-fill-bar: rgba(16, 16, 20, 0.68);
-  --glass-fill-card: rgba(28, 28, 34, 0.6);
-  --glass-fill-raised: rgba(32, 32, 38, 0.7);
-  --glass-fill-elevated: rgba(22, 22, 27, 0.8);
-  --glass-fill-sheet: rgba(20, 20, 25, 0.86);
-  --glass-fill-menu: rgba(16, 16, 20, 0.85);
-  --glass-fill-well: rgba(0, 0, 0, 0.42);
-  --glass-fill-input: rgba(0, 0, 0, 0.45);
+  --glass-fill-bar: rgba(12, 8, 26, 0.68);
+  --glass-fill-card: rgba(22, 14, 46, 0.6);
+  --glass-fill-raised: rgba(24, 15, 50, 0.7);
+  --glass-fill-elevated: rgba(18, 12, 40, 0.8);
+  --glass-fill-sheet: rgba(16, 10, 34, 0.86);
+  --glass-fill-menu: rgba(12, 8, 26, 0.85);
+  --glass-fill-well: rgba(5, 2, 10, 0.42);
+  --glass-fill-input: rgba(5, 2, 10, 0.45);
   --glass-fill-control: rgba(255, 255, 255, 0.07);
   --glass-fill-control-hover: rgba(255, 255, 255, 0.12);
   --glass-fill-selected: rgba(140, 82, 255, 0.24);
-  --glass-fill-overlay: rgba(0, 0, 0, 0.6);
-  --glass-fill-solid: #18181d; /* reduced transparency / no backdrop-filter */
+  --glass-fill-overlay: rgba(5, 2, 10, 0.6);
+  --glass-fill-solid: #120c26; /* reduced transparency / no backdrop-filter */
 
   /* Strokes, specular highlight, focus */
   --glass-stroke: rgba(255, 255, 255, 0.1);
@@ -196,7 +196,7 @@
 
   select option,
   select optgroup {
-    background-color: #18181d;
+    background-color: #120c26;
     color: #f8fafc;
   }
 
@@ -224,7 +224,9 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--kcc-ink);
+  /* Transparent: html carries the dark fallback (index.html), so the theme background and the grid on
+     body::before / body::after show. An opaque body painted over them and hid every Site Editor background. */
+  background-color: transparent;
   color: #f8fafc;
   min-height: 100vh;
 }
@@ -242,6 +244,19 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background: var(--app-bg);
+}
+
+/* The white grid of the KawanCosplay posters, faint, over whichever theme background is set */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 @supports (height: 100lvh) {
@@ -438,7 +453,7 @@ button, a[role="button"] {
   /* Card over imagery. Sprint 3: no live blur any more (it was unused and an in-flow blur costs a
      re-blur per scroll frame); a denser tint keeps text readable over photos. */
   .glass-card-frosted {
-    background-color: rgba(28, 28, 34, 0.86);
+    background-color: rgba(22, 14, 46, 0.86);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     box-shadow: var(--glass-highlight), var(--glass-shadow-md);
@@ -461,7 +476,7 @@ button, a[role="button"] {
   .glass-elevated,
   .liquid-glass-elevated {
     position: relative;
-    background-color: rgba(22, 22, 27, 0.95);
+    background-color: rgba(18, 12, 40, 0.95);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     border-top-color: var(--glass-stroke-top);
@@ -797,7 +812,7 @@ button, a[role="button"] {
   .glass-input:focus-within,
   .liquid-glass-input:focus-within {
     outline: none;
-    background-color: rgba(14, 14, 18, 0.6);
+    background-color: rgba(10, 6, 22, 0.6);
     border-color: var(--glass-stroke-focus);
     box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35), var(--glass-ring);
   }
@@ -852,10 +867,11 @@ button, a[role="button"] {
     cursor: pointer;
   }
 
+  /* White with deep purple text, like the white cards on the posters: readable on every Site Editor theme colour */
   .btn-primary {
     font-weight: 600;
-    color: #121216;
-    background-color: #f4f4f5;
+    color: var(--kcc-deep);
+    background-color: #f7f5ff;
     border: 1px solid rgba(255, 255, 255, 0.7);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--glass-glow-primary);
     transition: filter var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
@@ -895,7 +911,7 @@ button, a[role="button"] {
     height: 2.5rem;
     border-radius: 9999px;
     color: rgb(226 232 240);
-    background-color: rgba(24, 24, 29, 0.55);
+    background-color: rgba(20, 14, 40, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: var(--glass-highlight), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
@@ -1032,7 +1048,7 @@ button, a[role="button"] {
     }
 
     .glass-icon-button {
-      background-color: rgba(24, 24, 29, 0.72);
+      background-color: rgba(20, 14, 40, 0.72);
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
@@ -1068,16 +1084,16 @@ button, a[role="button"] {
     .liquid-glass-elevated,
     .glass-sheet,
     .glass-toast {
-      background-color: rgba(22, 22, 27, 0.97);
+      background-color: rgba(18, 12, 40, 0.97);
     }
 
     .glass-menu,
     .liquid-glass-menu {
-      background-color: rgba(16, 16, 20, 0.97);
+      background-color: rgba(12, 8, 26, 0.97);
     }
 
     .glass-card-frosted {
-      background-color: rgba(28, 28, 34, 0.92);
+      background-color: rgba(22, 14, 46, 0.92);
     }
 
     .glass-chip,
@@ -1086,7 +1102,7 @@ button, a[role="button"] {
     }
 
     .glass-overlay {
-      background-color: rgba(0, 0, 0, 0.78);
+      background-color: rgba(5, 2, 10, 0.78);
     }
   }
 
@@ -1116,7 +1132,7 @@ button, a[role="button"] {
     }
 
     .glass-overlay {
-      background-color: rgba(0, 0, 0, 0.85);
+      background-color: rgba(5, 2, 10, 0.85);
     }
   }
 
@@ -1136,14 +1152,14 @@ button, a[role="button"] {
   :root[data-perf="lite"] .liquid-glass-elevated,
   :root[data-perf="lite"] .glass-sheet,
   :root[data-perf="lite"] .glass-toast {
-    background-color: rgba(22, 22, 27, 0.97);
+    background-color: rgba(18, 12, 40, 0.97);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 
   :root[data-perf="lite"] .glass-menu,
   :root[data-perf="lite"] .liquid-glass-menu {
-    background-color: rgba(16, 16, 20, 0.97);
+    background-color: rgba(12, 8, 26, 0.97);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -1159,7 +1175,7 @@ button, a[role="button"] {
   }
 
   :root[data-perf="lite"] .glass-overlay {
-    background-color: rgba(0, 0, 0, 0.78);
+    background-color: rgba(5, 2, 10, 0.78);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -1183,9 +1199,9 @@ button, a[role="button"] {
 /* Brand gradient button (legacy name). Kept unlayered: its dark text intentionally wins over the
    `text-white` utilities still present on older markup. New code: use `.btn-primary`. */
 .liquid-glass-button {
-  background: #f4f4f5;
+  background: #f7f5ff;
   border: none;
-  color: #121216;
+  color: var(--kcc-deep);
   font-weight: 600;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), var(--glass-glow-primary);
   -webkit-user-select: none;

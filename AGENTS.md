@@ -194,6 +194,12 @@ and stays stored as it is until the member changes it (`listedAgeCategory`, matc
 Age maps only from its own spellings: 'Legal Age (17 tahun)' shares the key but shows as stored, like any text that
 is no listed status. Not tried with a real signed-in account.
 
+Done (2026-11-05): a Sheets import or auto-sync no longer replaces a stored age status; the sheet only fills a blank one
+(`buildImportUpdate`). It cannot tell a status changed in the app from an old cell, which can be the retired value. So a
+stored status changes in the app only (profile or admin edit), and a row that differs only there counts as unchanged, with
+no message to the admin. A status an admin blanks in the app is filled again by the next import. New members still get the
+cell text as typed, the retired value included. Checked on the emulator (real import code + rules), not with a real sheet.
+
 **Sprint 2 — branch `claude/sprint-2`, PR #1 into `main` (NOT merged / NOT live yet, 2026-10-13):**
 - A `785f6f5`: admin Sheets scope = `spreadsheets.readonly` only, requested on demand for the signed-in admin
   (no Drive scope, no Drive file list — paste the sheet URL/ID, last ID remembered); member Google sign-in asks
@@ -247,7 +253,9 @@ Open:
   the same timestamp + 127 import pairs 14 s apart); the owner approved the 74 so far and decides on the rest.
 - **Backlog (code):** a signed-in member who also submits the public form gets two member docs (sign-in profile +
   `kc_` registration; repair does not merge them); a changed Sheets import can overwrite in-app profile edits with
-  filled sheet cells (a blank cell no longer changes a stored value or invents one); fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
+  filled sheet cells (a blank cell no longer changes a stored value or invents one, and the age status only fills a
+  blank); the duplicate merge lets a newer duplicate's age status replace the keeper's, so it can bring back the retired
+  value; fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
   else's email) needs a server-side endpoint with the Admin SDK; package.json still lists unused `motion`,
   `country-state-city` and the conflicting `esbuild ^0.25` (remove together with a `bun.lock` update).
 - **Google side (Gemini) — status reported by Gemini 2026-10-11, verified by Claude in the Cloud console:**

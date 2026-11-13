@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "성인 (18세 이상)",
   filterMinor: "미성년자 (18세 미만)",
   filterPreferNotToSay: "미기재",
+
+  filterAllBirthdays: "모든 생일",
+
+  filterHasBirthday: "생일 등록됨",
+
+  filterBirthdayThisMonth: "이번 달 생일",
+
+  filterAllSocials: "모든 소셜 미디어",
+
+  filterHasSocial: "소셜 미디어 있음",
+
+  filterNoSocial: "소셜 미디어 없음",
   sortNewest: "🕒 시간: 최신순",
   sortNameAsc: "🔤 이름: A → Z",
   purgeButtonTitle: "Firestore의 모든 회원 데이터 삭제",

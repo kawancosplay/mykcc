@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "已成年（18+）",
   filterMinor: "未成年（<18）",
   filterPreferNotToSay: "未註明",
+
+  filterAllBirthdays: "所有生日",
+
+  filterHasBirthday: "有生日",
+
+  filterBirthdayThisMonth: "本月生日",
+
+  filterAllSocials: "所有社交平台",
+
+  filterHasSocial: "有社交平台",
+
+  filterNoSocial: "無社交平台",
   sortNewest: "🕒 時間：最新",
   sortNameAsc: "🔤 名稱：A → Z",
   purgeButtonTitle: "清除 Firestore 中的所有成員資料",

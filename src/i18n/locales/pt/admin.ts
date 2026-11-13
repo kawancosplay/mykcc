@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "Adulto (18+)",
   filterMinor: "Menor (<18)",
   filterPreferNotToSay: "Não informado",
+
+  filterAllBirthdays: "Todos os aniversários",
+
+  filterHasBirthday: "Com aniversário",
+
+  filterBirthdayThisMonth: "Aniversário este mês",
+
+  filterAllSocials: "Todas as redes sociais",
+
+  filterHasSocial: "Com redes sociais",
+
+  filterNoSocial: "Sem redes sociais",
   sortNewest: "🕒 Data: Mais recentes",
   sortNameAsc: "🔤 Nome: A → Z",
   purgeButtonTitle: "Apagar todos os dados de membros no Firestore",

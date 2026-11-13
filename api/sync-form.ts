@@ -317,8 +317,17 @@ export async function processSyncPayload(body: any): Promise<{
 }
 
 export default async function handler(req: any, res: any) {
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      status: 'ok',
+      endpoint: '/api/sync-form',
+      instructions: 'Send a POST request with Google Forms webhook payload or { rows: [...] } array to auto-sync members.',
+      ready: true,
+    });
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 

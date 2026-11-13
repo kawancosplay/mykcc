@@ -8,6 +8,15 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 
 // Webhook endpoint for instant Google Form submissions via Apps Script
+app.get('/api/sync-form', (_req, res) => {
+  res.json({
+    status: 'ok',
+    endpoint: '/api/sync-form',
+    instructions: 'Send a POST request with Google Forms webhook payload or { rows: [...] } array to auto-sync members.',
+    ready: true,
+  });
+});
+
 app.post('/api/sync-form', async (req, res) => {
   try {
     const payload = req.body;

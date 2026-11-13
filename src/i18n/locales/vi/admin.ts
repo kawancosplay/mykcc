@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "Đã thành niên (18+)",
   filterMinor: "Chưa thành niên (<18)",
   filterPreferNotToSay: "Không xác định",
+
+  filterAllBirthdays: "Tất cả ngày sinh",
+
+  filterHasBirthday: "Có ngày sinh",
+
+  filterBirthdayThisMonth: "Sinh nhật tháng này",
+
+  filterAllSocials: "Tất cả mạng xã hội",
+
+  filterHasSocial: "Có mạng xã hội",
+
+  filterNoSocial: "Không có mạng xã hội",
   sortNewest: "🕒 Thời gian: Mới nhất",
   sortNameAsc: "🔤 Tên: A → Z",
   purgeButtonTitle: "Xóa sạch toàn bộ dữ liệu thành viên trong Firestore",

@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "Diwasa (18+)",
   filterMinor: "Dereng Diwasa (<18)",
   filterPreferNotToSay: "Mboten dipunsebutaken",
+
+  filterAllBirthdays: "Kabeh Dina Lair",
+
+  filterHasBirthday: "Ana Dina Lair",
+
+  filterBirthdayThisMonth: "Dina Lair Wulan Iki",
+
+  filterAllSocials: "Kabeh Medsos",
+
+  filterHasSocial: "Ana Medsos",
+
+  filterNoSocial: "Ora Ana Medsos",
   sortNewest: "🕒 Wekdal: Paling Anyar",
   sortNameAsc: "🔤 Jeneng: A → Z",
   purgeButtonTitle: "Busak sedaya data anggota ing Firestore",

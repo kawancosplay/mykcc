@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "18 ומעלה",
   filterMinor: "מתחת ל-18",
   filterPreferNotToSay: "לא צוין",
+
+  filterAllBirthdays: "כל ימי ההולדת",
+
+  filterHasBirthday: "יש יום הולדת",
+
+  filterBirthdayThisMonth: "יום הולדת החودש",
+
+  filterAllSocials: "כל הרשתות החברתיות",
+
+  filterHasSocial: "יש רשת חברתית",
+
+  filterNoSocial: "ללא רשת חברתית",
   sortNewest: "🕒 זמן: החדשים ביותר",
   sortNameAsc: "🔤 שם: א → ת",
   purgeButtonTitle: "מחיקת כל נתוני החברים ב-Firestore",

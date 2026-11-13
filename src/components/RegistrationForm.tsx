@@ -38,7 +38,6 @@ import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
 import SocialLinksInput from './SocialLinksInput';
 import FloatingGlass from './FloatingGlass';
-import KccBadgePreview from './KccBadgePreview';
 import AgeBirthdayFields from './AgeBirthdayFields';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
@@ -658,8 +657,6 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       {/* GOOGLE FORM HEADER CARD */}
       <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
         <div className="p-5 sm:p-10">
-          {/* Floats so the welcome text wraps around the badge instead of leaving a gap under the title */}
-          <KccBadgePreview className="hidden sm:block float-right ml-8 mb-4 -mt-2 mr-1" />
           <p className="text-xs text-slate-400 mb-2 flex items-center gap-1.5 flex-wrap">
             <span className="text-purple-300 font-medium">{t('registration.officialFormTag')}</span>
             <span>·</span>
@@ -674,10 +671,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </p>
 
           {/* Inclusive Notice */}
-          <div className="glass-well p-3.5 rounded-2xl flex items-start gap-3 text-xs mb-4 border border-emerald-500/20 bg-emerald-950/20 text-emerald-200">
-            <Heart className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="callout-sfw-mint p-3.5 rounded-2xl flex items-start gap-3 text-xs mb-4">
+            <Heart className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
             <div>
-              <strong className="text-emerald-300">{t('registration.inclusiveWelcome')}</strong>
+              <strong className="text-emerald-100">{t('registration.inclusiveWelcome')}</strong>
             </div>
           </div>
 

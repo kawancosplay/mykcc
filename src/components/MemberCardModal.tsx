@@ -160,23 +160,11 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               </p>
             </div>
 
-            {/* HOLOGRAM ID CARD CONTAINER - LIQUID GLASS STYLE (no own backdrop blur: it already sits
-                on the sheet's blurred glass, a second blur here only costs GPU time) */}
+            {/* HOLOGRAM ID CARD CONTAINER - LIQUID GLASS STYLE */}
             <div
               ref={cardRef}
-              className="relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-gradient-to-br from-white/[0.10] via-slate-900/95 to-purple-950/80 shadow-2xl shadow-rose-950/50 mb-6 text-white"
+              className="relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-[rgba(26,18,48,0.95)] shadow-2xl mb-6 text-white"
             >
-              {/* Hologram sheen effects: soft radial glows combining lavender purple & mint green */}
-              <div
-                aria-hidden="true"
-                className="absolute top-0 right-0 -mr-28 -mt-28 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(closest-side, rgba(168, 85, 247, 0.35) 0%, rgba(140, 82, 255, 0.16) 60%, rgba(140, 82, 255, 0) 100%)' }}
-              ></div>
-              <div
-                aria-hidden="true"
-                className="absolute bottom-0 left-0 -ml-28 -mb-28 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(closest-side, rgba(52, 211, 153, 0.32) 0%, rgba(83, 255, 192, 0.15) 60%, rgba(83, 255, 192, 0) 100%)' }}
-              ></div>
 
               {/* Card Top Brand */}
               <div className="flex justify-between items-start gap-3 mb-5 border-b border-rose-500/20 pb-4 relative z-10">

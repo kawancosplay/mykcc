@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "வயது வந்தோர் (18+)",
   filterMinor: "சிறார் (<18)",
   filterPreferNotToSay: "குறிப்பிடப்படவில்லை",
+
+  filterAllBirthdays: "அனைத்து பிறந்தநாள்கள்",
+
+  filterHasBirthday: "பிறந்தநாள் உள்ளது",
+
+  filterBirthdayThisMonth: "இந்த மாத பிறந்தநாள்",
+
+  filterAllSocials: "அனைத்து சமூக வலைதளங்கள்",
+
+  filterHasSocial: "சமூக வலைதளம் உள்ளது",
+
+  filterNoSocial: "சமூக வலைதளம் இல்லை",
   sortNewest: "🕒 நேரம்: புதியவை முதலில்",
   sortNameAsc: "🔤 பெயர்: A → Z",
   purgeButtonTitle: "Firestore-இல் உள்ள அனைத்து உறுப்பினர் தரவையும் அழி",

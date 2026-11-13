@@ -18,8 +18,6 @@ interface OfficialGovBannerProps {
   currentLang: LanguageCode;
 }
 
-// Disclosure: the guide's height opens with the sheet spring and closes with the iOS curve, so the
-// navbar below glides instead of jumping. Height + opacity only.
 const disclosureVariants: Variants = {
   initial: { opacity: 0, height: 0 },
   animate: { opacity: 1, height: 'auto', transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
@@ -33,7 +31,6 @@ const DISCLOSURE_MOTION: PresenceMotionProps = {
   exit: 'exit',
 };
 
-// Reduced motion: quick cross-fade, no height animation.
 const FADE_MOTION: PresenceMotionProps = {
   variants: fadeVariants,
   initial: 'initial',
@@ -41,10 +38,6 @@ const FADE_MOTION: PresenceMotionProps = {
   exit: 'exit',
 };
 
-/*
- * Strip above the sticky navbar. StickyHeader renders it inside its own `.glass-bar` container (which draws
- * the line under it), so it has no glass of its own.
- */
 export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useI18n();
@@ -54,7 +47,6 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
     <div className="relative text-slate-300 text-xs">
       {/* Top Banner Row - Gov style */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
-        {/* Two lines reserved on phones: a language with longer copy cannot shift the page below (CLS). */}
         <div className="flex flex-wrap items-center justify-between gap-1 min-h-[2.25rem] sm:min-h-0">
           {/* Left: Global Community Badge + Official Site Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
@@ -63,16 +55,16 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
             </div>
 
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <span className="font-bold text-slate-200">
+              <span className="font-bold text-white">
                 {t('common.officialBannerText')}
               </span>
-              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 border border-purple-400/30 text-purple-200">
+              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 border border-purple-400/30 text-purple-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Official
               </span>
             </div>
           </div>
 
-          {/* Right: Gov-Style Toggle (small visual, 44px hit area via .touch-target) */}
+          {/* Right: Gov-Style Toggle */}
           <div className="flex items-center">
             <button
               type="button"
@@ -90,12 +82,11 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
         </div>
       </div>
 
-      {/* Expandable Verification Guide Drawer (scrolls on short phone screens instead of pushing the
-          navbar past the viewport). The outer wrapper clips the height animation. */}
+      {/* Expandable Verification Guide Drawer */}
       <AnimatePresence initial={false}>
       {isOpen && (
         <motion.div key="gov-banner-guide" {...disclosureMotion} className="overflow-hidden">
-        <div className="border-t border-white/[0.06] px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain">
+        <div className="border-t border-white/10 bg-[rgba(32,22,58,0.92)] px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Pillar 1: Official International Community Identity */}
             <div className="flex items-start gap-3.5">
@@ -144,14 +135,14 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
                     href="https://wa.me/6285711032782"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="touch-target inline-flex items-center gap-1.5 text-slate-300 font-bold hover:underline"
+                    className="touch-target inline-flex items-center gap-1.5 text-purple-300 font-bold hover:underline"
                   >
                     <span>{t('common.whatsappContact')}</span>
                     <ExternalLink className="w-3 h-3" aria-hidden="true" />
                   </a>
                   <a
                     href="mailto:cosplaysehat@gmail.com"
-                    className="touch-target inline-flex items-center gap-1.5 text-slate-300 font-bold hover:underline"
+                    className="touch-target inline-flex items-center gap-1.5 text-purple-300 font-bold hover:underline"
                   >
                     <span>{t('common.emailContact')}</span>
                   </a>

@@ -493,6 +493,31 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                     {t('admin.oldIdValue', { id: formatKccId(m.legacyUserId16) })}
                   </p>
                 )}
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  {m.birthday && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/35">
+                      🎂 {m.birthday}
+                    </span>
+                  )}
+                  {m.discordUsername && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/35 text-[10px] font-mono font-bold">
+                      💬 {m.discordUsername}
+                    </span>
+                  )}
+                </div>
+                {m.socialMedia && (
+                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                    {parseSocialLinks(m.socialMedia).map(({ platform, handle }, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white/[0.08] text-slate-200 border border-white/15"
+                      >
+                        <span className="font-bold text-violet-400">{platform}:</span>
+                        <span className="truncate max-w-[120px]">{handle}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -633,18 +658,33 @@ export const MemberTable: React.FC<MemberTableProps> = ({
           </td>
         );
       }
-      case 'discord':
+      case 'discord': {
+        const socials = m.socialMedia ? parseSocialLinks(m.socialMedia) : [];
         return (
           <td key={column} className="py-4 px-4">
-            {m.discordUsername ? (
-              <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-mono text-xs font-semibold break-all">
-                {m.discordUsername}
-              </span>
-            ) : (
-              <span className="text-slate-500 italic text-xs">—</span>
-            )}
+            <div className="flex flex-col gap-1 items-start">
+              {m.discordUsername ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/35 font-mono text-xs font-semibold break-all">
+                  <span className="text-[9px] uppercase font-bold text-indigo-400">Discord</span>
+                  <span>{m.discordUsername}</span>
+                </span>
+              ) : null}
+              {socials.map((s, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/[0.08] text-slate-200 border border-white/15"
+                >
+                  <span className="font-bold text-violet-400">{s.platform}:</span>
+                  <span className="truncate max-w-[120px]">{s.handle}</span>
+                </span>
+              ))}
+              {!m.discordUsername && socials.length === 0 && (
+                <span className="text-slate-500 italic text-xs">—</span>
+              )}
+            </div>
           </td>
         );
+      }
       case 'role':
         return (
           <td key={column} className="py-4 px-4">
@@ -662,9 +702,11 @@ export const MemberTable: React.FC<MemberTableProps> = ({
             <span className="text-slate-300 font-medium">{m.ageCategory || (m.age ? `${m.age}` : '-')}</span>
             {m.age && m.ageCategory && <p className="text-[10px] text-slate-400">{m.age}</p>}
             {m.birthday && (
-              <p className="text-[10px] text-slate-400">
-                {t('admin.fieldBirthday')}: {m.birthday}
-              </p>
+              <div className="mt-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/35">
+                  🎂 {m.birthday}
+                </span>
+              </div>
             )}
           </td>
         );

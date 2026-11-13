@@ -24,6 +24,7 @@ import {
 import {
   useSiteTheme,
   BackgroundTheme,
+  GlassPreset,
   FontTheme,
   ColorTheme,
   LayoutWidth,
@@ -97,6 +98,12 @@ export const SiteEditorModal: React.FC = () => {
     desc: string;
     previewGrad: string;
   }[] = [
+    {
+      id: 'lavender-mint-sticker',
+      name: 'Lavender & Mint Anime Poster',
+      desc: 'Bright pastel gradient (#B18CFE → #93C5FD → #6EE7B7) with faint white stationery grid',
+      previewGrad: 'linear-gradient(135deg, #b18cfe 0%, #93c5fd 50%, #6ee7b7 100%)',
+    },
     {
       id: 'bright-purple-fluent',
       name: t('siteEditor.bgBrightPurpleName'),
@@ -393,6 +400,68 @@ export const SiteEditorModal: React.FC = () => {
                         ))}
                       </div>
                     </div>
+
+                    <div>
+                      <label className={SECTION_LABEL}>QuickLiquid Glass Preset</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                        {[
+                          { id: 'clear', label: 'Clear', desc: 'Minimal refraction' },
+                          { id: 'thin', label: 'Thin', desc: 'Subtle frost' },
+                          { id: 'regular', label: 'Regular', desc: 'Frosted crystal' },
+                          { id: 'thick', label: 'Thick', desc: 'Deep frost' },
+                          { id: 'adaptive', label: 'Adaptive', desc: 'Auto contrast' },
+                        ].map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            aria-pressed={(theme.glassPreset || 'regular') === opt.id}
+                            onClick={() => updateTheme({ glassPreset: opt.id as GlassPreset })}
+                            className={`pressable-soft p-3 rounded-2xl border text-center ${
+                              (theme.glassPreset || 'regular') === opt.id ? OPTION_SELECTED : OPTION_IDLE
+                            }`}
+                          >
+                            <span className="text-xs font-bold text-white block">{opt.label}</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5 block">{opt.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className={SECTION_LABEL}>Glass Frost Blur Strength</label>
+                        <span className="text-xs font-mono font-bold text-purple-300">
+                          {theme.glassBlur ?? 12}px
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 glass-well p-3 rounded-2xl">
+                        <input
+                          type="range"
+                          min="0"
+                          max="24"
+                          step="2"
+                          value={theme.glassBlur ?? 12}
+                          onChange={(e) => updateTheme({ glassBlur: Number(e.target.value) })}
+                          className="w-full accent-purple-500 cursor-pointer"
+                        />
+                        <div className="flex gap-1.5 shrink-0">
+                          {[0, 8, 12, 16, 20].map((val) => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => updateTheme({ glassBlur: val })}
+                              className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${
+                                (theme.glassBlur ?? 12) === val
+                                  ? 'bg-purple-600 text-white border-purple-400'
+                                  : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white/20'
+                              }`}
+                            >
+                              {val}px
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -524,6 +593,44 @@ export const SiteEditorModal: React.FC = () => {
                           onChange={(e) => updateTheme({ customPrimaryColor: e.target.value, colorScheme: 'custom' })}
                           className="w-28 glass-input px-3 font-mono text-base sm:text-sm"
                         />
+                      </div>
+                    </div>
+
+                    {/* Live Lavender & Mint Pastel Color Adjusters */}
+                    <div className="glass-well p-4 rounded-3xl space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                          Lavender & Mint Pastel Background Colors
+                        </h4>
+                        <p className="text-[11px] text-slate-400">
+                          Adjust the pastel diagonal gradient tones live
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                          <span className="text-xs font-semibold text-slate-300">Lavender Tone</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={theme.lavenderColor || '#b18cfe'}
+                              onChange={(e) => updateTheme({ lavenderColor: e.target.value })}
+                              className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                            />
+                            <span className="font-mono text-xs text-purple-300 font-bold">{theme.lavenderColor || '#b18cfe'}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                          <span className="text-xs font-semibold text-slate-300">Mint Green Tone</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={theme.mintColor || '#6ee7b7'}
+                              onChange={(e) => updateTheme({ mintColor: e.target.value })}
+                              className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                            />
+                            <span className="font-mono text-xs text-emerald-300 font-bold">{theme.mintColor || '#6ee7b7'}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

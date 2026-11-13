@@ -3,12 +3,16 @@ import { db, describeFirestoreError } from './firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export type BackgroundTheme =
+  | 'deep-lavender-solid'
+  | 'lavender-mint-sticker'
   | 'bright-purple-fluent'
   | 'cyber-purple'
   | 'cosmic-dark'
   | 'fluent-lavender'
   | 'dark-onyx'
   | 'custom';
+
+export type GlassPreset = 'clear' | 'thin' | 'regular' | 'thick' | 'adaptive';
 
 // The id is stored in siteSettings/theme and predates the switch to Google Sans Flex.
 export type FontTheme = 'din-next';
@@ -23,6 +27,10 @@ export type EmblemType = 'kitsune' | 'crown' | 'sparkle' | 'shield' | 'heart' | 
 export interface SiteTheme {
   background: BackgroundTheme;
   customBgGradient?: string;
+  glassPreset?: GlassPreset;
+  glassBlur?: number;
+  lavenderColor?: string;
+  mintColor?: string;
   font: FontTheme;
   colorScheme: ColorTheme;
   customPrimaryColor?: string;
@@ -38,11 +46,15 @@ export interface SiteTheme {
 }
 
 export const DEFAULT_THEME: SiteTheme = {
-  background: 'bright-purple-fluent',
-  customBgGradient: 'linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%)',
+  background: 'deep-lavender-solid',
+  customBgGradient: '#1e1436',
+  glassPreset: 'thick',
+  glassBlur: 20,
+  lavenderColor: '#a855f7',
+  mintColor: '#10b981',
   font: 'din-next',
   colorScheme: 'purple',
-  customPrimaryColor: '#8c52ff',
+  customPrimaryColor: '#a855f7',
   layoutWidth: '7xl',
   cardRadius: 'rounded-3xl',
   navbarStyle: 'glass-bar',
@@ -55,22 +67,22 @@ export const DEFAULT_THEME: SiteTheme = {
 };
 
 const BACKGROUND_GRADIENTS: Record<Exclude<BackgroundTheme, 'custom'>, string> = {
-  'bright-purple-fluent':
-    'radial-gradient(circle at 18% 15%, rgba(83, 255, 192, 0.22) 0%, transparent 55%), radial-gradient(circle at 82% 25%, rgba(168, 85, 247, 0.28) 0%, transparent 60%), linear-gradient(145deg, #0a0418 0%, #1a0d33 40%, #0d211e 75%, #06110f 100%)',
-  'cyber-purple':
-    'radial-gradient(ellipse 65% 50% at 20% 15%, rgba(83, 255, 192, 0.22) 0%, transparent 65%), linear-gradient(135deg, #18052e 0%, #3b0764 50%, #064e3b 100%)',
-  'cosmic-dark':
-    'radial-gradient(ellipse 60% 50% at 80% 20%, rgba(168, 85, 247, 0.25) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 20% 80%, rgba(52, 211, 153, 0.18) 0%, transparent 65%), linear-gradient(135deg, #090614 0%, #170d2b 50%, #0c1a17 100%)',
-  'fluent-lavender':
-    'radial-gradient(ellipse 70% 55% at 20% 15%, rgba(83, 255, 192, 0.26) 0%, transparent 65%), radial-gradient(ellipse 75% 60% at 85% 30%, rgba(192, 132, 252, 0.35) 0%, transparent 70%), linear-gradient(135deg, #271242 0%, #3d1b64 50%, #132e24 100%)',
-  'dark-onyx': 'linear-gradient(135deg, #0a0910 0%, #12101b 50%, #1a1727 100%)',
+  'deep-lavender-solid': '#1e1436',
+  'lavender-mint-sticker': 'linear-gradient(135deg, #1e1436 0%, #2a1b4e 50%, #1e1436 100%)',
+  'bright-purple-fluent': '#1e1436',
+  'cyber-purple': 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #064e3b 100%)',
+  'cosmic-dark': 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #0c1a17 100%)',
+  'fluent-lavender': 'linear-gradient(135deg, #1e1436 0%, #2e1d52 100%)',
+  'dark-onyx': '#0a0910',
 };
 
 /** The page background gradient of a theme (App writes it to `--app-bg`; painted by `body::before`). */
 export function themeBackground(theme: SiteTheme): string {
-  if (theme.background === 'custom' && theme.customBgGradient) return theme.customBgGradient;
-  if (theme.background === 'custom') return BACKGROUND_GRADIENTS['bright-purple-fluent'];
-  return BACKGROUND_GRADIENTS[theme.background] ?? BACKGROUND_GRADIENTS['bright-purple-fluent'];
+  if (theme.background === 'custom') return theme.customBgGradient || '#1e1436';
+  if (!theme.background || theme.background === 'deep-lavender-solid' || theme.background === 'bright-purple-fluent') {
+    return '#1e1436';
+  }
+  return BACKGROUND_GRADIENTS[theme.background] ?? '#1e1436';
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -78,9 +90,10 @@ export function themeBackground(theme: SiteTheme): string {
 // Firestore snapshot only re-renders when something actually changed). index.html reads `appBg`.
 // ---------------------------------------------------------------------------------------------
 
-const THEME_CACHE_KEY = 'kcc_theme_v1';
+const THEME_CACHE_KEY = 'kcc_theme_v2';
 
-const BACKGROUNDS: readonly BackgroundTheme[] = ['bright-purple-fluent', 'cyber-purple', 'cosmic-dark', 'fluent-lavender', 'dark-onyx', 'custom'];
+const BACKGROUNDS: readonly BackgroundTheme[] = ['deep-lavender-solid', 'lavender-mint-sticker', 'bright-purple-fluent', 'cyber-purple', 'cosmic-dark', 'fluent-lavender', 'dark-onyx', 'custom'];
+const GLASS_PRESETS: readonly GlassPreset[] = ['clear', 'thin', 'regular', 'thick', 'adaptive'];
 const COLORS: readonly ColorTheme[] = ['purple', 'rose', 'indigo', 'emerald', 'amber', 'cyan', 'custom'];
 const WIDTHS: readonly LayoutWidth[] = ['7xl', '6xl', 'full'];
 const RADII: readonly CardRadius[] = ['rounded-3xl', 'rounded-2xl', 'rounded-xl', 'rounded-lg'];
@@ -102,6 +115,10 @@ function normalizeTheme(raw: unknown): SiteTheme {
   return {
     background: pick(data.background, BACKGROUNDS, DEFAULT_THEME.background),
     customBgGradient: str(data.customBgGradient, DEFAULT_THEME.customBgGradient, 400),
+    glassPreset: pick(data.glassPreset, GLASS_PRESETS, DEFAULT_THEME.glassPreset || 'regular'),
+    glassBlur: typeof data.glassBlur === 'number' && data.glassBlur >= 0 && data.glassBlur <= 30 ? data.glassBlur : DEFAULT_THEME.glassBlur,
+    lavenderColor: str(data.lavenderColor, DEFAULT_THEME.lavenderColor, 20),
+    mintColor: str(data.mintColor, DEFAULT_THEME.mintColor, 20),
     font: 'din-next',
     colorScheme: pick(data.colorScheme, COLORS, DEFAULT_THEME.colorScheme),
     customPrimaryColor: str(data.customPrimaryColor, DEFAULT_THEME.customPrimaryColor, 40),
@@ -226,6 +243,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     document.documentElement.style.setProperty('--theme-primary', colorMap[theme.colorScheme] || '#8c52ff');
+
+    // Apply live glass blur and pastel colors if customized
+    const blurPx = typeof theme.glassBlur === 'number' ? theme.glassBlur : 12;
+    document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);
+    if (theme.lavenderColor) {
+      document.documentElement.style.setProperty('--kcc-lavender', theme.lavenderColor);
+    }
+    if (theme.mintColor) {
+      document.documentElement.style.setProperty('--kcc-mint', theme.mintColor);
+    }
   }, [theme]);
 
   const updateTheme = useCallback(async (partial: Partial<SiteTheme>) => {

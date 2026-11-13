@@ -1,6 +1,6 @@
 import { lazy, Suspense, type ReactNode } from 'react';
+import { useSiteTheme } from '../lib/themeContext';
 
-// Loaded after the first paint, so the refraction engine never delays startup; the CSS glass shows until then
 const LiquidGlass = lazy(() => import('quick-liquid/react').then((m) => ({ default: m.LiquidGlass })));
 
 interface FloatingGlassProps {
@@ -12,32 +12,42 @@ interface FloatingGlassProps {
 }
 
 /**
- * Ultra-optimized liquid glass container powered by quick-liquid with physical rim lighting & refraction.
- * Applied across the entire site with full blur enabled on all devices and VMs.
+ * Substantial, dense iOS thick frosted glass container powered by quick-liquid.
+ * Configured in hardware CSS refraction mode (`refractionMode: 'css'`) with thick iOS frosted material
+ * (~82-86% opacity, dark plum tone) staying lightning fast on VMware Ubuntu Linux and mobile devices.
  */
 export default function FloatingGlass({
   className = '',
   children,
   borderRadius = 22,
-  material = 'regular',
-  tintOpacity = 0.55,
+  material,
+  tintOpacity = 0.82,
 }: FloatingGlassProps) {
-  const cssGlass = <div className={`glass-pill ${className}`}>{children}</div>;
+  const { theme } = useSiteTheme();
+  const activeMaterial = material || theme.glassPreset || 'thick';
+
+  const cssGlass = (
+    <div
+      className={`glass-pill border border-white/15 bg-[rgba(32,22,58,0.86)] text-white shadow-[0_12px_32px_rgba(0,0,0,0.35)] backdrop-blur-[20px] ${className}`}
+    >
+      {children}
+    </div>
+  );
+
   return (
     <Suspense fallback={cssGlass}>
       <LiquidGlass
         config={{
-          material,
+          material: activeMaterial,
           appearance: 'dark',
-          tint: '22, 22, 27',
+          tint: '32, 22, 58',
           tintOpacity,
           borderRadius,
           quality: 'low',
-          dispersionMode: 'auto',
-          refractionMode: 'auto',
+          refractionMode: 'css',
           respectPreferences: true,
         }}
-        className={`border border-white/10 ${className}`}
+        className={`border border-white/15 text-white shadow-[0_12px_32px_rgba(0,0,0,0.35)] ${className}`}
       >
         {children}
       </LiquidGlass>

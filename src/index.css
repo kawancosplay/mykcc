@@ -58,52 +58,50 @@
 :root {
   --font-site: 'Google Sans Flex', sans-serif;
 
-  /* Brand: colorful lavender and green (from the KawanCosplay posters & guidelines) */
-  --kcc-purple: #9d72ff;
-  --kcc-lavender: #b8a5fe;
-  --kcc-mint: #53ffc0;
-  --kcc-emerald: #34d399;
-  --kcc-ink: #070314;
-  --kcc-deep: #170d2e;
+  /* Brand: Clean Deep-Lavender & Mint Theme */
+  --kcc-purple: #a855f7;
+  --kcc-lavender: #c084fc;
+  --kcc-deep-lavender: #1e1436;
+  --kcc-mint: #34d399;
+  --kcc-emerald: #10b981;
+  --kcc-ink: #0d081a;
   --kcc-gradient: linear-gradient(135deg, #a855f7 0%, #34d399 100%);
-  --theme-primary: #9d72ff; /* overwritten at runtime by themeContext */
+  --theme-primary: #a855f7; /* overwritten at runtime by themeContext */
 
-  /* Page background: colorful lavender & fresh mint green combination (hardware-efficient 3-stop mesh) */
-  --app-bg: radial-gradient(circle at 18% 15%, rgba(83, 255, 192, 0.22) 0%, transparent 55%),
-    radial-gradient(circle at 82% 25%, rgba(168, 85, 247, 0.28) 0%, transparent 60%),
-    linear-gradient(145deg, #0a0418 0%, #1a0d33 40%, #0d211e 75%, #06110f 100%);
+  /* Clean solid background (NO ambient wallpaper, NO radial glows/blobs) */
+  --app-bg: #1e1436;
 
-  /* Glass materials: tint painted under the blur */
-  --glass-fill-bar: rgba(12, 8, 26, 0.68);
-  --glass-fill-card: rgba(22, 14, 46, 0.58);
-  --glass-fill-raised: rgba(24, 15, 50, 0.68);
-  --glass-fill-elevated: rgba(18, 12, 40, 0.8);
-  --glass-fill-sheet: rgba(16, 10, 34, 0.86);
-  --glass-fill-menu: rgba(12, 8, 26, 0.85);
-  --glass-fill-well: rgba(5, 2, 10, 0.42);
-  --glass-fill-input: rgba(5, 2, 10, 0.45);
-  --glass-fill-control: rgba(255, 255, 255, 0.07);
-  --glass-fill-control-hover: rgba(255, 255, 255, 0.12);
-  --glass-fill-selected: rgba(140, 82, 255, 0.24);
-  --glass-fill-overlay: rgba(5, 2, 10, 0.6);
-  --glass-fill-solid: #120c26; /* reduced transparency / no backdrop-filter */
+  /* Glass materials: dense, substantial iOS thick frosted glass (~86% opacity) */
+  --glass-fill-bar: rgba(32, 22, 58, 0.86);
+  --glass-fill-card: rgba(32, 22, 58, 0.86);
+  --glass-fill-raised: rgba(36, 25, 66, 0.88);
+  --glass-fill-elevated: rgba(32, 22, 58, 0.92);
+  --glass-fill-sheet: rgba(28, 20, 52, 0.94);
+  --glass-fill-menu: rgba(28, 20, 52, 0.95);
+  --glass-fill-well: rgba(18, 12, 36, 0.75);
+  --glass-fill-input: rgba(18, 12, 36, 0.75);
+  --glass-fill-control: rgba(255, 255, 255, 0.08);
+  --glass-fill-control-hover: rgba(255, 255, 255, 0.14);
+  --glass-fill-selected: rgba(168, 85, 247, 0.32);
+  --glass-fill-overlay: rgba(10, 6, 20, 0.65);
+  --glass-fill-solid: #20163a;
 
-  /* Strokes, specular highlight, focus */
-  --glass-stroke: rgba(255, 255, 255, 0.1);
-  --glass-stroke-strong: rgba(255, 255, 255, 0.16);
-  --glass-stroke-top: rgba(255, 255, 255, 0.2);
-  --glass-stroke-selected: rgba(140, 82, 255, 0.6);
-  --glass-stroke-focus: rgba(52, 211, 153, 0.75);
-  --glass-ring: 0 0 0 4px rgba(168, 85, 247, 0.28);
-  --glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-  --glass-highlight-strong: inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 38%);
+  /* Clean iOS rim, strokes, and highlights */
+  --glass-stroke: rgba(255, 255, 255, 0.14);
+  --glass-stroke-strong: rgba(255, 255, 255, 0.2);
+  --glass-stroke-top: rgba(255, 255, 255, 0.28);
+  --glass-stroke-selected: rgba(168, 85, 247, 0.7);
+  --glass-stroke-focus: #a855f7;
+  --glass-ring: 0 0 0 4px rgba(168, 85, 247, 0.35);
+  --glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+  --glass-highlight-strong: inset 0 1px 0 0 rgba(255, 255, 255, 0.24);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 38%);
 
   /* Elevation */
-  --glass-shadow-sm: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
-  --glass-shadow-md: 0 12px 32px -14px rgba(0, 0, 0, 0.7);
-  --glass-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.85);
-  --glass-glow-primary: 0 8px 24px -10px rgba(168, 85, 247, 0.4), 0 4px 14px -6px rgba(52, 211, 153, 0.3);
+  --glass-shadow-sm: 0 4px 14px -4px rgba(0, 0, 0, 0.4);
+  --glass-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --glass-shadow-lg: 0 24px 60px -10px rgba(0, 0, 0, 0.55);
+  --glass-glow-primary: 0 8px 24px -6px rgba(168, 85, 247, 0.45);
 
   /* Motion */
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
@@ -227,10 +225,8 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Transparent: html carries the dark fallback (index.html), so the theme background and the grid on
-     body::before / body::after show. An opaque body painted over them and hid every Site Editor background. */
   background-color: transparent;
-  color: #f8fafc;
+  color: #ffffff;
   min-height: 100vh;
 }
 
@@ -250,7 +246,7 @@ body::before {
   transform: translateZ(0);
 }
 
-/* The white grid of the KawanCosplay posters, faint, over whichever theme background is set */
+/* The subtle faint white grid of the KawanCosplay posters over clean solid background */
 body::after {
   content: '';
   position: fixed;
@@ -389,8 +385,62 @@ button, a[role="button"] {
     pointer-events: none;
     background-color: var(--glass-fill-bar);
     background-image: var(--glass-sheen);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+  }
+
+  /* ---------- Die-Cut Sticker Titles & Badges ---------- */
+  .sticker-title {
+    display: inline-block;
+    color: #111827;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-shadow:
+      -2px -2px 0 #ffffff,
+      2px -2px 0 #ffffff,
+      -2px 2px 0 #ffffff,
+      2px 2px 0 #ffffff,
+      0 0 12px rgba(255, 255, 255, 0.95),
+      0 4px 14px rgba(17, 24, 39, 0.12);
+  }
+
+  .sticker-violet {
+    color: #8b5cf6;
+    text-shadow:
+      -2px -2px 0 #ffffff,
+      2px -2px 0 #ffffff,
+      -2px 2px 0 #ffffff,
+      2px 2px 0 #ffffff,
+      0 0 12px rgba(255, 255, 255, 0.95),
+      0 4px 14px rgba(139, 92, 246, 0.2);
+  }
+
+  .sticker-emerald {
+    color: #16a34a;
+    text-shadow:
+      -2px -2px 0 #ffffff,
+      2px -2px 0 #ffffff,
+      -2px 2px 0 #ffffff,
+      2px 2px 0 #ffffff,
+      0 0 12px rgba(255, 255, 255, 0.95),
+      0 4px 14px rgba(22, 163, 74, 0.2);
+  }
+
+  .sticker-ink {
+    color: #111827;
+  }
+
+  .sticker-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: #ffffff;
+    border: 2px solid #ffffff;
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px rgba(17, 24, 39, 0.08), 0 1px 3px rgba(17, 24, 39, 0.04);
+    padding: 0.25rem 0.75rem;
+    font-weight: 700;
+    color: #111827;
   }
 
   /* Mobile bottom tab bar (hide on desktop with `lg:hidden`) */
@@ -406,7 +456,7 @@ button, a[role="button"] {
     gap: 0.25rem;
     padding: 0.375rem max(0.5rem, var(--safe-right)) calc(0.375rem + var(--safe-bottom)) max(0.5rem, var(--safe-left));
     border-top: 1px solid var(--glass-stroke);
-    box-shadow: 0 -10px 30px -18px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 -10px 30px -18px rgba(0, 0, 0, 0.15);
   }
 
   .glass-tabbar-item {
@@ -419,11 +469,11 @@ button, a[role="button"] {
     gap: 0.125rem;
     min-height: 3rem;
     padding: 0.25rem 0.25rem;
-    border-radius: 1rem;
+    border-radius: 9999px;
     font-size: 0.6875rem;
     font-weight: 600;
     line-height: 1.1;
-    color: rgb(148 163 184);
+    color: rgb(71 85 105);
     transition: color var(--dur-fast) ease;
   }
 
@@ -435,33 +485,39 @@ button, a[role="button"] {
   .glass-tabbar-item[aria-current="page"],
   .glass-tabbar-item[aria-selected="true"],
   .glass-tabbar-item.is-active {
-    color: #fff;
+    color: #8b5cf6;
   }
 
-  /* ---------- In-flow cards: high-performance liquid glass (specular sheen, no scroll-lagging blur) ---------- */
+  /* ---------- In-flow cards: dense iOS thick frosted material (~86% opacity) ---------- */
   .glass-card,
   .liquid-glass-card {
     background-color: var(--glass-fill-card);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke);
-    border-top-color: rgba(255, 255, 255, 0.16);
+    border-top-color: var(--glass-stroke-top);
+    border-radius: 1.5rem;
     box-shadow: var(--glass-highlight), var(--glass-shadow-md);
+    color: #ffffff;
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
   }
 
   .glass-raised {
     background-color: var(--glass-fill-raised);
     border-color: var(--glass-stroke-strong);
     border-top-color: var(--glass-stroke-top);
+    border-radius: 1.75rem;
     box-shadow: var(--glass-highlight-strong), var(--glass-shadow-lg);
   }
 
-  /* Card over imagery. Sprint 3: no live blur any more (it was unused and an in-flow blur costs a
-     re-blur per scroll frame); a denser tint keeps text readable over photos. */
+  /* Card over imagery */
   .glass-card-frosted {
-    background-color: rgba(22, 14, 46, 0.86);
+    background-color: rgba(32, 22, 58, 0.9);
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     box-shadow: var(--glass-highlight), var(--glass-shadow-md);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
   }
 
   .glass-card-interactive {
@@ -471,8 +527,16 @@ button, a[role="button"] {
 
   .glass-well {
     background-color: var(--glass-fill-well);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--glass-stroke);
+    border-radius: 1rem;
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  }
+
+  /* ---------- SFW & Community Mint Callout Box ---------- */
+  .callout-sfw-mint {
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    color: #a7f3d0;
   }
 
   /* ---------- Floating panels ---------- */
@@ -791,24 +855,30 @@ button, a[role="button"] {
     border-color: var(--glass-stroke-selected);
   }
 
-  /* ---------- Inputs ---------- */
+  /* ---------- Inner inputs, selects, radios, checkboxes: solid-feeling dark plum wells ---------- */
   .glass-input,
   .liquid-glass-input {
-    padding: 0.625rem 0.875rem;
-    border-radius: 0.875rem;
-    color: #f8fafc;
+    padding: 0.625rem 1rem;
+    border-radius: 9999px;
+    color: #ffffff;
     background-color: var(--glass-fill-input);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--glass-stroke);
     box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
-    caret-color: var(--theme-primary, #8c52ff);
+    caret-color: var(--theme-primary, #a855f7);
     -webkit-appearance: none;
     appearance: none;
     transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
   }
 
+  textarea.glass-input,
+  textarea.liquid-glass-input {
+    border-radius: 1.25rem;
+    resize: vertical;
+  }
+
   .glass-input::placeholder,
   .liquid-glass-input::placeholder {
-    color: rgb(100 116 139);
+    color: #94a3b8;
     opacity: 1;
   }
 
@@ -817,9 +887,9 @@ button, a[role="button"] {
   .glass-input:focus-within,
   .liquid-glass-input:focus-within {
     outline: none;
-    background-color: rgba(10, 6, 22, 0.6);
-    border-color: var(--glass-stroke-focus);
-    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35), var(--glass-ring);
+    background-color: rgba(24, 16, 48, 0.9);
+    border-color: #a855f7;
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(168, 85, 247, 0.35);
   }
 
   .glass-input[aria-invalid="true"],
@@ -829,7 +899,7 @@ button, a[role="button"] {
 
   .glass-input[aria-invalid="true"]:focus,
   .liquid-glass-input[aria-invalid="true"]:focus {
-    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(244, 63, 94, 0.25);
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(244, 63, 94, 0.25);
   }
 
   .glass-input:disabled,
@@ -852,34 +922,44 @@ button, a[role="button"] {
     background-position: left 0.75rem center;
   }
 
-  textarea.glass-input,
-  textarea.liquid-glass-input {
-    resize: vertical;
-  }
-
-  /* ---------- Buttons ---------- */
+  /* ---------- Soft pill buttons with Lavender & Mint accents ---------- */
   .btn-primary,
   .glass-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    min-height: 2.5rem;
-    padding: 0.625rem 1.125rem;
-    border-radius: 0.875rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.375rem;
+    border-radius: 9999px;
     font-size: 0.875rem;
     line-height: 1.2;
     cursor: pointer;
+    font-weight: 700;
   }
 
-  /* Crisp white-to-lavender card button with colorful lavender & mint glow */
+  /* Pill button with Lavender gradient */
   .btn-primary {
-    font-weight: 600;
-    color: var(--kcc-deep);
-    background: linear-gradient(135deg, #ffffff 0%, #f7f5ff 60%, #ecfdf5 100%);
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--glass-glow-primary);
+    color: #ffffff;
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 16px -2px rgba(168, 85, 247, 0.5);
     transition: filter var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
+  }
+
+  .glass-button {
+    color: #cbd5e1;
+    background-color: var(--glass-fill-control);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 100%);
+    border: 1px solid var(--glass-stroke);
+    box-shadow: var(--glass-highlight);
+    transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
+  }
+
+  .glass-button:hover,
+  .glass-button:active {
+    color: #ffffff;
+    background-color: var(--glass-fill-control-hover);
   }
 
   .glass-button {

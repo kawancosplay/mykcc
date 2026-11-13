@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "Dewasa (18+)",
   filterMinor: "Bawah Umur (<18)",
   filterPreferNotToSay: "Tidak dinyatakan",
+
+  filterAllBirthdays: "Semua Hari Lahir",
+
+  filterHasBirthday: "Ada Hari Lahir",
+
+  filterBirthdayThisMonth: "Hari Lahir Bulan Ini",
+
+  filterAllSocials: "Semua Media Sosial",
+
+  filterHasSocial: "Ada Media Sosial",
+
+  filterNoSocial: "Tiada Media Sosial",
   sortNewest: "🕒 Masa: Terkini",
   sortNameAsc: "🔤 Nama: A → Z",
   purgeButtonTitle: "Hapuskan semua data ahli dalam Firestore",

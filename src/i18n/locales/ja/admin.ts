@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "成人 (18歳以上)",
   filterMinor: "未成年 (18歳未満)",
   filterPreferNotToSay: "未回答",
+
+  filterAllBirthdays: "すべての誕生日",
+
+  filterHasBirthday: "誕生日あり",
+
+  filterBirthdayThisMonth: "今月の誕生日",
+
+  filterAllSocials: "すべてのSNS",
+
+  filterHasSocial: "SNSあり",
+
+  filterNoSocial: "SNSなし",
   sortNewest: "🕒 日時: 新しい順",
   sortNameAsc: "🔤 名前: A → Z",
   purgeButtonTitle: "Firestore のメンバーデータをすべて消去",

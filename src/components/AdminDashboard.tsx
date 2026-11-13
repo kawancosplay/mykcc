@@ -254,6 +254,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedRole, setSelectedRole] = useState('ALL');
   const [selectedCity, setSelectedCity] = useState('ALL');
   const [selectedAgeCategory, setSelectedAgeCategory] = useState('ALL');
+  const [selectedBirthdayFilter, setSelectedBirthdayFilter] = useState<'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH'>('ALL');
+  const [selectedSocialFilter, setSelectedSocialFilter] = useState('ALL');
   const [sortMode, setSortMode] = useState<SortMode>('timestamp_desc');
   const [pageSize, setPageSize] = useState<PageSize>(() => readStoredPageSize());
   const [page, setPage] = useState(1);
@@ -264,7 +266,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Back to page 1 whenever what is listed changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedRole, selectedCity, selectedAgeCategory, sortMode, pageSize]);
+  }, [searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, sortMode, pageSize]);
 
   const handlePageSize = (size: PageSize) => {
     setPageSize(size);
@@ -290,15 +292,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, [members]);
 
   const filteredMembers = useMemo(() => {
-    const filtered = members.filter(
-      (m) =>
-        memberMatchesQuery(m, searchQuery) &&
-        (selectedRole === 'ALL' || m.primaryRole === selectedRole) &&
-        (selectedCity === 'ALL' || m.city === selectedCity) &&
-        (selectedAgeCategory === 'ALL' || ageCategoryKey(m.ageCategory) === ageCategoryKey(selectedAgeCategory))
-    );
+    const currentMonth = new Date().getMonth() + 1;
+    const filtered = members.filter((m) => {
+      if (!memberMatchesQuery(m, searchQuery)) return false;
+      if (selectedRole !== 'ALL' && m.primaryRole !== selectedRole) return false;
+      if (selectedCity !== 'ALL' && m.city !== selectedCity) return false;
+      if (selectedAgeCategory !== 'ALL' && ageCategoryKey(m.ageCategory) !== ageCategoryKey(selectedAgeCategory)) return false;
+
+      // Birthday filter
+      if (selectedBirthdayFilter === 'HAS_BIRTHDAY') {
+        if (!m.birthday || !m.birthday.trim()) return false;
+      } else if (selectedBirthdayFilter === 'THIS_MONTH') {
+        if (!m.birthday || !m.birthday.trim()) return false;
+        const b = m.birthday.trim();
+        let matches = false;
+        const isoMatch = b.match(/^\d{4}-(\d{1,2})-\d{1,2}/);
+        if (isoMatch) {
+          matches = parseInt(isoMatch[1], 10) === currentMonth;
+        } else {
+          const slashMatch = b.match(/^\d{1,2}[/-](\d{1,2})[/-]\d{2,4}/);
+          if (slashMatch) {
+            matches = parseInt(slashMatch[1], 10) === currentMonth;
+          } else {
+            const dt = new Date(b);
+            if (!isNaN(dt.getTime())) {
+              matches = dt.getMonth() + 1 === currentMonth;
+            }
+          }
+        }
+        if (!matches) return false;
+      }
+
+      // Social filter
+      if (selectedSocialFilter === 'HAS_SOCIAL') {
+        const hasSocial = (!!m.socialMedia && m.socialMedia.trim() !== '') || (!!m.discordUsername && m.discordUsername.trim() !== '');
+        if (!hasSocial) return false;
+      } else if (selectedSocialFilter === 'NO_SOCIAL') {
+        const hasSocial = (!!m.socialMedia && m.socialMedia.trim() !== '') || (!!m.discordUsername && m.discordUsername.trim() !== '');
+        if (hasSocial) return false;
+      } else if (selectedSocialFilter === 'Discord') {
+        const isDiscord = (!!m.discordUsername && m.discordUsername.trim() !== '') || (!!m.socialMedia && m.socialMedia.toLowerCase().includes('discord'));
+        if (!isDiscord) return false;
+      } else if (selectedSocialFilter !== 'ALL') {
+        if (!m.socialMedia || !m.socialMedia.toLowerCase().includes(selectedSocialFilter.toLowerCase())) return false;
+      }
+
+      return true;
+    });
     return sortMembers(filtered, sortMode);
-  }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, sortMode]);
+  }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, sortMode]);
 
   const total = filteredMembers.length;
   const effectivePageSize = pageSize === 'all' ? Math.max(1, total) : pageSize;
@@ -503,7 +545,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }
 
   const hasActiveFilters =
-    selectedRole !== 'ALL' || selectedCity !== 'ALL' || selectedAgeCategory !== 'ALL' || !!searchQuery;
+    selectedRole !== 'ALL' ||
+    selectedCity !== 'ALL' ||
+    selectedAgeCategory !== 'ALL' ||
+    selectedBirthdayFilter !== 'ALL' ||
+    selectedSocialFilter !== 'ALL' ||
+    !!searchQuery;
 
   const tabLabel = (tab: AdminTab): string => {
     switch (tab) {
@@ -756,6 +803,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {/* No longer offered to anyone; stays here so admins can find the members who already have it */}
                         <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
                       </select>
+                      <select
+                        value={selectedBirthdayFilter}
+                        onChange={(e) => setSelectedBirthdayFilter(e.target.value as 'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH')}
+                        aria-label={t('admin.fieldBirthday')}
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                      >
+                        <option value="ALL">{t('admin.filterAllBirthdays')}</option>
+                        <option value="HAS_BIRTHDAY">🎂 {t('admin.filterHasBirthday')}</option>
+                        <option value="THIS_MONTH">🎉 {t('admin.filterBirthdayThisMonth')}</option>
+                      </select>
+                      <select
+                        value={selectedSocialFilter}
+                        onChange={(e) => setSelectedSocialFilter(e.target.value)}
+                        aria-label={t('admin.fieldSocialMedia')}
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                      >
+                        <option value="ALL">{t('admin.filterAllSocials')}</option>
+                        <option value="HAS_SOCIAL">📱 {t('admin.filterHasSocial')}</option>
+                        <option value="NO_SOCIAL">❌ {t('admin.filterNoSocial')}</option>
+                        <option value="Instagram">📸 Instagram</option>
+                        <option value="TikTok">🎵 TikTok</option>
+                        <option value="Discord">💬 Discord</option>
+                        <option value="Twitter">🐦 Twitter / X</option>
+                        <option value="YouTube">📺 YouTube</option>
+                        <option value="Facebook">👥 Facebook</option>
+                      </select>
 
                       <div className="flex items-center gap-1.5 liquid-glass-input rounded-xl px-2.5 py-2">
                         <ArrowUpDown className="w-3.5 h-3.5 text-rose-400 shrink-0" />
@@ -803,6 +876,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setSelectedRole('ALL');
                           setSelectedCity('ALL');
                           setSelectedAgeCategory('ALL');
+                          setSelectedBirthdayFilter('ALL');
+                          setSelectedSocialFilter('ALL');
                           setSearchQuery('');
                         }}
                         className="touch-target text-rose-400 hover:underline"

@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "Sawawa (18+)",
   filterMinor: "Handapeun Umur (<18)",
   filterPreferNotToSay: "Teu disebatkeun",
+
+  filterAllBirthdays: "Sadaya Dinten Weton",
+
+  filterHasBirthday: "Aya Dinten Weton",
+
+  filterBirthdayThisMonth: "Dinten Weton Sasih Ieu",
+
+  filterAllSocials: "Sadaya Média Sosial",
+
+  filterHasSocial: "Aya Média Sosial",
+
+  filterNoSocial: "Henteu Aya Média Sosial",
   sortNewest: "🕒 Waktos: Panganyarna",
   sortNameAsc: "🔤 Wasta: A → Z",
   purgeButtonTitle: "Beresihan sadaya data anggota di Firestore",

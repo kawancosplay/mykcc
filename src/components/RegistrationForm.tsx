@@ -559,7 +559,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </p>
 
             {/* Single KCC ID account highlight (8 digits; 16 before the 8-digit switch) */}
-            <div className="glass-well rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
+            <FloatingGlass borderRadius={16} className="rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
               <span className="text-xs text-slate-400 block mb-1">
                 {t('registration.singleAccountIdTitle')}
               </span>
@@ -580,7 +580,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                   )}
                 </p>
               )}
-            </div>
+            </FloatingGlass>
 
             {/* UNLOCKED WHATSAPP COMMUNITY GROUP INVITE LINK */}
             <div className="glass-well border-emerald-500/40 bg-emerald-950/60 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center">

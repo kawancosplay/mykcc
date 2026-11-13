@@ -433,7 +433,7 @@ button, a[role="button"] {
     color: #fff;
   }
 
-  /* ---------- In-flow cards: no backdrop blur (see notes) ---------- */
+  /* ---------- In-flow cards: liquid glass with full backdrop blur ---------- */
   .glass-card,
   .liquid-glass-card {
     background-color: var(--glass-fill-card);
@@ -441,6 +441,8 @@ button, a[role="button"] {
     border: 1px solid var(--glass-stroke);
     border-top-color: rgba(255, 255, 255, 0.14);
     box-shadow: var(--glass-highlight), var(--glass-shadow-md);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
   }
 
   .glass-raised {
@@ -1136,49 +1138,7 @@ button, a[role="button"] {
     }
   }
 
-  /* Lite / low-power mode (src/lib/perfMode.ts; `html[data-perf="lite"]` is set by the inline script in
-     index.html before this CSS loads, so the first paint is already right). Same layout and colours:
-     live blur becomes the dense translucent fills of the no-backdrop-filter fallback above. */
-  :root[data-perf="lite"] .liquid-glass::before,
-  :root[data-perf="lite"] .glass-bar::before,
-  :root[data-perf="lite"] .glass-pill::before,
-  :root[data-perf="lite"] .glass-tabbar::before {
-    background-color: rgba(14, 10, 30, 0.94);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  :root[data-perf="lite"] .glass-elevated,
-  :root[data-perf="lite"] .liquid-glass-elevated,
-  :root[data-perf="lite"] .glass-sheet,
-  :root[data-perf="lite"] .glass-toast {
-    background-color: rgba(18, 12, 40, 0.97);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  :root[data-perf="lite"] .glass-menu,
-  :root[data-perf="lite"] .liquid-glass-menu {
-    background-color: rgba(12, 8, 26, 0.97);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  :root[data-perf="lite"] .glass-chip,
-  :root[data-perf="lite"] .glass-icon-button {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  :root[data-perf="lite"] .glass-icon-button {
-    background-color: rgba(30, 22, 56, 0.9);
-  }
-
-  :root[data-perf="lite"] .glass-overlay {
-    background-color: rgba(5, 2, 10, 0.78);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
+  /* Full liquid glass blur is retained across all devices and display modes. */
 
   @media (prefers-contrast: more) {
     .glass-card,

@@ -1,3 +1,4 @@
+import FloatingGlass from './FloatingGlass';
 import { KCC_HEADER_LOGO } from './KawanCosplayLogo';
 
 /**
@@ -7,20 +8,24 @@ import { KCC_HEADER_LOGO } from './KawanCosplayLogo';
  */
 export default function KccBadgePreview({ className = '' }: { className?: string }) {
   return (
-    <div
-      aria-hidden="true"
-      className={`relative w-44 rotate-3 rounded-2xl border border-white/20 bg-zinc-100 p-4 pt-6 text-zinc-900 shadow-[0_20px_40px_-20px_rgba(0,0,0,0.9)] ${className}`}
-    >
-      <span className="absolute left-1/2 top-2.5 h-1.5 w-10 -translate-x-1/2 rounded-full bg-zinc-900/80"></span>
-      <div className="flex items-center gap-2">
-        <span className="rounded-lg bg-zinc-900 p-1">
-          <img src={KCC_HEADER_LOGO.src} alt="" width={28} height={28} className="h-7 w-7" />
-        </span>
-        <span className="text-[11px] font-medium leading-tight text-zinc-600">KawanCosplay Community</span>
-      </div>
-      <div className="mt-4 h-1 rounded-full bg-[var(--theme-primary)]"></div>
-      <div className="mt-3 text-[11px] text-zinc-500">KCC ID</div>
-      <div className="font-mono text-base tabular-nums tracking-wide">•••• ••••</div>
+    <div aria-hidden="true" className={`relative w-44 rotate-3 ${className}`}>
+      <FloatingGlass
+        borderRadius={16}
+        material="regular"
+        tintOpacity={0.88}
+        className="relative w-full rounded-2xl bg-zinc-100/95 p-4 pt-6 text-zinc-900 shadow-[0_20px_40px_-20px_rgba(0,0,0,0.9)]"
+      >
+        <span className="absolute left-1/2 top-2.5 h-1.5 w-10 -translate-x-1/2 rounded-full bg-zinc-900/80"></span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-lg bg-zinc-900 p-1">
+            <img src={KCC_HEADER_LOGO.src} alt="" width={28} height={28} className="h-7 w-7" />
+          </span>
+          <span className="text-[11px] font-medium leading-tight text-zinc-700">KawanCosplay Community</span>
+        </div>
+        <div className="mt-4 h-1 rounded-full bg-[var(--theme-primary)]"></div>
+        <div className="mt-3 text-[11px] text-zinc-600">KCC ID</div>
+        <div className="font-mono text-base tabular-nums tracking-wide text-zinc-900 font-semibold">•••• ••••</div>
+      </FloatingGlass>
     </div>
   );
 }

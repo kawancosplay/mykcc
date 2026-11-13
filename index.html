@@ -20,10 +20,10 @@
         if (et === 'slow-2g' || et === '2g') { r.push('effectiveType:' + et); auto = true; low = true; }
         else if (et === '3g') { r.push('effectiveType:3g'); low = true; }
         try { if (window.matchMedia && matchMedia('(prefers-reduced-transparency: reduce)').matches) { r.push('reducedTransparency'); auto = true; } } catch (e) {}
-        var lite = pref === 'lite' || (pref === 'auto' && auto);
+        var lite = pref === 'lite';
         d.setAttribute('data-perf', lite ? 'lite' : 'full');
         if (low) d.setAttribute('data-lowdata', '1');
-        window.__KCC_PERF__ = { pref: pref, autoLite: auto, lowData: low, reasons: r };
+        window.__KCC_PERF__ = { pref: pref, autoLite: false, lowData: low, reasons: r };
         // Cached site theme background (written by src/lib/themeContext.tsx): correct gradient in frame 1.
         try {
           var t = JSON.parse(localStorage.getItem('kcc_theme_v1') || 'null');

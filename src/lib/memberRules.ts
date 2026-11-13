@@ -207,10 +207,16 @@ const LEGAL_AGE_SPELLING = /^legal age\s*(\/\s*dewasa\s*)?(\(\s*18\+(\s*tahun)?\
  * until it is replaced, so the member must be able to pick its listed option.
  */
 export function listedAgeCategory(value: string, listed: readonly string[]): string {
-  if (value.length > MEMBER_FIELD_LIMITS.ageCategory) return value;
+  if (!isListedAgeCategory(value)) return value;
   const key = ageCategoryKey(value);
-  if (key === 'legal age' && !LEGAL_AGE_SPELLING.test(value.trim())) return value;
   return listed.find((opt) => ageCategoryKey(opt) === key) ?? value;
+}
+
+/** Legal Age or Minor in a spelling listedAgeCategory maps to its option: the only statuses the app lets anyone pick. */
+export function isListedAgeCategory(value: string): boolean {
+  if (value.length > MEMBER_FIELD_LIMITS.ageCategory) return false;
+  const key = ageCategoryKey(value);
+  return key === 'minor' || (key === 'legal age' && LEGAL_AGE_SPELLING.test(value.trim()));
 }
 
 /**

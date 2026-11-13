@@ -88,6 +88,7 @@ import {
   createdAtMs,
   compareByCreatedAtThenId,
   memberDisplayName,
+  isListedAgeCategory,
 } from './memberRules';
 import {
   planKccIdMigration,
@@ -1806,9 +1807,9 @@ export function isExactDuplicateGroup(
 
 /**
  * Admin: merges a duplicate registration into the keeper. The keeper keeps its KCC ID and receives the
- * newer data and every WhatsApp number (plus the duplicate's sign-in link when it has none); then the
- * duplicate doc is deleted and its card released. Both docs are re-read from the server first.
- * Returns the merged keeper.
+ * newer data (the age status has its own rule, below) and every WhatsApp number (plus the duplicate's
+ * sign-in link when it has none); then the duplicate doc is deleted and its card released. Both docs are
+ * re-read from the server first. Returns the merged keeper.
  */
 export async function mergeDuplicateRegistration(keeper: Member, duplicate: Member): Promise<Member> {
   if (!(await checkIsAdminUser(auth.currentUser))) {
@@ -1854,6 +1855,15 @@ export async function mergeDuplicateRegistration(keeper: Member, duplicate: Memb
     allowEmail: true,
     fillOnly: !duplicateIsNewer || duplicateIsPlaceholder,
   });
+  // Age status: nothing records which doc was changed in the app, where only Legal Age and Minor can be picked. So a
+  // listed status on the keeper stays; the duplicate's, newer or older, fills a blank or replaces an unlisted one (the
+  // retired value, other sheet text) when it is listed itself.
+  delete updates.ageCategory;
+  const keeperAge = storedText(keeperRaw.ageCategory).trim();
+  const duplicateAge = clampString(duplicateRaw.ageCategory, MEMBER_FIELD_LIMITS.ageCategory);
+  if (duplicateAge && (!keeperAge || (isListedAgeCategory(duplicateAge) && !isListedAgeCategory(keeperAge)))) {
+    updates.ageCategory = duplicateAge;
+  }
   if (!keeperAuthUid && duplicateAuthUid) {
     updates.authUid = duplicateAuthUid.slice(0, 128);
   }

@@ -200,6 +200,15 @@ stored status changes in the app only (profile or admin edit), and a row that di
 no message to the admin. A status an admin blanks in the app is filled again by the next import. New members still get the
 cell text as typed, the retired value included. Checked on the emulator (real import code + rules), not with a real sheet.
 
+Done (2026-11-13): the admin duplicate merge (single and bulk) has its own age status rule (`mergeDuplicateRegistration`,
+`isListedAgeCategory`). Nothing records which doc was changed in the app, where only Legal Age and Minor can be picked. So a
+listed status on the keeper stays, also against a newer duplicate; the duplicate's status, newer or older, fills a blank or
+replaces an unlisted one (the retired value, other sheet text) when it is listed itself. Both listed and different: the
+keeper's stays (for the double-imported pairs the duplicate still holds the sheet text, and a member's sign-in links to the
+keeper, the lower `kc_` doc id); the admin fixes it in the member edit form if needed. Other fields still take the newer
+duplicate's value; the registration form's re-submission (`buildMemberMergeUpdate`) is unchanged. Checked on the emulator
+(real merge code + rules), not on production data.
+
 **Sprint 2 — branch `claude/sprint-2`, PR #1 into `main` (NOT merged / NOT live yet, 2026-10-13):**
 - A `785f6f5`: admin Sheets scope = `spreadsheets.readonly` only, requested on demand for the signed-in admin
   (no Drive scope, no Drive file list — paste the sheet URL/ID, last ID remembered); member Google sign-in asks
@@ -254,8 +263,7 @@ Open:
 - **Backlog (code):** a signed-in member who also submits the public form gets two member docs (sign-in profile +
   `kc_` registration; repair does not merge them); a changed Sheets import can overwrite in-app profile edits with
   filled sheet cells (a blank cell no longer changes a stored value or invents one, and the age status only fills a
-  blank); the duplicate merge lets a newer duplicate's age status replace the keeper's, so it can bring back the retired
-  value; fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
+  blank); fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
   else's email) needs a server-side endpoint with the Admin SDK; package.json still lists unused `motion`,
   `country-state-city` and the conflicting `esbuild ^0.25` (remove together with a `bun.lock` update).
 - **Google side (Gemini) — status reported by Gemini 2026-10-11, verified by Claude in the Cloud console:**

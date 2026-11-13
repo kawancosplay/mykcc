@@ -488,6 +488,8 @@ export default function App() {
 
   // The signed-in member saved their own profile (profile screen, required age status step)
   const handleOwnProfileSaved = (updated: Member) => {
+    // A save that settles after sign-out or an account switch must not bring that profile back
+    if (!user || authUidRef.current !== user.uid) return;
     const isOwnMainProfile =
       isMainAdminUser(user) &&
       (updated.authUid === user?.uid || isMainAccountKccId(currentMember?.userId16));

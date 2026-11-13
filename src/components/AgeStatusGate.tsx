@@ -101,11 +101,11 @@ export const AgeStatusGate: React.FC<AgeStatusGateProps> = ({ member, onSaved, o
               <span>{t('admin.saveChanges')}</span>
             </button>
 
+            {/* Stays enabled while saving: offline, the save only settles once the connection is back */}
             <div className="flex justify-center">
               <button
                 type="button"
                 onClick={onLogout}
-                disabled={isSaving}
                 className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-300 hover:text-white hover:bg-rose-500/15 inline-flex items-center gap-2"
               >
                 <LogOut className="w-4 h-4" />

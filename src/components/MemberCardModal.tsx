@@ -166,17 +166,16 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               ref={cardRef}
               className="relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-gradient-to-br from-white/[0.10] via-slate-900/95 to-purple-950/80 shadow-2xl shadow-rose-950/50 mb-6 text-white"
             >
-              {/* Hologram sheen effects: soft radial glows (same centres as the old blurred circles) instead of
-                  `filter: blur()`, which re-rasterises on every frame of the sheet's slide-up animation */}
+              {/* Hologram sheen effects: soft radial glows combining lavender purple & mint green */}
               <div
                 aria-hidden="true"
                 className="absolute top-0 right-0 -mr-28 -mt-28 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(closest-side, rgba(244, 63, 94, 0.32) 0%, rgba(236, 72, 153, 0.14) 60%, rgba(236, 72, 153, 0) 100%)' }}
+                style={{ background: 'radial-gradient(closest-side, rgba(168, 85, 247, 0.35) 0%, rgba(140, 82, 255, 0.16) 60%, rgba(140, 82, 255, 0) 100%)' }}
               ></div>
               <div
                 aria-hidden="true"
                 className="absolute bottom-0 left-0 -ml-28 -mb-28 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(closest-side, rgba(99, 102, 241, 0.32) 0%, rgba(244, 63, 94, 0.14) 60%, rgba(244, 63, 94, 0) 100%)' }}
+                style={{ background: 'radial-gradient(closest-side, rgba(52, 211, 153, 0.32) 0%, rgba(83, 255, 192, 0.15) 60%, rgba(83, 255, 192, 0) 100%)' }}
               ></div>
 
               {/* Card Top Brand */}
@@ -220,7 +219,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                       {(member.name || member.cosplayName || 'KC')[0]?.toUpperCase() || 'KC'}
                     </div>
                   )}
-                  <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-950"></div>
+                  <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-[0_0_8px_#34d399]"></div>
                 </div>
 
                 {/* Names & Role */}

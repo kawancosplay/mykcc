@@ -55,10 +55,14 @@ export const DEFAULT_THEME: SiteTheme = {
 };
 
 const BACKGROUND_GRADIENTS: Record<Exclude<BackgroundTheme, 'custom'>, string> = {
-  'bright-purple-fluent': 'linear-gradient(135deg, #2a1258 0%, #1b1442 45%, #11082a 100%)',
-  'cyber-purple': 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #581c87 100%)',
-  'cosmic-dark': 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #20133e 100%)',
-  'fluent-lavender': 'linear-gradient(135deg, #371b58 0%, #4c2a76 50%, #5c3b88 100%)',
+  'bright-purple-fluent':
+    'radial-gradient(ellipse 70% 55% at 15% 10%, rgba(83, 255, 192, 0.28) 0%, transparent 65%), radial-gradient(ellipse 75% 60% at 85% 20%, rgba(168, 85, 247, 0.35) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 10% 85%, rgba(140, 82, 255, 0.28) 0%, transparent 65%), radial-gradient(ellipse 65% 55% at 90% 90%, rgba(52, 211, 153, 0.24) 0%, transparent 70%), linear-gradient(135deg, #070314 0%, #170d2e 45%, #0e1a1e 80%, #060e12 100%)',
+  'cyber-purple':
+    'radial-gradient(ellipse 65% 50% at 20% 15%, rgba(83, 255, 192, 0.22) 0%, transparent 65%), linear-gradient(135deg, #18052e 0%, #3b0764 50%, #064e3b 100%)',
+  'cosmic-dark':
+    'radial-gradient(ellipse 60% 50% at 80% 20%, rgba(168, 85, 247, 0.25) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 20% 80%, rgba(52, 211, 153, 0.18) 0%, transparent 65%), linear-gradient(135deg, #090614 0%, #170d2b 50%, #0c1a17 100%)',
+  'fluent-lavender':
+    'radial-gradient(ellipse 70% 55% at 20% 15%, rgba(83, 255, 192, 0.26) 0%, transparent 65%), radial-gradient(ellipse 75% 60% at 85% 30%, rgba(192, 132, 252, 0.35) 0%, transparent 70%), linear-gradient(135deg, #271242 0%, #3d1b64 50%, #132e24 100%)',
   'dark-onyx': 'linear-gradient(135deg, #0a0910 0%, #12101b 50%, #1a1727 100%)',
 };
 

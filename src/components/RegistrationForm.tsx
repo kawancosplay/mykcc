@@ -660,8 +660,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         <div className="p-5 sm:p-10">
           {/* Floats so the welcome text wraps around the badge instead of leaving a gap under the title */}
           <KccBadgePreview className="hidden sm:block float-right ml-8 mb-4 -mt-2 mr-1" />
-          <p className="text-xs text-slate-400 mb-2">
-            {t('registration.officialFormTag')} · {t('registration.safeCommunityTag')}
+          <p className="text-xs text-slate-400 mb-2 flex items-center gap-1.5 flex-wrap">
+            <span className="text-purple-300 font-medium">{t('registration.officialFormTag')}</span>
+            <span>·</span>
+            <span className="text-emerald-300 font-medium">{t('registration.safeCommunityTag')}</span>
           </p>
           <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-3">
             {t('registration.formTitle')}
@@ -672,23 +674,23 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </p>
 
           {/* Inclusive Notice */}
-          <div className="glass-well p-3.5 rounded-2xl flex items-start gap-3 text-xs text-slate-300 mb-4">
-            <Heart className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+          <div className="glass-well p-3.5 rounded-2xl flex items-start gap-3 text-xs mb-4 border border-emerald-500/20 bg-emerald-950/20 text-emerald-200">
+            <Heart className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div>
-              <strong>{t('registration.inclusiveWelcome')}</strong>
+              <strong className="text-emerald-300">{t('registration.inclusiveWelcome')}</strong>
             </div>
           </div>
 
           {/* WhatsApp Hotline Callout */}
           <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-white/10 text-xs text-slate-400">
             <div className="flex flex-wrap items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-slate-400 shrink-0" />
+              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{t('registration.officialHotlineLabel')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-slate-200 hover:underline"
+                className="font-semibold text-emerald-400 hover:text-emerald-300 hover:underline"
               >
                 +62 857-1103-2782
               </a>

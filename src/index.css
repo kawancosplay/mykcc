@@ -58,22 +58,27 @@
 :root {
   --font-site: 'Google Sans Flex', sans-serif;
 
-  /* Brand (from the KawanCosplay posters): purple night, white cards and type, the logo purple as the one accent */
-  --kcc-purple: #8c52ff;
+  /* Brand: colorful lavender and green (from the KawanCosplay posters & guidelines) */
+  --kcc-purple: #9d72ff;
+  --kcc-lavender: #b8a5fe;
   --kcc-mint: #53ffc0;
-  --kcc-ink: #05020a;
-  --kcc-deep: #1a0f33;
-  --kcc-gradient: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
-  --theme-primary: #8c52ff; /* overwritten at runtime by themeContext */
+  --kcc-emerald: #34d399;
+  --kcc-ink: #070314;
+  --kcc-deep: #170d2e;
+  --kcc-gradient: linear-gradient(135deg, #a855f7 0%, #34d399 100%);
+  --theme-primary: #9d72ff; /* overwritten at runtime by themeContext */
 
-  /* Page background, painted by the fixed `body::before` layer. The app may override it at
-     runtime: document.documentElement.style.setProperty('--app-bg', gradient) */
-  --app-bg: linear-gradient(135deg, #05020a 0%, #1a0f33 50%, #05020a 100%);
+  /* Page background: colorful lavender & fresh mint green combination */
+  --app-bg: radial-gradient(ellipse 70% 55% at 15% 10%, rgba(83, 255, 192, 0.28) 0%, transparent 65%),
+    radial-gradient(ellipse 75% 60% at 85% 20%, rgba(168, 85, 247, 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 10% 85%, rgba(140, 82, 255, 0.28) 0%, transparent 65%),
+    radial-gradient(ellipse 65% 55% at 90% 90%, rgba(52, 211, 153, 0.24) 0%, transparent 70%),
+    linear-gradient(135deg, #070314 0%, #170d2e 45%, #0e1a1e 80%, #060e12 100%);
 
   /* Glass materials: tint painted under the blur */
   --glass-fill-bar: rgba(12, 8, 26, 0.68);
-  --glass-fill-card: rgba(22, 14, 46, 0.6);
-  --glass-fill-raised: rgba(24, 15, 50, 0.7);
+  --glass-fill-card: rgba(22, 14, 46, 0.58);
+  --glass-fill-raised: rgba(24, 15, 50, 0.68);
   --glass-fill-elevated: rgba(18, 12, 40, 0.8);
   --glass-fill-sheet: rgba(16, 10, 34, 0.86);
   --glass-fill-menu: rgba(12, 8, 26, 0.85);
@@ -90,17 +95,17 @@
   --glass-stroke-strong: rgba(255, 255, 255, 0.16);
   --glass-stroke-top: rgba(255, 255, 255, 0.2);
   --glass-stroke-selected: rgba(140, 82, 255, 0.6);
-  --glass-stroke-focus: rgba(140, 82, 255, 0.75);
-  --glass-ring: 0 0 0 4px rgba(140, 82, 255, 0.28);
-  --glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  --glass-highlight-strong: inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 38%);
+  --glass-stroke-focus: rgba(52, 211, 153, 0.75);
+  --glass-ring: 0 0 0 4px rgba(168, 85, 247, 0.28);
+  --glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+  --glass-highlight-strong: inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 38%);
 
   /* Elevation */
   --glass-shadow-sm: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
   --glass-shadow-md: 0 12px 32px -14px rgba(0, 0, 0, 0.7);
   --glass-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.85);
-  --glass-glow-primary: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --glass-glow-primary: 0 8px 24px -10px rgba(168, 85, 247, 0.4), 0 4px 14px -6px rgba(52, 211, 153, 0.3);
 
   /* Motion */
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
@@ -738,10 +743,10 @@ button, a[role="button"] {
     z-index: -1;
     border-radius: inherit;
     pointer-events: none;
-    background-color: rgba(255, 255, 255, 0.14);
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    background-color: rgba(140, 82, 255, 0.22);
+    background-image: linear-gradient(135deg, rgba(168, 85, 247, 0.28) 0%, rgba(52, 211, 153, 0.15) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25),
                 0 4px 14px -4px rgba(0, 0, 0, 0.55);
   }
 
@@ -869,13 +874,13 @@ button, a[role="button"] {
     cursor: pointer;
   }
 
-  /* White with deep purple text, like the white cards on the posters: readable on every Site Editor theme colour */
+  /* Crisp white-to-lavender card button with colorful lavender & mint glow */
   .btn-primary {
     font-weight: 600;
     color: var(--kcc-deep);
-    background-color: #f7f5ff;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--glass-glow-primary);
+    background: linear-gradient(135deg, #ffffff 0%, #f7f5ff 60%, #ecfdf5 100%);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--glass-glow-primary);
     transition: filter var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
   }
 
@@ -1008,7 +1013,8 @@ button, a[role="button"] {
     }
 
     .btn-primary:hover:not(:disabled) {
-      background-color: #ffffff;
+      background: linear-gradient(135deg, #ffffff 0%, #faf5ff 50%, #f0fdf4 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 28px -4px rgba(168, 85, 247, 0.45), 0 4px 16px -2px rgba(52, 211, 153, 0.35);
     }
 
     .glass-button:hover:not(:disabled),

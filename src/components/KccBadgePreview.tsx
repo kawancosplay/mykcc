@@ -22,8 +22,13 @@ export default function KccBadgePreview({ className = '' }: { className?: string
           </span>
           <span className="text-[11px] font-medium leading-tight text-zinc-700">KawanCosplay Community</span>
         </div>
-        <div className="mt-4 h-1 rounded-full bg-[var(--theme-primary)]"></div>
-        <div className="mt-3 text-[11px] text-zinc-600">KCC ID</div>
+        <div className="mt-4 h-1.5 rounded-full bg-gradient-to-r from-purple-500 via-indigo-400 to-emerald-400"></div>
+        <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-600">
+          <span>KCC ID</span>
+          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> PASS
+          </span>
+        </div>
         <div className="font-mono text-base tabular-nums tracking-wide text-zinc-900 font-semibold">•••• ••••</div>
       </FloatingGlass>
     </div>

@@ -58,13 +58,16 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
         <div className="flex flex-wrap items-center justify-between gap-1 min-h-[2.25rem] sm:min-h-0">
           {/* Left: Global Community Badge + Official Site Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-slate-200">
+            <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0 text-emerald-300">
               <Globe className="w-3 h-3" />
             </div>
 
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
               <span className="font-bold text-slate-200">
                 {t('common.officialBannerText')}
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 border border-purple-400/30 text-purple-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Official
               </span>
             </div>
           </div>

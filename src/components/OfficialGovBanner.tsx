@@ -58,7 +58,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
         <div className="flex flex-wrap items-center justify-between gap-1 min-h-[2.25rem] sm:min-h-0">
           {/* Left: Global Community Badge + Official Site Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm text-white">
+            <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-slate-200">
               <Globe className="w-3 h-3" />
             </div>
 
@@ -74,7 +74,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="touch-target inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold underline underline-offset-2 transition-colors cursor-pointer"
+              className="touch-target inline-flex items-center gap-1 text-slate-300 hover:text-white font-semibold underline underline-offset-2 transition-colors cursor-pointer"
               aria-expanded={isOpen}
             >
               <span>{t('common.howYouKnow')}</span>
@@ -96,7 +96,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Pillar 1: Official International Community Identity */}
             <div className="flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-400">
+              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-slate-300">
                 <Globe className="w-5 h-5" />
               </div>
               <div className="space-y-1">
@@ -111,7 +111,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
 
             {/* Pillar 2: Security & Privacy */}
             <div className="flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400">
+              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-slate-300">
                 <Lock className="w-5 h-5" />
               </div>
               <div className="space-y-1">
@@ -126,7 +126,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
 
             {/* Pillar 3: Official WhatsApp Hotline & Email */}
             <div className="flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400">
+              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-slate-300">
                 <MessageCircle className="w-5 h-5" />
               </div>
               <div className="space-y-1">
@@ -141,14 +141,14 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
                     href="https://wa.me/6285711032782"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="touch-target inline-flex items-center gap-1.5 text-emerald-400 font-bold hover:underline"
+                    className="touch-target inline-flex items-center gap-1.5 text-slate-300 font-bold hover:underline"
                   >
                     <span>{t('common.whatsappContact')}</span>
                     <ExternalLink className="w-3 h-3" aria-hidden="true" />
                   </a>
                   <a
                     href="mailto:cosplaysehat@gmail.com"
-                    className="touch-target inline-flex items-center gap-1.5 text-indigo-400 font-bold hover:underline"
+                    className="touch-target inline-flex items-center gap-1.5 text-slate-300 font-bold hover:underline"
                   >
                     <span>{t('common.emailContact')}</span>
                   </a>

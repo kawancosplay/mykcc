@@ -38,6 +38,8 @@ import {
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
 import SocialLinksInput from './SocialLinksInput';
+import FloatingGlass from './FloatingGlass';
+import AgeBirthdayFields from './AgeBirthdayFields';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -119,6 +121,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     discordUsername: member.discordUsername || '',
     ageCategory: member.ageCategory || '',
     age: member.age || '',
+    birthday: member.birthday || '',
     ...storedProfileFields(member),
     socialMedia: member.socialMedia || '',
     portfolioUrl: member.portfolioUrl || '',
@@ -165,6 +168,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       discordUsername: member.discordUsername || '',
       ageCategory: member.ageCategory || '',
       age: member.age || '',
+      birthday: member.birthday || '',
       ...storedProfileFields(member),
       socialMedia: member.socialMedia || '',
       portfolioUrl: member.portfolioUrl || '',
@@ -555,20 +559,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               </select>
             </div>
 
-            {/* Usia Pasti */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                {t('profile.ageLabel')}
-              </label>
-              <input
-                type="text"
-                placeholder={t('profile.agePlaceholder')}
-                maxLength={MEMBER_FIELD_LIMITS.age}
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="glass-input w-full text-base sm:text-sm"
-              />
-            </div>
+            {/* Usia Pasti + Tanggal Lahir */}
+            <AgeBirthdayFields
+              age={formData.age}
+              birthday={formData.birthday || ''}
+              onAgeChange={(age) => setFormData({ ...formData, age })}
+              onBirthdayChange={(birthday) => setFormData({ ...formData, birthday })}
+              labelClassName="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5"
+            />
 
             {/* WhatsApp (Wajib) */}
             <div>
@@ -874,7 +872,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               screen, so the profile can be saved from any field. Sticky, not fixed: it settles under the
               last field. The wrapper ignores taps so only the glass bar itself is interactive. */}
           <div className="sticky bottom-0 z-20 mt-6 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none sm:flex sm:justify-end">
-            <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2 sm:max-w-md">
+            <FloatingGlass className="pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2 sm:max-w-md">
               <AnimatePresence initial={false}>
                 {errorMsg && (
                   <motion.div
@@ -915,7 +913,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 </motion.span>
                 <span>{t('profile.updateProfile')}</span>
               </button>
-            </div>
+            </FloatingGlass>
           </div>
         </div>
       </form>

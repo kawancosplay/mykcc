@@ -68,15 +68,6 @@ function useOpenedOnce(open: boolean): boolean {
   return opened || open;
 }
 
-// Cheap ambient light: radial gradients from index.css instead of huge `blur()` filters (hidden in lite mode).
-const AmbientBackground: React.FC<{ blobs?: 2 | 3 }> = ({ blobs = 3 }) => (
-  <div className="ambient-layer" aria-hidden="true">
-    <div className="ambient-blob ambient-blob--1"></div>
-    <div className="ambient-blob ambient-blob--2"></div>
-    {blobs === 3 && <div className="ambient-blob ambient-blob--3"></div>}
-  </div>
-);
-
 // Suspense fallback for a lazy screen: a glass card with shimmering placeholder rows.
 const ScreenSkeleton: React.FC<{ label: string; wide?: boolean }> = ({ label, wide = false }) => (
   <div
@@ -628,8 +619,6 @@ export default function App() {
         dir={dir}
         className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
       >
-        {/* Liquid Glass Background Caustics */}
-        <AmbientBackground blobs={2} />
 
         {/* Dedicated Admin Page Top Bar */}
         <header className="sticky top-0 z-50 glass-bar border-amber-500/30 px-4 sm:px-8 pt-[calc(0.75rem+var(--safe-top))] pb-3 flex items-center justify-between gap-2">
@@ -749,7 +738,6 @@ export default function App() {
       className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
     >
       {/* Liquid Glass Background Caustics & Bright Purple-ish Fluent Ambient Light */}
-      <AmbientBackground />
 
       {/* Sticky header (gov banner + navbar). It owns the scroll listener, so scrolling never
           re-renders App. */}

@@ -88,6 +88,7 @@ export const EMPTY_REGISTRATION_FORM = {
   discordUsername: '', // Discord Username column
   ageCategory: '',
   age: '', // Optional exact age or birthdate
+  birthday: '',
   country: '',
   province: '',
   city: '',

@@ -2,7 +2,8 @@
 
 @theme {
   --font-sans: 'Google Sans Flex', sans-serif;
-  --font-mono: 'Google Sans Flex', monospace;
+  /* KCC IDs and phone codes: a real fixed-width face, like a printed badge number */
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
 
   /* iOS UIKit-like curves, usable as `ease-ios` / `ease-out-soft` utilities */
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
@@ -57,7 +58,7 @@
 :root {
   --font-site: 'Google Sans Flex', sans-serif;
 
-  /* Brand (visual identity: purple -> mint on a deep violet night) */
+  /* Brand (from the KawanCosplay posters): purple night, white cards and type, the logo purple as the one accent */
   --kcc-purple: #8c52ff;
   --kcc-mint: #53ffc0;
   --kcc-ink: #05020a;
@@ -98,8 +99,8 @@
   /* Elevation */
   --glass-shadow-sm: 0 4px 14px -6px rgba(0, 0, 0, 0.55);
   --glass-shadow-md: 0 12px 32px -14px rgba(0, 0, 0, 0.7);
-  --glass-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.85), 0 0 40px -10px rgba(140, 82, 255, 0.22);
-  --glass-glow-primary: 0 8px 24px -10px rgba(140, 82, 255, 0.75);
+  --glass-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.85);
+  --glass-glow-primary: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
 
   /* Motion */
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
@@ -182,7 +183,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgba(83, 255, 192, 0.85);
+    outline: 2px solid rgba(177, 140, 255, 0.9);
     outline-offset: 2px;
   }
 
@@ -223,7 +224,9 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--kcc-ink);
+  /* Transparent: html carries the dark fallback (index.html), so the theme background and the grid on
+     body::before / body::after show. An opaque body painted over them and hid every Site Editor background. */
+  background-color: transparent;
   color: #f8fafc;
   min-height: 100vh;
 }
@@ -241,6 +244,19 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background: var(--app-bg);
+}
+
+/* The white grid of the KawanCosplay posters, faint, over whichever theme background is set */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 @supports (height: 100lvh) {
@@ -724,8 +740,7 @@ button, a[role="button"] {
     background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 60%);
     border: 1px solid rgba(255, 255, 255, 0.16);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
-                0 4px 14px -4px rgba(0, 0, 0, 0.55),
-                0 0 18px -6px rgba(140, 82, 255, 0.55);
+                0 4px 14px -4px rgba(0, 0, 0, 0.55);
   }
 
   /* CSS-only active state (no motion thumb element): add `.is-active` to the segment */
@@ -780,7 +795,7 @@ button, a[role="button"] {
     background-color: var(--glass-fill-input);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35);
-    caret-color: var(--kcc-mint);
+    caret-color: var(--theme-primary, #8c52ff);
     -webkit-appearance: none;
     appearance: none;
     transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
@@ -852,13 +867,13 @@ button, a[role="button"] {
     cursor: pointer;
   }
 
+  /* White with deep purple text, like the white cards on the posters: readable on every Site Editor theme colour */
   .btn-primary {
-    font-weight: 700;
-    color: #1a0f33; /* dark text: white fails contrast on the mint end */
-    background-color: #8c52ff;
-    background-image: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), var(--glass-glow-primary);
+    font-weight: 600;
+    color: var(--kcc-deep);
+    background-color: #f7f5ff;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), var(--glass-glow-primary);
     transition: filter var(--dur-fast) ease, box-shadow var(--dur-fast) ease, opacity var(--dur-fast) ease;
   }
 
@@ -991,7 +1006,7 @@ button, a[role="button"] {
     }
 
     .btn-primary:hover:not(:disabled) {
-      filter: brightness(1.08) saturate(1.05);
+      background-color: #ffffff;
     }
 
     .glass-button:hover:not(:disabled),
@@ -1184,9 +1199,9 @@ button, a[role="button"] {
 /* Brand gradient button (legacy name). Kept unlayered: its dark text intentionally wins over the
    `text-white` utilities still present on older markup. New code: use `.btn-primary`. */
 .liquid-glass-button {
-  background: linear-gradient(135deg, #8c52ff 0%, #53ffc0 100%);
+  background: #f7f5ff;
   border: none;
-  color: #1a0f33; /* Darker text for contrast on mint green */
+  color: var(--kcc-deep);
   font-weight: 600;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), var(--glass-glow-primary);
   -webkit-user-select: none;
@@ -1247,140 +1262,6 @@ button, a[role="button"] {
   }
 }
 
-/* =========================================================================
-   AMBIENT BACKGROUND
-   ========================================================================= */
-
-/* Preferred markup (cheap): radial gradients, no `filter: blur()`.
-   <div class="ambient-layer" aria-hidden="true">
-     <div class="ambient-blob ambient-blob--1"></div>
-     <div class="ambient-blob ambient-blob--2"></div>
-     <div class="ambient-blob ambient-blob--3"></div>
-   </div> */
-.ambient-layer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100vh;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  contain: strict;
-}
-
-@supports (height: 100lvh) {
-  .ambient-layer {
-    height: 100lvh;
-  }
-}
-
-.ambient-blob {
-  position: absolute;
-  border-radius: 9999px;
-  pointer-events: none;
-}
-
-.ambient-blob--1 {
-  top: -22vmax;
-  left: -20vmax;
-  width: 70vmax;
-  height: 70vmax;
-  background: radial-gradient(closest-side, rgba(168, 85, 247, 0.34) 0%, rgba(217, 70, 239, 0.16) 55%, rgba(217, 70, 239, 0) 100%);
-}
-
-.ambient-blob--2 {
-  top: 28%;
-  right: -24vmax;
-  width: 75vmax;
-  height: 75vmax;
-  background: radial-gradient(closest-side, rgba(139, 92, 246, 0.32) 0%, rgba(99, 102, 241, 0.16) 55%, rgba(99, 102, 241, 0) 100%);
-}
-
-.ambient-blob--3 {
-  bottom: -28vmax;
-  left: 18%;
-  width: 80vmax;
-  height: 80vmax;
-  background: radial-gradient(closest-side, rgba(217, 70, 239, 0.22) 0%, rgba(140, 82, 255, 0.14) 55%, rgba(140, 82, 255, 0) 100%);
-}
-
-/* Optional brand accent (mint end of the gradient), very faint */
-.ambient-blob--mint {
-  top: 55%;
-  left: -12vmax;
-  width: 45vmax;
-  height: 45vmax;
-  background: radial-gradient(closest-side, rgba(83, 255, 192, 0.08) 0%, rgba(83, 255, 192, 0) 100%);
-}
-
-@keyframes ambient-drift {
-  0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(3vmax, -2vmax, 0) scale(1.08); }
-  100% { transform: translate3d(-2vmax, 2vmax, 0) scale(1.03); }
-}
-
-/* Legacy blob markup (`blur-[140px]` + .animate-fluid-*), kept working but cheaper */
-/* Subtle continuous ambient fluid pulse animation - GPU accelerated transform only */
-@keyframes fluid-drift {
-  0%, 100% {
-    transform: translate3d(0px, 0px, 0) scale(1) rotate(0deg);
-  }
-  33% {
-    transform: translate3d(40px, -25px, 0) scale(1.12) rotate(4deg);
-  }
-  66% {
-    transform: translate3d(-25px, 25px, 0) scale(1.05) rotate(-4deg);
-  }
-}
-
-.animate-fluid-1,
-.animate-fluid-2,
-.animate-fluid-3 {
-  animation: none;
-}
-
-/* Blobs only drift on larger screens with motion allowed. On phones they stay still: a moving
-   backdrop forces every glass surface on screen to re-blur each frame (and drains battery). */
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .ambient-blob--1 {
-    animation: ambient-drift 26s ease-in-out infinite alternate;
-    will-change: transform;
-  }
-
-  .ambient-blob--2 {
-    animation: ambient-drift 32s ease-in-out infinite alternate-reverse;
-    will-change: transform;
-  }
-
-  .ambient-blob--3 {
-    animation: ambient-drift 38s ease-in-out -12s infinite alternate;
-    will-change: transform;
-  }
-
-  .animate-fluid-1 {
-    animation: fluid-drift 24s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    will-change: transform;
-  }
-
-  .animate-fluid-2 {
-    animation: fluid-drift 28s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
-    will-change: transform;
-  }
-
-  .animate-fluid-3 {
-    animation: fluid-drift 32s cubic-bezier(0.4, 0, 0.2, 1) infinite 8s;
-    will-change: transform;
-  }
-}
-
-/* Fewer blobs on phones */
-@media (max-width: 767px) {
-  .ambient-blob--3,
-  .animate-fluid-3 {
-    display: none;
-  }
-}
 
 /* =========================================================================
    UTILITIES (real Tailwind utilities: variants like `lg:pb-16` work)
@@ -1475,18 +1356,13 @@ button, a[role="button"] {
     animation-iteration-count: infinite !important;
   }
 
-  .animate-fluid-1,
-  .animate-fluid-2,
-  .animate-fluid-3,
-  .ambient-blob,
   .glass-skeleton {
     animation: none !important;
     will-change: auto;
   }
 }
 
-/* Lite / low-power mode (see the glass block in @layer components for the materials): no ambient light
-   layer (the theme gradient on body::before stays, so the colours do not change), short transitions,
+/* Lite / low-power mode (see the glass block in @layer components for the materials): short transitions,
    static skeletons, short CSS entrance animations, no smooth scrolling. Spinners keep turning. */
 :root[data-perf="lite"] {
   scroll-behavior: auto;
@@ -1495,10 +1371,6 @@ button, a[role="button"] {
   --dur-release: 120ms;
   --dur-fast: 100ms;
   --dur-base: 120ms;
-}
-
-:root[data-perf="lite"] .ambient-layer {
-  display: none;
 }
 
 /* (With the OS reduce-motion setting the block above already makes these 0.01 ms.) */

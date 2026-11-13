@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Dark canvas before any CSS arrives: never a white frame on a slow connection. -->
-    <style>html,body{background:#05020a}</style>
+    <style>html{background:#05020a}</style>
     <script>
       // Lite / low-power mode, decided BEFORE the CSS loads so the first paint is already right (no
       // glass-to-solid swap). Keep the rules in sync with detectSignals() in src/lib/perfMode.ts, which

@@ -37,6 +37,9 @@ import { EMPTY_REGISTRATION_FORM } from '../lib/memberRules';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
 import SocialLinksInput from './SocialLinksInput';
+import FloatingGlass from './FloatingGlass';
+import KccBadgePreview from './KccBadgePreview';
+import AgeBirthdayFields from './AgeBirthdayFields';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -124,7 +127,7 @@ const LEGACY_CUSTOM_CITY_OPTION = 'Other City / County';
 const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city === LEGACY_CUSTOM_CITY_OPTION;
 
 // Field a validation error points at: it gets aria-invalid (the red .glass-input border) until the next submit
-type ErrorField = 'name' | 'email' | 'phone' | 'socialMedia' | 'customCity' | 'codeOfConduct';
+type ErrorField = 'name' | 'email' | 'phone' | 'ageCategory' | 'socialMedia' | 'customCity' | 'codeOfConduct';
 
 // Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
 // control where it was while giving the tint some room.
@@ -339,6 +342,11 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       return;
     }
 
+    if (!dataToSubmit.ageCategory) {
+      showError(t('registration.ageCategoryRequiredError'), 'ageCategory');
+      return;
+    }
+
     if (!dataToSubmit.socialMedia.trim()) {
       showError(t('registration.socialMediaRequiredError'), 'socialMedia');
       return;
@@ -407,6 +415,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         city: finalCity,
         ageCategory: dataToSubmit.ageCategory,
         age: dataToSubmit.age.trim() || undefined,
+        birthday: dataToSubmit.birthday?.trim() || undefined,
         primaryRole: resolvedRole,
         fandom: dataToSubmit.fandom,
         experience: dataToSubmit.experience,
@@ -522,9 +531,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
     successView = (
       <motion.div key="success" {...pageMotion} className="max-w-2xl mx-auto py-12 px-4 text-slate-100">
-        <div className="glass-card glass-raised border-emerald-500/30 rounded-3xl overflow-hidden">
-          {/* Top Google Form Purple/Accent bar */}
-          <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
+        <div className="glass-card glass-raised rounded-3xl overflow-hidden">
 
           <div className="p-6 sm:p-10 text-center">
             {/* The check pops in on a spring just after the card (reduced motion: fade only) */}
@@ -544,7 +551,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               </div>
             )}
 
-            <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
               KawanCosplay Community
             </h2>
             <p className="text-slate-300 text-sm sm:text-base mb-6">
@@ -552,22 +559,22 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </p>
 
             {/* Single KCC ID account highlight (8 digits; 16 before the 8-digit switch) */}
-            <div className="glass-well border-rose-500/30 rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
-              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 block mb-1">
+            <div className="glass-well rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
+              <span className="text-xs text-slate-400 block mb-1">
                 {t('registration.singleAccountIdTitle')}
               </span>
-              <span className="font-mono font-black text-xl sm:text-2xl text-rose-400 tracking-wider">
+              <span className="font-mono font-medium text-2xl sm:text-3xl text-white tabular-nums tracking-wide">
                 {formatKccId(submittedMember.userId16)}
               </span>
               {isDuplicateShared ? (
-                <p className="text-xs text-emerald-400 mt-2 font-medium">
+                <p className="text-xs text-slate-300 mt-2">
                   {t('registration.duplicateMergedNotice')}
                 </p>
               ) : (
                 <p className="text-[11px] text-slate-300 mt-1.5">
                   {t('registration.verifiedMemberLabel')} <strong className="text-white">{memberName}</strong>
                   {submittedMember.discordUsername && (
-                    <span className="ml-2 text-indigo-300">
+                    <span className="ml-2 text-slate-400">
                       • {t('registration.discordValue', { username: submittedMember.discordUsername })}
                     </span>
                   )}
@@ -650,21 +657,13 @@ export const RegistrationForm = React.memo(function RegistrationForm({
     <motion.div key="form" {...pageMotion} className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
       {/* GOOGLE FORM HEADER CARD */}
       <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
-        {/* Top Google Form Purple/Accent Header Band */}
-        <div className="h-3 bg-gradient-to-r from-purple-600 via-rose-500 to-indigo-600"></div>
-
         <div className="p-5 sm:p-10">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
-              <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-              <span>{t('registration.officialFormTag')}</span>
-            </span>
-            <span className="glass-chip bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-              {t('registration.safeCommunityTag')}
-            </span>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
+          {/* Floats so the welcome text wraps around the badge instead of leaving a gap under the title */}
+          <KccBadgePreview className="hidden sm:block float-right ml-8 mb-4 -mt-2 mr-1" />
+          <p className="text-xs text-slate-400 mb-2">
+            {t('registration.officialFormTag')} · {t('registration.safeCommunityTag')}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-3">
             {t('registration.formTitle')}
           </h1>
 
@@ -673,8 +672,8 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </p>
 
           {/* Inclusive Notice */}
-          <div className="glass-well p-3.5 border-indigo-500/30 bg-indigo-950/40 rounded-2xl flex items-start gap-3 text-xs text-indigo-200 mb-4">
-            <Heart className="w-4 h-4 text-pink-400 shrink-0 mt-0.5" />
+          <div className="glass-well p-3.5 rounded-2xl flex items-start gap-3 text-xs text-slate-300 mb-4">
+            <Heart className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             <div>
               <strong>{t('registration.inclusiveWelcome')}</strong>
             </div>
@@ -683,13 +682,13 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           {/* WhatsApp Hotline Callout */}
           <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-white/10 text-xs text-slate-400">
             <div className="flex flex-wrap items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <MessageCircle className="w-4 h-4 text-slate-400 shrink-0" />
               <span>{t('registration.officialHotlineLabel')}</span>
               <a
                 href="https://wa.me/6285711032782"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-emerald-400 hover:underline"
+                className="font-medium text-slate-200 hover:underline"
               >
                 +62 857-1103-2782
               </a>
@@ -861,7 +860,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
           )}
 
-          <div className="space-y-1 mt-2">
+          <div role="radiogroup" aria-invalid={errorField === 'ageCategory' || undefined} className="space-y-1 mt-2">
             {AGE_CATEGORIES.map((opt) => (
               <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
                 <input
@@ -886,21 +885,22 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
             {t('registration.exactAgeOptional')}
           </label>
           <p className="text-xs text-slate-400 mb-4">
             {t('registration.ageDesc')}
           </p>
 
-          <input
-            type="text"
-            placeholder={t('registration.agePlaceholder')}
-            maxLength={MEMBER_FIELD_LIMITS.age}
-            value={formData.age}
-            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-            className="glass-input w-full text-base sm:text-sm"
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <AgeBirthdayFields
+              age={formData.age}
+              birthday={formData.birthday || ''}
+              onAgeChange={(age) => setFormData({ ...formData, age })}
+              onBirthdayChange={(birthday) => setFormData({ ...formData, birthday })}
+              labelClassName="block text-[11px] font-bold uppercase text-slate-400 mb-1"
+            />
+          </div>
         </div>
 
         {/* QUESTION 6: LOCATION / DOMICILE (COUNTRY, PROVINCE, CITY) */}
@@ -1256,7 +1256,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             indicator) while the form is on screen. Sticky, not fixed: it settles into place after the
             last question. The wrapper ignores taps so only the glass bar itself is interactive. */}
         <div className="sticky bottom-0 z-20 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none">
-          <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2">
+          <FloatingGlass className="pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2">
             <AnimatePresence initial={false}>
               {errorMsg && (
                 <motion.div
@@ -1289,7 +1289,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                 </>
               )}
             </button>
-          </div>
+          </FloatingGlass>
         </div>
 
         <div className="flex justify-center">

@@ -479,38 +479,91 @@ export const GoogleSheetsSync: React.FC<GoogleSheetsSyncProps> = ({
     };
   }, [isAutoSyncActive, accessToken, selectedSpreadsheetId, selectedTab, columnMapping, sheetContext, pollIntervalSeconds]);
 
-  // Google Apps Script snippet generator
+  // Google Apps Script snippet generator (100% automated background sync)
   const webhookUrl = `${window.location.origin}/api/sync-form`;
   const appsScriptCode = `/**
- * KAWANCOSPLAY GOOGLE FORM REAL-TIME SYNC BRIDGE
- * ${t('sheets.scriptCommentInstall')}
- * ${t('sheets.scriptCommentTrigger')}
+ * KAWANCOSPLAY GOOGLE FORM & SPREADSHEET 100% AUTOMATED BACKGROUND SYNC
+ * 
+ * Instructions:
+ * 1. Open your Google Form or Google Sheet -> Extensions -> Apps Script.
+ * 2. Paste this entire code into Code.gs and save.
+ * 3. Run 'installTriggers()' once. It grants permissions and sets up triggers.
+ * 4. Sync now runs 100% automatically in the background without opening the admin dashboard!
+ */
+
+var TARGET_WEBHOOK_URL = "${webhookUrl}";
+
+/**
+ * Real-time instant trigger on form submission
  */
 function onFormSubmit(e) {
-  var targetUrl = "${webhookUrl}";
-
-  // ${t('sheets.scriptCommentResponseData')}
   var responseData = e ? (e.namedValues || e.values) : {};
-  
   var payload = {
     source: "google_form_instant_trigger",
     timestamp: new Date().toISOString(),
     data: responseData
   };
+  sendPayload(payload);
+}
+
+/**
+ * Background full sheet sync (runs periodically or manually)
+ */
+function syncAllRows() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  if (!data || data.length <= 1) return;
   
+  var payload = {
+    source: "spreadsheet_sync",
+    timestamp: new Date().toISOString(),
+    rows: data
+  };
+  sendPayload(payload);
+}
+
+function sendPayload(payload) {
   var options = {
     method: "post",
     contentType: "application/json",
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
-  
   try {
-    var res = UrlFetchApp.fetch(targetUrl, options);
-    Logger.log("KawanCosplay Sync Result: " + res.getContentText());
+    var res = UrlFetchApp.fetch(TARGET_WEBHOOK_URL, options);
+    Logger.log("KCC Sync Result: " + res.getContentText());
   } catch (err) {
-    Logger.log("Sync Error: " + err.toString());
+    Logger.log("KCC Sync Error: " + err.toString());
   }
+}
+
+/**
+ * 1-Click install all background triggers!
+ */
+function installTriggers() {
+  // Clear any old triggers to avoid duplicates
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    ScriptApp.deleteTrigger(triggers[i]);
+  }
+
+  // 1. Instant trigger on Form Submit
+  try {
+    ScriptApp.newTrigger("onFormSubmit")
+      .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet())
+      .onFormSubmit()
+      .create();
+    Logger.log("Installed onFormSubmit trigger successfully.");
+  } catch (err) {
+    Logger.log("Could not bind onFormSubmit: " + err.message);
+  }
+
+  // 2. Periodic background sync every 10 minutes
+  ScriptApp.newTrigger("syncAllRows")
+    .timeBased()
+    .everyMinutes(10)
+    .create();
+  Logger.log("Installed 10-minute recurring background sync trigger.");
 }
 `;
 

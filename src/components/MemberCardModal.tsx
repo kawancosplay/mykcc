@@ -152,7 +152,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                 <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('card.badge')}</span>
               </span>
-              <h3 id={titleId} className="text-xl sm:text-2xl font-black text-white">
+              <h3 id={titleId} className="text-xl sm:text-2xl font-semibold text-white">
                 {t('card.title')}
               </h3>
               <p className="text-xs text-slate-400 mt-1">
@@ -192,7 +192,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                   </span>
                   {/* 8-digit IDs are short enough to read larger; legacy 16-digit IDs stay compact */}
                   <span
-                    className={`font-mono font-black text-rose-400 tracking-wider ${
+                    className={`font-mono font-semibold text-purple-300 tabular-nums tracking-wide ${
                       isKccId8(member.userId16) ? 'text-base sm:text-lg' : 'text-xs sm:text-sm'
                     }`}
                   >
@@ -279,7 +279,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               <button
                 type="button"
                 onClick={handlePrintCard}
-                className="flex-1 sm:flex-initial min-h-11 py-2.5 px-4 liquid-glass-button text-white font-bold rounded-xl text-xs sm:text-sm inline-flex items-center justify-center gap-2"
+                className="btn-primary pressable flex-1 sm:flex-initial min-h-11 py-2.5 px-5 rounded-xl text-xs sm:text-sm inline-flex items-center justify-center gap-2"
               >
                 <Download className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('card.printDownload')}</span>

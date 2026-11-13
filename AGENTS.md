@@ -24,6 +24,9 @@ dashboard with Google Sheets sync.
   "Database '(default)' not found" and the whole site breaks (this happened once).
 - `server.ts` (Express) only runs locally. On Vercel, `/api/health` and `/api/sync-form` are the serverless
   functions in `api/`. `vercel.json` rewrites every non-`/api` path to `index.html`.
+- Hosting is Vercel only; Cloudflare Workers is no longer used (owner, 2026-11-13). The leftover Worker still
+  reports a `Workers Builds: mykcc` check that fails in 0 s on every PR branch and passes on `main`: ignore it,
+  judge a PR by the Vercel checks. Removing the Worker in the Cloudflare dashboard is the owner's call.
 
 ## 2. Division of labour between agents
 
@@ -180,14 +183,27 @@ site (`AgeStatusGate`, rendered by `App.tsx`; it cannot be dismissed, only signi
 sign-in provider and older blank profiles. Members with the old value are not asked, and the admin portal layout does
 not show it. Only `ageCategory` is written (`updateMemberProfileData`); no rules change. Not tried with a real account.
 
+Done (2026-11-05): cancelling the admin demo sandbox's exit button now stays in the sandbox; only a confirmed clear leaves it
+(Cancel used to drop the banner but keep the preset data, so the next Submit was a live save). Checked in a local preview with
+the tester forced visible and `window.confirm` stubbed; not tried with a real admin account.
+
 Done (2026-10-11, live): bilingual privacy policy at `/privacy` (needed for the OAuth Branding page).
 
 Done (2026-11-04, live, PR #7): the member's profile form no longer shows or saves a blank or differently spelled
 age status as Legal Age; it writes the status only when the member changes it (`changedAgeCategory`,
 `unlistedAgeCategory` in `memberRules.ts`). Not tried with a real signed-in account. A stored status over 50
-characters now gets a save error until the member picks a listed one (it used to be cut short). Still open: other
-spellings show untranslated beside their listed option; map them with `ageCategoryKey` (on `main` since PR #8), see
-the `shortcut:` comment in `UserProfile.tsx`.
+characters now gets a save error until the member picks a listed one (it used to be cut short).
+
+Done (2026-11-05): in that form another spelling of a listed status shows as that option with its translated label
+and stays stored as it is until the member changes it (`listedAgeCategory`, matched through `ageCategoryKey`). Legal
+Age maps only from its own spellings: 'Legal Age (17 tahun)' shares the key but shows as stored, like any text that
+is no listed status. Not tried with a real signed-in account.
+
+Done (2026-11-05): a Sheets import or auto-sync no longer replaces a stored age status; the sheet only fills a blank one
+(`buildImportUpdate`). It cannot tell a status changed in the app from an old cell, which can be the retired value. So a
+stored status changes in the app only (profile or admin edit), and a row that differs only there counts as unchanged, with
+no message to the admin. A status an admin blanks in the app is filled again by the next import. New members still get the
+cell text as typed, the retired value included. Checked on the emulator (real import code + rules), not with a real sheet.
 
 **Sprint 2 — branch `claude/sprint-2`, PR #1 into `main` (NOT merged / NOT live yet, 2026-10-13):**
 - A `785f6f5`: admin Sheets scope = `spreadsheets.readonly` only, requested on demand for the signed-in admin
@@ -229,6 +245,8 @@ the `shortcut:` comment in `UserProfile.tsx`.
 - Admin run order after deploy: merge duplicates → fix registration dates → switch to 8-digit IDs. Turn the
   Sheets auto-sync off while doing it.
 
+Social media question (2026-11-04): a platform dropdown + username/link per account, stored in the existing `socialMedia` string as `Instagram: @a | TikTok: @b` (`src/lib/socialLinks.ts`, `SocialLinksInput`). An `Other` account has no prefix, so older free text stays as it is. The whole string keeps the 120-character limit of the published rules. At least one account is required on registration only. A Sheets cell never replaces a member's list of accounts, and a shared handle no longer counts as the same person when both sides have phone numbers (none shared) or the handle is a placeholder like 'tidak ada'.
+
 Open:
 - **Before merging PR #1:** visual check on a phone-size and a desktop-size window (sheets, drag-to-dismiss,
   page transitions, admin tabs, language switch incl. `ar` RTL). The owner approves the merge.
@@ -240,7 +258,9 @@ Open:
   the same timestamp + 127 import pairs 14 s apart); the owner approved the 74 so far and decides on the rest.
 - **Backlog (code):** a signed-in member who also submits the public form gets two member docs (sign-in profile +
   `kc_` registration; repair does not merge them); a changed Sheets import can overwrite in-app profile edits with
-  filled sheet cells (a blank cell no longer changes a stored value or invents one); fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
+  filled sheet cells (a blank cell no longer changes a stored value or invents one, and the age status only fills a
+  blank); the duplicate merge lets a newer duplicate's age status replace the keeper's, so it can bring back the retired
+  value; fully safe public registration (no client-chosen IDs, no `kc_` doc carrying someone
   else's email) needs a server-side endpoint with the Admin SDK; package.json still lists unused `motion`,
   `country-state-city` and the conflicting `esbuild ^0.25` (remove together with a `bun.lock` update).
 - **Google side (Gemini) — status reported by Gemini 2026-10-11, verified by Claude in the Cloud console:**

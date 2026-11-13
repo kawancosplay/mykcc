@@ -203,13 +203,28 @@ export function memberDisplayName(data: Partial<Member> | null | undefined): str
   return typeof value === 'string' && value.trim() ? value.trim() : 'Member';
 }
 
+// 'Legal Age (17 tahun)' has the same key as Legal Age, but must not show as an adult: only these spellings do
+const LEGAL_AGE_SPELLING = /^legal age\s*(\/\s*dewasa\s*)?(\(\s*18\+(\s*tahun)?\s*\))?$/i;
+
+/**
+ * What the profile's age status select shows: the listed option for any spelling of this status (ageCategoryKey), so
+ * its label is translated, else the value itself. Text over the rules' limit stays as it is: every save is refused
+ * until it is replaced, so the member must be able to pick its listed option.
+ */
+export function listedAgeCategory(value: string, listed: readonly string[]): string {
+  if (value.length > MEMBER_FIELD_LIMITS.ageCategory) return value;
+  const key = ageCategoryKey(value);
+  if (key === 'legal age' && !LEGAL_AGE_SPELLING.test(value.trim())) return value;
+  return listed.find((opt) => ageCategoryKey(opt) === key) ?? value;
+}
+
 /**
  * The extra option the profile's age status needs, because a select whose value matches no option shows its first
- * one (Legal Age): a blank status ('') or another spelling (admin form, Sheets). null when the options list it.
+ * one (Legal Age): a blank status ('') or text that is no listed status. null when a listed option covers it.
  */
 export function unlistedAgeCategory(stored: string | undefined, listed: readonly string[]): string | null {
   const value = stored || '';
-  return listed.includes(value) ? null : value;
+  return listed.includes(listedAgeCategory(value, listed)) ? null : value;
 }
 
 /**

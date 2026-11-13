@@ -45,8 +45,8 @@ type EditorTab = 'layout' | 'background' | 'colors' | 'font' | 'logo';
 /** Tab order (left to right in LTR), used for the direction of the content slide. */
 const EDITOR_TAB_ORDER: readonly EditorTab[] = ['layout', 'background', 'colors', 'font', 'logo'];
 
-// Option tiles: selected = purple accent, idle = recessed glass well
-const OPTION_SELECTED = 'bg-purple-950/60 border-purple-400 shadow-md ring-1 ring-purple-400';
+// Option tiles: selected = purple & emerald accent, idle = recessed glass well
+const OPTION_SELECTED = 'bg-gradient-to-r from-purple-950/70 via-purple-900/60 to-emerald-950/40 border-purple-400 shadow-md ring-1 ring-purple-400/80';
 const OPTION_IDLE = 'glass-well hover:border-white/20';
 const SECTION_LABEL = 'block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2';
 
@@ -101,25 +101,25 @@ export const SiteEditorModal: React.FC = () => {
       id: 'bright-purple-fluent',
       name: t('siteEditor.bgBrightPurpleName'),
       desc: t('siteEditor.bgBrightPurpleDesc'),
-      previewGrad: 'linear-gradient(135deg, #2e1065 0%, #1e1145 40%, #3b0764 75%, #4c1d95 100%)',
+      previewGrad: 'radial-gradient(circle at 18% 15%, #53ffc0 0%, transparent 45%), radial-gradient(circle at 80% 25%, #a855f7 0%, transparent 50%), linear-gradient(135deg, #0a0418 0%, #1a0d33 40%, #0d211e 75%, #06110f 100%)',
     },
     {
       id: 'cyber-purple',
       name: t('siteEditor.bgCyberPurpleName'),
       desc: t('siteEditor.bgCyberPurpleDesc'),
-      previewGrad: 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #581c87 100%)',
+      previewGrad: 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #064e3b 100%)',
     },
     {
       id: 'cosmic-dark',
       name: t('siteEditor.bgCosmicDarkName'),
       desc: t('siteEditor.bgCosmicDarkDesc'),
-      previewGrad: 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #20133e 100%)',
+      previewGrad: 'radial-gradient(circle at 80% 20%, #a855f7 0%, transparent 50%), linear-gradient(135deg, #090614 0%, #170d2b 50%, #0c1a17 100%)',
     },
     {
       id: 'fluent-lavender',
       name: t('siteEditor.bgFluentLavenderName'),
       desc: t('siteEditor.bgFluentLavenderDesc'),
-      previewGrad: 'linear-gradient(135deg, #371b58 0%, #4c2a76 50%, #5c3b88 100%)',
+      previewGrad: 'radial-gradient(circle at 20% 15%, #53ffc0 0%, transparent 45%), radial-gradient(circle at 80% 30%, #c084fc 0%, transparent 50%), linear-gradient(135deg, #271242 0%, #3d1b64 50%, #132e24 100%)',
     },
     {
       id: 'dark-onyx',
@@ -205,12 +205,15 @@ export const SiteEditorModal: React.FC = () => {
               <div className="sheet-grabber" aria-hidden="true" />
               <div className="px-4 sm:px-6 pt-1 pb-4 sm:pt-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600/30 to-emerald-500/20 border border-purple-400/40 flex items-center justify-center text-purple-200 shrink-0 shadow-[0_0_15px_rgba(83,255,192,0.15)]">
                     <Palette className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <h2 id={titleId} className="text-base sm:text-lg font-black text-white">
-                      {t('siteEditor.editorTitle')}
+                    <h2 id={titleId} className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                      <span>{t('siteEditor.editorTitle')}</span>
+                      <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 border border-emerald-400/30 text-emerald-300">
+                        QuickLiquid
+                      </span>
                     </h2>
                     <p className="text-xs text-purple-200/80">
                       {t('siteEditor.editorDesc')}
@@ -660,9 +663,9 @@ export const SiteEditorModal: React.FC = () => {
             </div>
 
             {/* Modal Bottom Footer with Close & Save Confirmation */}
-            <div className="shrink-0 px-4 sm:px-6 py-4 border-t border-white/10 flex items-center justify-between gap-3">
-              <span className="text-xs text-purple-300 font-semibold flex items-center gap-1.5 min-w-0">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="shrink-0 px-4 sm:px-6 py-4 border-t border-white/10 flex items-center justify-between gap-3 bg-black/20">
+              <span className="text-xs text-purple-200 font-medium flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] shrink-0"></span>
                 <span>{t('siteEditor.autoSaveNotice')}</span>
               </span>
 

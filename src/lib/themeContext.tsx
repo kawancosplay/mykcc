@@ -56,7 +56,7 @@ export const DEFAULT_THEME: SiteTheme = {
 
 const BACKGROUND_GRADIENTS: Record<Exclude<BackgroundTheme, 'custom'>, string> = {
   'bright-purple-fluent':
-    'radial-gradient(ellipse 70% 55% at 15% 10%, rgba(83, 255, 192, 0.28) 0%, transparent 65%), radial-gradient(ellipse 75% 60% at 85% 20%, rgba(168, 85, 247, 0.35) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 10% 85%, rgba(140, 82, 255, 0.28) 0%, transparent 65%), radial-gradient(ellipse 65% 55% at 90% 90%, rgba(52, 211, 153, 0.24) 0%, transparent 70%), linear-gradient(135deg, #070314 0%, #170d2e 45%, #0e1a1e 80%, #060e12 100%)',
+    'radial-gradient(circle at 18% 15%, rgba(83, 255, 192, 0.22) 0%, transparent 55%), radial-gradient(circle at 82% 25%, rgba(168, 85, 247, 0.28) 0%, transparent 60%), linear-gradient(145deg, #0a0418 0%, #1a0d33 40%, #0d211e 75%, #06110f 100%)',
   'cyber-purple':
     'radial-gradient(ellipse 65% 50% at 20% 15%, rgba(83, 255, 192, 0.22) 0%, transparent 65%), linear-gradient(135deg, #18052e 0%, #3b0764 50%, #064e3b 100%)',
   'cosmic-dark':

@@ -32,7 +32,10 @@ export default function FloatingGlass({
           tint: '22, 22, 27',
           tintOpacity,
           borderRadius,
-          quality: 'medium',
+          quality: 'low',
+          dispersionMode: 'auto',
+          refractionMode: 'auto',
+          respectPreferences: true,
         }}
         className={`border border-white/10 ${className}`}
       >

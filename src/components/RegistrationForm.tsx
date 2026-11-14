@@ -36,7 +36,7 @@ import { EMPTY_REGISTRATION_FORM } from '../lib/memberRules';
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
 import FloatingGlass from './FloatingGlass';
-import KccBadgePreview from './KccBadgePreview';
+import SocialLinksInput from './SocialLinksInput';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { DURATION, EASE, SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -124,7 +124,7 @@ const LEGACY_CUSTOM_CITY_OPTION = 'Other City / County';
 const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city === LEGACY_CUSTOM_CITY_OPTION;
 
 // Field a validation error points at: it gets aria-invalid (the red .glass-input border) until the next submit
-type ErrorField = 'name' | 'email' | 'phone' | 'customCity' | 'codeOfConduct';
+type ErrorField = 'name' | 'email' | 'phone' | 'socialMedia' | 'customCity' | 'codeOfConduct';
 
 // Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
 // control where it was while giving the tint some room.
@@ -176,6 +176,8 @@ export const RegistrationForm = React.memo(function RegistrationForm({
   const [isDuplicateShared, setIsDuplicateShared] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<ErrorField | null>(null);
+  // Bumped when the form is cleared: empty social rows never reach formData, so only a remount removes them
+  const [socialRowsKey, setSocialRowsKey] = useState(0);
   const [errorPulse, setErrorPulse] = useState(0);
   const [showAgeExplainer, setShowAgeExplainer] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -310,6 +312,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       setIsDemoSubmission(false);
       setErrorMsg(null);
       setErrorField(null);
+      setSocialRowsKey((key) => key + 1);
     }
   };
 
@@ -333,6 +336,11 @@ export const RegistrationForm = React.memo(function RegistrationForm({
     const phoneDigits = dataToSubmit.phone.replace(/\D/g, '');
     if (!dataToSubmit.phone.trim() || phoneDigits.length < MIN_PHONE_DIGITS) {
       showError(t('registration.whatsappRequiredError', { minDigits: MIN_PHONE_DIGITS }), 'phone');
+      return;
+    }
+
+    if (!dataToSubmit.socialMedia.trim()) {
+      showError(t('registration.socialMediaRequiredError'), 'socialMedia');
       return;
     }
 
@@ -641,8 +649,6 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       {/* GOOGLE FORM HEADER CARD */}
       <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
         <div className="p-5 sm:p-10">
-          {/* Floats so the welcome text wraps around the badge instead of leaving a gap under the title */}
-          <KccBadgePreview className="hidden sm:block float-right ml-8 mb-4 -mt-2 mr-1" />
           <p className="text-xs text-slate-400 mb-2">
             {t('registration.officialFormTag')} · {t('registration.safeCommunityTag')}
           </p>
@@ -1090,22 +1096,19 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </div>
         </div>
 
-        {/* QUESTION 10: SOCIAL MEDIA (OPTIONAL) */}
+        {/* QUESTION 10: SOCIAL MEDIA */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
-            {t('registration.socialMediaTitle')}
-          </label>
+          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">`r`n            {t('registration.socialMediaTitle')}{' '}`r`n            <span className="text-rose-500">*</span>`r`n          </label>
           <p className="text-xs text-slate-400 mb-4">
             {t('registration.socialMediaDesc')}
           </p>
 
-          <input
-            type="text"
-            placeholder={t('registration.socialMediaPlaceholder')}
-            maxLength={MEMBER_FIELD_LIMITS.socialMedia}
+          <SocialLinksInput
+            key={socialRowsKey}
+            required
+            invalid={errorField === 'socialMedia'}
             value={formData.socialMedia}
-            onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })}
-            className="glass-input w-full text-base sm:text-sm"
+            onChange={(socialMedia) => setFormData({ ...formData, socialMedia })}
           />
         </div>
 

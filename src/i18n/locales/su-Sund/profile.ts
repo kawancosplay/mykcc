@@ -25,7 +25,6 @@ const profile: LocaleNamespace<'profile'> = {
   discordPlaceholder: "ᮎᮧᮔ᮪ᮒᮧ: alyachan_cos ᮃᮒᮔᮕᮤ user#0001",
   roleLabel: "ᮕᮨᮛᮔ᮪ ᮅᮒᮙ ᮓᮤ ᮊᮧᮙᮥᮔᮤᮒᮞ᮪",
   customRolePlaceholder: "ᮞᮨᮛᮒ᮪ ᮕᮨᮛᮔ᮪ / ᮊᮃᮂᮜᮤᮃᮔ᮪ ᮞᮔᮦᮞ᮪ ᮃᮔ᮪ᮏᮩᮔ᮪...",
-  socialMediaPlaceholder: "@wasta_pangguna (Instagram / X / TikTok)",
   reasonLabel: "ᮃᮜᮨᮞᮔ᮪ ᮍᮌᮘᮥᮀ & ᮎᮒᮨᮒᮔ᮪ ᮕᮢᮧᮕᮤᮜ᮪",
   roleIdolFan: "ᮕᮍᮌᮥᮙ᮪ ᮄᮓᮧᮜ᮪ / ᮝᮧᮒ",
   roleOtaku: "ᮇᮒᮊᮥ ᮃᮔᮤᮙᮦ, ᮙᮍ & ᮌᮦᮙ᮪",

@@ -56,6 +56,7 @@ import {
   generate16DigitUserId,
   generateUniqueChronologicalUserId16,
   findDuplicateMember,
+  normalizeSocialHandle,
   extractAllPhones,
   isValidKccId,
   isKccId8,
@@ -73,6 +74,7 @@ import {
   MAIN_ACCOUNT_KCC_ID,
   MAIN_ACCOUNT_UID,
 } from './idGenerator';
+import { parseSocialLinks } from './socialLinks';
 import {
   MEMBER_FIELD_LIMITS,
   MEMBER_OWNER_EDITABLE_FIELDS,
@@ -942,16 +944,24 @@ const IMPORT_FILL_FIELDS = [...IMPORT_COMPARE_FIELDS, 'birthday'] as const;
 
 /**
  * Changes a sheet row brings to an already existing member: only changed, non-empty, clamped fields;
- * phone numbers merged (the existing primary stays primary). Never userId16, createdAt, source, status,
- * authUid.
+ * phone numbers merged (the existing primary stays primary). The age status only fills a blank. Never
+ * userId16, createdAt, source, status, authUid.
  */
 export function buildImportUpdate(matched: Member, m: Omit<Member, 'id'>): Record<string, unknown> {
   const changes: Record<string, unknown> = {};
   for (const field of IMPORT_COMPARE_FIELDS) {
     let incoming = clampString(m[field], MEMBER_FIELD_LIMITS[field]);
     if (!incoming) continue;
+    // An old cell (maybe the retired value) must not undo a status changed in the app, so the sheet only fills a blank
+    if (field === 'ageCategory' && String(matched.ageCategory ?? '').trim()) continue;
     if (field === 'email') incoming = incoming.toLowerCase();
     const current = matched[field] === undefined || matched[field] === null ? '' : String(matched[field]);
+    if (field === 'socialMedia') {
+      // A sheet cell must not cost a member their accounts: it adds nothing new, or it is one account against their list
+      const stored = parseSocialLinks(current).map(({ handle }) => normalizeSocialHandle(handle));
+      const sheet = parseSocialLinks(incoming).map(({ handle }) => normalizeSocialHandle(handle));
+      if (sheet.every((handle) => stored.includes(handle)) || (stored.length > 1 && sheet.length === 1)) continue;
+    }
     if (incoming !== current) changes[field] = incoming;
   }
   const phones = mergeMemberPhones(matched, m);

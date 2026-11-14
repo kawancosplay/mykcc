@@ -431,7 +431,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
           {/* Member Identity & KCC ID */}
           <div className="flex-1 text-center sm:text-left">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {formData.cosplayName}
+            </h1>
+            {member.email && <p className="text-xs text-slate-500 mt-0.5">{member.email}</p>}
+
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
               {roleBadge && (
                 <span className="glass-chip max-w-full whitespace-normal leading-tight font-bold bg-rose-100/70 text-rose-700 border-rose-200">
                   {roleBadge}
@@ -442,11 +447,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 <span>{t('profile.verifiedActive')}</span>
               </span>
             </div>
-
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {formData.cosplayName}
-            </h1>
-            {member.email && <p className="text-xs text-slate-500 mt-0.5">{member.email}</p>}
 
             {/* KCC ID BOX (8 digits; 16 before the 8-digit switch) */}
             <div className="glass-well mt-4 inline-flex items-center gap-3 border-rose-500/30 rounded-2xl ps-4 pe-2 py-2">

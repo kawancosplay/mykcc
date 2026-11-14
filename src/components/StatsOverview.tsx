@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Sparkles, MapPin, Layers, Heart, BarChart3, PieChart, ShieldCheck } from 'lucide-react';
+import { Users, Sparkles, MapPin, Layers, Heart, PieChart, ShieldCheck } from 'lucide-react';
 import { Member } from '../types';
 import { SPRING, useReducedMotion } from '../lib/motion';
 import { useI18n } from '../i18n';
@@ -112,13 +112,6 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
   return (
     <div className="max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <div className="flex items-center space-x-2 mb-2">
-          <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
-            <BarChart3 className="w-3.5 h-3.5 text-rose-400" />
-            <span>{t('stats.badge')}</span>
-          </span>
-          <span className="text-xs text-slate-400">{t('stats.subtitle')}</span>
-        </div>
         <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
           {t('stats.title')}
         </h1>

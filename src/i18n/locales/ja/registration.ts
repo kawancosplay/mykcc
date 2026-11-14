@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "KawanCosplay 新規メンバー登録",
-  formDesc: "KawanCosplay Community（KCC）へようこそ！コスプレイヤー、アイドルファン、オタク、ポップカルチャー愛好家のための、100% SFW で安心な国際コミュニティです。2025年6月30日設立。国籍や経験を問わず、どなたでも温かく歓迎します。\n\n簡単な登録フォームにご記入いただくと、公式 KCC ID カードが発行され、WhatsApp コミュニティグループの参加リンクが表示されます。Discord サーバーへの参加リンクは WhatsApp グループ参加後にご利用いただけます。",
+  formDesc: "KawanCosplay Community（KCC）へようこそ。KCC は 100% SFW の国際コスプレコミュニティで、KawanCosplay Media と KawanCosplay Community からなる KawanCosplay Group の一員です。KCC は KawanCosplay が作った WhatsApp グループと Discord サーバーです。もともとは Instagram で KawanCosplay とコラボしたコスプレイヤーの交流の場として作られましたが、現在はコスプレイヤーかどうかに関係なく、コスプレの世界に興味のある方ならどなたでも参加できます。2025年6月30日設立。\n\nぜひ私たちの仲間になって、WhatsApp グループや Discord サーバーでメンバーと交流してください。宗教・人種・言語を問わず、海外メンバーも歓迎します。\n\n安全を確保し悪用を防ぐため、コミュニティへの参加にはフォームへの記入をお願いしています。WhatsApp グループのリンクはフォーム送信後に表示されます。そのため、フォームの記入が終わってもこのタブを閉じないでください。なお、Discord サーバーは WhatsApp グループに参加した後にご利用いただけます。\n\nその他お困りのことがあれば、Instagram の @kawancosplayers に DM するか、WhatsApp でホットライン +62 857-1103-2782 までご連絡ください。",
   inclusiveWelcome: "どなたでも大歓迎：コスプレイヤー、アイドルファン、オタク、ポップカルチャー好きの皆さん！",
   requiredIndicator: "* 必須の質問です",
   officialFormTag: "KawanCosplay 公式フォーム",

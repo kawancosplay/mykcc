@@ -18,6 +18,11 @@ import {
   Wrench,
   History,
   UserCog,
+  Copy,
+  FileCode,
+  Instagram,
+  Plus,
+  X,
 } from 'lucide-react';
 import type { AdminEntry, KccCounter, Member, SyncLog, SubscriptionErrorKind } from '../types';
 import { formatKccId } from '../lib/idGenerator';
@@ -43,7 +48,7 @@ import {
   renderRich,
 } from './admin/adminUi';
 import type { AdminBusyTask, MemberStatus } from './admin/adminUi';
-import { MemberTable, memberMatchesQuery, nextSortMode, sortMembers } from './admin/MemberTable';
+import { MemberTable, memberMatchesQuery, nextSortMode, parseSmartSocials, sortMembers } from './admin/MemberTable';
 import type { SortField, SortMode } from './admin/MemberTable';
 import { DEFAULT_PAGE_SIZE, Pagination, parsePageSize } from './admin/Pagination';
 import type { PageSize } from './admin/Pagination';
@@ -256,17 +261,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedAgeCategory, setSelectedAgeCategory] = useState('ALL');
   const [selectedBirthdayFilter, setSelectedBirthdayFilter] = useState<'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH'>('ALL');
   const [selectedSocialFilter, setSelectedSocialFilter] = useState('ALL');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'ALL' | MemberStatus>('ALL');
   const [sortMode, setSortMode] = useState<SortMode>('timestamp_desc');
   const [pageSize, setPageSize] = useState<PageSize>(() => readStoredPageSize());
   const [page, setPage] = useState(1);
   const listTopRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcut '/' to focus search bar
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        document.activeElement !== searchInputRef.current &&
+        !(document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement)
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const handleToggleSort = (field: SortField) => setSortMode((prev) => nextSortMode(prev, field));
 
   // Back to page 1 whenever what is listed changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, sortMode, pageSize]);
+  }, [searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, selectedStatusFilter, sortMode, pageSize]);
 
   const handlePageSize = (size: PageSize) => {
     setPageSize(size);
@@ -291,6 +314,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return Array.from(set).sort();
   }, [members]);
 
+  const birthdayThisMonthCount = useMemo(() => {
+    const currentMonth = new Date().getMonth() + 1;
+    return members.filter((m) => {
+      if (!m.birthday || !m.birthday.trim()) return false;
+      const b = m.birthday.trim();
+      const isoMatch = b.match(/^\d{4}-(\d{1,2})-\d{1,2}/);
+      if (isoMatch) return parseInt(isoMatch[1], 10) === currentMonth;
+      const slashMatch = b.match(/^\d{1,2}[/-](\d{1,2})[/-]\d{2,4}/);
+      if (slashMatch) return parseInt(slashMatch[1], 10) === currentMonth;
+      const dt = new Date(b);
+      return !isNaN(dt.getTime()) && dt.getMonth() + 1 === currentMonth;
+    }).length;
+  }, [members]);
+
   const filteredMembers = useMemo(() => {
     const currentMonth = new Date().getMonth() + 1;
     const filtered = members.filter((m) => {
@@ -298,6 +335,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (selectedRole !== 'ALL' && m.primaryRole !== selectedRole) return false;
       if (selectedCity !== 'ALL' && m.city !== selectedCity) return false;
       if (selectedAgeCategory !== 'ALL' && ageCategoryKey(m.ageCategory) !== ageCategoryKey(selectedAgeCategory)) return false;
+      if (selectedStatusFilter !== 'ALL' && (m.status || 'verified') !== selectedStatusFilter) return false;
 
       // Birthday filter
       if (selectedBirthdayFilter === 'HAS_BIRTHDAY') {
@@ -340,7 +378,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return true;
     });
     return sortMembers(filtered, sortMode);
-  }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, sortMode]);
+  }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, selectedStatusFilter, sortMode]);
 
   const total = filteredMembers.length;
   const effectivePageSize = pageSize === 'all' ? Math.max(1, total) : pageSize;
@@ -421,10 +459,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  // CSV of the filtered list. Header order == cell order. IDs FORMATTED (Excel keeps leading zeros), values
-  // starting with = + - @ are prefixed with ' (CSV injection), downloaded as a Blob with a BOM.
-  const exportToCsv = () => {
-    if (filteredMembers.length === 0) {
+  // CSV & JSON export helpers
+  const exportMembersToCsv = (list: Member[], fileSuffix = '') => {
+    if (list.length === 0) {
       alert(t('admin.exportNoData'));
       return;
     }
@@ -449,7 +486,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       'admin.csvRegisteredAt',
     ];
     const header = headerKeys.map((key) => csvCell(t(key))).join(',');
-    const rows = filteredMembers.map((m) =>
+    const rows = list.map((m) =>
       [
         m.userId16 ? formatKccId(m.userId16) : '',
         m.legacyUserId16 ? formatKccId(m.legacyUserId16) : '',
@@ -473,7 +510,108 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         .map(csvCell)
         .join(',')
     );
-    downloadCsv(`kawancosplay_members_${fileDateStamp()}.csv`, [header, ...rows].join('\r\n'));
+    const suffix = fileSuffix ? `_${fileSuffix}` : '';
+    downloadCsv(`kawancosplay_members${suffix}_${fileDateStamp()}.csv`, [header, ...rows].join('\r\n'));
+  };
+
+  const exportToCsv = () => exportMembersToCsv(filteredMembers);
+
+  const exportToJson = () => {
+    if (filteredMembers.length === 0) {
+      alert(t('admin.exportNoData'));
+      return;
+    }
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(filteredMembers, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute('href', dataStr);
+    a.setAttribute('download', `kawancosplay_members_${fileDateStamp()}.json`);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  // ----- Bulk Selection & Batch Actions -----
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(() => new Set());
+
+  const toggleSelectMember = (id: string) => {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const pageMemberIds = useMemo(() => pageMembers.map((m) => m.id), [pageMembers]);
+  const isAllOnPageSelected =
+    pageMemberIds.length > 0 && pageMemberIds.every((id) => selectedMemberIds.has(id));
+  const isSomeOnPageSelected =
+    pageMemberIds.some((id) => selectedMemberIds.has(id));
+
+  const toggleSelectAllOnPage = () => {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      if (isAllOnPageSelected) {
+        pageMemberIds.forEach((id) => next.delete(id));
+      } else {
+        pageMemberIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkSetStatus = async (status: MemberStatus) => {
+    if (selectedMemberIds.size === 0) return;
+    const targets = members.filter((m) => selectedMemberIds.has(m.id));
+    if (!window.confirm(`Update status to "${status}" for ${targets.length} selected member(s)?`)) {
+      return;
+    }
+    try {
+      for (const m of targets) {
+        await updateMemberStatus(m.id, status, m.userId16);
+      }
+      haptic('success');
+      alert(`Updated ${targets.length} members to "${status}".`);
+    } catch (e) {
+      alert(`Bulk update error: ${describeFirestoreError(e)}`);
+    }
+  };
+
+  const handleBulkCopyPhones = () => {
+    const phones = members
+      .filter((m) => selectedMemberIds.has(m.id) && m.phone)
+      .map((m) => m.phone!.trim());
+    if (phones.length === 0) {
+      alert('No WhatsApp phone numbers found for selected members.');
+      return;
+    }
+    navigator.clipboard.writeText(phones.join('\n'));
+    haptic('success');
+    alert(`Copied ${phones.length} WhatsApp numbers to clipboard.`);
+  };
+
+  const handleBulkCopyInstagrams = () => {
+    const handles: string[] = [];
+    members
+      .filter((m) => selectedMemberIds.has(m.id))
+      .forEach((m) => {
+        const parsed = parseSmartSocials(m.socialMedia, (m as unknown as { instagram?: string }).instagram);
+        const ig = parsed.find((s) => s.platform === 'Instagram');
+        if (ig && ig.handle) handles.push(ig.handle);
+      });
+    if (handles.length === 0) {
+      alert('No Instagram handles found for selected members.');
+      return;
+    }
+    navigator.clipboard.writeText(handles.join('\n'));
+    haptic('success');
+    alert(`Copied ${handles.length} Instagram handles to clipboard.`);
+  };
+
+  const handleBulkExportCsv = () => {
+    const selectedList = members.filter((m) => selectedMemberIds.has(m.id));
+    if (selectedList.length === 0) return;
+    exportMembersToCsv(selectedList, `selected_${selectedList.length}`);
   };
 
   // ----- Not authorized: privacy lock screen (Google sign-in only, no passkey) -----
@@ -550,6 +688,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     selectedAgeCategory !== 'ALL' ||
     selectedBirthdayFilter !== 'ALL' ||
     selectedSocialFilter !== 'ALL' ||
+    selectedStatusFilter !== 'ALL' ||
     !!searchQuery;
 
   const tabLabel = (tab: AdminTab): string => {
@@ -582,15 +721,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="liquid-glass-card glass-raised rounded-3xl p-5 sm:p-8 mb-8 relative overflow-hidden">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
-                    <ShieldCheck className="w-3.5 h-3.5 text-rose-400" />
-                    <span>{t('admin.managementPortalBadge')}</span>
-                  </span>
-                  <span className="glass-chip font-mono font-normal bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-                    {t('admin.verifiedAccessBadge')}
-                  </span>
-                </div>
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900">{t('admin.dashboardTitle')}</h1>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
                   {t('admin.dashboardDesc')} {t('admin.dashboardPrivacyNote')}
@@ -598,15 +728,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <a
-                  href="https://wa.me/6285711032782"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="glass-button pressable px-3.5 text-xs font-bold bg-emerald-600/20 border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>{t('admin.whatsappHotlineShort', { phone: ADMIN_WHATSAPP_DISPLAY })}</span>
-                </a>
                 {lockInfo?.hasLock && (
                   <button
                     type="button"
@@ -625,26 +746,81 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
-            {/* Quick Stats Summary ('—' until the first successful members snapshot) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 pt-6 border-t border-white/10">
-              <div className="glass-well p-4 rounded-2xl">
-                <p className="text-xs text-slate-400">{t('admin.totalMembers')}</p>
+            {/* Quick Stats Summary: Clickable KPI Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mt-6 sm:mt-8 pt-6 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedStatusFilter('ALL');
+                  setSelectedBirthdayFilter('ALL');
+                }}
+                className={`text-start p-4 rounded-2xl transition-all cursor-pointer ${
+                  selectedStatusFilter === 'ALL' && selectedBirthdayFilter === 'ALL'
+                    ? 'bg-purple-100/90 border-2 border-purple-500 shadow-md ring-2 ring-purple-300'
+                    : 'glass-well hover:border-purple-300 border border-transparent'
+                }`}
+              >
+                <p className="text-xs text-slate-500 font-semibold">{t('admin.totalMembers')}</p>
                 <p className="text-2xl font-black text-slate-900">{membersLoaded ? formatNumber(members.length) : '—'}</p>
-              </div>
+                <span className="text-[10px] text-purple-700 font-semibold mt-1 block">Click to view all</span>
+              </button>
+
               {(
                 [
-                  ['verified', 'text-emerald-400'],
-                  ['active', 'text-indigo-400'],
-                  ['pending', 'text-amber-400'],
-                ] as Array<[MemberStatus, string]>
-              ).map(([status, tone]) => (
-                <div key={status} className="glass-well p-4 rounded-2xl">
-                  <p className="text-xs text-slate-400">{t('admin.statusStat', { status: t(STATUS_LABEL_KEYS[status]) })}</p>
-                  <p className={`text-2xl font-black ${tone}`}>
-                    {membersLoaded ? formatNumber(members.filter((m) => m.status === status).length) : '—'}
-                  </p>
-                </div>
-              ))}
+                  ['verified', 'text-emerald-700', 'bg-emerald-50 border-emerald-400 ring-emerald-300'],
+                  ['active', 'text-indigo-700', 'bg-indigo-50 border-indigo-400 ring-indigo-300'],
+                  ['pending', 'text-amber-700', 'bg-amber-50 border-amber-400 ring-amber-300'],
+                ] as Array<[MemberStatus, string, string]>
+              ).map(([status, tone, activeBorder]) => {
+                const isSelected = selectedStatusFilter === status;
+                return (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => {
+                      setSelectedStatusFilter((prev) => (prev === status ? 'ALL' : status));
+                      if (selectedBirthdayFilter === 'THIS_MONTH') setSelectedBirthdayFilter('ALL');
+                    }}
+                    className={`text-start p-4 rounded-2xl transition-all cursor-pointer ${
+                      isSelected
+                        ? `bg-white border-2 shadow-md ring-2 ${activeBorder}`
+                        : 'glass-well hover:border-slate-300 border border-transparent'
+                    }`}
+                  >
+                    <p className="text-xs text-slate-500 font-semibold">{t('admin.statusStat', { status: t(STATUS_LABEL_KEYS[status]) })}</p>
+                    <p className={`text-2xl font-black ${tone}`}>
+                      {membersLoaded ? formatNumber(members.filter((m) => (m.status || 'verified') === status).length) : '—'}
+                    </p>
+                    <span className="text-[10px] text-slate-500 font-medium mt-1 block">
+                      {isSelected ? '✓ Filter active' : 'Filter by status'}
+                    </span>
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBirthdayFilter((prev) => (prev === 'THIS_MONTH' ? 'ALL' : 'THIS_MONTH'));
+                  if (selectedStatusFilter !== 'ALL') setSelectedStatusFilter('ALL');
+                }}
+                className={`text-start p-4 rounded-2xl transition-all cursor-pointer ${
+                  selectedBirthdayFilter === 'THIS_MONTH'
+                    ? 'bg-amber-50 border-2 border-amber-400 shadow-md ring-2 ring-amber-300'
+                    : 'glass-well hover:border-amber-300 border border-transparent'
+                }`}
+              >
+                <p className="text-xs text-amber-800 font-semibold flex items-center gap-1">
+                  <span>🎂</span>
+                  <span>Birthdays (Month)</span>
+                </p>
+                <p className="text-2xl font-black text-amber-900">
+                  {membersLoaded ? formatNumber(birthdayThisMonthCount) : '—'}
+                </p>
+                <span className="text-[10px] text-amber-700 font-medium mt-1 block">
+                  {selectedBirthdayFilter === 'THIS_MONTH' ? '✓ Filter active' : 'Filter birthdays'}
+                </span>
+              </button>
             </div>
 
             {/* Sub-nav tabs (segmented control; scrolls sideways on narrow screens). The active thumb slides
@@ -749,126 +925,172 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* MEMBERS: (d) loaded — filters, pagination, list */}
             {adminTab === 'members' && !membersError && membersLoaded && (
               <div className="space-y-5">
-                <div className="liquid-glass-card rounded-3xl p-4 sm:p-6">
-                  <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                    <div className="relative flex-1 min-w-0">
-                      <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-4 border border-slate-200/80 bg-white/95">
+                  {/* Row 1: Full-Width Search Bar + Primary Action Buttons */}
+                  <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                    <div className="relative flex-1 min-w-[280px]">
+                      <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#475569] pointer-events-none" />
                       <input
+                        ref={searchInputRef}
                         type="search"
-                        placeholder={t('admin.searchPlaceholder')}
+                        placeholder="Search name, KCC ID, Instagram, Discord, WhatsApp, email, or city..."
                         aria-label={t('admin.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full ps-12 pe-4 py-3.5 liquid-glass-input rounded-2xl text-slate-900 placeholder:text-slate-400 text-base"
+                        className="w-full ps-11 pe-20 py-2.5 h-11 liquid-glass-input rounded-2xl text-[#0F172A] font-medium placeholder:text-[#64748B] text-sm sm:text-base border border-slate-300 bg-white/90 focus:bg-white transition-colors"
                       />
+                      <div className="absolute end-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            aria-label="Clear search"
+                            className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-semibold text-slate-600 bg-slate-100 border border-slate-300 rounded shadow-xs">
+                          /
+                        </kbd>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <select
-                        value={selectedRole}
-                        onChange={(e) => setSelectedRole(e.target.value)}
-                        aria-label={t('admin.colRole')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-800 max-w-full"
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <a
+                        href="/?tab=register"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="h-11 px-3.5 py-2 rounded-xl text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white inline-flex items-center gap-1.5 shadow-md transition-colors"
+                        title="Open Registration Form"
                       >
-                        <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
-                        {availableRoles.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={selectedCity}
-                        onChange={(e) => setSelectedCity(e.target.value)}
-                        aria-label={t('admin.colLocation')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
-                      >
-                        <option value="ALL">{t('admin.filterAllCities')}</option>
-                        {availableCities.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={selectedAgeCategory}
-                        onChange={(e) => setSelectedAgeCategory(e.target.value)}
-                        aria-label={t('admin.colAge')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
-                      >
-                        <option value="ALL">{t('admin.filterAllAges')}</option>
-                        {/* Matched through ageCategoryKey, so every stored spelling counts; only the labels are translated */}
-                        <option value="Legal Age / Dewasa (18+)">{t('admin.filterLegalAge')}</option>
-                        <option value="Minor / Di Bawah Umur (<18)">{t('admin.filterMinor')}</option>
-                        {/* No longer offered to anyone; stays here so admins can find the members who already have it */}
-                        <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
-                      </select>
-                      <select
-                        value={selectedBirthdayFilter}
-                        onChange={(e) => setSelectedBirthdayFilter(e.target.value as 'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH')}
-                        aria-label={t('admin.fieldBirthday')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
-                      >
-                        <option value="ALL">{t('admin.filterAllBirthdays')}</option>
-                        <option value="HAS_BIRTHDAY">🎂 {t('admin.filterHasBirthday')}</option>
-                        <option value="THIS_MONTH">🎉 {t('admin.filterBirthdayThisMonth')}</option>
-                      </select>
-                      <select
-                        value={selectedSocialFilter}
-                        onChange={(e) => setSelectedSocialFilter(e.target.value)}
-                        aria-label={t('admin.fieldSocialMedia')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
-                      >
-                        <option value="ALL">{t('admin.filterAllSocials')}</option>
-                        <option value="HAS_SOCIAL">📱 {t('admin.filterHasSocial')}</option>
-                        <option value="NO_SOCIAL">❌ {t('admin.filterNoSocial')}</option>
-                        <option value="Instagram">📸 Instagram</option>
-                        <option value="TikTok">🎵 TikTok</option>
-                        <option value="Discord">💬 Discord</option>
-                        <option value="Twitter">🐦 Twitter / X</option>
-                        <option value="YouTube">📺 YouTube</option>
-                        <option value="Facebook">👥 Facebook</option>
-                      </select>
-
-                      <div className="flex items-center gap-1.5 liquid-glass-input rounded-xl px-2.5 py-2">
-                        <ArrowUpDown className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                        <select
-                          value={sortMode === 'name_asc' ? 'name_asc' : 'timestamp_desc'}
-                          onChange={(e) => setSortMode(e.target.value === 'name_asc' ? 'name_asc' : 'timestamp_desc')}
-                          className="bg-transparent text-base sm:text-sm text-slate-800 focus:outline-none pe-1 cursor-pointer"
-                        >
-                          <option value="timestamp_desc">{t('admin.sortNewest')}</option>
-                          <option value="name_asc">{t('admin.sortNameAsc')}</option>
-                        </select>
-                      </div>
-
+                        <Plus className="w-4 h-4" />
+                        <span>+ Add Member</span>
+                      </a>
                       <button
                         type="button"
                         onClick={exportToCsv}
-                        className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-slate-900 inline-flex items-center gap-1.5 shadow-md pointer-coarse:min-h-11"
+                        className="h-11 px-3.5 py-2 bg-white/90 hover:bg-white border border-slate-300 rounded-xl text-xs font-bold text-[#0F172A] inline-flex items-center gap-1.5 shadow-xs transition-colors"
                       >
-                        <Download className="w-3.5 h-3.5" />
+                        <Download className="w-3.5 h-3.5 text-slate-700" />
                         <span>{t('admin.exportCsv')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exportToJson}
+                        className="h-11 px-3.5 py-2 bg-white/90 hover:bg-white border border-slate-300 rounded-xl text-xs font-bold text-[#0F172A] inline-flex items-center gap-1.5 shadow-xs transition-colors"
+                        title="Export filtered members as JSON"
+                      >
+                        <FileCode className="w-3.5 h-3.5 text-slate-700" />
+                        <span>Export JSON</span>
                       </button>
                       <button
                         type="button"
                         onClick={handlePurgeAll}
                         disabled={isPurging || isBusy}
                         title={t('admin.purgeButtonTitle')}
-                        className="px-3.5 py-2 liquid-glass-button rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-md disabled:opacity-50 disabled:cursor-not-allowed pointer-coarse:min-h-11"
+                        className="h-11 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-xl text-xs font-bold text-rose-900 inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        <Trash2 className={`w-3.5 h-3.5 ${isPurging ? 'animate-spin' : ''}`} />
+                        <Trash2 className={`w-3.5 h-3.5 text-rose-700 ${isPurging ? 'animate-spin' : ''}`} />
                         <span>{isPurging ? t('admin.purging') : t('admin.purgeButton')}</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 pt-3 border-t border-white/10">
-                    <span>
-                      {renderRich(t('admin.showingMembers', { total: formatNumber(members.length) }), {
-                        shown: <strong>{formatNumber(total)}</strong>,
-                      })}
-                    </span>
+                  {/* Row 2: Responsive Filter Selects + Reset */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/70">
+                    <select
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      aria-label={t('admin.colRole')}
+                      className="px-3 py-2 liquid-glass-input rounded-xl text-xs font-semibold text-slate-900 bg-white border border-slate-300"
+                    >
+                      <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
+                      {availableRoles.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      aria-label={t('admin.colLocation')}
+                      className="px-3 py-2 liquid-glass-input rounded-xl text-xs font-semibold text-slate-900 bg-white border border-slate-300"
+                    >
+                      <option value="ALL">{t('admin.filterAllCities')}</option>
+                      {availableCities.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={selectedAgeCategory}
+                      onChange={(e) => setSelectedAgeCategory(e.target.value)}
+                      aria-label={t('admin.colAge')}
+                      className="px-3 py-2 liquid-glass-input rounded-xl text-xs font-semibold text-slate-900 bg-white border border-slate-300"
+                    >
+                      <option value="ALL">{t('admin.filterAllAges')}</option>
+                      <option value="Legal Age / Dewasa (18+)">{t('admin.filterLegalAge')}</option>
+                      <option value="Minor / Di Bawah Umur (<18)">{t('admin.filterMinor')}</option>
+                      <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
+                    </select>
+
+                    <select
+                      value={selectedBirthdayFilter}
+                      onChange={(e) => setSelectedBirthdayFilter(e.target.value as 'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH')}
+                      aria-label={t('admin.fieldBirthday')}
+                      className="px-3 py-2 liquid-glass-input rounded-xl text-xs font-semibold text-slate-900 bg-white border border-slate-300"
+                    >
+                      <option value="ALL">{t('admin.filterAllBirthdays')}</option>
+                      <option value="HAS_BIRTHDAY">🎂 {t('admin.filterHasBirthday')}</option>
+                      <option value="THIS_MONTH">🎉 {t('admin.filterBirthdayThisMonth')}</option>
+                    </select>
+
+                    <select
+                      value={selectedSocialFilter}
+                      onChange={(e) => setSelectedSocialFilter(e.target.value)}
+                      aria-label={t('admin.fieldSocialMedia')}
+                      className="px-3 py-2 liquid-glass-input rounded-xl text-xs font-semibold text-slate-900 bg-white border border-slate-300"
+                    >
+                      <option value="ALL">{t('admin.filterAllSocials')}</option>
+                      <option value="HAS_SOCIAL">📱 {t('admin.filterHasSocial')}</option>
+                      <option value="NO_SOCIAL">❌ {t('admin.filterNoSocial')}</option>
+                      <option value="Instagram">📸 Instagram</option>
+                      <option value="TikTok">🎵 TikTok</option>
+                      <option value="Discord">💬 Discord</option>
+                      <option value="Twitter">🐦 Twitter / X</option>
+                      <option value="YouTube">📺 YouTube</option>
+                      <option value="Facebook">👥 Facebook</option>
+                    </select>
+
+                    <select
+                      value={selectedStatusFilter}
+                      onChange={(e) => setSelectedStatusFilter(e.target.value as 'ALL' | MemberStatus)}
+                      aria-label={t('admin.colStatus')}
+                      className="px-3 py-2 liquid-glass-input rounded-xl text-xs font-semibold text-slate-900 bg-white border border-slate-300"
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="verified">Verified</option>
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                    </select>
+
+                    <div className="flex items-center gap-1.5 liquid-glass-input rounded-xl px-2.5 py-1.5 bg-white border border-slate-300">
+                      <ArrowUpDown className="w-3.5 h-3.5 text-violet-600 shrink-0" />
+                      <select
+                        value={sortMode === 'name_asc' ? 'name_asc' : 'timestamp_desc'}
+                        onChange={(e) => setSortMode(e.target.value === 'name_asc' ? 'name_asc' : 'timestamp_desc')}
+                        className="bg-transparent text-xs font-semibold text-slate-900 focus:outline-none pe-1 cursor-pointer"
+                      >
+                        <option value="timestamp_desc">{t('admin.sortNewest')}</option>
+                        <option value="name_asc">{t('admin.sortNameAsc')}</option>
+                      </select>
+                    </div>
+
                     {hasActiveFilters && (
                       <button
                         type="button"
@@ -878,13 +1100,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setSelectedAgeCategory('ALL');
                           setSelectedBirthdayFilter('ALL');
                           setSelectedSocialFilter('ALL');
+                          setSelectedStatusFilter('ALL');
                           setSearchQuery('');
                         }}
-                        className="touch-target text-rose-400 hover:underline"
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-700 hover:bg-rose-50 border border-rose-300 transition-colors"
                       >
                         {t('admin.resetFilter')}
                       </button>
                     )}
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[#0F172A] font-semibold pt-3 border-t border-slate-200/70">
+                    <span>
+                      {renderRich(t('admin.showingMembers', { total: formatNumber(members.length) }), {
+                        shown: <strong className="text-purple-950 font-bold">{formatNumber(total)}</strong>,
+                      })}
+                    </span>
                   </div>
                 </div>
 
@@ -911,7 +1142,92 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     onDelete={handleDeleteMember}
                     onStatusChange={handleStatusChange}
                     onOpenSync={() => selectAdminTab('sync')}
+                    selectedIds={selectedMemberIds}
+                    onToggleSelect={toggleSelectMember}
+                    onToggleSelectAll={toggleSelectAllOnPage}
+                    isAllSelected={isAllOnPageSelected}
+                    isSomeSelected={isSomeOnPageSelected}
                   />
+
+                  {/* Floating / Sticky Batch Action Bar when 1+ members selected */}
+                  {selectedMemberIds.size > 0 && (
+                    <aside
+                      aria-label="Bulk actions"
+                      className="sticky bottom-4 z-30 p-3 sm:p-4 rounded-2xl bg-slate-900/95 text-white border border-purple-500/40 shadow-2xl backdrop-blur-md flex flex-wrap items-center justify-between gap-3 animate-fade-in"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span className="text-xs sm:text-sm font-bold font-mono">
+                          {selectedMemberIds.size} member{selectedMemberIds.size > 1 ? 's' : ''} selected
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center rounded-xl bg-white/10 p-1 gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleBulkSetStatus('verified')}
+                            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                          >
+                            Set Verified
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleBulkSetStatus('active')}
+                            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+                          >
+                            Set Active
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleBulkSetStatus('pending')}
+                            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white transition-colors"
+                          >
+                            Set Pending
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleBulkCopyPhones}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/20 transition-colors inline-flex items-center gap-1.5"
+                          title="Copy WhatsApp numbers of selected members"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Copy WhatsApp</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleBulkCopyInstagrams}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/20 transition-colors inline-flex items-center gap-1.5"
+                          title="Copy Instagram handles of selected members"
+                        >
+                          <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                          <span>Copy Instagram</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleBulkExportCsv}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/20 transition-colors inline-flex items-center gap-1.5"
+                          title="Export selected members to CSV"
+                        >
+                          <Download className="w-3.5 h-3.5 text-purple-300" />
+                          <span>Export CSV ({selectedMemberIds.size})</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMemberIds(new Set())}
+                          className="p-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition-colors text-xs font-bold"
+                          title="Deselect all"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </aside>
+                  )}
 
                   {pageCount > 1 && (
                     <Pagination

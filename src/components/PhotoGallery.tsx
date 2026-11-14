@@ -397,17 +397,22 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       {/* Header bar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <span className="glass-chip font-bold bg-pink-100/70 text-pink-700 border-pink-200">
-              <Camera className="w-3.5 h-3.5 text-pink-600" />
-              <span>{t('gallery.title')}</span>
-            </span>
+          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            {t('gallery.showcaseHeading')}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <p className="text-slate-600 text-sm max-w-2xl">
+              {t('gallery.description')}
+            </p>
             {/* Counts the LOADED photos (no total-count query); "+ more" while older pages exist */}
             {status !== 'loading' && status !== 'error' && (
-              <span className="text-xs text-slate-600 font-medium">
-                {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
-                  count: formatNumber(photos.length),
-                })}
+              <span className="text-xs text-slate-600 font-medium inline-flex items-center gap-1.5 ms-0 sm:ms-2">
+                <span>•</span>
+                <span>
+                  {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
+                    count: formatNumber(photos.length),
+                  })}
+                </span>
                 {feed.hasMore && <span className="ms-1">{t('gallery.morePhotosHint')}</span>}
               </span>
             )}
@@ -417,17 +422,11 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               disabled={status === 'loading' || status === 'loadingMore'}
               title={t('gallery.refresh')}
               aria-label={t('gallery.refresh')}
-              className="touch-target inline-flex items-center justify-center w-10 h-10 text-slate-600 hover:text-purple-700 disabled:opacity-40 rounded-full"
+              className="touch-target inline-flex items-center justify-center w-8 h-8 text-slate-600 hover:text-purple-700 disabled:opacity-40 rounded-full"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${status === 'loading' ? 'animate-spin' : ''}`} aria-hidden="true" />
             </button>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            {t('gallery.showcaseHeading')}
-          </h1>
-          <p className="text-slate-600 text-sm max-w-2xl mt-1">
-            {t('gallery.description')}
-          </p>
         </div>
 
         {/* Upload Action (photo uploads require a signed-in account) */}

@@ -48,13 +48,13 @@ export const Pagination: React.FC<PaginationProps> = ({
   const atLast = page >= pageCount;
 
   const iconButton =
-    'glass-icon-button pressable disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none';
+    'p-1.5 rounded-lg bg-white/90 text-[#0F172A] border border-slate-300 hover:bg-violet-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none';
 
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-slate-300 ${className}`}
+      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-[#0F172A] font-semibold ${className}`}
     >
-      <p className="font-semibold" aria-live="polite">
+      <p className="font-semibold text-[#0F172A]" aria-live="polite">
         {t('admin.paginationRange', {
           from: formatNumber(from),
           to: formatNumber(to),
@@ -85,7 +85,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             >
               <ChevronLeft className="w-4 h-4 rtl:rotate-180" />
             </button>
-            <span className="px-1.5 whitespace-nowrap tabular-nums">
+            <span className="px-1.5 whitespace-nowrap tabular-nums text-[#0F172A] font-semibold">
               {t('admin.pageOf', { page: formatNumber(page), pages: formatNumber(pageCount) })}
             </span>
             <button
@@ -112,7 +112,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         )}
 
         <label className="flex items-center gap-1.5">
-          <span className="text-slate-600 font-medium">{t('admin.pageSize')}</span>
+          <span className="text-[#0F172A] font-semibold">{t('admin.pageSize')}</span>
           <select
             value={String(pageSize)}
             onChange={(e) => {

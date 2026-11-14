@@ -5,13 +5,11 @@ import {
   Share2,
   X,
   CheckCircle2,
-  Sparkles,
   QrCode,
   MessageCircle,
 } from 'lucide-react';
 import { Member } from '../types';
 import { formatKccId, isKccId8, isValidKccId } from '../lib/idGenerator';
-import { KawanCosplayLogo } from './KawanCosplayLogo';
 import { useI18n } from '../i18n';
 import { haptic } from '../lib/haptic';
 import { usePresenceMotion, useScrollLock, useSheetDrag } from '../lib/motion';
@@ -148,41 +146,27 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
           <div className="glass-scroll px-5 pt-0 pb-6 sm:p-8">
             <div className="text-center mb-6">
-              <span className="glass-chip text-rose-600 bg-rose-50 border-rose-200 mb-2">
-                <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>{t('card.badge')}</span>
-              </span>
               <h3 id={titleId} className="text-xl sm:text-2xl font-bold text-slate-900">
                 {t('card.title')}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                {t('card.subtitle')}
-              </p>
             </div>
 
             {/* HOLOGRAM ID CARD CONTAINER - LIQUID GLASS STYLE */}
             <div
               ref={cardRef}
-              className="relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-[rgba(26,18,48,0.95)] shadow-2xl mb-6 text-white"
+              className="kcc-member-id-card relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-[rgba(26,18,48,0.95)] shadow-2xl mb-6 text-white"
             >
 
               {/* Card Top Brand */}
-              <div className="flex justify-between items-start gap-3 mb-5 border-b border-rose-500/20 pb-4 relative z-10">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <KawanCosplayLogo size="sm" showText={true} />
-                </div>
-
-                {/* ONLY KCC ID is used - No separate redundant card number */}
-                <div className="text-end shrink-0">
-                  <span className="text-[9px] font-mono uppercase tracking-wider text-slate-400 block">
+              <div className="flex justify-between items-center gap-3 mb-5 border-b border-rose-500/20 pb-4 relative z-10">
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-300 font-bold tracking-wider text-xs uppercase font-mono">
                     {t('card.kccIdLabel')}
                   </span>
-                  {/* 8-digit IDs are short enough to read larger; legacy 16-digit IDs stay compact */}
-                  <span
-                    className={`font-mono font-semibold text-purple-300 tabular-nums tracking-wide ${
-                      isKccId8(member.userId16) ? 'text-base sm:text-lg' : 'text-xs sm:text-sm'
-                    }`}
-                  >
+                </div>
+
+                <div className="text-end shrink-0">
+                  <span className="font-mono font-bold text-white text-lg sm:text-xl tracking-widest drop-shadow-sm tabular-nums">
                     {formatKccId(member.userId16)}
                   </span>
                 </div>
@@ -241,9 +225,6 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                   )}
                   <p className="text-[10px] text-slate-400 font-mono">
                     {t('card.joinedLabel')} <span className="text-slate-200 font-semibold">{formattedDate}</span>
-                  </p>
-                  <p className="text-[9px] text-emerald-300 font-mono">
-                    {t('card.hotlineWa')}
                   </p>
                   <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold mt-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />

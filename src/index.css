@@ -1686,3 +1686,20 @@ select.glass-input,
 select.liquid-glass-input {
   padding-inline-end: 2.25rem;
 }
+
+/* Protect dark KCC Member ID Card from light-mode dark-text overrides */
+.kcc-member-id-card {
+  color: #ffffff !important;
+}
+.kcc-member-id-card h1,
+.kcc-member-id-card h2,
+.kcc-member-id-card h3,
+.kcc-member-id-card h4,
+.kcc-member-id-card p,
+.kcc-member-id-card span,
+.kcc-member-id-card div {
+  color: unset;
+}
+.kcc-member-id-card h4 {
+  color: #ffffff !important;
+}

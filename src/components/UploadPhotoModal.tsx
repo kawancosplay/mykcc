@@ -217,9 +217,6 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
 
             <div className="glass-scroll p-6 sm:p-8">
               <div className="mb-6 pr-12">
-                <span className="glass-chip font-bold bg-rose-100/70 text-rose-700 border-rose-200 mb-2">
-                  {t('gallery.uploadBadge')}
-                </span>
                 <h3 id={titleId} className="text-xl sm:text-2xl font-black text-slate-900">
                   {t('gallery.uploadTitle')}
                 </h3>

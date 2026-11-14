@@ -797,9 +797,6 @@ export default function App() {
         {activeTab === 'card' && (
           <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 text-center">
             <div className="glass-card glass-raised rounded-3xl p-8 sm:p-12">
-              <span className="glass-chip text-rose-700 bg-rose-50 border-rose-200 mb-3 font-bold">
-                {t('common.cardPageBadge')}
-              </span>
               <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] mb-2">
                 {t('common.cardPageTitle')}
               </h2>

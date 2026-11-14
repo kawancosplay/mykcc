@@ -3,6 +3,7 @@ import { User } from 'firebase/auth';
 // App shell + landing page (registration form) stay in the main bundle: they are the first paint.
 import { StickyHeader } from './components/StickyHeader';
 import { RegistrationForm } from './components/RegistrationForm';
+import { AgeStatusGate } from './components/AgeStatusGate';
 import { PerfLiteNotice, PerfModeFooterButton } from './components/PerfModeControl';
 
 // Heavy screens and modals load on demand. The loaders are kept separately so idle prefetch can warm them.
@@ -43,6 +44,7 @@ import {
   warmAuthPopup,
 } from './lib/firebase';
 import { MAIN_ACCOUNT_KCC_ID, formatKccId, isMainAccountKccId, parseKccIdInput } from './lib/idGenerator';
+import { isAgeStatusBlank } from './lib/memberRules';
 import { useI18n } from './i18n';
 import { themeBackground, useSiteTheme } from './lib/themeContext';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
@@ -473,6 +475,16 @@ export default function App() {
     if (memberProfile) {
       setCurrentMember(isMainAdminUser(authUser) ? withMainId(memberProfile) : memberProfile);
     }
+  };
+
+  // The signed-in member saved their own profile (profile screen, required age status step)
+  const handleOwnProfileSaved = (updated: Member) => {
+    // A save that settles after sign-out or an account switch must not bring that profile back
+    if (!user || authUidRef.current !== user.uid) return;
+    const isOwnMainProfile =
+      isMainAdminUser(user) &&
+      (updated.authUid === user?.uid || isMainAccountKccId(currentMember?.userId16));
+    setCurrentMember(isOwnMainProfile ? withMainId(updated) : updated);
   };
 
   // Admin "Connect Google Sheets": on-demand read-only Sheets scope for the signed-in admin account.
@@ -911,12 +923,7 @@ export default function App() {
           currentMember ? (
             <UserProfile
               member={currentMember}
-              onUpdateMember={(updated) => {
-                const isOwnMainProfile =
-                  isMainAdminUser(user) &&
-                  (updated.authUid === user?.uid || isMainAccountKccId(currentMember?.userId16));
-                setCurrentMember(isOwnMainProfile ? withMainId(updated) : updated);
-              }}
+              onUpdateMember={handleOwnProfileSaved}
               onOpenCardModal={handleOpenCard}
               currentLang={currentLang}
             />
@@ -1011,6 +1018,18 @@ export default function App() {
           <SiteEditorModal />
         </Suspense>
       )}
+
+      {/* Required age status for a signed-in member with none (after the other modals, so it stays on top) */}
+      <AnimatePresence>
+        {user && currentMember && isAgeStatusBlank(currentMember) && (
+          <AgeStatusGate
+            key={currentMember.id}
+            member={currentMember}
+            onSaved={handleOwnProfileSaved}
+            onLogout={handleLogout}
+          />
+        )}
+      </AnimatePresence>
 
       {/* One-time notice when Auto turned Lite mode on for this device */}
       <PerfLiteNotice />

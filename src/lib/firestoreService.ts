@@ -88,6 +88,7 @@ import {
   createdAtMs,
   compareByCreatedAtThenId,
   memberDisplayName,
+  isListedAgeCategory,
 } from './memberRules';
 import {
   planKccIdMigration,
@@ -1854,6 +1855,15 @@ export async function mergeDuplicateRegistration(keeper: Member, duplicate: Memb
     allowEmail: true,
     fillOnly: !duplicateIsNewer || duplicateIsPlaceholder,
   });
+  // Age status: nothing records which doc was changed in the app, where only Legal Age and Minor can be picked. So a
+  // listed status on the keeper stays; the duplicate's, newer or older, fills a blank or replaces an unlisted one (the
+  // retired value, other sheet text) when it is listed itself.
+  delete updates.ageCategory;
+  const keeperAge = storedText(keeperRaw.ageCategory).trim();
+  const duplicateAge = clampString(duplicateRaw.ageCategory, MEMBER_FIELD_LIMITS.ageCategory);
+  if (duplicateAge && (!keeperAge || (isListedAgeCategory(duplicateAge) && !isListedAgeCategory(keeperAge)))) {
+    updates.ageCategory = duplicateAge;
+  }
   if (!keeperAuthUid && duplicateAuthUid) {
     updates.authUid = duplicateAuthUid.slice(0, 128);
   }

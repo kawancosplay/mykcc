@@ -176,7 +176,14 @@ all IDs unique, `memberCards` built, public lookup verified).
 
 Done (2026-11-04): 'Prefer not to say' is no longer offered for the age status (public form, profile, admin edit). The public
 form starts blank and requires a choice. Members who already have the old value keep it (label via
-`isPreferNotToSayAge`); the admin filter keeps it. Still open: sign-in profiles are never asked; the rules do not enforce it.
+`isPreferNotToSayAge`); the admin filter keeps it. Still open: the rules do not enforce it.
+
+Done (2026-11-13): a signed-in member with a blank age status must choose Legal Age or Minor before using the public
+site (`AgeStatusGate`, rendered by `App.tsx`; it cannot be dismissed, only signing out leaves it, also while a save
+waits for the connection). It covers every sign-in provider and older blank profiles. Members with the old value are
+not asked, and the admin portal layout does not show it. Only `ageCategory` goes to the member doc;
+`updateMemberProfileData` then refreshes the public card from the loaded profile, as the profile screen does. No rules
+change. Not tried with a real account.
 
 Done (2026-11-05): cancelling the admin demo sandbox's exit button now stays in the sandbox; only a confirmed clear leaves it
 (Cancel used to drop the banner but keep the preset data, so the next Submit was a live save). Checked in a local preview with

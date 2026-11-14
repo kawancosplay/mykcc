@@ -154,6 +154,37 @@ export const ErrorFlash: React.FC<{ pulse: number }> = ({ pulse }) => {
   );
 };
 
+/** The age status choices, nothing preselected and one required. Also asked after sign-in by AgeStatusGate. */
+export const AgeCategoryRadios: React.FC<{ value: string; onChange: (value: string) => void }> = ({
+  value,
+  onChange,
+}) => {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-1 mt-2">
+      {AGE_CATEGORIES.map((opt) => (
+        <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
+          <input
+            type="radio"
+            name="ageCategory"
+            required
+            value={opt.val}
+            checked={value === opt.val}
+            onChange={(e) => {
+              onChange(e.target.value);
+              haptic('selection');
+            }}
+            className="w-5 h-5 shrink-0 cursor-pointer"
+          />
+          <span className="text-sm text-slate-200 group-hover:text-white">
+            {t(opt.labelKey)}
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+};
+
 const NO_EXISTING_MEMBERS: Member[] = [];
 
 // Memoized (perf F8): App's auth / theme / header state changes no longer re-render this large form;
@@ -861,27 +892,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
           )}
 
-          <div className="space-y-1 mt-2">
-            {AGE_CATEGORIES.map((opt) => (
-              <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
-                <input
-                  type="radio"
-                  name="ageCategory"
-                  required
-                  value={opt.val}
-                  checked={formData.ageCategory === opt.val}
-                  onChange={(e) => {
-                    setFormData({ ...formData, ageCategory: e.target.value });
-                    haptic('selection');
-                  }}
-                  className="w-5 h-5 shrink-0 cursor-pointer"
-                />
-                <span className="text-sm text-slate-200 group-hover:text-white">
-                  {t(opt.labelKey)}
-                </span>
-              </label>
-            ))}
-          </div>
+          <AgeCategoryRadios
+            value={formData.ageCategory}
+            onChange={(ageCategory) => setFormData({ ...formData, ageCategory })}
+          />
         </div>
 
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}

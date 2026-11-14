@@ -138,6 +138,11 @@ export function isPreferNotToSayAge(value: unknown): boolean {
   return ageCategoryKey(value) === 'memilih untuk tidak menyebutkan';
 }
 
+/** Every new sign-in profile starts blank: a signed-in member with no status must choose one (AgeStatusGate). */
+export function isAgeStatusBlank(member: Pick<Member, 'ageCategory'>): boolean {
+  return !String(member.ageCategory ?? '').trim();
+}
+
 /** Legacy placeholder emails (memberxxx@kawancosplay.id, member12@…) are treated as no email. */
 export function isFakePlaceholderEmail(email?: string): boolean {
   if (!email || typeof email !== 'string') return false;

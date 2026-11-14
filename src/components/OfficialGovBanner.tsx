@@ -19,9 +19,17 @@ interface OfficialGovBannerProps {
 }
 
 const disclosureVariants: Variants = {
-  initial: { opacity: 0, height: 0 },
-  animate: { opacity: 1, height: 'auto', transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
-  exit: { opacity: 0, height: 0, transition: TWEEN.sheetExit },
+  initial: { opacity: 0, transform: 'translate3d(0, -6px, 0)' },
+  animate: {
+    opacity: 1,
+    transform: 'translate3d(0, 0, 0)',
+    transition: { duration: 0.14, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    transform: 'translate3d(0, -6px, 0)',
+    transition: { duration: 0.12, ease: 'easeIn' },
+  },
 };
 
 const DISCLOSURE_MOTION: PresenceMotionProps = {
@@ -66,7 +74,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="touch-target inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 font-bold underline underline-offset-2 transition-colors cursor-pointer text-[13px]"
+              className="touch-target inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 font-bold underline underline-offset-2 transition-colors cursor-pointer text-[13px] touch-manipulation"
               aria-expanded={isOpen}
             >
               <span>{t('common.howYouKnow')}</span>
@@ -82,8 +90,13 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
       {/* Expandable Verification Guide Drawer */}
       <AnimatePresence initial={false}>
       {isOpen && (
-        <motion.div key="gov-banner-guide" {...disclosureMotion} className="overflow-hidden">
-        <div className="border-t border-white/60 bg-[rgba(255,255,255,0.78)] -webkit-backdrop-blur-[12px] backdrop-blur-[12px] text-slate-800 px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain shadow-lg">
+        <motion.div
+          key="gov-banner-guide"
+          {...disclosureMotion}
+          style={{ willChange: 'transform, opacity' }}
+          className="overflow-hidden will-change-[transform,opacity]"
+        >
+        <div className="border-t border-white/60 bg-[rgba(255,255,255,0.95)] text-slate-800 px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain shadow-lg">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Pillar 1: Official International Community Identity */}
             <div className="flex items-start gap-3.5">

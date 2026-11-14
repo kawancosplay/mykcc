@@ -55,21 +55,35 @@ export interface NavbarProps {
   onMobileMenuToggle?: (isOpen: boolean) => void;
 }
 
-// Panels that drop down from the navbar (mobile menu, desktop language popover): they settle in from
-// just above their anchor with the sheet spring and fade out. They end on y = 0 / scale = 1, where
-// framer-motion writes `transform: none`, and contain no `position: fixed` children (the PWA guide
-// sheet is portaled to <body>).
+// Panels that drop down from the navbar (mobile menu, desktop language popover): fast GPU-composited
+// transform & opacity transitions without height calculations.
 const dropdownVariants: Variants = {
-  initial: { opacity: 0, y: -6, scale: 0.97 },
-  animate: { opacity: 1, y: 0, scale: 1, transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
-  exit: { opacity: 0, scale: 0.98, transition: TWEEN.fadeOut },
+  initial: { opacity: 0, transform: 'translate3d(0, -6px, 0)' },
+  animate: {
+    opacity: 1,
+    transform: 'translate3d(0, 0, 0)',
+    transition: { duration: 0.14, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    transform: 'translate3d(0, -6px, 0)',
+    transition: { duration: 0.12, ease: 'easeIn' },
+  },
 };
 
-// Inline disclosure (language list inside the mobile menu): the height opens with the sheet spring.
+// Inline disclosure (language list inside the mobile menu): GPU-composited transform & opacity.
 const disclosureVariants: Variants = {
-  initial: { opacity: 0, height: 0 },
-  animate: { opacity: 1, height: 'auto', transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
-  exit: { opacity: 0, height: 0, transition: TWEEN.sheetExit },
+  initial: { opacity: 0, transform: 'translate3d(0, -6px, 0)' },
+  animate: {
+    opacity: 1,
+    transform: 'translate3d(0, 0, 0)',
+    transition: { duration: 0.14, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    transform: 'translate3d(0, -6px, 0)',
+    transition: { duration: 0.12, ease: 'easeIn' },
+  },
 };
 
 const presence = (variants: Variants): PresenceMotionProps => ({
@@ -246,7 +260,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center justify-end gap-1 md:gap-2 shrink-0 h-full flex-1">
             <button
               type="button"
-              className={`glass-button lg:hidden min-touch p-2.5 rounded-2xl pressable ${
+              className={`glass-button lg:hidden min-touch p-2.5 rounded-2xl pressable touch-manipulation ${
                 isMobileMenuOpen ? 'bg-rose-100 text-rose-700 border-rose-300' : 'text-slate-700'
               }`}
               onClick={handleToggleMobileMenu}
@@ -405,7 +419,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <motion.div
             key="mobile-menu"
             {...dropdownMotion}
-            className="lg:hidden absolute top-full left-0 right-0 w-full liquid-glass-menu p-4 sm:p-5 flex flex-col gap-2.5 max-h-[calc(100dvh-75px-var(--safe-top))] overflow-y-auto overscroll-contain z-50 rounded-b-3xl border-t-0 pb-[calc(1rem+var(--safe-bottom))] origin-top"
+            style={{ willChange: 'transform, opacity' }}
+            className="lg:hidden absolute top-full left-0 right-0 w-full liquid-glass-menu p-4 sm:p-5 flex flex-col gap-2.5 max-h-[calc(100dvh-75px-var(--safe-top))] overflow-y-auto overscroll-contain z-50 rounded-b-3xl border-t-0 pb-[calc(1rem+var(--safe-bottom))] origin-top will-change-[transform,opacity]"
           >
              {/* User Profile Info Card */}
              {currentMember && (
@@ -520,7 +535,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </button>
                     <AnimatePresence initial={false}>
                       {isMobileLangOpen && (
-                        <motion.div key="mobile-lang-list" {...disclosureMotion} className="overflow-hidden">
+                        <motion.div
+                          key="mobile-lang-list"
+                          {...disclosureMotion}
+                          style={{ willChange: 'transform, opacity' }}
+                          className="overflow-hidden will-change-[transform,opacity]"
+                        >
                           <div className="pt-1.5">
                             <div className="w-full grid grid-cols-2 gap-1 p-1.5 rounded-2xl glass-well border-purple-200 text-sm text-slate-800 max-h-56 overflow-y-auto overscroll-contain bg-white/90">
                             {LANGUAGES.map((lang) => (

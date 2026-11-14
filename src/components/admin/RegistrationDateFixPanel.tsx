@@ -203,14 +203,14 @@ export const RegistrationDateFixPanel: React.FC<RegistrationDateFixPanelProps> =
       <span
         className={`${chip} ${
           r.matchedBy === 'name'
-            ? 'bg-amber-500/15 text-amber-200 border-amber-500/30'
-            : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+            ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+            : 'bg-emerald-100 text-emerald-950 border-emerald-400 font-bold'
         }`}
       >
         {t(MATCH_KEYS[r.matchedBy])}
       </span>
-      {r.ambiguous && <span className={`${chip} bg-rose-500/15 text-rose-200 border-rose-500/30`}>{t('admin.dateFixAmbiguous')}</span>}
-      <span className={`${chip} bg-white/[0.06] text-slate-300 border-white/10`}>
+      {r.ambiguous && <span className={`${chip} bg-rose-100 text-rose-900 border-rose-300 font-bold`}>{t('admin.dateFixAmbiguous')}</span>}
+      <span className={`${chip} bg-slate-100 text-slate-800 border-slate-200 font-medium`}>
         {SOURCE_LABEL_KEYS[r.source] ? t(SOURCE_LABEL_KEYS[r.source]) : r.source}
       </span>
     </div>
@@ -223,14 +223,14 @@ export const RegistrationDateFixPanel: React.FC<RegistrationDateFixPanelProps> =
       onChange={() => toggleRow(r.memberId)}
       disabled={applying}
       aria-label={t('admin.dateFixSelectRow', { name: r.name || r.memberId })}
-      className="w-4 h-4 accent-emerald-400"
+      className="w-4 h-4 accent-emerald-600"
     />
   );
 
   return (
     <div className="glass-card rounded-3xl p-6 sm:p-8 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shrink-0">
           <CalendarClock className="w-5 h-5" aria-hidden="true" />
         </div>
         <div>

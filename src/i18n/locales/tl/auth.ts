@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Nagkaproblema habang nagla-log in. Pakisubukang muli.",
   googleLoginFailed: "Kinansela o nagkaproblema ang pag-sign in gamit ang Google.",
   popupBlockedTapAgain: "Na-block ng browser ang sign-in window. I-tap ulit ang button.",
+
+  legalConsentNotice: 'Sa pag-sign in, sumasang-ayon ka sa aming',
 };
 
 export default auth;

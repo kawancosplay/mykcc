@@ -544,7 +544,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       ) : filteredPhotos.length === 0 && photos.length > 0 && feed.hasMore ? (
         // Filters only search the loaded pages: offer older photos
         <div className="glass-card text-center py-14 px-4 rounded-3xl">
-          <Search className="w-10 h-10 text-slate-400 mx-auto mb-3" aria-hidden="true" />
+          <Search className="w-10 h-10 text-slate-500 mx-auto mb-3" aria-hidden="true" />
           <p className="text-sm text-slate-600 max-w-sm mx-auto mb-4">{t('gallery.filterLoadMoreHint')}</p>
           <button
             type="button"
@@ -558,7 +558,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         </div>
       ) : filteredPhotos.length === 0 ? (
         <div className="glass-card text-center py-16 px-4 rounded-3xl">
-          <Camera className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+          <Camera className="w-12 h-12 text-slate-500 mx-auto mb-3" />
           <h3 className="text-lg font-bold text-slate-900 mb-1">{t('gallery.emptyTitle')}</h3>
           <p className="text-sm text-slate-600 max-w-sm mx-auto mb-4">
             {t('gallery.emptyDesc')}
@@ -715,7 +715,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
             )}
           </button>
           {loadMoreFailed && (
-            <p className="text-xs text-rose-400 text-center" role="alert">
+            <p className="text-xs text-rose-600 font-semibold text-center" role="alert">
               {t('gallery.loadFailed')}
             </p>
           )}

@@ -311,15 +311,15 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
   );
 
   const convenienceNote = (
-    <p className="text-[11px] text-slate-400 leading-relaxed flex items-start gap-1.5 text-start">
-      <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-px text-emerald-300" aria-hidden="true" />
+    <p className="text-[11px] text-slate-600 leading-relaxed flex items-start gap-1.5 text-start font-medium">
+      <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-px text-emerald-700" aria-hidden="true" />
       <span>{t('admin.lockConvenienceNote')}</span>
     </p>
   );
 
   const signOutButton = (
     <button type="button" onClick={onLogout} className="glass-button pressable w-full px-4 text-xs pointer-coarse:min-h-11">
-      <LogOut className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
+      <LogOut className="w-4 h-4 text-amber-700 shrink-0" aria-hidden="true" />
       <span>{t('admin.signOutAdmin')}</span>
     </button>
   );
@@ -420,12 +420,12 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
             <button
               type="button"
               onClick={() => setDialogMode('forgot')}
-              className="touch-target w-full text-xs font-semibold text-rose-300 hover:underline"
+              className="touch-target w-full text-xs font-bold text-rose-700 hover:underline"
             >
               {t('admin.lockForgot')}
             </button>
           ) : (
-            <p className="text-xs text-slate-400 text-center">{t('admin.lockAskMain', { email: OFFICIAL_ADMIN_EMAIL })}</p>
+            <p className="text-xs text-slate-600 text-center font-medium">{t('admin.lockAskMain', { email: OFFICIAL_ADMIN_EMAIL })}</p>
           )}
 
           {signOutButton}

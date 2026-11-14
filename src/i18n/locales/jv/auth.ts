@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Wonten kalepatan nalika mlebet. Mangga cobi malih.",
   googleLoginFailed: "Mlebet nganggo Google dipunbatalaken utawi wonten masalah.",
   popupBlockedTapAgain: "Browser ngalangi jendhela login. Tutul tombolipun malih.",
+
+  legalConsentNotice: 'Kanthi mlebu, sampeyan setuju karo',
 };
 
 export default auth;

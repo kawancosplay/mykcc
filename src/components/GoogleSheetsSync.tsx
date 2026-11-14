@@ -558,12 +558,12 @@ function installTriggers() {
     Logger.log("Could not bind onFormSubmit: " + err.message);
   }
 
-  // 2. Periodic background sync every 10 minutes
+  // 2. Periodic background sync every 5 minutes (backup poller)
   ScriptApp.newTrigger("syncAllRows")
     .timeBased()
-    .everyMinutes(10)
+    .everyMinutes(5)
     .create();
-  Logger.log("Installed 10-minute recurring background sync trigger.");
+  Logger.log("Installed 5-minute recurring background sync trigger.");
 }
 `;
 
@@ -578,16 +578,16 @@ function installTriggers() {
       {/* Title & Introduction */}
       <div className="mb-8">
         <div className="flex items-center space-x-2 mb-2">
-          <span className="glass-chip font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+          <span className="glass-chip font-bold bg-emerald-100 text-emerald-950 border-emerald-400">
             <Zap className="w-3.5 h-3.5 text-emerald-400" />
             <span>{t('sheets.bridgeBadge')}</span>
           </span>
-          <span className="text-xs text-slate-400">{t('sheets.bridgeSubtitle')}</span>
+          <span className="text-xs text-[#475569] font-medium">{t('sheets.bridgeSubtitle')}</span>
         </div>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">{t('sheets.pageTitle')}</h1>
-            <p className="text-slate-300 text-sm sm:text-base max-w-3xl mt-1">{t('sheets.pageDesc')}</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-[#0F172A] tracking-tight">{t('sheets.pageTitle')}</h1>
+            <p className="text-[#475569] text-sm sm:text-base max-w-3xl mt-1 font-medium">{t('sheets.pageDesc')}</p>
           </div>
           <div className="shrink-0 flex items-center gap-2">
             <button
@@ -605,22 +605,22 @@ function installTriggers() {
 
       {/* Auth Alert if token is not ready */}
       {!accessToken && (
-        <div className="glass-card border-amber-500/30 rounded-3xl p-6 sm:p-8 mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="bg-amber-100/90 border-[1.5px] border-amber-300 rounded-3xl p-6 sm:p-8 mb-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0 text-amber-400">
+            <div className="w-12 h-12 rounded-2xl bg-amber-200 border border-amber-300 flex items-center justify-center shrink-0 text-amber-800">
               <AlertCircle className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white mb-1">{t('sheets.connectionRequiredTitle')}</h3>
-              <p className="text-sm text-slate-300 leading-relaxed max-w-xl">{t('sheets.connectionRequiredDesc')}</p>
-              <p className="text-xs text-amber-200/90 leading-relaxed max-w-xl mt-2">
+              <h3 className="text-lg font-extrabold text-[#92400E] mb-1">{t('sheets.connectionRequiredTitle')}</h3>
+              <p className="text-sm text-[#78350F] leading-relaxed max-w-xl font-medium">{t('sheets.connectionRequiredDesc')}</p>
+              <p className="text-xs text-[#92400E] leading-relaxed max-w-xl mt-2 font-medium">
                 {user?.email
                   ? t('sheets.accessRequestNoticeWithEmail', { email: user.email })
                   : t('sheets.accessRequestNotice')}
               </p>
               {connectError && (
-                <p className="text-xs text-rose-300 font-semibold leading-relaxed max-w-xl mt-2 flex items-start gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-px" />
+                <p className="text-xs text-rose-800 font-semibold leading-relaxed max-w-xl mt-2 flex items-start gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-px" />
                   <span>{connectError}</span>
                 </p>
               )}
@@ -631,18 +631,18 @@ function installTriggers() {
             type="button"
             onClick={handleAuthorizeGoogle}
             disabled={isLoadingSheets}
-            className="pressable px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm shadow-xl flex items-center space-x-2 shrink-0 disabled:opacity-50"
+            className="pressable px-6 py-3.5 rounded-2xl bg-amber-900 hover:bg-amber-800 text-white font-bold text-sm shadow-md flex items-center space-x-2 shrink-0 disabled:opacity-50"
           >
-            <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+            <FileSpreadsheet className="w-5 h-5 text-amber-200" />
             <span>{t('sheets.connectSheets')}</span>
           </button>
         </div>
       )}
 
       {/* MAIN TWO-COLUMN WORKFLOW */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* LEFT COLUMN: SPREADSHEET PICKER & COLUMN MAPPER (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="space-y-6">
           {/* STEP 1: PILIH SPREADSHEET */}
           <div className="glass-card rounded-3xl p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-white/10">
@@ -651,15 +651,15 @@ function installTriggers() {
                   1
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">{t('sheets.step1Title')}</h2>
-                  <p className="text-xs text-slate-400">{t('sheets.step1Desc')}</p>
+                  <h2 className="text-lg font-bold text-[#0F172A]">{t('sheets.step1Title')}</h2>
+                  <p className="text-xs text-[#475569]">{t('sheets.step1Desc')}</p>
                 </div>
               </div>
             </div>
 
             {accessToken && connectError && (
               <p className="mb-4 text-xs text-rose-300 font-semibold flex items-start gap-1.5">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-px" />
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-px" />
                 <span>{connectError}</span>
               </p>
             )}
@@ -667,7 +667,7 @@ function installTriggers() {
             <div className="space-y-4">
               {/* Spreadsheet URL / ID (Drive listing removed: it needs a Drive scope; only spreadsheets.readonly is requested) */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#1E293B] mb-2 font-semibold">
                   {t('sheets.spreadsheetInputLabel')}
                 </label>
                 <div className="flex gap-2">
@@ -711,7 +711,7 @@ function installTriggers() {
               {/* Sheet tabs selector if multiple sheets */}
               {sheetTabs.length > 1 && (
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#1E293B] mb-2 font-semibold">
                     {t('sheets.sheetTabLabel')}
                   </label>
                   <select
@@ -742,14 +742,14 @@ function installTriggers() {
                     2
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-white">{t('sheets.step2Title')}</h2>
+                    <h2 className="text-lg font-bold text-[#0F172A]">{t('sheets.step2Title')}</h2>
                     <p className="text-xs text-slate-400">
                       {t('sheets.step2Desc', { count: formatNumber(headers.length) })}
                     </p>
                   </div>
                 </div>
 
-                <span className="glass-chip font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                <span className="glass-chip font-bold bg-emerald-100 text-emerald-950 border-emerald-400">
                   {t('sheets.autoDetectedBadge')}
                 </span>
               </div>
@@ -757,7 +757,7 @@ function installTriggers() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 {/* Nama Lengkap */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnFullName')} <span className="text-rose-400">*</span>
                   </label>
                   <select
@@ -776,7 +776,7 @@ function installTriggers() {
 
                 {/* Cosplay Name */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnCosname')} <span className="text-rose-400">*</span>
                   </label>
                   <select
@@ -795,7 +795,7 @@ function installTriggers() {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnEmail')} <span className="text-rose-400">*</span>
                   </label>
                   <select
@@ -814,7 +814,7 @@ function installTriggers() {
 
                 {/* WhatsApp */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnWhatsapp')} <span className="text-rose-400">*</span>
                   </label>
                   <select
@@ -833,7 +833,7 @@ function installTriggers() {
 
                 {/* WhatsApp Cadangan / No WA 2 */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnWhatsapp2')}{' '}
                     <span className="text-slate-500 font-normal">{t('sheets.optionalTag')}</span>
                   </label>
@@ -853,7 +853,7 @@ function installTriggers() {
 
                 {/* Username Discord */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnDiscord')}
                   </label>
                   <select
@@ -872,7 +872,7 @@ function installTriggers() {
 
                 {/* Domisili / Kota */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnCity')}
                   </label>
                   <select
@@ -891,7 +891,7 @@ function installTriggers() {
 
                 {/* Peran / Role */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnRole')}
                   </label>
                   <select
@@ -910,7 +910,7 @@ function installTriggers() {
 
                 {/* Fandom */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnFandom')}
                   </label>
                   <select
@@ -929,7 +929,7 @@ function installTriggers() {
 
                 {/* Timestamp */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-[#1E293B] uppercase mb-1 font-semibold">
                     {t('sheets.columnTimestamp')}
                   </label>
                   <select
@@ -950,11 +950,11 @@ function installTriggers() {
               {/* Preview of first 3 rows including Discord Username & WhatsApp */}
               {previewRows.length > 0 && (
                 <div className="mb-6 glass-well rounded-2xl p-4 overflow-x-auto">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-950 font-bold mb-2">
                     {t('sheets.previewTitle')}
                   </p>
                   <table className="w-full text-left text-xs">
-                    <thead className="text-slate-400 border-b border-white/10 font-mono text-[10px] uppercase">
+                    <thead className="text-[#475569] border-b border-white/10 font-mono text-[10px] uppercase">
                       <tr>
                         <th className="py-1.5 pr-3">{t('sheets.previewColName')}</th>
                         <th className="py-1.5 px-3">WhatsApp</th>
@@ -962,7 +962,7 @@ function installTriggers() {
                         <th className="py-1.5 pl-3">{t('sheets.previewColCity')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/[0.06] text-slate-200">
+                    <tbody className="divide-y divide-slate-200 text-[#1E293B]">
                       {previewRows.slice(0, 4).map((r, idx) => {
                         const cosIdx = columnMapping.name >= 0 ? columnMapping.name : (columnMapping.cosplayName ?? -1);
                         const nameVal =
@@ -976,8 +976,8 @@ function installTriggers() {
                         const cityVal = columnMapping.city >= 0 ? r[columnMapping.city] || '-' : '-';
                         return (
                           <tr key={idx}>
-                            <td className="py-1.5 pr-3 font-semibold text-white">{nameVal}</td>
-                            <td className="py-1.5 px-3 font-mono text-emerald-400">
+                            <td className="py-1.5 pr-3 font-semibold text-[#0F172A]">{nameVal}</td>
+                            <td className="py-1.5 px-3 font-mono text-emerald-800 font-semibold">
                               <span>{waVal}</span>
                               {wa2Val && (
                                 <span className="block text-[10px] text-emerald-300/80">
@@ -985,8 +985,8 @@ function installTriggers() {
                                 </span>
                               )}
                             </td>
-                            <td className="py-1.5 px-3 font-mono text-indigo-300">{dcVal}</td>
-                            <td className="py-1.5 pl-3 text-slate-400">{cityVal}</td>
+                            <td className="py-1.5 px-3 font-mono text-indigo-800 font-semibold">{dcVal}</td>
+                            <td className="py-1.5 pl-3 text-[#475569]">{cityVal}</td>
                           </tr>
                         );
                       })}
@@ -1022,7 +1022,7 @@ function installTriggers() {
 
               {/* Result banner */}
               {importResult && (
-                <div className="mt-4 p-4 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs sm:text-sm flex items-center justify-between">
+                <div className="mt-4 p-4 rounded-2xl bg-emerald-50 border-[1.5px] border-emerald-300 text-emerald-950 font-medium text-xs sm:text-sm flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                     <span>
@@ -1050,7 +1050,7 @@ function installTriggers() {
               )}
 
               {importResult && unparsableRows.length > 0 && (
-                <p className="mt-3 p-3 rounded-xl bg-amber-950/60 border border-amber-500/40 text-xs text-amber-200 flex items-start gap-1.5">
+                <p className="mt-3 p-3 rounded-xl bg-amber-50 border-[1.5px] border-amber-300 text-xs text-amber-950 font-medium flex items-start gap-1.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-px" aria-hidden="true" />
                   <span>
                     {t('sheets.importUnparsableRows', {
@@ -1080,7 +1080,7 @@ function installTriggers() {
           )}
 
           {errorMsg && (
-            <div className="p-5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+            <div className="p-5 rounded-2xl bg-rose-50 border-[1.5px] border-rose-300 text-rose-950 font-medium text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
               <div className="flex items-start space-x-3">
                 <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                 <div>
@@ -1102,7 +1102,7 @@ function installTriggers() {
         </div>
 
         {/* RIGHT COLUMN: REAL-TIME TRANSITION ENGINE & APPS SCRIPT (5 cols) */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="space-y-6">
           {/* REAL-TIME LIVE POLLER */}
           <div className="glass-card border-emerald-500/30 rounded-3xl p-6 sm:p-7 relative overflow-hidden">
             {/* Soft glow: a radial gradient instead of `filter: blur()` (no offscreen blur layer) */}
@@ -1126,7 +1126,7 @@ function installTriggers() {
                     }`}
                   ></span>
                 </span>
-                <h3 className="font-bold text-white text-base">{t('sheets.pollerTitle')}</h3>
+                <h3 className="font-bold text-[#0F172A] text-base">{t('sheets.pollerTitle')}</h3>
               </div>
 
               <span
@@ -1140,13 +1140,13 @@ function installTriggers() {
               </span>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
+            <p className="text-xs text-[#475569] leading-relaxed mb-4 font-medium">
               {t('sheets.pollerDesc', { seconds: formatNumber(pollIntervalSeconds) })}
             </p>
 
             <div className="glass-well p-4 rounded-2xl space-y-3 mb-5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">{t('sheets.pollIntervalLabel')}</span>
+                <span className="text-[#475569] font-medium">{t('sheets.pollIntervalLabel')}</span>
                 <select
                   value={pollIntervalSeconds}
                   onChange={(e) => setPollIntervalSeconds(Number(e.target.value))}
@@ -1160,8 +1160,8 @@ function installTriggers() {
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">{t('sheets.lastPollLabel')}</span>
-                <span className="font-mono text-slate-200">
+                <span className="text-[#475569] font-medium">{t('sheets.lastPollLabel')}</span>
+                <span className="font-mono text-[#0F172A] font-bold">
                   {lastPollTime
                     ? formatDate(lastPollTime, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
                     : t('sheets.lastPollNever')}
@@ -1199,9 +1199,9 @@ function installTriggers() {
           <div className="glass-card border-indigo-500/30 rounded-3xl p-6 sm:p-7">
             <div className="flex items-center space-x-2 mb-3">
               <Code2 className="w-5 h-5 text-indigo-400" />
-              <h3 className="font-bold text-white text-base">{t('sheets.webhookTitle')}</h3>
+              <h3 className="font-bold text-[#0F172A] text-base">{t('sheets.webhookTitle')}</h3>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">{renderMarkedText(t('sheets.webhookDesc'))}</p>
+            <p className="text-xs text-[#475569] leading-relaxed mb-4 font-medium">{renderMarkedText(t('sheets.webhookDesc'))}</p>
 
             {/* Code Box */}
             <div className="relative glass-well rounded-2xl p-4 font-mono text-[11px] text-slate-300 overflow-x-auto max-h-48 mb-4">
@@ -1221,11 +1221,11 @@ function installTriggers() {
                   </>
                 )}
               </button>
-              <pre className="text-slate-400" dir="ltr">{appsScriptCode}</pre>
+              <pre className="text-slate-800 font-semibold" dir="ltr">{appsScriptCode}</pre>
             </div>
 
-            <div className="space-y-1.5 text-xs text-slate-300">
-              <p className="font-bold text-white">{t('sheets.installStepsTitle')}</p>
+            <div className="space-y-1.5 text-xs text-[#1E293B] font-medium">
+              <p className="font-bold text-[#0F172A]">{t('sheets.installStepsTitle')}</p>
               <p>{renderMarkedText(t('sheets.installStep1'))}</p>
               <p>{renderMarkedText(t('sheets.installStep2'))}</p>
               <p>{renderMarkedText(t('sheets.installStep3'))}</p>
@@ -1237,9 +1237,9 @@ function installTriggers() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-slate-400" />
-                <h3 className="font-bold text-white text-sm">{t('sheets.recentSyncTitle')}</h3>
+                <h3 className="font-bold text-[#0F172A] text-sm">{t('sheets.recentSyncTitle')}</h3>
               </div>
-              <span className="text-xs text-slate-500 font-mono">
+              <span className="text-xs text-[#475569] font-mono font-medium">
                 {t('sheets.logCount', { count: formatNumber(syncLogs.length) })}
               </span>
             </div>
@@ -1258,12 +1258,12 @@ function installTriggers() {
                     className="glass-well p-3 rounded-xl text-xs space-y-1"
                   >
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-emerald-400">{describeLogSource(log.source)}</span>
+                      <span className="font-semibold text-emerald-800 font-bold">{describeLogSource(log.source)}</span>
                       <span className="text-[10px] text-slate-500 font-mono">
                         {formatDate(log.syncedAt, { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-[11px]">{describeLogDetails(log)}</p>
+                    <p className="text-[#475569] text-[11px] font-medium">{describeLogDetails(log)}</p>
                   </div>
                 ))}
               </div>

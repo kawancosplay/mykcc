@@ -8,6 +8,12 @@
       "wip/*": false
     }
   },
+  "crons": [
+    {
+      "path": "/api/sync-sheets",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/geo/(.*)",
@@ -21,8 +27,12 @@
   ],
   "rewrites": [
     {
+      "source": "/terms",
+      "destination": "/index.html"
+    },
+    {
       "source": "/privacy",
-      "destination": "/privacy.html"
+      "destination": "/index.html"
     },
     {
       "source": "/((?!api/|geo/).*)",

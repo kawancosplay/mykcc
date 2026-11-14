@@ -97,6 +97,10 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: "Haz clic aquí para iniciar sesión",
   copyright: "© 2026 MyKCC. Todos los derechos reservados.",
   privacyShieldActive: "Sistema de identidad KCC ID y escudo de privacidad activo",
+
+  terms: 'Términos y Condiciones',
+  privacy: 'Política de Privacidad',
+  backToHome: 'Volver al Inicio',
 };
 
 export default common;

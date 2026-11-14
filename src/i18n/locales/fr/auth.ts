@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Un problème est survenu lors de la connexion. Veuillez réessayer.",
   googleLoginFailed: "La connexion Google a été annulée ou a rencontré un problème.",
   popupBlockedTapAgain: "Le navigateur a bloqué la fenêtre de connexion. Appuyez à nouveau sur le bouton.",
+
+  legalConsentNotice: 'En vous connectant, vous acceptez nos',
 };
 
 export default auth;

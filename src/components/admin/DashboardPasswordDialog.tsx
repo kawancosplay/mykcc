@@ -208,7 +208,7 @@ export const DashboardPasswordDialog: React.FC<DashboardPasswordDialogProps> = (
               className={inputClass}
             />
             {currentError && (
-              <p id="dash-lock-current-error" role="alert" className="mt-1.5 text-xs text-rose-300">
+              <p id="dash-lock-current-error" role="alert" className="mt-1.5 text-xs text-rose-700 font-semibold">
                 {currentError}
               </p>
             )}
@@ -250,7 +250,7 @@ export const DashboardPasswordDialog: React.FC<DashboardPasswordDialogProps> = (
                 className={inputClass}
               />
               {nextError && (
-                <p id="dash-lock-new-error" role="alert" className="mt-1.5 text-xs text-rose-300">
+                <p id="dash-lock-new-error" role="alert" className="mt-1.5 text-xs text-rose-700 font-semibold">
                   {nextError}
                 </p>
               )}
@@ -259,7 +259,7 @@ export const DashboardPasswordDialog: React.FC<DashboardPasswordDialogProps> = (
         )}
 
         {formError && (
-          <p role="alert" className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-xs text-rose-200 break-words">
+          <p role="alert" className="p-3 rounded-xl bg-rose-50 border-[1.5px] border-rose-300 text-xs text-rose-900 font-semibold break-words">
             {formError}
           </p>
         )}
@@ -271,7 +271,7 @@ export const DashboardPasswordDialog: React.FC<DashboardPasswordDialogProps> = (
               disabled={busy}
               className={`${
                 mode === 'remove'
-                  ? 'glass-button bg-rose-950/60 border-rose-500/40 text-rose-200'
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-sm'
                   : 'btn-primary'
               } pressable w-full px-4 text-sm pointer-coarse:min-h-11`}
             >

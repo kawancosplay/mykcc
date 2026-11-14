@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "משהו השתבש בהתחברות. יש לנסות שוב.",
   googleLoginFailed: "ההתחברות עם Google בוטלה או נתקלה בבעיה.",
   popupBlockedTapAgain: "הדפדפן חסם את חלון ההתחברות. יש ללחוץ על הכפתור שוב.",
+
+  legalConsentNotice: 'בהתחברותך, אתה מסכים ל',
 };
 
 export default auth;

@@ -97,6 +97,10 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: "여기를 눌러 로그인",
   copyright: "© 2026 MyKCC. All rights reserved.",
   privacyShieldActive: "KCC ID 신원 및 개인정보 보호 시스템 작동 중",
+
+  terms: '이용약관',
+  privacy: '개인정보처리방침',
+  backToHome: '홈으로 돌아가기',
 };
 
 export default common;

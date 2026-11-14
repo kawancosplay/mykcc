@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "حدث خطأ أثناء تسجيل الدخول. يُرجى المحاولة مرة أخرى.",
   googleLoginFailed: "أُلغي تسجيل الدخول عبر Google أو واجه مشكلة.",
   popupBlockedTapAgain: "حظر المتصفح نافذة تسجيل الدخول. اضغط على الزر مرة أخرى.",
+
+  legalConsentNotice: 'بتسجيل الدخول، فإنك توافق على',
 };
 
 export default auth;

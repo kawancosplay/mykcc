@@ -375,8 +375,8 @@ export const KccIdBadge: React.FC<{ id: string | undefined }> = ({ id }) => {
   const value = id || '';
   if (isMainAccountKccId(value)) {
     return (
-      <span className={`${chipBase} bg-amber-500/20 text-amber-300 border-amber-500/40`}>
-        <Crown className="w-3 h-3 text-amber-400" aria-hidden="true" />
+      <span className={`${chipBase} bg-amber-100 text-amber-900 border-amber-300 font-bold`}>
+        <Crown className="w-3 h-3 text-amber-700" aria-hidden="true" />
         <span>{t('admin.mainAccountBadge')}</span>
       </span>
     );
@@ -384,15 +384,15 @@ export const KccIdBadge: React.FC<{ id: string | undefined }> = ({ id }) => {
   if (isAdminRangeKccId(value)) {
     const number = String(parseInt(digitsOnly(value) || '1', 10)).padStart(4, '0');
     return (
-      <span className={`${chipBase} bg-rose-500/20 text-rose-300 border-rose-500/40`}>
-        <Shield className="w-3 h-3 text-rose-400" aria-hidden="true" />
+      <span className={`${chipBase} bg-rose-100 text-rose-900 border-rose-300 font-bold`}>
+        <Shield className="w-3 h-3 text-rose-700" aria-hidden="true" />
         <span>{t('admin.adminIdBadge', { number })}</span>
       </span>
     );
   }
   if (isKccId8(value)) {
     return (
-      <span className={`${chipBase} bg-slate-200 text-slate-900 border border-slate-300 font-semibold`}>
+      <span className={`${chipBase} bg-slate-200 text-slate-900 border border-slate-300 font-bold`}>
         <Hash className="w-3 h-3 text-slate-700" aria-hidden="true" />
         <span>{t('admin.memberIdBadge')}</span>
       </span>
@@ -400,8 +400,8 @@ export const KccIdBadge: React.FC<{ id: string | undefined }> = ({ id }) => {
   }
   if (isLegacyKccId16(value)) {
     return (
-      <span className={`${chipBase} bg-indigo-500/15 text-indigo-300 border-indigo-500/30`}>
-        <Clock className="w-3 h-3 text-indigo-400" aria-hidden="true" />
+      <span className={`${chipBase} bg-indigo-100 text-indigo-900 border-indigo-300 font-bold`}>
+        <Clock className="w-3 h-3 text-indigo-700" aria-hidden="true" />
         <span>{t('admin.timestampIdBadge')}</span>
       </span>
     );

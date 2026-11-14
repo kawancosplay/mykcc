@@ -97,6 +97,10 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: "Klik ing ngriki kangge mlebet",
   copyright: "© 2026 MyKCC. Sedaya hak dipunreksa.",
   privacyShieldActive: "Sistem Identitas KCC ID & Tameng Privasi Aktif",
+
+  terms: 'Syarat & Katemtuan',
+  privacy: 'Kabijakan Privasi',
+  backToHome: 'Bali menyang Beranda',
 };
 
 export default common;

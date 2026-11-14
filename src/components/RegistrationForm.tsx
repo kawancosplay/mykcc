@@ -591,36 +591,36 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </motion.div>
 
             {isDemoSubmission && (
-              <div className="glass-well mb-4 p-3 rounded-2xl border-amber-500/40 bg-amber-950/60 text-amber-200 text-xs flex items-center justify-center gap-2">
-                <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="glass-well mb-4 p-3 rounded-2xl border-amber-300 bg-amber-50 text-amber-950 text-xs flex items-center justify-center gap-2">
+                <FlaskConical className="w-4 h-4 text-amber-700 shrink-0" />
                 <span className="font-semibold">{t('registration.sandboxSubmissionNotice')}</span>
               </div>
             )}
 
-            <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] mb-2">
               KawanCosplay Community
             </h2>
-            <p className="text-slate-300 text-sm sm:text-base mb-6">
+            <p className="text-[#475569] font-medium text-sm sm:text-base mb-6">
               {t('registration.responseRecorded')}
             </p>
 
             {/* Single KCC ID account highlight (8 digits; 16 before the 8-digit switch) */}
             <FloatingGlass borderRadius={16} className="rounded-2xl p-5 mb-5 max-w-md mx-auto text-center">
-              <span className="text-xs text-slate-400 block mb-1">
+              <span className="text-xs text-[#475569] font-semibold block mb-1">
                 {t('registration.singleAccountIdTitle')}
               </span>
-              <span className="font-mono font-medium text-2xl sm:text-3xl text-white tabular-nums tracking-wide">
+              <span className="font-mono font-bold text-2xl sm:text-3xl text-[#0F172A] tabular-nums tracking-wide">
                 {formatKccId(submittedMember.userId16)}
               </span>
               {isDuplicateShared ? (
-                <p className="text-xs text-slate-300 mt-2">
+                <p className="text-xs text-[#475569] font-medium mt-2">
                   {t('registration.duplicateMergedNotice')}
                 </p>
               ) : (
-                <p className="text-[11px] text-slate-300 mt-1.5">
-                  {t('registration.verifiedMemberLabel')} <strong className="text-white">{memberName}</strong>
+                <p className="text-[11px] text-[#475569] font-medium mt-1.5">
+                  {t('registration.verifiedMemberLabel')} <strong className="text-[#0F172A]">{memberName}</strong>
                   {submittedMember.discordUsername && (
-                    <span className="ml-2 text-slate-400">
+                    <span className="ml-2 text-[#475569]">
                       • {t('registration.discordValue', { username: submittedMember.discordUsername })}
                     </span>
                   )}
@@ -629,15 +629,15 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </FloatingGlass>
 
             {/* UNLOCKED WHATSAPP COMMUNITY GROUP INVITE LINK */}
-            <div className="glass-well border-emerald-500/40 bg-emerald-950/60 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center">
-              <div className="glass-chip mb-2 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="glass-well border-emerald-300 bg-emerald-50/90 rounded-2xl p-5 mb-6 max-w-md mx-auto text-center">
+              <div className="glass-chip mb-2 font-bold bg-emerald-100 text-emerald-950 border-emerald-400">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
                 <span>{t('registration.whatsappUnlockedBadge')}</span>
               </div>
-              <h3 className="text-base sm:text-lg font-extrabold text-white mb-1">
+              <h3 className="text-base sm:text-lg font-extrabold text-emerald-950 mb-1">
                 {t('registration.whatsappUnlockedTitle')}
               </h3>
-              <p className="text-xs text-emerald-200/90 mb-4 leading-relaxed">
+              <p className="text-xs text-emerald-900 font-medium mb-4 leading-relaxed">
                 {t('registration.whatsappUnlockedDesc')}
               </p>
 

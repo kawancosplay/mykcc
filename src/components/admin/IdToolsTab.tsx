@@ -348,7 +348,7 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
       {/* 1. Run order guide */}
       <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-300 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-sky-100 border border-sky-300 flex items-center justify-center text-sky-800 shrink-0">
             <ListOrdered className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
@@ -377,7 +377,7 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
             <span className="text-sm font-semibold text-slate-900">{t('admin.runOrderStep3')}</span>
             <span
               className={`glass-chip self-start sm:self-center ${
-                kccCounter ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : ''
+                kccCounter ? 'bg-emerald-100 text-emerald-950 border-emerald-400 font-bold' : ''
               }`}
             >
               {step3Chip}
@@ -390,7 +390,7 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
       <div className="liquid-glass-card rounded-3xl p-5 sm:p-6">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-300 flex items-center justify-center text-indigo-800 shrink-0">
               <Layers className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
@@ -410,20 +410,20 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
         </div>
 
         {mergeResult && (
-          <p className={`mt-4 text-xs font-mono break-words ${mergeResult.isError ? 'text-rose-300' : 'text-emerald-300'}`}>
+          <p className={`mt-4 text-xs font-mono font-bold break-words ${mergeResult.isError ? 'text-rose-700' : 'text-emerald-800'}`}>
             {t(mergeResult.isError ? 'admin.resultFailed' : 'admin.resultSuccess', { message: mergeResult.message })}
           </p>
         )}
 
         {bulkMergeReport && (
           <div
-            className={`mt-4 p-4 rounded-2xl border text-xs text-slate-200 space-y-3 ${
-              bulkMergeReport.failedGroups > 0 ? 'bg-amber-950/50 border-amber-500/30' : 'bg-emerald-950/50 border-emerald-500/30'
+            className={`mt-4 p-4 rounded-2xl border text-xs space-y-3 ${
+              bulkMergeReport.failedGroups > 0 ? 'bg-amber-50 border-amber-300 text-amber-950 font-medium' : 'bg-emerald-50 border-emerald-300 text-emerald-950 font-medium'
             }`}
           >
             <p
               className={`font-bold flex items-center gap-1.5 ${
-                bulkMergeReport.failedGroups > 0 ? 'text-amber-300' : 'text-emerald-300'
+                bulkMergeReport.failedGroups > 0 ? 'text-amber-900' : 'text-emerald-900'
               }`}
             >
               {bulkMergeReport.failedGroups > 0 ? (

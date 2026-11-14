@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "로그인 중에 문제가 발생했어요. 다시 시도해 주세요.",
   googleLoginFailed: "Google 로그인이 취소되었거나 문제가 발생했어요.",
   popupBlockedTapAgain: "브라우저가 로그인 창을 차단했어요. 버튼을 다시 눌러 주세요.",
+
+  legalConsentNotice: '로그인하면 당사의 다음 약관에 동의하는 것으로 간주됩니다:',
 };
 
 export default auth;

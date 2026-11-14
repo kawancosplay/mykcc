@@ -37,7 +37,7 @@ import {
 } from '../lib/motion';
 import type { PresenceMotionProps } from '../lib/motion';
 
-type NavTab = 'form' | 'card' | 'gallery' | 'profile' | 'admin';
+type NavTab = 'form' | 'card' | 'gallery' | 'profile' | 'admin' | 'terms' | 'privacy';
 
 export interface NavbarProps {
   activeTab: NavTab;

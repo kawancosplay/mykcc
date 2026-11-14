@@ -157,12 +157,12 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
       <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-300 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-800 shrink-0">
               <Users className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">{t('admin.tabAdmins')}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
+              <p className="text-xs text-slate-600 leading-relaxed mt-1 max-w-3xl">
                 {t('admin.adminsInfo', { email: OFFICIAL_ADMIN_EMAIL })}
               </p>
             </div>
@@ -185,8 +185,8 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
         )}
 
         {status === 'error' && (
-          <div className="p-4 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs space-y-3">
-            <p className="font-semibold">{t('admin.adminsLoadFailed')}</p>
+          <div className="p-4 rounded-2xl bg-rose-50 border-[1.5px] border-rose-300 text-rose-900 text-xs space-y-3 font-medium">
+            <p className="font-bold">{t('admin.adminsLoadFailed')}</p>
             {error && <p className="opacity-90 break-words">{error}</p>}
             <button type="button" onClick={() => void load()} className="glass-button pressable px-3.5 text-xs">
               <RefreshCw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -259,7 +259,7 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
                     type="button"
                     onClick={() => void handleRemove(entry)}
                     disabled={busy || rulesMissing}
-                    className="glass-button pressable w-full md:w-[9rem] px-3 text-xs pointer-coarse:min-h-11 bg-rose-950/50 border-rose-500/40 text-rose-200 mt-2 md:mt-0"
+                    className="pressable w-full md:w-[9rem] px-3.5 py-2 rounded-xl text-xs font-bold pointer-coarse:min-h-11 inline-flex items-center justify-center gap-1.5 bg-rose-100 hover:bg-rose-200 border-[1.5px] border-rose-300 text-rose-900 shadow-sm transition-[transform,opacity,background-color] mt-2 md:mt-0"
                   >
                     {removingUid === entry.uid ? <Spinner /> : <UserMinus className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
                     <span>{t('admin.removeAdmin')}</span>
@@ -270,7 +270,7 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
         </ul>
 
         {status === 'ready' && !rulesMissing && (admins || []).length === 0 && (
-          <p className="text-xs text-slate-400">{t('admin.noOtherAdmins')}</p>
+          <p className="text-xs text-slate-600 font-medium">{t('admin.noOtherAdmins')}</p>
         )}
       </div>
 

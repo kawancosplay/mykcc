@@ -238,9 +238,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {errorMsg && (
               <div
                 role="alert"
-                className="mb-4 p-3 rounded-xl bg-rose-950/70 border border-rose-500/40 text-rose-200 text-xs flex items-center gap-2 animate-fade-in"
+                className="mb-4 p-3 rounded-xl bg-rose-50/90 border-[1.5px] border-rose-300 text-rose-900 text-xs font-semibold flex items-center gap-2 animate-fade-in"
               >
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
             )}
@@ -276,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {t('auth.emailLabel')}
                   </label>
                   <div className="relative">
-                    <Mail className={`${iconClass} text-slate-400`} aria-hidden="true" />
+                    <Mail className={`${iconClass} text-slate-500`} aria-hidden="true" />
                     <input
                       id={emailId}
                       type="email"
@@ -310,7 +310,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       )}
                     </div>
                     <div className="relative">
-                      <Lock className={`${iconClass} text-slate-400`} aria-hidden="true" />
+                      <Lock className={`${iconClass} text-slate-500`} aria-hidden="true" />
                       <input
                         id={passwordId}
                         type="password"
@@ -374,6 +374,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <span>{t('auth.continueWithGoogle')}</span>
                   </button>
                 </div>
+
+                <p className="mt-3 text-[11px] text-center text-slate-500 leading-relaxed">
+                  {t('auth.legalConsentNotice')}{' '}
+                  <a
+                    href="/terms"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onClose();
+                      window.location.hash = 'terms';
+                    }}
+                    className="text-purple-700 font-bold hover:underline"
+                  >
+                    {t('common.terms')}
+                  </a>{' '}
+                  &amp;{' '}
+                  <a
+                    href="/privacy"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onClose();
+                      window.location.hash = 'privacy';
+                    }}
+                    className="text-purple-700 font-bold hover:underline"
+                  >
+                    {t('common.privacy')}
+                  </a>
+                  .
+                </p>
               </>
             )}
           </div>

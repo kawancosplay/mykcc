@@ -72,7 +72,7 @@ export const KccCounterCard: React.FC<KccCounterCardProps> = ({ kccCounter, refr
     <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-300 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-sky-100 border border-sky-300 flex items-center justify-center text-sky-800 shrink-0">
             <Activity className="w-5 h-5" aria-hidden="true" />
           </div>
           <div className="space-y-1">
@@ -95,23 +95,23 @@ export const KccCounterCard: React.FC<KccCounterCardProps> = ({ kccCounter, refr
       <NoticeBanner notice={notice} onDismiss={() => setNotice(null)} />
 
       {blockedIds && blockedIds.length === 0 && (
-        <p role="status" className="text-xs text-emerald-300 flex items-start gap-1.5">
+        <p role="status" className="text-xs text-emerald-800 font-bold flex items-start gap-1.5">
           <CheckCircle className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" />
           <span>{t('admin.counterHealthy')}</span>
         </p>
       )}
 
       {blockedIds && blockedIds.length > 0 && (
-        <div className="p-3.5 rounded-2xl bg-amber-950/50 border border-amber-500/40 text-xs text-amber-200 space-y-3">
-          <p className="flex items-start gap-1.5" role="alert">
-            <ShieldAlert className="w-4 h-4 shrink-0 mt-px" aria-hidden="true" />
+        <div className="p-3.5 rounded-2xl bg-amber-50 border-[1.5px] border-amber-300 text-xs text-amber-950 space-y-3 font-medium">
+          <p className="flex items-start gap-1.5 font-bold text-amber-900" role="alert">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-px text-amber-700" aria-hidden="true" />
             <span>{t('admin.counterBlocked', { ids: blockedIds.map((id) => formatKccId(id)).join(', ') })}</span>
           </p>
           <button
             type="button"
             onClick={() => void handleAdvance()}
             disabled={working || busy}
-            className="glass-button pressable w-full sm:w-auto px-3.5 text-xs pointer-coarse:min-h-11 bg-amber-600/20 border-amber-500/40 text-amber-100"
+            className="pressable w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold pointer-coarse:min-h-11 inline-flex items-center justify-center gap-1.5 bg-amber-100 hover:bg-amber-200 border-[1.5px] border-amber-400 text-amber-950 shadow-sm transition-[transform,opacity,background-color]"
           >
             {advancing ? <Spinner /> : <FastForward className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
             <span>{t('admin.counterAdvance')}</span>

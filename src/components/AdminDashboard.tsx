@@ -659,7 +659,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               {user && (
                 <button onClick={onLogout} className="glass-button pressable w-full mt-3 px-4 text-xs">
-                  <LogOut className="w-4 h-4 text-rose-400" />
+                  <LogOut className="w-4 h-4 text-rose-600" />
                   <span>{t('admin.signOutThisAccount')}</span>
                 </button>
               )}
@@ -735,12 +735,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     disabled={isBusy}
                     className="glass-button pressable px-3.5 text-xs"
                   >
-                    <Lock className="w-3.5 h-3.5 text-rose-300" />
+                    <Lock className="w-3.5 h-3.5 text-rose-600" />
                     <span>{t('admin.lockNow')}</span>
                   </button>
                 )}
                 <button type="button" onClick={onLogout} disabled={isBusy} className="glass-button pressable px-3.5 text-xs">
-                  <LogOut className="w-3.5 h-3.5 text-amber-400" />
+                  <LogOut className="w-3.5 h-3.5 text-amber-700" />
                   <span>{t('admin.signOutAdmin')}</span>
                 </button>
               </div>
@@ -854,8 +854,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 })}
               </motion.div>
               {showBusyNote && (
-                <p role="status" className="mt-3 text-xs text-amber-200 flex items-start gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" />
+                <p role="status" className="mt-3 text-xs text-amber-800 font-semibold flex items-start gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px text-amber-700" aria-hidden="true" />
                   <span>{t('admin.busyTabLocked')}</span>
                 </p>
               )}
@@ -874,7 +874,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* MEMBERS: (a) rejected by Firestore rules */}
             {adminTab === 'members' && membersError === 'permission-denied' && (
               <div className="liquid-glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto">
-                <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
+                <div className="w-16 h-16 rounded-2xl bg-rose-100 border border-rose-300 flex items-center justify-center mx-auto mb-4 text-rose-700">
                   <Lock className="w-8 h-8" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">{t('admin.permissionDeniedTitle')}</h3>
@@ -965,7 +965,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         title="Open Registration Form"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>+ Add Member</span>
+                        <span>Add Member</span>
                       </a>
                       <button
                         type="button"

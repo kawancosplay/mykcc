@@ -114,4 +114,8 @@ export default {
   // Footer
   copyright: '© 2026 MyKCC. All rights reserved.',
   privacyShieldActive: 'KCC ID Identity & Privacy Shield System Active',
+
+  terms: 'Terms & Conditions',
+  privacy: 'Privacy Policy',
+  backToHome: 'Back to Home',
 } as const;

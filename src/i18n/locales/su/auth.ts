@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Aya kasalahan nalika asup. Mangga cobian deui.",
   googleLoginFailed: "Asup nganggo Google dibolaykeun atanapi aya kendala.",
   popupBlockedTapAgain: "Browser ngablokir jandéla login. Toél deui tombolna.",
+
+  legalConsentNotice: 'Ku asup, anjeun satuju kana',
 };
 
 export default auth;

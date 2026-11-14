@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀ ꦏꦊꦥꦠꦤ꧀ ꦤꦭꦶꦏ ꦩ꧀ꦭꦼꦧꦼꦠ꧀꧉ ꦩꦁꦒ ꦕꦺꦴꦧꦶ ꦩꦭꦶꦃ꧉",
   googleLoginFailed: "ꦩ꧀ꦭꦼꦧꦼꦠ꧀ ꦔꦁꦒꦺꦴ Google ꦢꦶꦥꦸꦤ꧀ꦧꦠꦭꦏꦼꦤ꧀ ꦲꦸꦠꦮꦶ ꦮꦺꦴꦤ꧀ꦠꦼꦤ꧀ ꦩꦱꦭꦃ꧉",
   popupBlockedTapAgain: "ꦧꦿꦲꦸꦱꦼꦂ ꦔꦭꦔꦶ ꦗꦼꦤ꧀ꦝꦺꦭ ꦭꦺꦴꦒꦶꦤ꧀. ꦠꦸꦠꦸꦭ꧀ ꦠꦺꦴꦩ꧀ꦧꦺꦴꦭꦶꦥꦸꦤ꧀ ꦩꦭꦶꦃ.",
+
+  legalConsentNotice: 'ꦏꦤ꧀ꦛꦶꦩ꧀ꦭꦼꦧꦸ꧈ꦱꦩ꧀ꦥꦪꦤ꧀ꦱꦼꦠꦸꦗꦸꦏꦫꦺꦴ',
 };
 
 export default auth;

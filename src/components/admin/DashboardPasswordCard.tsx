@@ -32,7 +32,7 @@ export const DashboardPasswordCard: React.FC<DashboardPasswordCardProps> = ({ lo
   return (
     <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shrink-0">
           {lockState === 'set' ? <Lock className="w-5 h-5" aria-hidden="true" /> : <LockOpen className="w-5 h-5" aria-hidden="true" />}
         </div>
         <div className="min-w-0">
@@ -83,7 +83,7 @@ export const DashboardPasswordCard: React.FC<DashboardPasswordCardProps> = ({ lo
           <button
             type="button"
             onClick={() => setMode('remove')}
-            className="glass-button pressable w-full sm:w-auto px-4 text-xs pointer-coarse:min-h-11 bg-rose-950/50 border-rose-500/40 text-rose-200"
+            className="pressable w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold pointer-coarse:min-h-11 inline-flex items-center justify-center gap-1.5 bg-rose-100 hover:bg-rose-200 border-[1.5px] border-rose-300 text-rose-900 shadow-sm transition-[transform,opacity,background-color]"
           >
             <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>{t('admin.lockRemoveButton')}</span>
@@ -92,7 +92,7 @@ export const DashboardPasswordCard: React.FC<DashboardPasswordCardProps> = ({ lo
           <button
             type="button"
             onClick={() => setMode('forgot')}
-            className="touch-target px-2 text-xs font-semibold text-rose-300 hover:underline self-start sm:self-center"
+            className="touch-target px-2 text-xs font-bold text-rose-800 hover:underline self-start sm:self-center"
           >
             {t('admin.lockForgot')}
           </button>

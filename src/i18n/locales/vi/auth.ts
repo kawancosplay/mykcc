@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại.",
   googleLoginFailed: "Đăng nhập Google đã bị hủy hoặc gặp sự cố.",
   popupBlockedTapAgain: "Trình duyệt đã chặn cửa sổ đăng nhập. Hãy chạm vào nút một lần nữa.",
+
+  legalConsentNotice: 'Bằng cách đăng nhập, bạn đồng ý với',
 };
 
 export default auth;

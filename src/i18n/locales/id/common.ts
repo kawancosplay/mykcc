@@ -116,6 +116,10 @@ const common: LocaleNamespace<'common'> = {
   // Footer
   copyright: '© 2026 MyKCC. Hak cipta dilindungi.',
   privacyShieldActive: 'Sistem Identitas KCC ID & Perisai Privasi Aktif',
+
+  terms: 'Syarat & Ketentuan',
+  privacy: 'Kebijakan Privasi',
+  backToHome: 'Kembali ke Beranda',
 };
 
 export default common;

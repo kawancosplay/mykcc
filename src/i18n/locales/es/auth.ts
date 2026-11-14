@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Algo salió mal al iniciar sesión. Vuelve a intentarlo.",
   googleLoginFailed: "El inicio de sesión con Google se canceló o tuvo un problema.",
   popupBlockedTapAgain: "El navegador bloqueó la ventana de inicio de sesión. Toca el botón otra vez.",
+
+  legalConsentNotice: 'Al iniciar sesión, aceptas nuestros',
 };
 
 export default auth;

@@ -97,6 +97,10 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: "Nhấn vào đây để đăng nhập",
   copyright: "© 2026 MyKCC. Bảo lưu mọi quyền.",
   privacyShieldActive: "Hệ thống định danh & lá chắn quyền riêng tư KCC ID đang hoạt động",
+
+  terms: 'Điều khoản & Điều kiện',
+  privacy: 'Chính sách Quyền riêng tư',
+  backToHome: 'Quay lại Trang chủ',
 };
 
 export default common;

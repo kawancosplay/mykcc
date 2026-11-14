@@ -97,6 +97,10 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: "ꦏ꧀ꦭꦶꦏ꧀ ꦲꦶꦁ ꦔꦿꦶꦏꦶ ꦏꦁꦒꦺ ꦩ꧀ꦭꦼꦧꦼꦠ꧀",
   copyright: "© 2026 MyKCC. ꦱꦼꦢꦪ ꦲꦏ꧀ ꦢꦶꦥꦸꦤ꧀ꦫꦼꦏ꧀ꦱ꧉",
   privacyShieldActive: "ꦱꦶꦱ꧀ꦠꦼꦩ꧀ ꦲꦶꦢꦺꦤ꧀ꦠꦶꦠꦱ꧀ KCC ID & ꦠꦩꦺꦁ ꦥꦿꦶꦮ꦳ꦱꦶ ꦲꦏ꧀ꦠꦶꦥ꦳꧀",
+
+  terms: 'ꦱꦾꦫꦠ꧀ꦭꦤ꧀ꦏꦠꦼꦩ꧀ꦠꦸꦮꦤ꧀',
+  privacy: 'ꦏꦧꦶꦗꦏꦤ꧀ꦥꦿꦶꦮ꦳ꦱꦶ',
+  backToHome: 'ꦧꦭꦶꦩꦼꦚꦁꦔꦉꦥ꧀',
 };
 
 export default common;

@@ -17,6 +17,8 @@ const AuthModal = lazy(() => loadAuthModal().then(m => ({ default: m.AuthModal }
 const UserProfile = lazy(() => import('./components/UserProfile').then(m => ({ default: m.UserProfile })));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const SiteEditorModal = lazy(() => import('./components/SiteEditorModal').then(m => ({ default: m.SiteEditorModal })));
+const TermsPage = lazy(() => import('./components/TermsPage').then(m => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('./components/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
 
 import type { Member, Photo, SyncLog, SubscriptionErrorKind } from './types';
 import {
@@ -53,7 +55,7 @@ import { getMotionConfig, usePresenceMotion } from './lib/motion';
 import { allowSpeculativeLoading, usePerfMode } from './lib/perfMode';
 import { Palette, Lock, IdCard, Search, ShieldCheck, AlertCircle } from 'lucide-react';
 
-type AppTab = 'form' | 'card' | 'gallery' | 'profile' | 'admin';
+type AppTab = 'form' | 'card' | 'gallery' | 'profile' | 'admin' | 'terms' | 'privacy';
 
 // The main account's display ID until mainAccountKccId() has answered: the legacy 16-digit main ID
 // (0000…0000), i.e. what it is before the 8-digit switch. After the switch it resolves to '00000000'.
@@ -220,16 +222,38 @@ export default function App() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
 
-  // Listen for URL hash `#admin` for direct admin portal access
+  // Listen for URL paths and hashes (/terms, /privacy, #terms, #privacy, #admin)
   useEffect(() => {
-    const handleHash = () => {
-      if (window.location.hash === '#admin') {
+    const handleRoute = () => {
+      const path = (window.location.pathname || '').toLowerCase();
+      const hash = (window.location.hash || '').toLowerCase();
+      if (path === '/terms' || hash === '#terms') {
+        setActiveTab('terms');
+      } else if (path === '/privacy' || hash === '#privacy') {
+        setActiveTab('privacy');
+      } else if (hash === '#admin') {
         setActiveTab('admin');
       }
     };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+    handleRoute();
+    window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('popstate', handleRoute);
+    return () => {
+      window.removeEventListener('hashchange', handleRoute);
+      window.removeEventListener('popstate', handleRoute);
+    };
+  }, []);
+
+  // Autonomous background sync trigger on public visits (cooldown-gated every 5 minutes)
+  useEffect(() => {
+    const COOLDOWN_MS = 5 * 60 * 1000;
+    const LAST_SYNC_KEY = 'kcc_last_auto_sync_ts';
+    const lastAttempt = Number(sessionStorage.getItem(LAST_SYNC_KEY) || 0);
+    if (Date.now() - lastAttempt > COOLDOWN_MS) {
+      sessionStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
+      // Non-blocking ping to the autonomous sync endpoint
+      fetch('/api/sync-sheets', { method: 'GET' }).catch(() => {});
+    }
   }, []);
 
   // Main account: resolve its ID format once per sign-in (counter exists → 8 digits). Errors keep the default.
@@ -925,12 +949,12 @@ export default function App() {
               currentLang={currentLang}
             />
           ) : user && memberLoadState === 'error' ? (
-            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
-              <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-4" />
-              <p className="text-base font-bold text-white mb-2">
+            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-600 px-4">
+              <AlertCircle className="w-12 h-12 text-rose-600 mx-auto mb-4" />
+              <p className="text-base font-extrabold text-[#0F172A] mb-2">
                 {t('common.profileLoadFailed')}
               </p>
-              <p className="text-xs text-slate-400 mb-4">
+              <p className="text-xs text-[#475569] font-medium mb-4">
                 {t('common.checkConnectionRetry')}
               </p>
               <button
@@ -942,28 +966,56 @@ export default function App() {
               </button>
             </div>
           ) : user ? (
-            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400 px-4">
+            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-600 px-4">
               <div className="w-12 h-12 border-4 border-rose-500/30 border-t-rose-500 rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-base font-bold text-white mb-2">
+              <p className="text-base font-extrabold text-[#0F172A] mb-2">
                 {t('common.preparingProfile')}
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#475569] font-medium">
                 {t('common.preparingProfileDesc')}
               </p>
             </div>
           ) : (
-            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-400">
-               <p className="text-lg font-bold text-white mb-2">{t('common.pleaseSignIn')}</p>
+            <div className="max-w-md mx-auto py-20 text-center animate-fade-in text-slate-600">
+               <p className="text-lg font-extrabold text-[#0F172A] mb-2">{t('common.pleaseSignIn')}</p>
                <button
                  type="button"
                  onClick={openAuthModal}
                  onPointerDown={warmAuthPopup}
-                 className="touch-target text-rose-400 font-bold hover:underline"
+                 className="touch-target text-rose-600 font-bold hover:underline"
                >
                  {t('common.clickToSignIn')}
                </button>
             </div>
           )
+        )}
+
+        {activeTab === 'terms' && (
+          <TermsPage
+            onBack={() => {
+              setActiveTab('form');
+              if (window.location.pathname === '/terms') {
+                window.history.pushState(null, '', '/');
+              }
+              if (window.location.hash === '#terms') {
+                window.location.hash = '';
+              }
+            }}
+          />
+        )}
+
+        {activeTab === 'privacy' && (
+          <PrivacyPage
+            onBack={() => {
+              setActiveTab('form');
+              if (window.location.pathname === '/privacy') {
+                window.history.pushState(null, '', '/');
+              }
+              if (window.location.hash === '#privacy') {
+                window.location.hash = '';
+              }
+            }}
+          />
         )}
         </Suspense>
       </motion.main>
@@ -1059,6 +1111,28 @@ export default function App() {
             <button type="button" onClick={() => handleTabChange('gallery')} className="touch-target pressable hover:text-pink-600 transition-colors">
               {t('common.navGallery')}
             </button>
+            <a
+              href="/terms"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveTab('terms');
+                window.location.hash = 'terms';
+              }}
+              className="touch-target pressable hover:text-purple-700 transition-colors"
+            >
+              {t('common.terms')}
+            </a>
+            <a
+              href="/privacy"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveTab('privacy');
+                window.location.hash = 'privacy';
+              }}
+              className="touch-target pressable hover:text-purple-700 transition-colors"
+            >
+              {t('common.privacy')}
+            </a>
             {/* Discreet Admin Portal Link for Managers */}
             <button
               type="button"

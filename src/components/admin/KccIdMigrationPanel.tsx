@@ -41,10 +41,10 @@ const KIND_KEYS: Record<KccIdMigrationKind, TranslationKey> = {
   done: 'admin.migrationKindDone',
 };
 const KIND_TONES: Record<KccIdMigrationKind, string> = {
-  main: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-  admin: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-  member: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-  done: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+  main: 'bg-amber-100 text-amber-900 border-amber-300 font-bold',
+  admin: 'bg-rose-100 text-rose-900 border-rose-300 font-bold',
+  member: 'bg-indigo-100 text-indigo-900 border-indigo-300 font-bold',
+  done: 'bg-emerald-100 text-emerald-950 border-emerald-400 font-bold',
 };
 const NOTE_KEYS: Record<KccIdMigrationNote, TranslationKey> = {
   duplicate_old_id: 'admin.migrationNoteDuplicateOldId',
@@ -216,7 +216,7 @@ export const KccIdMigrationPanel: React.FC<KccIdMigrationPanelProps> = ({
   return (
     <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-5">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-violet-300 shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-violet-100 border border-violet-300 flex items-center justify-center text-violet-800 shrink-0">
           <ArrowRightLeft className="w-5 h-5" aria-hidden="true" />
         </div>
         <div className="min-w-0 space-y-1">

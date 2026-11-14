@@ -97,6 +97,10 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: "点击此处登录",
   copyright: "© 2026 MyKCC。保留所有权利。",
   privacyShieldActive: "KCC ID 身份与隐私保护系统已启用",
+
+  terms: '服务条款',
+  privacy: '隐私政策',
+  backToHome: '返回首页',
 };
 
 export default common;

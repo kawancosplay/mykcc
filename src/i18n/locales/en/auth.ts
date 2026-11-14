@@ -26,4 +26,6 @@ export default {
   authFailed: 'Something went wrong while signing in. Please try again.',
   googleLoginFailed: 'Google sign-in was cancelled or ran into a problem.',
   popupBlockedTapAgain: 'The browser blocked the sign-in window. Tap the button again.',
+
+  legalConsentNotice: 'By signing in, you agree to our',
 } as const;

@@ -97,6 +97,10 @@ const common: LocaleNamespace<'common'> = {
   clickToSignIn: "உள்நுழைய இங்கே கிளிக் செய்யவும்",
   copyright: "© 2026 MyKCC. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
   privacyShieldActive: "KCC ID அடையாள & தனியுரிமைக் கவச அமைப்பு செயலில் உள்ளது",
+
+  terms: 'விதிமுறைகள் & நிபந்தனைகள்',
+  privacy: 'தனியுரிமைக் கொள்கை',
+  backToHome: 'முகப்புக்குத் திரும்பு',
 };
 
 export default common;

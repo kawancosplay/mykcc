@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Bei der Anmeldung ist etwas schiefgelaufen. Bitte versuche es erneut.",
   googleLoginFailed: "Die Google-Anmeldung wurde abgebrochen oder ist auf ein Problem gestoßen.",
   popupBlockedTapAgain: "Der Browser hat das Anmeldefenster blockiert. Tippe noch einmal auf den Button.",
+
+  legalConsentNotice: 'Mit der Anmeldung stimmen Sie unseren',
 };
 
 export default auth;

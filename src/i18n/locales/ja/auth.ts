@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "ログイン中に問題が発生しました。もう一度お試しください。",
   googleLoginFailed: "Google ログインがキャンセルされたか、問題が発生しました。",
   popupBlockedTapAgain: "ブラウザがログイン画面をブロックしました。もう一度ボタンをタップしてください。",
+
+  legalConsentNotice: 'ログインすることにより、当サービスの',
 };
 
 export default auth;

@@ -170,7 +170,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
   };
 
   const handlePasswordReset = () => {
-    if (!hasEmail) return;
+    if (!hasEmail || !m.authUid) return;
     if (!window.confirm(t('admin.passwordResetConfirm', { email: (m.email || '').trim() }))) return;
     void run('reset', async () => {
       await sendMemberPasswordReset(m);
@@ -206,7 +206,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
   };
 
   const actionButton =
-    'glass-button pressable w-full px-3 text-xs pointer-coarse:min-h-11 justify-start text-start disabled:opacity-50';
+    'pressable w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold pointer-coarse:min-h-11 justify-start text-start inline-flex items-center gap-2 bg-white/78 border-[1.5px] border-white/92 shadow-[0_2px_10px_rgba(31,38,135,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/95 text-[#0F172A] transition-[transform,opacity,background-color,border-color] duration-150 disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <AdminSheet
@@ -220,8 +220,8 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
     >
       <div className="space-y-5">
         {/* Header: who this is */}
-        <div className="glass-well rounded-2xl p-4 flex items-start gap-3">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-950 border border-white/10 shrink-0">
+        <div className="bg-white/78 border-[1.5px] border-white/92 shadow-[0_2px_10px_rgba(31,38,135,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shrink-0">
             {m.avatarUrl ? (
               <img src={m.avatarUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             ) : (
@@ -296,7 +296,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
             {/* WhatsApp */}
             <div className="space-y-2">
               {phones.length === 0 ? (
-                <p className="text-xs text-slate-400">{t('admin.noPhone')}</p>
+                <p className="text-xs text-slate-600">{t('admin.noPhone')}</p>
               ) : (
                 phones.map((phone, i) => {
                   const href = waLink(phone, t('admin.whatsappTemplate', { name, id: kccLabel }));
@@ -307,7 +307,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="glass-button pressable w-full px-3 text-xs pointer-coarse:min-h-11 justify-start bg-emerald-600/15 border-emerald-500/40 text-emerald-200"
+                      className="pressable w-full px-3.5 py-2.5 rounded-xl text-xs font-bold pointer-coarse:min-h-11 justify-start text-start inline-flex items-center gap-2 bg-emerald-100/90 hover:bg-emerald-200/90 text-emerald-950 border-[1.5px] border-emerald-400 shadow-[0_2px_8px_rgba(16,185,129,0.1)] transition-[transform,opacity,background-color] duration-150"
                     >
                       <MessageCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                       <span className="break-all">{t('admin.whatsappChat', { phone })}</span>
@@ -323,13 +323,17 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
                 <button
                   type="button"
                   onClick={handlePasswordReset}
-                  disabled={!hasEmail || anyBusy}
+                  disabled={!hasEmail || !m.authUid || anyBusy}
                   className={actionButton}
                 >
                   {busyAction === 'reset' ? <Spinner /> : <KeyRound className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
                   <span>{t('admin.sendPasswordReset')}</span>
                 </button>
-                {!hasEmail && <p className="text-[11px] text-slate-400 px-1">{t('admin.passwordResetNoEmail')}</p>}
+                {!m.authUid ? (
+                  <p className="text-[11px] text-slate-600 px-1">{t('admin.loginNotLinked')}</p>
+                ) : !hasEmail ? (
+                  <p className="text-[11px] text-slate-600 px-1">{t('admin.passwordResetNoEmail')}</p>
+                ) : null}
               </div>
 
               {m.authUid && !isOwnLogin && (
@@ -343,7 +347,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
                     {busyAction === 'unlink' ? <Spinner /> : <Link2Off className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
                     <span>{t('admin.unlinkLogin')}</span>
                   </button>
-                  {isSignInProfile && <p className="text-[11px] text-slate-400 px-1">{t('admin.unlinkSignInProfile')}</p>}
+                  {isSignInProfile && <p className="text-[11px] text-slate-600 px-1">{t('admin.unlinkSignInProfile')}</p>}
                 </div>
               )}
 
@@ -357,7 +361,7 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
                   {busyAction === 'admin' ? <Spinner /> : <ShieldPlus className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
                   <span>{t('admin.makeAdmin')}</span>
                 </button>
-                {blockReason && <p className="text-[11px] text-slate-400 px-1">{t(blockReason)}</p>}
+                {blockReason && <p className="text-[11px] text-slate-600 px-1">{t(blockReason)}</p>}
               </div>
 
               <button
@@ -371,19 +375,19 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
               </button>
             </div>
 
-            <p className="text-[11px] text-slate-400 flex items-start gap-1.5 leading-relaxed">
+            <p className="text-[11px] text-slate-600 flex items-start gap-1.5 leading-relaxed font-medium">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
               <span>{t('admin.supportAdminSdkNote')}</span>
             </p>
 
             {/* Danger zone */}
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-950/30 p-4 space-y-2">
-              <p className="text-xs font-bold text-rose-300 uppercase tracking-wider">{t('admin.dangerZone')}</p>
+            <div className="bg-rose-50/90 border-[1.5px] border-rose-300 rounded-2xl p-4 space-y-2">
+              <p className="text-xs font-bold text-rose-900 uppercase tracking-wider">{t('admin.dangerZone')}</p>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={anyBusy || locked}
-                className="glass-button pressable w-full sm:w-auto px-4 text-xs pointer-coarse:min-h-11 bg-rose-950/60 border-rose-500/40 text-rose-200 disabled:opacity-50"
+                className="pressable w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold pointer-coarse:min-h-11 inline-flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-[transform,opacity,background-color] duration-150 disabled:opacity-50"
               >
                 {busyAction === 'delete' ? <Spinner /> : <Trash2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
                 <span>{t('admin.deleteMemberTitle')}</span>

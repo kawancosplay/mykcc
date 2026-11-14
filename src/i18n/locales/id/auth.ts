@@ -28,6 +28,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: 'Terjadi kendala autentikasi.',
   googleLoginFailed: 'Login dengan Google dibatalkan atau terkendala.',
   popupBlockedTapAgain: 'Browser memblokir jendela login. Ketuk tombolnya sekali lagi.',
+
+  legalConsentNotice: 'Dengan masuk, Anda menyetujui',
 };
 
 export default auth;

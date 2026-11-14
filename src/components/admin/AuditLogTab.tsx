@@ -27,7 +27,7 @@ const DetailsText: React.FC<{ text: string }> = ({ text }) => {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="touch-target text-[11px] font-semibold text-rose-300 hover:underline mt-0.5"
+          className="touch-target text-[11px] font-bold text-rose-700 hover:underline mt-0.5"
           aria-expanded={expanded}
         >
           {expanded ? t('admin.showLess') : t('admin.showMore')}
@@ -121,7 +121,7 @@ export const AuditLogTab: React.FC = () => {
 
   const renderDetails = (e: AdminLogEntry) => (
     <div className="space-y-0.5">
-      {typeof e.count === 'number' && <p className="font-semibold text-slate-300">{t('admin.logCount', { count: formatNumber(e.count) })}</p>}
+      {typeof e.count === 'number' && <p className="font-semibold text-slate-700">{t('admin.logCount', { count: formatNumber(e.count) })}</p>}
       {e.details ? <DetailsText text={e.details} /> : typeof e.count !== 'number' ? <span>—</span> : null}
     </div>
   );
@@ -131,7 +131,7 @@ export const AuditLogTab: React.FC = () => {
       <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-300 flex items-center justify-center text-indigo-800 shrink-0">
               <History className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
@@ -172,8 +172,8 @@ export const AuditLogTab: React.FC = () => {
 
       {status === 'error' && (
         <div className="liquid-glass-card rounded-3xl p-6 text-center space-y-3">
-          <p className="text-sm font-bold text-rose-300">{t('admin.logLoadFailed')}</p>
-          {error && <p className="text-xs text-slate-400 break-words">{error}</p>}
+          <p className="text-sm font-bold text-rose-800">{t('admin.logLoadFailed')}</p>
+          {error && <p className="text-xs text-slate-600 break-words">{error}</p>}
           <button type="button" onClick={() => void loadFirstPage()} className="glass-button pressable px-4 text-xs">
             <RefreshCw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span>{t('common.tryAgain')}</span>
@@ -193,7 +193,7 @@ export const AuditLogTab: React.FC = () => {
       )}
 
       {(status === 'ready' || status === 'loadingMore') && !rulesMissing && visible.length === 0 && (
-        <div className="liquid-glass-card rounded-3xl p-8 text-center text-sm text-slate-400">{t('admin.logEmpty')}</div>
+        <div className="liquid-glass-card rounded-3xl p-8 text-center text-sm text-slate-600 font-medium">{t('admin.logEmpty')}</div>
       )}
 
       {(status === 'ready' || status === 'loadingMore') && visible.length > 0 && (
@@ -201,7 +201,7 @@ export const AuditLogTab: React.FC = () => {
           <div className="liquid-glass-card rounded-3xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-start text-xs">
-                <thead className="bg-[color:var(--glass-fill-well)] text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
+                <thead className="bg-[color:var(--glass-fill-well)] text-slate-600 uppercase tracking-wider font-mono border-b border-white/10">
                   <tr>
                     <th scope="col" className="py-3 px-4 text-start">{t('admin.logColTime')}</th>
                     <th scope="col" className="py-3 px-4 text-start">{t('admin.logColActor')}</th>
@@ -210,7 +210,7 @@ export const AuditLogTab: React.FC = () => {
                     <th scope="col" className="py-3 px-4 text-start">{t('admin.logColDetails')}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.06] text-slate-400">
+                <tbody className="divide-y divide-white/[0.06] text-slate-600">
                   {visible.map((e) => (
                     <tr key={e.id} className="align-top">
                       <td className="py-3 px-4 whitespace-nowrap text-slate-700">{timeLabel(e)}</td>

@@ -258,7 +258,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                     </div>
                   ) : (
                     <div className="glass-well rounded-2xl border-2 border-dashed border-white/50 hover:border-rose-400 p-6 text-center transition-colors">
-                      <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                      <Camera className="w-10 h-10 text-slate-500 mx-auto mb-2" />
                       <p className="text-xs text-slate-600 font-semibold mb-2">{t('gallery.chooseFileHint')}</p>
                       <label className="glass-button pressable text-xs font-bold">
                         <Upload className="w-4 h-4 text-rose-600" />
@@ -273,7 +273,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                   {/* Judul Foto */}
                   <div>
                     <label className={LABEL_CLASS}>
-                      {t('gallery.photoTitleLabel')} <span className="text-rose-400">*</span>
+                      {t('gallery.photoTitleLabel')} <span className="text-rose-600 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -289,7 +289,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                   {/* Nama Karakter */}
                   <div>
                     <label className={LABEL_CLASS}>
-                      {t('gallery.characterLabel')} <span className="text-rose-400">*</span>
+                      {t('gallery.characterLabel')} <span className="text-rose-600 font-bold">*</span>
                     </label>
                     <input
                       type="text"
@@ -305,7 +305,7 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                   {/* Serial / Series */}
                   <div>
                     <label className={LABEL_CLASS}>
-                      {t('gallery.seriesLabel')} <span className="text-rose-400">*</span>
+                      {t('gallery.seriesLabel')} <span className="text-rose-600 font-bold">*</span>
                     </label>
                     <input
                       type="text"

@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "உள்நுழையும்போது ஏதோ தவறு நடந்துவிட்டது. மீண்டும் முயற்சிக்கவும்.",
   googleLoginFailed: "Google உள்நுழைவு ரத்துசெய்யப்பட்டது அல்லது ஒரு சிக்கல் ஏற்பட்டது.",
   popupBlockedTapAgain: "உலாவி உள்நுழைவுச் சாளரத்தைத் தடுத்தது. பொத்தானை மீண்டும் தட்டுங்கள்.",
+
+  legalConsentNotice: 'உள்நுழைவதன் மூலம், நீங்கள் எங்கள்',
 };
 
 export default auth;

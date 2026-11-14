@@ -26,6 +26,8 @@ const auth: LocaleNamespace<'auth'> = {
   authFailed: "Berlaku masalah semasa log masuk. Sila cuba lagi.",
   googleLoginFailed: "Log masuk Google telah dibatalkan atau menghadapi masalah.",
   popupBlockedTapAgain: "Pelayar menyekat tetingkap log masuk. Ketik butang sekali lagi.",
+
+  legalConsentNotice: 'Dengan log masuk, anda bersetuju dengan',
 };
 
 export default auth;

@@ -195,7 +195,7 @@ export const SiteEditorModal: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="glass-sheet sm:max-w-4xl bg-[rgba(255,255,255,0.95)] border border-purple-200/60 shadow-2xl overflow-hidden rounded-3xl"
+            className="glass-sheet sm:max-w-4xl bg-[rgba(255,255,255,0.96)] border border-purple-200/60 shadow-2xl overflow-hidden rounded-3xl"
             {...sheetMotion}
             {...drag.sheetProps}
           >

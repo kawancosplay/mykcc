@@ -96,7 +96,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
           style={{ willChange: 'transform, opacity' }}
           className="overflow-hidden will-change-[transform,opacity]"
         >
-        <div className="border-t border-white/60 bg-[rgba(255,255,255,0.95)] text-slate-800 px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain shadow-lg">
+        <div className="border-t border-white/60 bg-[rgba(255,255,255,0.96)] text-slate-800 px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain shadow-lg">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Pillar 1: Official International Community Identity */}
             <div className="flex items-start gap-3.5">

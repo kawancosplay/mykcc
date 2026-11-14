@@ -160,25 +160,47 @@ export const tabVariants: Variants = {
       : { opacity: 0, x: Math.sign(direction) * -TAB_SHIFT, transition: TWEEN.pageOut },
 };
 
-/** `.glass-sheet` below 640px: slides up from the bottom edge. */
+/** `.glass-sheet` below 640px: fast GPU-composited slide up from the bottom edge. */
 export const sheetVariants: Variants = {
-  initial: { y: '100%' },
-  animate: { y: 0, transition: SPRING.sheet },
-  exit: { y: '100%', transition: TWEEN.sheetExit },
+  initial: { opacity: 0, y: '100%' },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.16, ease: EASE.outSoft },
+  },
+  exit: {
+    opacity: 0,
+    y: '100%',
+    transition: { duration: 0.14, ease: EASE.outSoft },
+  },
 };
 
-/** `.glass-sheet` from 640px and `.glass-elevated` dialogs: scale + fade. */
+/** `.glass-sheet` from 640px and `.glass-elevated` dialogs: fast GPU-composited scale + fade. */
 export const dialogVariants: Variants = {
   initial: { opacity: 0, scale: 0.96 },
-  animate: { opacity: 1, scale: 1, transition: TWEEN.dialog },
-  exit: { opacity: 0, scale: 0.98, transition: TWEEN.fadeOut },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.16, ease: EASE.outSoft },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.98,
+    transition: { duration: 0.14, ease: EASE.outSoft },
+  },
 };
 
-/** `.glass-overlay` backdrop. */
+/** `.glass-overlay` backdrop: fast fade. */
 export const overlayVariants: Variants = {
   initial: { opacity: 0 },
-  animate: { opacity: 1, transition: TWEEN.fadeIn },
-  exit: { opacity: 0, transition: TWEEN.fadeOut },
+  animate: {
+    opacity: 1,
+    transition: { duration: 0.16, ease: 'easeOut' },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.12, ease: 'easeIn' },
+  },
 };
 
 export type PresenceKind = 'page' | 'tab' | 'sheet' | 'dialog' | 'overlay';

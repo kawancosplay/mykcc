@@ -115,8 +115,8 @@ export const PWAInstallButton: React.FC = () => {
                     <div className="sheet-grabber" aria-hidden="true" />
                   </div>
                   <div className="glass-scroll px-6 pt-0 pb-6 sm:p-6">
-                    <h3 id={titleId} className="text-lg font-semibold text-white">{t('common.pwaIosTitle')}</h3>
-                    <p className="mt-2 text-sm text-slate-300">
+                    <h3 id={titleId} className="text-lg font-semibold text-slate-900">{t('common.pwaIosTitle')}</h3>
+                    <p className="mt-2 text-sm text-slate-700">
                       {withBold(t('common.pwaIosStep1'), 'share', t('common.pwaIosShare'))}<br />
                       {withBold(t('common.pwaIosStep2'), 'addToHome', t('common.pwaIosAddToHome'))}
                     </p>

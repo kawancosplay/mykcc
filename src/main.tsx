@@ -7,11 +7,13 @@ import { ThemeProvider } from './lib/themeContext.tsx';
 import './lib/perfMode';
 import './index.css';
 
-// Lock in soft translucent liquid glass defaults
+// Lock in soft translucent liquid glass defaults and opaque frosted modal surfaces
 if (typeof document !== 'undefined') {
   const root = document.documentElement;
   root.style.setProperty('--glass-fill-card', 'rgba(255, 255, 255, 0.56)');
   root.style.setProperty('--glass-fill-bar', 'rgba(255, 255, 255, 0.65)');
+  root.style.setProperty('--glass-fill-sheet', 'rgba(255, 255, 255, 0.96)');
+  root.style.setProperty('--glass-fill-overlay', 'rgba(15, 23, 42, 0.55)');
   root.style.setProperty('--glass-fill-input', 'rgba(255, 255, 255, 0.88)');
   root.style.setProperty('--glass-stroke-card', '1.5px solid rgba(255, 255, 255, 0.82)');
   root.style.setProperty('--glass-blur', '18px');

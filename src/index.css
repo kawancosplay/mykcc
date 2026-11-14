@@ -87,14 +87,14 @@
   --glass-fill-card: rgba(255, 255, 255, 0.56);
   --glass-fill-raised: rgba(255, 255, 255, 0.62);
   --glass-fill-elevated: rgba(255, 255, 255, 0.72);
-  --glass-fill-sheet: rgba(255, 255, 255, 0.75);
-  --glass-fill-menu: rgba(255, 255, 255, 0.75);
+  --glass-fill-sheet: rgba(255, 255, 255, 0.96);
+  --glass-fill-menu: rgba(255, 255, 255, 0.96);
   --glass-fill-well: rgba(255, 255, 255, 0.50);
   --glass-fill-input: rgba(255, 255, 255, 0.88);
   --glass-fill-control: rgba(255, 255, 255, 0.75);
   --glass-fill-control-hover: rgba(255, 255, 255, 0.90);
   --glass-fill-selected: rgba(139, 92, 246, 0.16);
-  --glass-fill-overlay: rgba(15, 23, 42, 0.45);
+  --glass-fill-overlay: rgba(15, 23, 42, 0.55);
   --glass-fill-solid: #ffffff;
 
   /* Clean crystal rim, strokes, and specular caustics: 1.5px solid rgba(255, 255, 255, 0.82) */
@@ -155,6 +155,17 @@
 
   html[data-surface-mode="dark"] {
     color-scheme: dark;
+    --glass-fill-sheet: rgba(22, 16, 42, 0.97);
+    --glass-fill-menu: rgba(22, 16, 42, 0.97);
+    --glass-fill-overlay: rgba(5, 5, 12, 0.75);
+  }
+
+  html[data-surface-mode="dark"] .glass-sheet,
+  html[data-surface-mode="dark"] [role="dialog"],
+  html[data-surface-mode="dark"] [aria-modal="true"],
+  html[data-surface-mode="dark"] .modal-sheet {
+    background-color: rgba(22, 16, 42, 0.97) !important;
+    color: #f8fafc !important;
   }
 
   html {
@@ -661,7 +672,10 @@ button, a[role="button"] {
     pointer-events: auto;
   }
 
-  .glass-sheet {
+  .glass-sheet,
+  [role="dialog"],
+  [aria-modal="true"],
+  .modal-sheet {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -669,7 +683,7 @@ button, a[role="button"] {
     max-height: calc(100vh - var(--safe-top) - 0.75rem);
     overflow: hidden;
     color: #0f172a;
-    background-color: var(--glass-fill-sheet);
+    background-color: var(--glass-fill-sheet, rgba(255, 255, 255, 0.96));
     background-image: var(--glass-sheen);
     border: 1px solid var(--glass-stroke-strong);
     border-top-color: var(--glass-stroke-top);
@@ -679,6 +693,8 @@ button, a[role="button"] {
     box-shadow: var(--glass-highlight-strong), 0 -18px 50px -20px rgba(124, 58, 237, 0.25);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     backdrop-filter: blur(20px) saturate(160%);
+    will-change: transform, opacity;
+    contain: layout paint;
   }
 
   @supports (height: 100dvh) {
@@ -1236,18 +1252,63 @@ button, a[role="button"] {
       --glass-fill-bar: rgba(255, 255, 255, 0.65);
       --glass-fill-card: rgba(255, 255, 255, 0.56);
       --glass-fill-raised: rgba(255, 255, 255, 0.62);
-      --glass-fill-sheet: rgba(255, 255, 255, 0.75);
+      --glass-fill-sheet: rgba(255, 255, 255, 0.96);
       --glass-fill-elevated: rgba(255, 255, 255, 0.72);
-      --glass-fill-menu: rgba(255, 255, 255, 0.75);
+      --glass-fill-menu: rgba(255, 255, 255, 0.96);
       --glass-fill-well: rgba(255, 255, 255, 0.50);
       --glass-fill-input: rgba(255, 255, 255, 0.88);
+      --glass-fill-overlay: rgba(15, 23, 42, 0.55);
+    }
+
+    /* All modals, bottom sheets, dialogs, and popovers on mobile: dense high-contrast frosted surface (0.96)
+       with zero live backdrop blur so GPU never stalls or drops frames */
+    .glass-sheet,
+    [role="dialog"],
+    [aria-modal="true"],
+    .modal-sheet {
+      background-color: rgba(255, 255, 255, 0.96) !important;
+      background-image: none !important;
+      border: 1px solid rgba(255, 255, 255, 0.85) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+      box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.3) !important;
+      color: #0f172a !important;
+      will-change: transform, opacity;
+      contain: layout paint;
+    }
+
+    html[data-surface-mode="dark"] .glass-sheet,
+    html[data-surface-mode="dark"] [role="dialog"],
+    html[data-surface-mode="dark"] [aria-modal="true"],
+    html[data-surface-mode="dark"] .modal-sheet {
+      background-color: rgba(22, 16, 42, 0.97) !important;
+      color: #f8fafc !important;
+    }
+
+    /* Modal backdrop overlay: dark dimmed backdrop (0.55) with zero blur on mobile */
+    .glass-overlay {
+      background-color: rgba(15, 23, 42, 0.55) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+
+    html[data-surface-mode="dark"] .glass-overlay {
+      background-color: rgba(5, 5, 12, 0.75) !important;
+    }
+
+    /* Contain overscroll on all scrollable modal bodies so scrolling inside never jitters the page */
+    .glass-scroll,
+    .sheet-viewport [role="dialog"],
+    .sheet-viewport .glass-sheet,
+    [role="dialog"] .overflow-y-auto,
+    .glass-sheet .overflow-y-auto {
+      overscroll-behavior: contain !important;
     }
 
     /* Stop multi-layer backdrop-filter stacking during mobile scroll: keep the exact same
        0.58 soft translucent frosted appearance with solid/gradient fill without per-frame GPU passes */
     .glass-card,
     .liquid-glass-card,
-    .glass-sheet,
     .glass-elevated,
     .liquid-glass-elevated,
     .glass-raised {
@@ -1272,7 +1333,7 @@ button, a[role="button"] {
     /* Pre-composited frosted menus & popovers: backdrop-filter: none so opening/closing never stalls GPU */
     .glass-menu,
     .liquid-glass-menu {
-      background-color: rgba(255, 255, 255, 0.95) !important;
+      background-color: rgba(255, 255, 255, 0.96) !important;
       border: 1px solid rgba(255, 255, 255, 0.85) !important;
       -webkit-backdrop-filter: none !important;
       backdrop-filter: none !important;
@@ -1282,7 +1343,7 @@ button, a[role="button"] {
 
     html[data-surface-mode="dark"] .liquid-glass-menu,
     html[data-surface-mode="dark"] .glass-menu {
-      background-color: rgba(22, 16, 42, 0.96) !important;
+      background-color: rgba(22, 16, 42, 0.97) !important;
       color: #f8fafc;
     }
 
@@ -1353,7 +1414,7 @@ button, a[role="button"] {
     }
 
     .glass-overlay {
-      background-color: rgba(15, 23, 42, 0.45);
+      background-color: rgba(15, 23, 42, 0.55);
     }
   }
 

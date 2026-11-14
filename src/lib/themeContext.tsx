@@ -393,6 +393,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.documentElement.style.setProperty('--glass-text-muted', '#94A3B8');
       document.documentElement.style.setProperty('--glass-fill-card', `rgba(15, 23, 42, ${frostAlpha})`);
       document.documentElement.style.setProperty('--glass-fill-bar', 'rgba(15, 23, 42, 0.85)');
+      document.documentElement.style.setProperty('--glass-fill-sheet', 'rgba(22, 16, 42, 0.97)');
+      document.documentElement.style.setProperty('--glass-fill-overlay', 'rgba(5, 5, 12, 0.75)');
       document.documentElement.style.setProperty('--glass-fill-input', 'rgba(30, 41, 59, 0.85)');
       document.documentElement.style.setProperty('--glass-stroke-card', '1.5px solid rgba(255, 255, 255, 0.15)');
     } else {
@@ -401,6 +403,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.documentElement.style.setProperty('--glass-text-muted', '#475569');
       document.documentElement.style.setProperty('--glass-fill-card', `rgba(255, 255, 255, ${frostAlpha})`);
       document.documentElement.style.setProperty('--glass-fill-bar', 'rgba(255, 255, 255, 0.65)');
+      document.documentElement.style.setProperty('--glass-fill-sheet', 'rgba(255, 255, 255, 0.96)');
+      document.documentElement.style.setProperty('--glass-fill-overlay', 'rgba(15, 23, 42, 0.55)');
       document.documentElement.style.setProperty('--glass-fill-input', 'rgba(255, 255, 255, 0.88)');
       document.documentElement.style.setProperty('--glass-stroke-card', '1.5px solid rgba(255, 255, 255, 0.82)');
     }

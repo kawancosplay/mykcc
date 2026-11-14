@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "KawanCosplay 新成員入會登記",
-  formDesc: "歡迎來到 KawanCosplay Community（KCC）——100% SFW 的國際 Cosplay 社群。我們隸屬於 KawanCosplay Group，該集團由 KawanCosplay Media 與 KawanCosplay Community 組成。KCC 是由 KawanCosplay 建立的 WhatsApp 群組與 Discord 伺服器。最初是為了在 Instagram 上與 KawanCosplay 合作的 Cosplayer 們所打造的交流聚會平台，如今已向所有對 Cosplay 世界有興趣的人開放，無論您是不是 Cosplayer。社群成立於 2025 年 6 月 30 日。歡迎加入我們，在 WhatsApp 群組和/或 Discord 伺服器中與成員們互動。我們歡迎國際成員，不分宗教、種族與語言。為確保安全並防止濫用，請填寫此表單加入社群。送出表單後即可取得 WhatsApp 群組連結，因此填寫完表單後請不要關閉此分頁。Discord 伺服器則需在加入 WhatsApp 群組之後才能加入。如需進一步協助，請在 Instagram 上私訊 @kawancosplayers，或透過 WhatsApp 聯絡我們的專線 +62 857-1103-2782。",
+  formDesc: "歡迎來到 KawanCosplay Community (KCC)！這是一個專為 Cosplayer、偶像粉絲、ACG 愛好者及流行文化同好打造的 100% SFW 友善國際社群。創立於 2025 年 6 月 30 日，無論您的背景、經驗或語言如何，我們都熱烈歡迎。\n\n請填寫這份簡短的註冊表單以獲取您的官方 KCC ID 會員卡，並即刻解鎖官方 WhatsApp 社群群組連結。Discord 伺服器連結將在您加入 WhatsApp 群組後開放。",
   inclusiveWelcome: "歡迎所有人：Cosplayer、偶像粉絲、動漫宅，以及所有流行文化愛好者！",
   requiredIndicator: "* 表示必填問題",
   officialFormTag: "KawanCosplay 官方表單",

@@ -800,10 +800,10 @@ export default function App() {
               <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-3">
                 {t('common.cardPageBadge')}
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] mb-2">
                 {t('common.cardPageTitle')}
               </h2>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto mb-6 leading-relaxed">
+              <p className="text-[#334155] text-xs sm:text-sm max-w-lg mx-auto mb-6 leading-relaxed">
                 {t('common.cardPageDesc')}
               </p>
 
@@ -811,18 +811,18 @@ export default function App() {
               {currentMember && (
                 <div className="mb-8 p-5 glass-well rounded-2xl max-w-md mx-auto text-start flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <span className="text-[10px] text-purple-300 uppercase font-mono tracking-wider block">
+                    <span className="text-[10px] text-[#6D28D9] font-bold uppercase font-mono tracking-wider block">
                       {t('common.connectedProfile')}
                     </span>
-                    <h4 className="font-bold text-white text-base truncate">{currentMember.cosplayName}</h4>
-                    <p className="text-xs font-mono text-purple-300">
+                    <h4 className="font-bold text-[#0F172A] text-base truncate">{currentMember.cosplayName}</h4>
+                    <p className="text-xs font-mono font-bold text-[#4C1D95]">
                       {t('common.kccIdValue', { id: formatKccId(currentMember.userId16) })}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleOpenCard(currentMember)}
-                    className="px-3.5 py-2 min-h-11 liquid-glass-button text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shrink-0"
+                    className="px-3.5 py-2 min-h-11 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shrink-0 shadow-md shadow-purple-500/20"
                   >
                     <IdCard className="w-3.5 h-3.5" />
                     <span>{t('common.openPass')}</span>
@@ -833,7 +833,7 @@ export default function App() {
               {/* Lookup Card Form */}
               <form onSubmit={handleLookupCard} className="max-w-md mx-auto space-y-3 mb-6">
                 <div className="relative">
-                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden="true" />
+                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none" aria-hidden="true" />
                   <input
                     type="text"
                     inputMode="numeric"
@@ -845,18 +845,18 @@ export default function App() {
                     aria-invalid={lookupError ? true : undefined}
                     value={lookupQuery}
                     onChange={(e) => setLookupQuery(e.target.value)}
-                    className="w-full ps-10 pe-4 py-2.5 glass-input rounded-xl text-white text-base sm:text-sm"
+                    className="w-full ps-10 pe-4 py-2.5 glass-input rounded-xl text-[#0F172A] placeholder-[#64748B] text-base sm:text-sm font-medium"
                   />
                 </div>
 
                 {lookupError && (
-                  <p className="text-xs text-rose-400 text-start px-1" role="alert">{lookupError}</p>
+                  <p className="text-xs text-rose-600 font-semibold text-start px-1" role="alert">{lookupError}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={isLookingUp}
-                  className="w-full py-2.5 px-5 min-h-11 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-2.5 px-5 min-h-11 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-purple-500/25 disabled:opacity-50"
                 >
                   <Search className="w-4 h-4" />
                   <span>{isLookingUp ? t('common.searching') : t('common.lookupSubmit')}</span>

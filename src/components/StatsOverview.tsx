@@ -119,10 +119,10 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
           </span>
           <span className="text-xs text-slate-400">{t('stats.subtitle')}</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+        <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
           {t('stats.title')}
         </h1>
-        <p className="text-slate-300 text-sm sm:text-base max-w-2xl mt-1">
+        <p className="text-slate-600 text-sm sm:text-base max-w-2xl mt-1">
           {t('stats.description')}
         </p>
       </div>

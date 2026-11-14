@@ -439,7 +439,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               onRequireLogin();
             }
           }}
-          className="liquid-glass-button px-4 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shrink-0 self-start md:self-auto"
+          className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white px-5 py-2.5 rounded-full font-semibold text-xs sm:text-sm inline-flex items-center justify-center gap-1.5 shrink-0 self-start md:self-auto shadow-md shadow-purple-500/25 transition-all pressable"
         >
           <Plus className="w-4 h-4" />
           <span>{t('gallery.uploadPhoto')}</span>
@@ -451,14 +451,14 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search box */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none" />
             <input
               type="text"
               placeholder={t('gallery.searchPlaceholder')}
               aria-label={t('gallery.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full glass-input pl-10 pr-4 text-base sm:text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-[#DDD6FE] rounded-full text-[#0F172A] placeholder-[#64748B] text-base sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/30"
             />
           </div>
 
@@ -468,7 +468,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               value={selectedCharacter}
               onChange={(e) => setSelectedCharacter(e.target.value)}
               aria-label={t('gallery.allCharacters')}
-              className="w-full glass-input text-base sm:text-sm text-slate-200"
+              className="w-full px-4 py-2 bg-white border border-[#DDD6FE] rounded-full text-[#0F172A] text-base sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/30 cursor-pointer"
             >
               <option value="ALL">
                 {t('gallery.filterOptionWithCount', {
@@ -490,7 +490,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               value={selectedEvent}
               onChange={(e) => setSelectedEvent(e.target.value)}
               aria-label={t('gallery.allEvents')}
-              className="w-full glass-input text-base sm:text-sm text-slate-200"
+              className="w-full px-4 py-2 bg-white border border-[#DDD6FE] rounded-full text-[#0F172A] text-base sm:text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/30 cursor-pointer"
             >
               <option value="ALL">
                 {t('gallery.filterOptionWithCount', {
@@ -607,10 +607,10 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
 
                     {/* Character Badge Top */}
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                      <span className="glass-chip min-h-6 px-2.5 py-1 text-[10px] font-bold bg-rose-600/90 border-rose-400/40 text-white">
+                      <span className="min-h-6 px-2.5 py-1 text-[10px] font-bold bg-rose-600/95 border border-rose-400/40 text-white rounded-full shadow-md">
                         {photo.character}
                       </span>
-                      <span className="glass-chip min-h-6 px-2.5 py-1 text-[10px] text-slate-300">
+                      <span className="min-h-6 px-2.5 py-1 text-[10px] font-semibold text-white rounded-full shadow-md bg-[rgba(15,23,42,0.72)] border border-white/25 [-webkit-backdrop-filter:blur(8px)] [backdrop-filter:blur(8px)]">
                         {photo.series}
                       </span>
                     </div>
@@ -625,7 +625,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                           e.stopPropagation();
                           handleDownload(photo);
                         }}
-                        className="glass-icon-button w-9 h-9"
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-white bg-[rgba(15,23,42,0.72)] border border-white/25 [-webkit-backdrop-filter:blur(8px)] [backdrop-filter:blur(8px)] hover:bg-slate-900 transition-colors shadow-md"
                       >
                         <Download className="w-3.5 h-3.5" />
                       </button>
@@ -633,7 +633,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         type="button"
                         onClick={(e) => handleLike(e, photo)}
                         aria-label={t('gallery.likeWithCount', { count: formatNumber(likesOf(photo)) })}
-                        className="glass-icon-button w-auto h-9 px-3 gap-1 hover:bg-rose-600 hover:text-white"
+                        className="h-9 px-3 gap-1.5 rounded-full inline-flex items-center justify-center text-white bg-[rgba(15,23,42,0.72)] border border-white/25 [-webkit-backdrop-filter:blur(8px)] [backdrop-filter:blur(8px)] hover:bg-rose-600 transition-colors shadow-md"
                       >
                         <LikeHeart
                           pop={likePops[photo.id] || 0}

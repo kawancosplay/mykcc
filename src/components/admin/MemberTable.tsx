@@ -418,7 +418,7 @@ const EmptyState: React.FC<{ totalMembers: number; onOpenSync: () => void }> = (
         <ShieldCheck className="w-8 h-8" aria-hidden="true" />
       </div>
       <div>
-        <h3 className="text-lg font-bold text-white mb-1">
+        <h3 className="text-lg font-bold text-slate-900 mb-1">
           {empty ? t('admin.emptyDatabaseTitle') : t('admin.noResultsTitle')}
         </h3>
         <p className="text-xs text-slate-400 leading-relaxed">
@@ -481,11 +481,11 @@ export const MemberTable: React.FC<MemberTableProps> = ({
               <Avatar member={m} size="w-11 h-11" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="font-bold text-white text-sm break-words">{memberName(m)}</p>
+                  <p className="font-bold text-slate-900 text-sm break-words">{memberName(m)}</p>
                   {isAdminMember(m) && <AdminChip />}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                  <span className="text-white tracking-wider text-xs font-mono font-bold">{formatKccId(m.userId16)}</span>
+                  <span className="text-purple-900 tracking-wider text-xs font-mono font-bold">{formatKccId(m.userId16)}</span>
                   <KccIdBadge id={m.userId16} />
                 </div>
                 {m.legacyUserId16 && (
@@ -599,7 +599,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
               <Avatar member={m} />
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="font-bold text-white text-sm">{memberName(m)}</p>
+                  <p className="font-bold text-slate-900 text-sm">{memberName(m)}</p>
                   {isAdminMember(m) && <AdminChip />}
                 </div>
                 {m.fullName && m.fullName !== memberName(m) && (
@@ -613,7 +613,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
         return (
           <td key={column} className="py-4 px-4">
             <div className="flex flex-col gap-1 items-start">
-              <span className="text-white tracking-wider text-xs font-mono font-bold whitespace-nowrap">
+              <span className="text-purple-900 tracking-wider text-xs font-mono font-bold whitespace-nowrap">
                 {formatKccId(m.userId16)}
               </span>
               {m.legacyUserId16 && (
@@ -699,7 +699,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       case 'age':
         return (
           <td key={column} className="py-4 px-4">
-            <span className="text-slate-300 font-medium">{m.ageCategory || (m.age ? `${m.age}` : '-')}</span>
+            <span className="text-slate-700 font-medium">{m.ageCategory || (m.age ? `${m.age}` : '-')}</span>
             {m.age && m.ageCategory && <p className="text-[10px] text-slate-400">{m.age}</p>}
             {m.birthday && (
               <div className="mt-1">
@@ -712,7 +712,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
         );
       case 'location':
         return (
-          <td key={column} className="py-4 px-4 text-slate-300">
+          <td key={column} className="py-4 px-4 text-slate-700">
             {[m.city, m.country].filter(Boolean).join(', ') || '—'}
           </td>
         );

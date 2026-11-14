@@ -10,26 +10,33 @@ import {
   Sparkles,
   RotateCcw,
   Check,
-  Sliders,
-  Maximize2,
-  Minimize2,
   Crown,
   Shield,
   Heart,
-  Eye,
   Sun,
   Moon,
-  Layers,
+  Grid,
+  Eye,
+  Sliders,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   useSiteTheme,
   BackgroundTheme,
   GlassPreset,
-  FontTheme,
-  ColorTheme,
+  PerfTier,
   LayoutWidth,
   CardRadius,
+  CardDensity,
   NavbarStyle,
+  SurfaceMode,
+  ButtonStyle,
+  FontFamily,
+  HeadingStyle,
+  FontScale,
+  GridType,
+  GradientAngle,
+  ColorTheme,
   EmblemType,
 } from '../lib/themeContext';
 import { useI18n } from '../i18n';
@@ -42,24 +49,23 @@ import {
   useThumbTransition,
 } from '../lib/motion';
 
-type EditorTab = 'layout' | 'background' | 'colors' | 'font' | 'logo';
-/** Tab order (left to right in LTR), used for the direction of the content slide. */
-const EDITOR_TAB_ORDER: readonly EditorTab[] = ['layout', 'background', 'colors', 'font', 'logo'];
+type EditorTab = 'layout' | 'background' | 'colors' | 'font' | 'visibility';
+const EDITOR_TAB_ORDER: readonly EditorTab[] = ['layout', 'background', 'colors', 'font', 'visibility'];
 
-// Option tiles: selected = purple & emerald accent, idle = recessed glass well
-const OPTION_SELECTED = 'bg-gradient-to-r from-purple-950/70 via-purple-900/60 to-emerald-950/40 border-purple-400 shadow-md ring-1 ring-purple-400/80';
-const OPTION_IDLE = 'glass-well hover:border-white/20';
-const SECTION_LABEL = 'block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2';
+// Strict high-contrast styling tokens
+const OPTION_SELECTED =
+  'bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] border-[#7C3AED] text-white shadow-lg shadow-purple-500/25 ring-2 ring-purple-400';
+const OPTION_IDLE =
+  'bg-white/85 border border-purple-500/20 text-slate-800 shadow-sm hover:border-purple-400/50 hover:bg-white transition-all';
+const SECTION_LABEL = 'block text-xs font-bold uppercase tracking-wider text-[#475569] mb-2';
 
 export const SiteEditorModal: React.FC = () => {
   const { t, isRtl } = useI18n();
   const { theme, updateTheme, resetTheme, isEditorOpen, setIsEditorOpen, saveError, clearSaveError } = useSiteTheme();
   const [activeTab, setActiveTab] = useState<EditorTab>('layout');
-  // Direction of the last tab change for the content slide: 1 = in from the right, -1 = from the left
   const [tabDirection, setTabDirection] = useState(0);
   const titleId = useId();
 
-  // Closing never loses anything (see below), so a swipe down on the header may close the sheet too
   const closeEditor = useCallback(() => setIsEditorOpen(false), [setIsEditorOpen]);
   useScrollLock(isEditorOpen);
   const overlayMotion = usePresenceMotion('overlay');
@@ -68,7 +74,6 @@ export const SiteEditorModal: React.FC = () => {
   const thumbTransition = useThumbTransition();
   const drag = useSheetDrag(closeEditor);
 
-  // Changes are saved as they are made, so Escape can close the editor like the close button
   useEffect(() => {
     if (!isEditorOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -78,14 +83,12 @@ export const SiteEditorModal: React.FC = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isEditorOpen, setIsEditorOpen]);
 
-  // Reopening shows the last tab without a content slide (the sheet itself is animating in)
   useEffect(() => {
     if (!isEditorOpen) setTabDirection(0);
   }, [isEditorOpen]);
 
   const selectTab = (tab: EditorTab) => {
     if (tab === activeTab) return;
-    // A later tab sits to the right in LTR (to the left in RTL): its content slides in from that side
     const step = Math.sign(EDITOR_TAB_ORDER.indexOf(tab) - EDITOR_TAB_ORDER.indexOf(activeTab));
     setTabDirection(isRtl ? -step : step);
     setActiveTab(tab);
@@ -100,39 +103,33 @@ export const SiteEditorModal: React.FC = () => {
   }[] = [
     {
       id: 'lavender-mint-sticker',
-      name: 'Lavender & Mint Anime Poster',
-      desc: 'Bright pastel gradient (#B18CFE → #93C5FD → #6EE7B7) with faint white stationery grid',
-      previewGrad: 'linear-gradient(135deg, #b18cfe 0%, #93c5fd 50%, #6ee7b7 100%)',
+      name: t('siteEditor.bgKccPastelName'),
+      desc: t('siteEditor.bgKccPastelDesc'),
+      previewGrad: 'linear-gradient(135deg, #B18CFE 0%, #93C5FD 50%, #6EE7B7 100%)',
     },
     {
-      id: 'bright-purple-fluent',
-      name: t('siteEditor.bgBrightPurpleName'),
-      desc: t('siteEditor.bgBrightPurpleDesc'),
-      previewGrad: 'radial-gradient(circle at 18% 15%, #53ffc0 0%, transparent 45%), radial-gradient(circle at 80% 25%, #a855f7 0%, transparent 50%), linear-gradient(135deg, #0a0418 0%, #1a0d33 40%, #0d211e 75%, #06110f 100%)',
+      id: 'lavender-poster',
+      name: t('siteEditor.bgLavenderPosterName'),
+      desc: t('siteEditor.bgLavenderPosterDesc'),
+      previewGrad: 'linear-gradient(135deg, #C4B5FD 0%, #A78BFA 50%, #818CF8 100%)',
     },
     {
-      id: 'cyber-purple',
-      name: t('siteEditor.bgCyberPurpleName'),
-      desc: t('siteEditor.bgCyberPurpleDesc'),
-      previewGrad: 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #064e3b 100%)',
+      id: 'mint-breeze',
+      name: t('siteEditor.bgMintBreezeName'),
+      desc: t('siteEditor.bgMintBreezeDesc'),
+      previewGrad: 'linear-gradient(135deg, #6EE7B7 0%, #34D399 50%, #059669 100%)',
     },
     {
-      id: 'cosmic-dark',
-      name: t('siteEditor.bgCosmicDarkName'),
-      desc: t('siteEditor.bgCosmicDarkDesc'),
-      previewGrad: 'radial-gradient(circle at 80% 20%, #a855f7 0%, transparent 50%), linear-gradient(135deg, #090614 0%, #170d2b 50%, #0c1a17 100%)',
+      id: 'sakura-otaku',
+      name: t('siteEditor.bgSakuraOtakuName'),
+      desc: t('siteEditor.bgSakuraOtakuDesc'),
+      previewGrad: 'linear-gradient(135deg, #FBCFE8 0%, #F472B6 50%, #FB7185 100%)',
     },
     {
-      id: 'fluent-lavender',
-      name: t('siteEditor.bgFluentLavenderName'),
-      desc: t('siteEditor.bgFluentLavenderDesc'),
-      previewGrad: 'radial-gradient(circle at 20% 15%, #53ffc0 0%, transparent 45%), radial-gradient(circle at 80% 30%, #c084fc 0%, transparent 50%), linear-gradient(135deg, #271242 0%, #3d1b64 50%, #132e24 100%)',
-    },
-    {
-      id: 'dark-onyx',
-      name: t('siteEditor.bgDarkOnyxName'),
-      desc: t('siteEditor.bgDarkOnyxDesc'),
-      previewGrad: 'linear-gradient(135deg, #0a0910 0%, #12101b 50%, #1a1727 100%)',
+      id: 'ios-dark-glass',
+      name: t('siteEditor.bgIosDarkName'),
+      desc: t('siteEditor.bgIosDarkDesc'),
+      previewGrad: 'linear-gradient(135deg, #0B0A10 0%, #171523 50%, #1A162B 100%)',
     },
   ];
 
@@ -140,28 +137,26 @@ export const SiteEditorModal: React.FC = () => {
     id: ColorTheme;
     name: string;
     hex: string;
-    secondaryHex: string;
   }[] = [
-    { id: 'purple', name: t('siteEditor.colorPurple'), hex: '#a855f7', secondaryHex: '#c084fc' },
-    { id: 'rose', name: t('siteEditor.colorRose'), hex: '#f43f5e', secondaryHex: '#fb7185' },
-    { id: 'indigo', name: t('siteEditor.colorIndigo'), hex: '#6366f1', secondaryHex: '#818cf8' },
-    { id: 'emerald', name: t('siteEditor.colorEmerald'), hex: '#10b981', secondaryHex: '#34d399' },
-    { id: 'amber', name: t('siteEditor.colorAmber'), hex: '#f59e0b', secondaryHex: '#fbbf24' },
-    { id: 'cyan', name: t('siteEditor.colorCyan'), hex: '#06b6d4', secondaryHex: '#22d3ee' },
+    { id: 'purple', name: t('siteEditor.colorPurple'), hex: '#7C3AED' },
+    { id: 'rose', name: t('siteEditor.colorRose'), hex: '#F43F5E' },
+    { id: 'indigo', name: t('siteEditor.colorIndigo'), hex: '#6366F1' },
+    { id: 'emerald', name: t('siteEditor.colorEmerald'), hex: '#10B981' },
+    { id: 'amber', name: t('siteEditor.colorAmber'), hex: '#F59E0B' },
+    { id: 'cyan', name: t('siteEditor.colorCyan'), hex: '#06B6D4' },
   ];
 
   const fontOptions: {
-    id: FontTheme;
+    id: FontFamily;
     name: string;
-    desc: string;
     family: string;
   }[] = [
-    {
-      id: 'din-next',
-      name: t('siteEditor.fontGoogleSansFlexName'),
-      desc: t('siteEditor.fontGoogleSansFlexDesc'),
-      family: "'Google Sans Flex', sans-serif",
-    },
+    { id: 'Plus Jakarta Sans', name: 'Plus Jakarta Sans', family: "'Plus Jakarta Sans', sans-serif" },
+    { id: 'Inter', name: 'Inter', family: "'Inter', sans-serif" },
+    { id: 'Nunito', name: 'Nunito', family: "'Nunito', sans-serif" },
+    { id: 'Poppins', name: 'Poppins', family: "'Poppins', sans-serif" },
+    { id: 'Space Grotesk', name: 'Space Grotesk', family: "'Space Grotesk', sans-serif" },
+    { id: 'din-next', name: 'Google Sans Flex', family: "'Google Sans Flex', sans-serif" },
   ];
 
   const emblemOptions: {
@@ -169,24 +164,21 @@ export const SiteEditorModal: React.FC = () => {
     name: string;
     icon: React.ReactNode;
   }[] = [
-    { id: 'kitsune', name: t('siteEditor.emblemKitsune'), icon: <Sparkles className="w-5 h-5 text-rose-400" /> },
-    { id: 'crown', name: t('siteEditor.emblemCrown'), icon: <Crown className="w-5 h-5 text-amber-400" /> },
-    { id: 'shield', name: t('siteEditor.emblemShield'), icon: <Shield className="w-5 h-5 text-indigo-400" /> },
-    { id: 'heart', name: t('siteEditor.emblemHeart'), icon: <Heart className="w-5 h-5 text-pink-400" /> },
-    { id: 'sparkle', name: t('siteEditor.emblemSparkle'), icon: <Sparkles className="w-5 h-5 text-yellow-400" /> },
+    { id: 'kitsune', name: t('siteEditor.emblemKitsune'), icon: <Sparkles className="w-5 h-5 text-rose-500" /> },
+    { id: 'crown', name: t('siteEditor.emblemCrown'), icon: <Crown className="w-5 h-5 text-amber-500" /> },
+    { id: 'shield', name: t('siteEditor.emblemShield'), icon: <Shield className="w-5 h-5 text-indigo-500" /> },
+    { id: 'heart', name: t('siteEditor.emblemHeart'), icon: <Heart className="w-5 h-5 text-pink-500" /> },
+    { id: 'sparkle', name: t('siteEditor.emblemSparkle'), icon: <Sparkles className="w-5 h-5 text-purple-500" /> },
   ];
 
   const editorTabs: { id: EditorTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'layout', label: t('siteEditor.tabLayout'), icon: <Layout className="w-3.5 h-3.5 text-purple-400" /> },
-    { id: 'background', label: t('siteEditor.tabBackground'), icon: <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> },
-    { id: 'colors', label: t('siteEditor.tabColors'), icon: <Palette className="w-3.5 h-3.5 text-pink-400" /> },
-    { id: 'font', label: t('siteEditor.tabFont'), icon: <Type className="w-3.5 h-3.5 text-amber-400" /> },
-    { id: 'logo', label: t('siteEditor.tabLogo'), icon: <ImageIcon className="w-3.5 h-3.5 text-emerald-400" /> },
+    { id: 'layout', label: t('siteEditor.tabLayout'), icon: <Layout className="w-4 h-4" /> },
+    { id: 'background', label: t('siteEditor.tabBackground'), icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'colors', label: t('siteEditor.tabColors'), icon: <Palette className="w-4 h-4" /> },
+    { id: 'font', label: t('siteEditor.tabFont'), icon: <Type className="w-4 h-4" /> },
+    { id: 'visibility', label: t('siteEditor.tabVisibility'), icon: <Eye className="w-4 h-4" /> },
   ];
 
-  // Bottom sheet on phones, centered dialog from 640px. Portaled to <body> so no transformed or z-indexed
-  // ancestor can trap it; z-[100] / z-[101] keep it above every other overlay as before. AnimatePresence
-  // keeps it mounted until the exit animation (slide down / fade) has finished.
   return createPortal(
     <AnimatePresence>
       {isEditorOpen && (
@@ -203,26 +195,26 @@ export const SiteEditorModal: React.FC = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="glass-sheet sm:max-w-4xl"
+            className="glass-sheet sm:max-w-4xl bg-[rgba(255,255,255,0.95)] border border-purple-200/60 shadow-2xl overflow-hidden rounded-3xl"
             {...sheetMotion}
             {...drag.sheetProps}
           >
-            {/* Top Header (also the drag handle on phones: grabber + title area, buttons excluded) */}
-            <div className="sheet-handle border-b border-white/10" {...drag.handleProps}>
-              <div className="sheet-grabber" aria-hidden="true" />
+            {/* Header */}
+            <div className="sheet-handle border-b border-purple-100 bg-white/60" {...drag.handleProps}>
+              <div className="sheet-grabber bg-slate-300" aria-hidden="true" />
               <div className="px-4 sm:px-6 pt-1 pb-4 sm:pt-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600/30 to-emerald-500/20 border border-purple-400/40 flex items-center justify-center text-purple-200 shrink-0 shadow-[0_0_15px_rgba(83,255,192,0.15)]">
+                  <div className="w-10 h-10 rounded-2xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-700 shrink-0 shadow-sm">
                     <Palette className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <h2 id={titleId} className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                    <h2 id={titleId} className="text-base sm:text-lg font-black text-[#0F172A] tracking-tight flex items-center gap-2">
                       <span>{t('siteEditor.editorTitle')}</span>
-                      <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 border border-emerald-400/30 text-emerald-300">
-                        QuickLiquid
+                      <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 text-violet-800 border border-violet-300">
+                        QuickLiquid Studio
                       </span>
                     </h2>
-                    <p className="text-xs text-purple-200/80">
+                    <p className="text-xs text-[#475569]">
                       {t('siteEditor.editorDesc')}
                     </p>
                   </div>
@@ -232,7 +224,7 @@ export const SiteEditorModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={resetTheme}
-                    className="glass-button pressable px-3 text-xs"
+                    className="glass-button pressable px-3 text-xs font-semibold text-[#475569] hover:text-[#0F172A] border border-purple-200"
                     title={t('siteEditor.resetTitle')}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -243,8 +235,7 @@ export const SiteEditorModal: React.FC = () => {
                     type="button"
                     onClick={closeEditor}
                     aria-label={t('common.close')}
-                    title={t('common.close')}
-                    className="glass-icon-button"
+                    className="glass-icon-button text-slate-600 hover:text-slate-900 bg-slate-100"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -252,15 +243,9 @@ export const SiteEditorModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Editor Navigation Tabs (segmented control, scrolls sideways on narrow screens). The active
-                thumb slides between tabs (shared layoutId); layoutScroll keeps it right when scrolled. */}
-            <div className="shrink-0 px-4 sm:px-6 py-3 border-b border-white/10">
-              <motion.div
-                role="tablist"
-                aria-label={t('siteEditor.editorTitle')}
-                className="glass-segmented glass-segmented-scroll"
-                layoutScroll
-              >
+            {/* Navigation Tabs */}
+            <div className="shrink-0 px-4 sm:px-6 py-2.5 border-b border-purple-100 bg-purple-50/40">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
                 {editorTabs.map((tab) => {
                   const isActive = activeTab === tab.id;
                   return (
@@ -270,516 +255,811 @@ export const SiteEditorModal: React.FC = () => {
                       role="tab"
                       aria-selected={isActive}
                       onClick={() => selectTab(tab.id)}
-                      className="glass-segment"
+                      className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap shrink-0 ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] text-white shadow-md shadow-purple-500/20'
+                          : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/80'
+                      }`}
                     >
-                      {/* borderRadius is set inline (same value as the CSS) so framer-motion keeps the pill
-                          round while the thumb scales between tabs of different widths */}
-                      {isActive && (
-                        <motion.span
-                          layoutId={LAYOUT_IDS.siteEditorTabs}
-                          className="glass-segment-thumb"
-                          style={{ borderRadius: 9999 }}
-                          transition={thumbTransition}
-                          aria-hidden="true"
-                        />
-                      )}
                       {tab.icon}
                       <span>{tab.label}</span>
                     </button>
                   );
                 })}
-              </motion.div>
+              </div>
             </div>
 
-            {/* Save error (only a signed-in admin can save site settings) */}
+            {/* Save error notice */}
             {saveError && (
               <div
                 role="alert"
-                className="shrink-0 mx-4 sm:mx-6 mt-4 p-3 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-start justify-between gap-3"
+                className="shrink-0 mx-4 sm:mx-6 mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-start justify-between gap-3"
               >
                 <span>{t('siteEditor.saveFailed', { error: saveError })}</span>
                 <button
                   type="button"
                   onClick={clearSaveError}
                   aria-label={t('common.close')}
-                  title={t('common.close')}
-                  className="touch-target p-1 rounded-lg hover:bg-rose-900/60 text-rose-300 hover:text-white transition-colors shrink-0"
+                  className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition-colors shrink-0"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
-            {/* Tab Body. The keyed wrapper re-mounts per tab and slides the new content in from the side of
-                the chosen tab (no exit: the old tab is gone at once). overflow-x-hidden: the 16px slide
-                must not flash a horizontal scrollbar. Opacity + translate only, no fixed children inside. */}
-            <div className="glass-scroll overflow-x-hidden p-4 sm:p-6 space-y-6">
+            {/* Scrollable Tab Body */}
+            <div className="glass-scroll max-h-[68vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-6">
               <motion.div
                 key={activeTab}
                 custom={tabDirection}
                 {...tabMotion}
                 initial={tabDirection === 0 ? false : tabMotion.initial}
               >
-                {/* TAB 1: LAYOUT */}
+                {/* TAB 1: LAYOUT & QUICKLIQUID */}
                 {activeTab === 'layout' && (
                   <div className="space-y-6">
+                    {/* Content Width */}
                     <div>
                       <label className={SECTION_LABEL}>{t('siteEditor.layoutWidthLabel')}</label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {[
+                          { id: '5xl', label: t('siteEditor.width5xl'), desc: t('siteEditor.width5xlDesc') },
                           { id: '7xl', label: t('siteEditor.widthNormal'), desc: t('siteEditor.widthNormalDesc') },
-                          { id: '6xl', label: t('siteEditor.widthCompact'), desc: t('siteEditor.widthCompactDesc') },
                           { id: 'full', label: t('siteEditor.widthFull'), desc: t('siteEditor.widthFullDesc') },
-                        ].map((opt) => (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            aria-pressed={theme.layoutWidth === opt.id}
-                            onClick={() => updateTheme({ layoutWidth: opt.id as LayoutWidth })}
-                            className={`pressable-soft p-4 rounded-2xl border text-left whitespace-normal ${
-                              theme.layoutWidth === opt.id ? OPTION_SELECTED : OPTION_IDLE
-                            }`}
-                          >
-                            <h4 className="font-bold text-white text-xs sm:text-sm">{opt.label}</h4>
-                            <p className="text-[11px] text-slate-400 mt-1">{opt.desc}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={SECTION_LABEL}>{t('siteEditor.navbarStyleLabel')}</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {[
-                          { id: 'glass-bar', label: t('siteEditor.navbarGlassBar'), desc: t('siteEditor.navbarGlassBarDesc') },
-                          {
-                            id: 'floating-pill',
-                            label: t('siteEditor.navbarFloatingPill'),
-                            desc: t('siteEditor.navbarFloatingPillDesc'),
-                          },
-                          { id: 'minimal', label: t('siteEditor.navbarMinimal'), desc: t('siteEditor.navbarMinimalDesc') },
-                        ].map((opt) => (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            aria-pressed={theme.navbarStyle === opt.id}
-                            onClick={() => updateTheme({ navbarStyle: opt.id as NavbarStyle })}
-                            className={`pressable-soft p-4 rounded-2xl border text-left whitespace-normal ${
-                              theme.navbarStyle === opt.id ? OPTION_SELECTED : OPTION_IDLE
-                            }`}
-                          >
-                            <h4 className="font-bold text-white text-xs sm:text-sm">{opt.label}</h4>
-                            <p className="text-[11px] text-slate-400 mt-1">{opt.desc}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={SECTION_LABEL}>{t('siteEditor.cardRadiusLabel')}</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {[
-                          { id: 'rounded-3xl', label: t('siteEditor.radius3xl'), preview: 'rounded-3xl' },
-                          { id: 'rounded-2xl', label: t('siteEditor.radius2xl'), preview: 'rounded-2xl' },
-                          { id: 'rounded-xl', label: t('siteEditor.radiusXl'), preview: 'rounded-xl' },
-                          { id: 'rounded-lg', label: t('siteEditor.radiusLg'), preview: 'rounded-lg' },
-                        ].map((opt) => (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            aria-pressed={theme.cardRadius === opt.id}
-                            onClick={() => updateTheme({ cardRadius: opt.id as CardRadius })}
-                            className={`pressable-soft p-3.5 border text-center ${opt.preview} ${
-                              theme.cardRadius === opt.id
-                                ? 'bg-purple-950/60 border-purple-400 ring-1 ring-purple-400'
-                                : OPTION_IDLE
-                            }`}
-                          >
-                            <span className="text-xs font-bold text-white block">{opt.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={SECTION_LABEL}>QuickLiquid Glass Preset</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                        {[
-                          { id: 'clear', label: 'Clear', desc: 'Minimal refraction' },
-                          { id: 'thin', label: 'Thin', desc: 'Subtle frost' },
-                          { id: 'regular', label: 'Regular', desc: 'Frosted crystal' },
-                          { id: 'thick', label: 'Thick', desc: 'Deep frost' },
-                          { id: 'adaptive', label: 'Adaptive', desc: 'Auto contrast' },
-                        ].map((opt) => (
-                          <button
-                            key={opt.id}
-                            type="button"
-                            aria-pressed={(theme.glassPreset || 'regular') === opt.id}
-                            onClick={() => updateTheme({ glassPreset: opt.id as GlassPreset })}
-                            className={`pressable-soft p-3 rounded-2xl border text-center ${
-                              (theme.glassPreset || 'regular') === opt.id ? OPTION_SELECTED : OPTION_IDLE
-                            }`}
-                          >
-                            <span className="text-xs font-bold text-white block">{opt.label}</span>
-                            <span className="text-[10px] text-slate-400 mt-0.5 block">{opt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className={SECTION_LABEL}>Glass Frost Blur Strength</label>
-                        <span className="text-xs font-mono font-bold text-purple-300">
-                          {theme.glassBlur ?? 12}px
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 glass-well p-3 rounded-2xl">
-                        <input
-                          type="range"
-                          min="0"
-                          max="24"
-                          step="2"
-                          value={theme.glassBlur ?? 12}
-                          onChange={(e) => updateTheme({ glassBlur: Number(e.target.value) })}
-                          className="w-full accent-purple-500 cursor-pointer"
-                        />
-                        <div className="flex gap-1.5 shrink-0">
-                          {[0, 8, 12, 16, 20].map((val) => (
-                            <button
-                              key={val}
-                              type="button"
-                              onClick={() => updateTheme({ glassBlur: val })}
-                              className={`px-2 py-1 rounded-lg text-[10px] font-bold border ${
-                                (theme.glassBlur ?? 12) === val
-                                  ? 'bg-purple-600 text-white border-purple-400'
-                                  : 'bg-white/10 text-slate-300 border-white/10 hover:bg-white/20'
-                              }`}
-                            >
-                              {val}px
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 2: BACKGROUND */}
-                {activeTab === 'background' && (
-                  <div className="space-y-6">
-                    <label className={SECTION_LABEL}>{t('siteEditor.backgroundPresetsLabel')}</label>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      {backgroundPresets.map((bg) => {
-                        const isSelected = theme.background === bg.id;
-                        return (
-                          <button
-                            key={bg.id}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => updateTheme({ background: bg.id })}
-                            className={`pressable-soft w-full p-4 rounded-3xl border text-left whitespace-normal flex flex-col justify-between ${
-                              isSelected
-                                ? 'bg-purple-950/40 border-purple-400 shadow-xl ring-2 ring-purple-400'
-                                : 'glass-well hover:border-purple-500/40'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-bold text-white text-sm">{bg.name}</h4>
-                              {isSelected && (
-                                <span className="w-5 h-5 rounded-full bg-purple-500 text-white flex items-center justify-center">
-                                  <Check className="w-3 h-3" />
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-slate-400 mb-3">{bg.desc}</p>
-                            <div
-                              className="h-14 rounded-2xl border border-white/20 shadow-inner"
-                              style={{ background: bg.previewGrad }}
-                            ></div>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Custom CSS gradient option */}
-                    <div className="glass-well p-4 rounded-3xl space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                            {t('siteEditor.customGradientTitle')}
-                          </h4>
-                          <p className="text-[11px] text-slate-400">
-                            {t('siteEditor.customGradientDesc')}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          aria-pressed={theme.background === 'custom'}
-                          onClick={() => updateTheme({ background: 'custom' })}
-                          className={`glass-button pressable px-3 text-xs font-bold shrink-0 ${
-                            theme.background === 'custom' ? 'bg-purple-600 border-purple-400/60 text-white' : ''
-                          }`}
-                        >
-                          {t('siteEditor.useCustom')}
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        placeholder="linear-gradient(135deg, #1e102e 0%, #3b0764 100%)"
-                        aria-label={t('siteEditor.customGradientTitle')}
-                        value={theme.customBgGradient || ''}
-                        onChange={(e) => updateTheme({ customBgGradient: e.target.value, background: 'custom' })}
-                        className="w-full glass-input font-mono text-purple-200 text-base sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 3: COLORS */}
-                {activeTab === 'colors' && (
-                  <div className="space-y-6">
-                    <label className={SECTION_LABEL}>{t('siteEditor.accentColorLabel')}</label>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-                      {colorPalettes.map((cp) => {
-                        const isSelected = theme.colorScheme === cp.id;
-                        return (
-                          <button
-                            key={cp.id}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => updateTheme({ colorScheme: cp.id })}
-                            className={`pressable-soft p-4 rounded-2xl border text-left flex items-center justify-between ${
-                              isSelected
-                                ? 'bg-purple-950/40 border-white shadow-xl ring-2 ring-purple-400'
-                                : OPTION_IDLE
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className="w-7 h-7 rounded-full shadow-md border border-white/20 shrink-0"
-                                style={{ background: cp.hex }}
-                              ></div>
-                              <span className="font-bold text-xs sm:text-sm text-white truncate">{cp.name}</span>
-                            </div>
-                            {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Custom Color Picker */}
-                    <div className="glass-well p-4 rounded-3xl flex items-center justify-between flex-wrap gap-3">
-                      <div>
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                          {t('siteEditor.customColorTitle')}
-                        </h4>
-                        <p className="text-[11px] text-slate-400">{t('siteEditor.customColorDesc')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          aria-label={t('siteEditor.customColorTitle')}
-                          value={theme.customPrimaryColor || '#a855f7'}
-                          onChange={(e) => updateTheme({ customPrimaryColor: e.target.value, colorScheme: 'custom' })}
-                          className="w-11 h-11 rounded-xl cursor-pointer bg-transparent border-0"
-                        />
-                        <input
-                          type="text"
-                          aria-label={t('siteEditor.customColorTitle')}
-                          value={theme.customPrimaryColor || '#a855f7'}
-                          onChange={(e) => updateTheme({ customPrimaryColor: e.target.value, colorScheme: 'custom' })}
-                          className="w-28 glass-input px-3 font-mono text-base sm:text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Live Lavender & Mint Pastel Color Adjusters */}
-                    <div className="glass-well p-4 rounded-3xl space-y-3">
-                      <div>
-                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                          Lavender & Mint Pastel Background Colors
-                        </h4>
-                        <p className="text-[11px] text-slate-400">
-                          Adjust the pastel diagonal gradient tones live
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                          <span className="text-xs font-semibold text-slate-300">Lavender Tone</span>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={theme.lavenderColor || '#b18cfe'}
-                              onChange={(e) => updateTheme({ lavenderColor: e.target.value })}
-                              className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
-                            />
-                            <span className="font-mono text-xs text-purple-300 font-bold">{theme.lavenderColor || '#b18cfe'}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                          <span className="text-xs font-semibold text-slate-300">Mint Green Tone</span>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={theme.mintColor || '#6ee7b7'}
-                              onChange={(e) => updateTheme({ mintColor: e.target.value })}
-                              className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
-                            />
-                            <span className="font-mono text-xs text-emerald-300 font-bold">{theme.mintColor || '#6ee7b7'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 4: FONT */}
-                {activeTab === 'font' && (
-                  <div className="space-y-6">
-                    <label className={SECTION_LABEL}>{t('siteEditor.fontLabel')}</label>
-
-                    <div className="space-y-3">
-                      {fontOptions.map((f) => {
-                        const isSelected = theme.font === f.id;
-                        return (
-                          <button
-                            key={f.id}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => updateTheme({ font: f.id })}
-                            className={`pressable-soft w-full p-4 rounded-2xl border text-left whitespace-normal flex items-center justify-between ${
-                              isSelected
-                                ? 'bg-purple-950/60 border-purple-400 shadow-md ring-2 ring-purple-400'
-                                : 'glass-well hover:border-purple-500/30'
-                            }`}
-                          >
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4
-                                  className="text-base sm:text-lg font-bold text-white"
-                                  style={{ fontFamily: f.family }}
-                                >
-                                  {f.name}
-                                </h4>
-                                {isSelected && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-500 text-white font-bold">
-                                    {t('siteEditor.fontActive')}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-400 mt-1">{f.desc}</p>
-                              <p
-                                className="text-xs text-purple-200 mt-2 tracking-wide font-medium"
-                                style={{ fontFamily: f.family }}
-                              >
-                                {t('siteEditor.fontSample')}
-                              </p>
-                            </div>
-
-                            {isSelected && <Check className="w-5 h-5 text-purple-400 shrink-0 ml-3" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 5: LOGO */}
-                {activeTab === 'logo' && (
-                  <div className="space-y-6">
-                    <div>
-                      <label className={SECTION_LABEL}>{t('siteEditor.logoTextLabel')}</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-[11px] text-slate-400 mb-1">{t('siteEditor.logoTitleLabel')}</label>
-                          <input
-                            type="text"
-                            value={theme.logo.title}
-                            onChange={(e) => updateTheme({ logo: { ...theme.logo, title: e.target.value } })}
-                            placeholder="KawanCosplay"
-                            aria-label={t('siteEditor.logoTitleLabel')}
-                            className="w-full glass-input text-base sm:text-sm"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] text-slate-400 mb-1">{t('siteEditor.logoSubtitleLabel')}</label>
-                          <input
-                            type="text"
-                            value={theme.logo.subtitle}
-                            onChange={(e) => updateTheme({ logo: { ...theme.logo, subtitle: e.target.value } })}
-                            placeholder={t('siteEditor.logoSubtitlePlaceholder')}
-                            aria-label={t('siteEditor.logoSubtitleLabel')}
-                            className="w-full glass-input text-base sm:text-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={SECTION_LABEL}>{t('siteEditor.emblemLabel')}</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {emblemOptions.map((emblem) => {
-                          const isSelected = theme.logo.emblemType === emblem.id;
+                        ].map((opt) => {
+                          const isSelected = theme.layoutWidth === opt.id;
                           return (
                             <button
-                              key={emblem.id}
+                              key={opt.id}
                               type="button"
                               aria-pressed={isSelected}
-                              onClick={() => updateTheme({ logo: { ...theme.logo, emblemType: emblem.id } })}
-                              className={`pressable-soft p-3.5 rounded-2xl border text-left flex items-center gap-2.5 ${
+                              onClick={() => updateTheme({ layoutWidth: opt.id as LayoutWidth })}
+                              className={`p-4 rounded-2xl border text-left whitespace-normal relative ${
                                 isSelected ? OPTION_SELECTED : OPTION_IDLE
                               }`}
                             >
-                              {emblem.icon}
-                              <span className="text-xs font-bold text-white truncate">{emblem.name}</span>
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className={`font-bold text-xs sm:text-sm ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>{opt.label}</h4>
+                                {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
+                              </div>
+                              <p className={`text-[11px] ${isSelected ? 'text-white/90' : 'text-[#475569]'}`}>{opt.desc}</p>
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
+                    {/* Navbar Style */}
                     <div>
-                      <label className={SECTION_LABEL}>{t('siteEditor.customLogoLabel')}</label>
-                      <input
-                        type="url"
-                        value={theme.logo.customLogoUrl || ''}
-                        onChange={(e) =>
-                          updateTheme({
-                            logo: {
-                              ...theme.logo,
-                              customLogoUrl: e.target.value,
-                              emblemType: e.target.value ? 'custom_img' : 'kitsune',
-                            },
-                          })
-                        }
-                        placeholder="https://domain.com/logo-kawancosplay.png"
-                        aria-label={t('siteEditor.customLogoLabel')}
-                        className="w-full glass-input text-base sm:text-sm"
-                      />
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        {t('siteEditor.customLogoHint')}
-                      </p>
+                      <label className={SECTION_LABEL}>{t('siteEditor.navbarStyleLabel')}</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                          { id: 'glass-bar', label: t('siteEditor.navbarGlassBar'), desc: t('siteEditor.navbarGlassBarDesc') },
+                          { id: 'floating-pill', label: t('siteEditor.navbarFloatingPill'), desc: t('siteEditor.navbarFloatingPillDesc') },
+                          { id: 'minimal', label: t('siteEditor.navbarMinimal'), desc: t('siteEditor.navbarMinimalDesc') },
+                        ].map((opt) => {
+                          const isSelected = theme.navbarStyle === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => updateTheme({ navbarStyle: opt.id as NavbarStyle })}
+                              className={`p-4 rounded-2xl border text-left whitespace-normal relative ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className={`font-bold text-xs sm:text-sm ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>{opt.label}</h4>
+                                {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
+                              </div>
+                              <p className={`text-[11px] ${isSelected ? 'text-white/90' : 'text-[#475569]'}`}>{opt.desc}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Card Radius */}
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.cardRadiusLabel')}</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {[
+                          { id: 'rounded-xl', label: t('siteEditor.radiusXl'), cls: 'rounded-xl' },
+                          { id: 'rounded-2xl', label: t('siteEditor.radius2xl'), cls: 'rounded-2xl' },
+                          { id: 'rounded-3xl', label: t('siteEditor.radius3xl'), cls: 'rounded-3xl' },
+                          { id: 'rounded-4xl', label: t('siteEditor.radius4xl'), cls: 'rounded-[2rem]' },
+                        ].map((opt) => {
+                          const isSelected = theme.cardRadius === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => updateTheme({ cardRadius: opt.id as CardRadius })}
+                              className={`p-3.5 border text-center ${opt.cls} ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <span className={`text-xs font-bold block ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                {opt.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Card Padding & Density */}
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.cardPaddingLabel')}</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { id: 'compact', label: t('siteEditor.densityCompact') },
+                          { id: 'normal', label: t('siteEditor.densityNormal') },
+                          { id: 'spacious', label: t('siteEditor.densitySpacious') },
+                        ].map((opt) => {
+                          const isSelected = theme.cardDensity === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => updateTheme({ cardDensity: opt.id as CardDensity })}
+                              className={`p-3 rounded-2xl border text-center ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <span className={`text-xs font-bold block ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                {opt.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* QuickLiquid Controls */}
+                    <div className="p-5 rounded-3xl bg-purple-50/50 border border-purple-200/60 space-y-5">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-extrabold text-[#0F172A] text-sm flex items-center gap-2">
+                          <Sliders className="w-4 h-4 text-[#7C3AED]" />
+                          <span>{t('siteEditor.quickLiquidHeading')}</span>
+                        </h3>
+                      </div>
+
+                      {/* Presets */}
+                      <div>
+                        <label className={SECTION_LABEL}>{t('siteEditor.glassPresetLabel')}</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                          {[
+                            { id: 'clear', label: t('siteEditor.presetClear') },
+                            { id: 'thin', label: t('siteEditor.presetThin') },
+                            { id: 'regular', label: t('siteEditor.presetRegular') },
+                            { id: 'thick', label: t('siteEditor.presetThick') },
+                            { id: 'adaptive', label: t('siteEditor.presetAdaptive') },
+                          ].map((opt) => {
+                            const isSelected = (theme.glassPreset || 'regular') === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                aria-pressed={isSelected}
+                                onClick={() => updateTheme({ glassPreset: opt.id as GlassPreset })}
+                                className={`p-2.5 rounded-xl border text-center ${
+                                  isSelected ? OPTION_SELECTED : OPTION_IDLE
+                                }`}
+                              >
+                                <span className={`text-xs font-bold block ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                  {opt.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Blur Strength Slider */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className={SECTION_LABEL}>{t('siteEditor.blurStrengthLabel')}</label>
+                          <span className="text-xs font-mono font-bold text-[#7C3AED]">
+                            {theme.glassBlur ?? 14}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="32"
+                          step="2"
+                          value={theme.glassBlur ?? 14}
+                          onChange={(e) => updateTheme({ glassBlur: Number(e.target.value) })}
+                          className="studio-range-slider w-full"
+                        />
+                      </div>
+
+                      {/* Card Frost Opacity Slider */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className={SECTION_LABEL}>{t('siteEditor.frostOpacityLabel')}</label>
+                          <span className="text-xs font-mono font-bold text-[#7C3AED]">
+                            {theme.cardFrostOpacity ?? 65}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="45"
+                          max="98"
+                          step="1"
+                          value={theme.cardFrostOpacity ?? 65}
+                          onChange={(e) => updateTheme({ cardFrostOpacity: Number(e.target.value) })}
+                          className="studio-range-slider w-full"
+                        />
+                      </div>
+
+                      {/* Specular Rim Highlight Toggle & Performance Tier */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div className="flex items-center justify-between p-3.5 bg-white/80 rounded-2xl border border-purple-200/50">
+                          <div>
+                            <h4 className="text-xs font-bold text-[#0F172A]">{t('siteEditor.specularRimLabel')}</h4>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={theme.specularRim ?? true}
+                            onChange={(e) => updateTheme({ specularRim: e.target.checked })}
+                            className="w-5 h-5 accent-[#7C3AED] cursor-pointer"
+                          />
+                        </div>
+
+                        <div>
+                          <label className={SECTION_LABEL}>{t('siteEditor.perfTierLabel')}</label>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {[
+                              { id: 'auto', label: t('siteEditor.tierAuto') },
+                              { id: 'high', label: t('siteEditor.tierHigh') },
+                              { id: 'fast', label: t('siteEditor.tierFast') },
+                            ].map((tier) => {
+                              const isSelected = (theme.perfTier || 'auto') === tier.id;
+                              return (
+                                <button
+                                  key={tier.id}
+                                  type="button"
+                                  onClick={() => updateTheme({ perfTier: tier.id as PerfTier })}
+                                  className={`p-2 rounded-xl text-[11px] font-bold border text-center ${
+                                    isSelected ? OPTION_SELECTED : OPTION_IDLE
+                                  }`}
+                                >
+                                  {tier.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: BACKGROUND & GRID */}
+                {activeTab === 'background' && (
+                  <div className="space-y-6">
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.backgroundPresetsLabel')}</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {backgroundPresets.map((bg) => {
+                          const isSelected = theme.background === bg.id;
+                          return (
+                            <button
+                              key={bg.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => updateTheme({ background: bg.id })}
+                              className={`p-4 rounded-3xl border text-left whitespace-normal flex flex-col justify-between ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                  {bg.name}
+                                </h4>
+                                {isSelected && (
+                                  <span className="w-5 h-5 rounded-full bg-white text-[#7C3AED] flex items-center justify-center font-bold">
+                                    <Check className="w-3 h-3" />
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-xs mb-3 ${isSelected ? 'text-white/90' : 'text-[#475569]'}`}>
+                                {bg.desc}
+                              </p>
+                              <div
+                                className="h-12 rounded-2xl border border-black/10 shadow-inner"
+                                style={{ background: bg.previewGrad }}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 3-Stop Custom Gradient Controls */}
+                    <div className="p-5 rounded-3xl bg-purple-50/50 border border-purple-200/60 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider">
+                            {t('siteEditor.custom3StopGradientTitle')}
+                          </h4>
+                          <p className="text-[11px] text-[#475569]">{t('siteEditor.custom3StopGradientDesc')}</p>
+                        </div>
+                        <button
+                          type="button"
+                          aria-pressed={theme.background === 'custom'}
+                          onClick={() => updateTheme({ background: 'custom' })}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                            theme.background === 'custom'
+                              ? 'bg-[#7C3AED] text-white border-[#7C3AED]'
+                              : 'bg-white text-[#475569] border-purple-200 hover:text-[#0F172A]'
+                          }`}
+                        >
+                          {t('siteEditor.useCustom')}
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-purple-100">
+                          <span className="text-xs font-bold text-[#334155]">Stop 1</span>
+                          <input
+                            type="color"
+                            value={theme.bgGradientStop1 || '#B18CFE'}
+                            onChange={(e) => updateTheme({ bgGradientStop1: e.target.value, background: 'custom' })}
+                            className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-purple-100">
+                          <span className="text-xs font-bold text-[#334155]">Stop 2</span>
+                          <input
+                            type="color"
+                            value={theme.bgGradientStop2 || '#93C5FD'}
+                            onChange={(e) => updateTheme({ bgGradientStop2: e.target.value, background: 'custom' })}
+                            className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-purple-100">
+                          <span className="text-xs font-bold text-[#334155]">Stop 3</span>
+                          <input
+                            type="color"
+                            value={theme.bgGradientStop3 || '#6EE7B7'}
+                            onChange={(e) => updateTheme({ bgGradientStop3: e.target.value, background: 'custom' })}
+                            className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={SECTION_LABEL}>{t('siteEditor.gradientAngleLabel')}</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {(['135deg', '180deg', '90deg', 'radial'] as const).map((angle) => {
+                            const isSelected = (theme.bgGradientAngle || '135deg') === angle;
+                            return (
+                              <button
+                                key={angle}
+                                type="button"
+                                onClick={() => updateTheme({ bgGradientAngle: angle, background: 'custom' })}
+                                className={`p-2 rounded-xl text-xs font-bold border text-center ${
+                                  isSelected ? OPTION_SELECTED : OPTION_IDLE
+                                }`}
+                              >
+                                {angle}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stationery Grid Controls */}
+                    <div className="p-5 rounded-3xl bg-purple-50/50 border border-purple-200/60 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-[#0F172A] uppercase tracking-wider flex items-center gap-2">
+                          <Grid className="w-4 h-4 text-[#7C3AED]" />
+                          <span>{t('siteEditor.gridHeading')}</span>
+                        </h4>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-xs font-bold text-[#334155]">{t('siteEditor.gridToggleLabel')}</span>
+                          <input
+                            type="checkbox"
+                            checked={theme.gridEnabled ?? true}
+                            onChange={(e) => updateTheme({ gridEnabled: e.target.checked })}
+                            className="w-5 h-5 accent-[#7C3AED] cursor-pointer"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={SECTION_LABEL}>{t('siteEditor.gridTypeLabel')}</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { id: 'lines', label: t('siteEditor.gridLines') },
+                              { id: 'dots', label: t('siteEditor.gridDots') },
+                            ].map((g) => {
+                              const isSelected = (theme.gridType || 'lines') === g.id;
+                              return (
+                                <button
+                                  key={g.id}
+                                  type="button"
+                                  onClick={() => updateTheme({ gridType: g.id as GridType })}
+                                  className={`p-2.5 rounded-xl text-xs font-bold border text-center ${
+                                    isSelected ? OPTION_SELECTED : OPTION_IDLE
+                                  }`}
+                                >
+                                  {g.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className={SECTION_LABEL}>{t('siteEditor.gridOpacityLabel')}</label>
+                            <span className="text-xs font-mono font-bold text-[#7C3AED]">
+                              {theme.gridOpacity ?? 7}%
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="25"
+                            step="1"
+                            value={theme.gridOpacity ?? 7}
+                            onChange={(e) => updateTheme({ gridOpacity: Number(e.target.value) })}
+                            className="studio-range-slider w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: COLORS & SURFACE MODE */}
+                {activeTab === 'colors' && (
+                  <div className="space-y-6">
+                    {/* Surface Mode Toggle */}
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.surfaceModeHeading')}</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {[
+                          {
+                            id: 'light',
+                            label: t('siteEditor.surfaceLight'),
+                            desc: t('siteEditor.surfaceLightDesc'),
+                            icon: <Sun className="w-5 h-5 text-amber-500" />,
+                          },
+                          {
+                            id: 'dark',
+                            label: t('siteEditor.surfaceDark'),
+                            desc: t('siteEditor.surfaceDarkDesc'),
+                            icon: <Moon className="w-5 h-5 text-indigo-400" />,
+                          },
+                        ].map((mode) => {
+                          const isSelected = (theme.surfaceMode || 'light') === mode.id;
+                          return (
+                            <button
+                              key={mode.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => updateTheme({ surfaceMode: mode.id as SurfaceMode })}
+                              className={`p-4 rounded-3xl border text-left whitespace-normal flex items-start gap-3 ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <div className="p-2 rounded-xl bg-white shadow-sm shrink-0 mt-0.5">
+                                {mode.icon}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <h4 className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                    {mode.label}
+                                  </h4>
+                                  {isSelected && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
+                                </div>
+                                <p className={`text-xs mt-1 ${isSelected ? 'text-white/90' : 'text-[#475569]'}`}>
+                                  {mode.desc}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Accent Color Palettes */}
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.accentColorLabel')}</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {colorPalettes.map((cp) => {
+                          const isSelected = theme.colorScheme === cp.id;
+                          return (
+                            <button
+                              key={cp.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => updateTheme({ colorScheme: cp.id, primaryAccentColor: cp.hex })}
+                              className={`p-3.5 rounded-2xl border text-left flex items-center justify-between ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span
+                                  className="w-6 h-6 rounded-full shadow-sm border border-black/10 shrink-0"
+                                  style={{ background: cp.hex }}
+                                />
+                                <span className={`font-bold text-xs truncate ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                  {cp.name}
+                                </span>
+                              </div>
+                              {isSelected && <Check className="w-4 h-4 text-white shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Primary & Secondary Color Pickers */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="p-4 rounded-3xl bg-white border border-purple-200/50 flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-[#0F172A]">{t('siteEditor.customColorTitle')}</h4>
+                          <span className="font-mono text-xs font-bold text-[#7C3AED]">
+                            {theme.primaryAccentColor || theme.customPrimaryColor || '#7C3AED'}
+                          </span>
+                        </div>
+                        <input
+                          type="color"
+                          value={theme.primaryAccentColor || theme.customPrimaryColor || '#7C3AED'}
+                          onChange={(e) => updateTheme({ primaryAccentColor: e.target.value, customPrimaryColor: e.target.value, colorScheme: 'custom' })}
+                          className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0"
+                        />
+                      </div>
+
+                      <div className="p-4 rounded-3xl bg-white border border-purple-200/50 flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-[#0F172A]">{t('siteEditor.secondaryAccentLabel')}</h4>
+                          <span className="font-mono text-xs font-bold text-[#10B981]">
+                            {theme.secondaryAccentColor || theme.mintColor || '#10B981'}
+                          </span>
+                        </div>
+                        <input
+                          type="color"
+                          value={theme.secondaryAccentColor || theme.mintColor || '#10B981'}
+                          onChange={(e) => updateTheme({ secondaryAccentColor: e.target.value, mintColor: e.target.value })}
+                          className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border-0"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Button Style Selector */}
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.buttonStyleLabel')}</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { id: 'solid', label: t('siteEditor.buttonStyleSolid') },
+                          { id: 'gradient', label: t('siteEditor.buttonStyleGradient') },
+                          { id: 'outline', label: t('siteEditor.buttonStyleOutline') },
+                        ].map((btn) => {
+                          const isSelected = (theme.buttonStyle || 'gradient') === btn.id;
+                          return (
+                            <button
+                              key={btn.id}
+                              type="button"
+                              onClick={() => updateTheme({ buttonStyle: btn.id as ButtonStyle })}
+                              className={`p-3 rounded-2xl border text-center ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <span className={`text-xs font-bold block ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                {btn.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 4: TYPOGRAPHY */}
+                {activeTab === 'font' && (
+                  <div className="space-y-6">
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.fontLabel')}</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {fontOptions.map((f) => {
+                          const isSelected = theme.font === f.id;
+                          return (
+                            <button
+                              key={f.id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() => updateTheme({ font: f.id })}
+                              className={`p-4 rounded-2xl border text-left whitespace-normal flex items-center justify-between ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <div>
+                                <h4
+                                  className={`text-base font-bold ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}
+                                  style={{ fontFamily: f.family }}
+                                >
+                                  {f.name}
+                                </h4>
+                                <p
+                                  className={`text-xs mt-1 ${isSelected ? 'text-white/80' : 'text-[#475569]'}`}
+                                  style={{ fontFamily: f.family }}
+                                >
+                                  Aa Bb Cc 123
+                                </p>
+                              </div>
+                              {isSelected && <Check className="w-5 h-5 text-white shrink-0 ml-2" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Heading Style */}
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.headingStyleLabel')}</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { id: 'clean', label: t('siteEditor.headingClean') },
+                          { id: 'sticker', label: t('siteEditor.headingSticker') },
+                          { id: 'gradient', label: t('siteEditor.headingGradient') },
+                        ].map((hs) => {
+                          const isSelected = (theme.headingStyle || 'clean') === hs.id;
+                          return (
+                            <button
+                              key={hs.id}
+                              type="button"
+                              onClick={() => updateTheme({ headingStyle: hs.id as HeadingStyle })}
+                              className={`p-3 rounded-2xl border text-center ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <span className={`text-xs font-bold block ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                {hs.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Font Scale */}
+                    <div>
+                      <label className={SECTION_LABEL}>{t('siteEditor.fontScaleLabel')}</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { id: '95', label: '95%' },
+                          { id: '100', label: '100%' },
+                          { id: '105', label: '105%' },
+                        ].map((scale) => {
+                          const isSelected = (theme.fontScale || '100') === scale.id;
+                          return (
+                            <button
+                              key={scale.id}
+                              type="button"
+                              onClick={() => updateTheme({ fontScale: scale.id as FontScale })}
+                              className={`p-3 rounded-2xl border text-center ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              <span className={`text-xs font-bold block ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                {scale.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 5: BRAND & SECTION VISIBILITY TOGGLES */}
+                {activeTab === 'visibility' && (
+                  <div className="space-y-6">
+                    <label className={SECTION_LABEL}>{t('siteEditor.visibilityHeading')}</label>
+                    <div className="space-y-3">
+                      {[
+                        {
+                          key: 'showOfficialBanner',
+                          label: t('siteEditor.toggleOfficialBanner'),
+                          desc: t('siteEditor.toggleOfficialBannerDesc'),
+                          val: theme.showOfficialBanner ?? true,
+                        },
+                        {
+                          key: 'showRegistrationIntro',
+                          label: t('siteEditor.toggleRegistrationIntro'),
+                          desc: t('siteEditor.toggleRegistrationIntroDesc'),
+                          val: theme.showRegistrationIntro ?? true,
+                        },
+                        {
+                          key: 'showWhatsAppHotline',
+                          label: t('siteEditor.toggleWhatsAppHotline'),
+                          desc: t('siteEditor.toggleWhatsAppHotlineDesc'),
+                          val: theme.showWhatsAppHotline ?? false,
+                        },
+                        {
+                          key: 'showMemberStats',
+                          label: t('siteEditor.toggleMemberStats'),
+                          desc: t('siteEditor.toggleMemberStatsDesc'),
+                          val: theme.showMemberStats ?? true,
+                        },
+                        {
+                          key: 'registrationOpen',
+                          label: t('siteEditor.toggleRegistrationOpen'),
+                          desc: t('siteEditor.toggleRegistrationOpenDesc'),
+                          val: theme.registrationOpen ?? true,
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.key}
+                          className="p-4 rounded-2xl bg-white border border-purple-200/50 flex items-center justify-between gap-4"
+                        >
+                          <div className="min-w-0">
+                            <h4 className="text-xs sm:text-sm font-bold text-[#0F172A]">{item.label}</h4>
+                            <p className="text-[11px] text-[#475569] mt-0.5">{item.desc}</p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={item.val}
+                            onChange={(e) => updateTheme({ [item.key]: e.target.checked } as Partial<typeof theme>)}
+                            className="w-5 h-5 accent-[#7C3AED] cursor-pointer shrink-0"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Logo & Emblem Customization */}
+                    <div className="pt-4 border-t border-purple-100 space-y-4">
+                      <label className={SECTION_LABEL}>{t('siteEditor.emblemLabel')}</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {emblemOptions.map((emblem) => {
+                          const isSelected = theme.logo.emblemType === emblem.id;
+                          return (
+                            <button
+                              key={emblem.id}
+                              type="button"
+                              onClick={() => updateTheme({ logo: { ...theme.logo, emblemType: emblem.id } })}
+                              className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 ${
+                                isSelected ? OPTION_SELECTED : OPTION_IDLE
+                              }`}
+                            >
+                              {emblem.icon}
+                              <span className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-[#0F172A]'}`}>
+                                {emblem.name}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
               </motion.div>
             </div>
 
-            {/* Modal Bottom Footer with Close & Save Confirmation */}
-            <div className="shrink-0 px-4 sm:px-6 py-4 border-t border-white/10 flex items-center justify-between gap-3 bg-black/20">
-              <span className="text-xs text-purple-200 font-medium flex items-center gap-2 min-w-0">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] shrink-0"></span>
+            {/* Modal Footer */}
+            <div className="shrink-0 px-4 sm:px-6 py-4 border-t border-purple-100 flex items-center justify-between gap-3 bg-slate-50/90">
+              <span className="text-xs text-[#334155] font-semibold flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981] shrink-0" />
                 <span>{t('siteEditor.autoSaveNotice')}</span>
               </span>
 
               <button
                 type="button"
                 onClick={closeEditor}
-                className="btn-primary pressable px-5 text-xs sm:text-sm shrink-0"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#6D28D9] text-white font-bold text-xs sm:text-sm hover:opacity-95 shadow-md shadow-purple-500/25 pressable shrink-0"
               >
                 {t('siteEditor.doneClose')}
               </button>

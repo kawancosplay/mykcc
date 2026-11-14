@@ -161,7 +161,7 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
               <Users className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">{t('admin.tabAdmins')}</h3>
+              <h3 className="text-base font-bold text-slate-900">{t('admin.tabAdmins')}</h3>
               <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">
                 {t('admin.adminsInfo', { email: OFFICIAL_ADMIN_EMAIL })}
               </p>
@@ -209,7 +209,7 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
           <li className={rowClass}>
             <div className="flex flex-wrap items-center gap-1.5 min-w-0">
               <Crown className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
-              <span className="font-bold text-white text-sm">{t('admin.mainAccountRow')}</span>
+              <span className="font-bold text-slate-900 text-sm">{t('admin.mainAccountRow')}</span>
               <span className="glass-chip bg-amber-500/20 text-amber-300 border-amber-500/40">{t('admin.permanentChip')}</span>
               {isMainAdminUser(user) && (
                 <span className="glass-chip bg-indigo-500/20 text-indigo-200 border-indigo-500/40">{t('admin.youChip')}</span>
@@ -238,7 +238,7 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
                 <li key={entry.uid} className={rowClass}>
                   <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                     <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0" aria-hidden="true" />
-                    <span className="font-bold text-white text-sm break-words">{name}</span>
+                    <span className="font-bold text-slate-900 text-sm break-words">{name}</span>
                     {isSelf && (
                       <span className="glass-chip bg-indigo-500/20 text-indigo-200 border-indigo-500/40">{t('admin.youChip')}</span>
                     )}
@@ -277,7 +277,7 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
       {/* Add an admin */}
       {!rulesMissing && (
         <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 space-y-4">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <ShieldPlus className="w-4 h-4 text-emerald-300" aria-hidden="true" />
             <span>{t('admin.addAdminTitle')}</span>
           </h3>
@@ -289,7 +289,7 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
               onChange={(e) => setPickerQuery(e.target.value)}
               placeholder={t('admin.addAdminSearchPlaceholder')}
               aria-label={t('admin.addAdminSearchPlaceholder')}
-              className="w-full ps-10 pe-4 py-3 liquid-glass-input rounded-2xl text-white text-base"
+              className="w-full ps-10 pe-4 py-3 liquid-glass-input rounded-2xl text-slate-900 placeholder:text-slate-400 text-base"
             />
           </div>
 
@@ -303,8 +303,8 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
                     className="glass-well rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                   >
                     <div className="min-w-0">
-                      <p className="font-bold text-white text-sm break-words">{memberName(m)}</p>
-                      <p className="text-[11px] font-mono text-slate-300">{formatKccId(m.userId16)}</p>
+                      <p className="font-bold text-slate-900 text-sm break-words">{memberName(m)}</p>
+                      <p className="text-[11px] font-mono text-slate-600">{formatKccId(m.userId16)}</p>
                       {m.email && <p className="text-[11px] text-slate-400 break-all">{m.email}</p>}
                     </div>
                     {reason ? (

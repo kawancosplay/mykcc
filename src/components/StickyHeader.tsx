@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navbar } from './Navbar';
 import type { NavbarProps } from './Navbar';
 import { OfficialGovBanner } from './OfficialGovBanner';
+import { useSiteTheme } from '../lib/themeContext';
 
 export type StickyHeaderProps = Omit<NavbarProps, 'isVisible' | 'isMobileMenuOpen' | 'onMobileMenuToggle'>;
 
@@ -55,15 +56,18 @@ export const StickyHeader = React.memo(function StickyHeader(props: StickyHeader
     if (open) setIsVisible(true);
   }, []);
 
+  const { theme } = useSiteTheme();
   const hidden = !isMobileMenuOpen && !isVisible;
 
   return (
     <>
       {/* Official Government-Style Verification Header: not sticky, it scrolls away with the page.
           shortcut: both bars carry the top inset, so a notch would add a gap between them at the top of the page; upgrade if index.html ever sets viewport-fit=cover */}
-      <div className="glass-bar pt-safe px-safe">
-        <OfficialGovBanner currentLang={props.currentLang} />
-      </div>
+      {theme.showOfficialBanner !== false && (
+        <div className="glass-bar pt-safe px-safe">
+          <OfficialGovBanner currentLang={props.currentLang} />
+        </div>
+      )}
 
       {/* Main Navbar */}
       <div

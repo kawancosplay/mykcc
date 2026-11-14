@@ -591,8 +591,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {t('admin.verifiedAccessBadge')}
                   </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white">{t('admin.dashboardTitle')}</h1>
-                <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900">{t('admin.dashboardTitle')}</h1>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
                   {t('admin.dashboardDesc')} {t('admin.dashboardPrivacyNote')}
                 </p>
               </div>
@@ -629,7 +629,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 pt-6 border-t border-white/10">
               <div className="glass-well p-4 rounded-2xl">
                 <p className="text-xs text-slate-400">{t('admin.totalMembers')}</p>
-                <p className="text-2xl font-black text-white">{membersLoaded ? formatNumber(members.length) : '—'}</p>
+                <p className="text-2xl font-black text-slate-900">{membersLoaded ? formatNumber(members.length) : '—'}</p>
               </div>
               {(
                 [
@@ -701,8 +701,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
                   <Lock className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{t('admin.permissionDeniedTitle')}</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{t('admin.permissionDeniedTitle')}</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">
                   {renderRich(t('admin.permissionDeniedDesc', { email: OFFICIAL_ADMIN_EMAIL }), {
                     database: <span className="font-mono text-amber-300 break-all">{NAMED_DATABASE_ID}</span>,
                   })}
@@ -729,8 +729,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
                   <AlertTriangle className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{t('admin.loadMembersFailedTitle')}</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">{t('admin.loadMembersFailedDesc')}</p>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{t('admin.loadMembersFailedTitle')}</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">{t('admin.loadMembersFailedDesc')}</p>
                 <button onClick={() => window.location.reload()} className="glass-button pressable px-4 text-xs">
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>{t('admin.reloadPage')}</span>
@@ -742,7 +742,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {adminTab === 'members' && !membersError && !membersLoaded && (
               <div className="liquid-glass-card rounded-3xl p-10 flex flex-col items-center justify-center gap-3 text-center">
                 <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-xs sm:text-sm text-slate-300">{t('admin.loadingMembers')}</p>
+                <p className="text-xs sm:text-sm text-slate-600">{t('admin.loadingMembers')}</p>
               </div>
             )}
 
@@ -759,7 +759,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         aria-label={t('admin.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full ps-12 pe-4 py-3.5 liquid-glass-input rounded-2xl text-white text-base"
+                        className="w-full ps-12 pe-4 py-3.5 liquid-glass-input rounded-2xl text-slate-900 placeholder:text-slate-400 text-base"
                       />
                     </div>
 
@@ -768,7 +768,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedRole}
                         onChange={(e) => setSelectedRole(e.target.value)}
                         aria-label={t('admin.colRole')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-800 max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
                         {availableRoles.map((r) => (
@@ -835,7 +835,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <select
                           value={sortMode === 'name_asc' ? 'name_asc' : 'timestamp_desc'}
                           onChange={(e) => setSortMode(e.target.value === 'name_asc' ? 'name_asc' : 'timestamp_desc')}
-                          className="bg-transparent text-base sm:text-sm text-slate-200 focus:outline-none pe-1 cursor-pointer"
+                          className="bg-transparent text-base sm:text-sm text-slate-800 focus:outline-none pe-1 cursor-pointer"
                         >
                           <option value="timestamp_desc">{t('admin.sortNewest')}</option>
                           <option value="name_asc">{t('admin.sortNameAsc')}</option>

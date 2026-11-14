@@ -35,6 +35,7 @@ import {
 } from '../lib/worldLocations';
 import { EMPTY_REGISTRATION_FORM } from '../lib/memberRules';
 import { useI18n } from '../i18n';
+import { useSiteTheme } from '../lib/themeContext';
 import PhoneInput from './PhoneInput';
 import SocialLinksInput from './SocialLinksInput';
 import FloatingGlass from './FloatingGlass';
@@ -204,6 +205,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
   isAdmin = false,
 }: RegistrationFormProps) {
   const { t, lang, intlLocale, countryName } = useI18n();
+  const { theme } = useSiteTheme();
   // DemoFormTester and describeFirestoreError still take an "Indonesian?" flag
   const isId = lang === 'id';
 
@@ -693,43 +695,30 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       {/* GOOGLE FORM HEADER CARD */}
       <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
         <div className="p-5 sm:p-10">
-          <p className="text-xs text-slate-500 mb-2 flex items-center gap-1.5 flex-wrap">
-            <span className="text-purple-300 font-medium">{t('registration.officialFormTag')}</span>
-            <span>·</span>
-            <span className="text-emerald-300 font-medium">{t('registration.safeCommunityTag')}</span>
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-4">
             {t('registration.formTitle')}
           </h1>
 
-          <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-4">
-            {t('registration.formDesc')}
-          </p>
-
-          {/* Inclusive Notice */}
-          <div className="callout-sfw-mint p-3.5 rounded-2xl flex items-start gap-3 text-xs mb-4">
-            <Heart className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
-            <div>
-              <strong className="text-emerald-950 font-bold">{t('registration.inclusiveWelcome')}</strong>
+          {theme.showRegistrationIntro !== false && (
+            <div className="text-[#1E293B] text-[15px] sm:text-base font-normal leading-relaxed space-y-3 mb-6">
+              {t('registration.formDesc').split('\n\n').map((paragraph, idx) => (
+                <p key={idx}>{paragraph}</p>
+              ))}
             </div>
-          </div>
+          )}
 
-          {/* WhatsApp Hotline Callout */}
-          <div className="flex items-center justify-between flex-wrap gap-2 pt-3 border-t border-white/10 text-xs text-slate-400">
-            <div className="flex flex-wrap items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{t('registration.officialHotlineLabel')}</span>
-              <a
-                href="https://wa.me/6285711032782"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-emerald-400 hover:text-emerald-300 hover:underline"
-              >
+          {theme.showWhatsAppHotline && (
+            <div className="mb-6 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+              <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{t('registration.needHelpHotline')}</span>
+              <a href="https://wa.me/6285711032782" target="_blank" rel="noopener noreferrer" className="font-bold underline">
                 +62 857-1103-2782
               </a>
             </div>
+          )}
 
-            <span className="text-rose-400 font-semibold">{t('registration.requiredIndicator')}</span>
+          <div className="flex items-center justify-end pt-3 border-t border-slate-200/40 text-xs">
+            <span className="text-rose-500 font-semibold">{t('registration.requiredIndicator')}</span>
           </div>
         </div>
       </div>
@@ -776,6 +765,12 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
       {/* FORM BODY - GOOGLE FORM STYLE QUESTION CARDS. Fields keep a bottom scroll margin so a field
           scrolled into view on focus is not hidden behind the sticky submit bar. */}
+      {!theme.registrationOpen ? (
+        <div className="glass-card glass-raised rounded-3xl p-8 text-center text-slate-800 mb-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Registration Temporarily Closed</h2>
+          <p className="text-sm text-slate-600">New member registrations are currently paused by the community administration.</p>
+        </div>
+      ) : (
       <form
         ref={attachInvalidHaptic}
         onSubmit={handleSubmit}
@@ -1322,6 +1317,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </button>
         </div>
       </form>
+      )}
     </motion.div>
   );
 

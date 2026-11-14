@@ -58,9 +58,6 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
               <span className="font-bold text-slate-900">
                 {t('common.officialBannerText')}
               </span>
-              <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 border border-purple-300 text-purple-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Official
-              </span>
             </div>
           </div>
 

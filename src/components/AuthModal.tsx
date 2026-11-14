@@ -182,9 +182,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <div className="glass-scroll px-6 pt-0 pb-6 sm:p-8">
             <div className="text-center mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-lg shadow-rose-500/25">
-                KC
-              </div>
               <h3 id={titleId} className="text-xl sm:text-2xl font-black text-slate-900">
                 {mode === 'signup'
                   ? t('auth.signUpTitle')
@@ -192,9 +189,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   ? t('auth.forgotPasswordTitle')
                   : t('auth.loginTitle')}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                {t('auth.portalSubtitle')}
-              </p>
             </div>
 
             {mode !== 'forgot' && (

@@ -330,7 +330,7 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
       <div className="w-full max-w-md mx-auto py-16 px-4 text-slate-100">
         <div className="liquid-glass-card glass-raised rounded-3xl p-8 flex flex-col items-center gap-3 text-center">
           <Spinner className="w-8 h-8 text-rose-400" />
-          <p className="text-xs sm:text-sm text-slate-300">{t('admin.lockChecking')}</p>
+          <p className="text-xs sm:text-sm text-slate-600">{t('admin.lockChecking')}</p>
         </div>
       </div>
     );
@@ -344,7 +344,7 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
           <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
             <ShieldAlert className="w-7 h-7" aria-hidden="true" />
           </div>
-          <h2 className="text-xl font-black text-white">{t('admin.dashboardTitle')}</h2>
+          <h2 className="text-xl font-black text-slate-900">{t('admin.dashboardTitle')}</h2>
           <p role="alert" className="text-sm text-slate-300 leading-relaxed">
             {t('admin.lockCheckFailed')}
           </p>

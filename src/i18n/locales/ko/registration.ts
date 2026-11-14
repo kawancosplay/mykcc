@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "KawanCosplay 신규 회원 가입",
-  formDesc: "KawanCosplay Community(KCC)에 오신 것을 환영해요. KCC는 100% SFW 국제 코스프레 커뮤니티로, KawanCosplay Media와 KawanCosplay Community로 이루어진 KawanCosplay Group의 일원이에요. KCC는 KawanCosplay가 만든 WhatsApp 그룹이자 Discord 서버예요. 처음에는 Instagram에서 KawanCosplay와 협업한 코스플레이어들의 친목 모임으로 시작했지만, 지금은 코스플레이어든 아니든 코스프레 세계에 관심 있는 누구에게나 열려 있어요. 2025년 6월 30일에 설립되었어요. 부담 없이 함께하면서 WhatsApp 그룹이나 Discord 서버에서 회원들과 교류해 보세요. 종교, 인종, 언어와 관계없이 해외 회원도 환영해요. 안전을 지키고 악용을 막기 위해, 커뮤니티에 가입하려면 신청서를 작성해 주세요. WhatsApp 그룹 링크는 신청서를 제출한 후에 제공돼요. 그러니 신청서 작성을 마친 후에도 이 탭을 닫지 마세요. 단, Discord 서버는 WhatsApp 그룹에 가입한 후에만 이용할 수 있어요. 더 도움이 필요하면 Instagram의 @kawancosplayers로 DM을 보내거나 WhatsApp으로 핫라인 +62 857-1103-2782에 연락해 주세요.",
+  formDesc: "KawanCosplay Community(KCC)에 오신 것을 환영합니다! 코스플레이어, 아이돌 팬, 오타쿠, 서브컬처 팬들을 위한 100% SFW 안심 국제 커뮤니티입니다. 2025년 6월 30일 설립되었으며, 배경이나 언어에 상관없이 누구나 따뜻하게 환영합니다.\n\n간단한 등록 양식을 작성하시면 공식 KCC ID 카드를 발급받고 WhatsApp 커뮤니티 그룹 참여 링크를 즉시 확인하실 수 있습니다. Discord 서버 링크는 WhatsApp 그룹 참여 후 안내됩니다.",
   inclusiveWelcome: "누구나 환영해요: 코스플레이어, 아이돌 팬, 오타쿠, 그리고 팝컬처를 사랑하는 모든 친구들!",
   requiredIndicator: "* 표시는 필수 질문이에요",
   officialFormTag: "KawanCosplay 공식 신청서",

@@ -117,29 +117,9 @@ function detectSignals(): { autoLite: boolean; lowData: boolean; reasons: string
   }
   const nav = navigator as NavigatorWithHints;
   const reasons: string[] = [];
-  let autoLite = false;
-  if (typeof nav.deviceMemory === 'number' && nav.deviceMemory > 0 && nav.deviceMemory <= 4) {
-    reasons.push('deviceMemory');
-    autoLite = true;
-  }
-  if (
-    typeof nav.hardwareConcurrency === 'number' &&
-    nav.hardwareConcurrency > 0 &&
-    nav.hardwareConcurrency <= 4 &&
-    !isAppleTouchDevice(nav)
-  ) {
-    reasons.push('hardwareConcurrency');
-    autoLite = true;
-  }
-  const connection = nav.connection;
-  if (connection?.saveData === true) autoLite = true;
-  if (connection?.effectiveType === 'slow-2g' || connection?.effectiveType === '2g') autoLite = true;
-  if (matches('(prefers-reduced-transparency: reduce)')) {
-    reasons.push('reducedTransparency');
-    autoLite = true;
-  }
   const lowData = detectLowData(nav, reasons);
-  return { autoLite, lowData, reasons };
+  // Full liquid glass with quick-liquid is enabled across all devices by default
+  return { autoLite: false, lowData, reasons };
 }
 
 function initialState(): PerfState {

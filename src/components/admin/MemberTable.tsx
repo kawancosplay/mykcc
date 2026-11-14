@@ -285,7 +285,7 @@ const StatusSelect: React.FC<{
       )} ${className}`}
     >
       {MEMBER_STATUSES.map((s) => (
-        <option key={s} value={s} className="bg-slate-900 text-white">
+        <option key={s} value={s} className="bg-white text-slate-900">
           {t(STATUS_LABEL_KEYS[s])}
         </option>
       ))}
@@ -326,7 +326,7 @@ const DetailsToggle: React.FC<{ open: boolean; panelId: string; onToggle: () => 
       aria-controls={panelId}
       title={t('admin.detailsToggle')}
       aria-label={t('admin.detailsToggle')}
-      className={`touch-target pressable inline-flex items-center justify-center p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200 pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${className}`}
+      className={`touch-target pressable inline-flex items-center justify-center p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${className}`}
     >
       <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
     </button>
@@ -385,7 +385,7 @@ const DetailsPanel: React.FC<{ id: string; member: Member; showEmail: boolean }>
         .map(([label, value]) => (
           <div key={label} className="min-w-0">
             <dt className="text-slate-500 uppercase tracking-wider text-[10px]">{label}</dt>
-            <dd className="text-slate-200 break-words whitespace-pre-line">{value}</dd>
+            <dd className="text-slate-900 font-medium break-words whitespace-pre-line">{value}</dd>
           </div>
         ))}
     </dl>
@@ -418,10 +418,10 @@ const EmptyState: React.FC<{ totalMembers: number; onOpenSync: () => void }> = (
         <ShieldCheck className="w-8 h-8" aria-hidden="true" />
       </div>
       <div>
-        <h3 className="text-lg font-bold text-white mb-1">
+        <h3 className="text-lg font-bold text-slate-900 mb-1">
           {empty ? t('admin.emptyDatabaseTitle') : t('admin.noResultsTitle')}
         </h3>
-        <p className="text-xs text-slate-400 leading-relaxed">
+        <p className="text-xs text-slate-600 leading-relaxed">
           {empty ? t('admin.emptyDatabaseDesc') : t('admin.noResultsDesc')}
         </p>
       </div>
@@ -481,11 +481,11 @@ export const MemberTable: React.FC<MemberTableProps> = ({
               <Avatar member={m} size="w-11 h-11" />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="font-bold text-white text-sm break-words">{memberName(m)}</p>
+                  <p className="font-bold text-slate-900 text-sm break-words">{memberName(m)}</p>
                   {isAdminMember(m) && <AdminChip />}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                  <span className="text-white tracking-wider text-xs font-mono font-bold">{formatKccId(m.userId16)}</span>
+                  <span className="text-purple-900 tracking-wider text-xs font-mono font-bold">{formatKccId(m.userId16)}</span>
                   <KccIdBadge id={m.userId16} />
                 </div>
                 {m.legacyUserId16 && (
@@ -493,15 +493,40 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                     {t('admin.oldIdValue', { id: formatKccId(m.legacyUserId16) })}
                   </p>
                 )}
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  {m.birthday && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/35">
+                      🎂 {m.birthday}
+                    </span>
+                  )}
+                  {m.discordUsername && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/35 text-[10px] font-mono font-bold">
+                      💬 {m.discordUsername}
+                    </span>
+                  )}
+                </div>
+                {m.socialMedia && (
+                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                    {parseSocialLinks(m.socialMedia).map(({ platform, handle }, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-800 border border-slate-300"
+                      >
+                        <span className="font-bold text-violet-700">{platform}:</span>
+                        <span className="truncate max-w-[120px]">{handle}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
             <StatusSelect member={m} onStatusChange={onStatusChange} className="w-full" />
 
-            <div className="text-[11px] text-slate-400 space-y-0.5">
+            <div className="text-[11px] text-slate-600 space-y-0.5">
               <p>{t('admin.registeredOn', { date: m.createdAt ? formatDate(m.createdAt) : '-' })}</p>
               {m.phone ? (
-                <p className="text-emerald-400 font-mono font-bold text-xs break-all">{m.phone}</p>
+                <p className="text-emerald-700 font-mono font-bold text-xs break-all">{m.phone}</p>
               ) : (
                 <p className="text-slate-500 italic">—</p>
               )}
@@ -574,7 +599,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
               <Avatar member={m} />
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="font-bold text-white text-sm">{memberName(m)}</p>
+                  <p className="font-bold text-slate-900 text-sm">{memberName(m)}</p>
                   {isAdminMember(m) && <AdminChip />}
                 </div>
                 {m.fullName && m.fullName !== memberName(m) && (
@@ -588,7 +613,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
         return (
           <td key={column} className="py-4 px-4">
             <div className="flex flex-col gap-1 items-start">
-              <span className="text-white tracking-wider text-xs font-mono font-bold whitespace-nowrap">
+              <span className="text-purple-900 tracking-wider text-xs font-mono font-bold whitespace-nowrap">
                 {formatKccId(m.userId16)}
               </span>
               {m.legacyUserId16 && (
@@ -633,18 +658,33 @@ export const MemberTable: React.FC<MemberTableProps> = ({
           </td>
         );
       }
-      case 'discord':
+      case 'discord': {
+        const socials = m.socialMedia ? parseSocialLinks(m.socialMedia) : [];
         return (
           <td key={column} className="py-4 px-4">
-            {m.discordUsername ? (
-              <span className="inline-block px-2.5 py-1 rounded-lg bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-mono text-xs font-semibold break-all">
-                {m.discordUsername}
-              </span>
-            ) : (
-              <span className="text-slate-500 italic text-xs">—</span>
-            )}
+            <div className="flex flex-col gap-1 items-start">
+              {m.discordUsername ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/35 font-mono text-xs font-semibold break-all">
+                  <span className="text-[9px] uppercase font-bold text-indigo-400">Discord</span>
+                  <span>{m.discordUsername}</span>
+                </span>
+              ) : null}
+              {socials.map((s, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-800 border border-slate-300"
+                >
+                  <span className="font-bold text-violet-700">{s.platform}:</span>
+                  <span className="truncate max-w-[120px]">{s.handle}</span>
+                </span>
+              ))}
+              {!m.discordUsername && socials.length === 0 && (
+                <span className="text-slate-500 italic text-xs">—</span>
+              )}
+            </div>
           </td>
         );
+      }
       case 'role':
         return (
           <td key={column} className="py-4 px-4">
@@ -659,13 +699,20 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       case 'age':
         return (
           <td key={column} className="py-4 px-4">
-            <span className="text-slate-300 font-medium">{m.ageCategory || (m.age ? `${m.age}` : '-')}</span>
+            <span className="text-slate-700 font-medium">{m.ageCategory || (m.age ? `${m.age}` : '-')}</span>
             {m.age && m.ageCategory && <p className="text-[10px] text-slate-400">{m.age}</p>}
+            {m.birthday && (
+              <div className="mt-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/35">
+                  🎂 {m.birthday}
+                </span>
+              </div>
+            )}
           </td>
         );
       case 'location':
         return (
-          <td key={column} className="py-4 px-4 text-slate-300">
+          <td key={column} className="py-4 px-4 text-slate-700">
             {[m.city, m.country].filter(Boolean).join(', ') || '—'}
           </td>
         );
@@ -691,7 +738,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 onClick={() => onViewCard(m)}
                 title={t('admin.viewKccIdTitle')}
                 aria-label={t('admin.viewKccIdTitle')}
-                className="touch-target pressable p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200"
+                className="touch-target pressable p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
@@ -699,7 +746,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 type="button"
                 onClick={() => onManage(m)}
                 title={t('admin.manageMember')}
-                className="touch-target pressable inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 text-indigo-200 text-[11px] font-bold whitespace-nowrap"
+                className="touch-target pressable inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-indigo-50 border border-indigo-300 hover:bg-indigo-100 text-indigo-800 text-[11px] font-bold whitespace-nowrap"
               >
                 <UserCog className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('admin.manageMember')}</span>
@@ -709,7 +756,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 onClick={() => onDelete(m)}
                 title={t('admin.deleteMemberTitle')}
                 aria-label={t('admin.deleteMemberTitle')}
-                className="touch-target pressable p-1.5 rounded-lg bg-rose-950/60 border border-rose-500/30 hover:bg-rose-900 text-rose-300"
+                className="touch-target pressable p-1.5 rounded-lg bg-rose-50 border border-rose-300 hover:bg-rose-100 text-rose-700"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -725,7 +772,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
     <div className="liquid-glass-card rounded-3xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs">
-          <thead className="bg-[color:var(--glass-fill-well)] text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
+          <thead className="bg-white/80 text-slate-700 uppercase tracking-wider font-mono border-b border-slate-200">
             <tr>{MEMBER_COLUMNS.map(renderHeader)}</tr>
           </thead>
           <tbody className="divide-y divide-white/[0.06]">

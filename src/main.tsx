@@ -7,6 +7,19 @@ import { ThemeProvider } from './lib/themeContext.tsx';
 import './lib/perfMode';
 import './index.css';
 
+// Lock in soft translucent liquid glass defaults
+if (typeof document !== 'undefined') {
+  const root = document.documentElement;
+  root.style.setProperty('--glass-fill-card', 'rgba(255, 255, 255, 0.56)');
+  root.style.setProperty('--glass-fill-bar', 'rgba(255, 255, 255, 0.65)');
+  root.style.setProperty('--glass-fill-input', 'rgba(255, 255, 255, 0.88)');
+  root.style.setProperty('--glass-stroke-card', '1.5px solid rgba(255, 255, 255, 0.82)');
+  root.style.setProperty('--glass-blur', '18px');
+  root.style.setProperty('--glass-text-title', '#0F172A');
+  root.style.setProperty('--glass-text-body', '#1E293B');
+  root.style.setProperty('--glass-text-muted', '#475569');
+}
+
 // First frame = final frame: English and Indonesian are bundled; any other initial language is loaded
 // BEFORE the first render (capped at 1.5 s, then English is shown and the locale swaps in when it
 // arrives), so the page never renders twice with text of different lengths (layout shift).

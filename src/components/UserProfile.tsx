@@ -38,6 +38,8 @@ import {
 import { useI18n } from '../i18n';
 import PhoneInput from './PhoneInput';
 import SocialLinksInput from './SocialLinksInput';
+import FloatingGlass from './FloatingGlass';
+import AgeBirthdayFields from './AgeBirthdayFields';
 import type { LanguageCode, TranslationKey } from '../i18n';
 import { SPRING, TWEEN, usePresenceMotion, useReducedMotion } from '../lib/motion';
 import { haptic } from '../lib/haptic';
@@ -119,6 +121,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     discordUsername: member.discordUsername || '',
     ageCategory: member.ageCategory || '',
     age: member.age || '',
+    birthday: member.birthday || '',
     ...storedProfileFields(member),
     socialMedia: member.socialMedia || '',
     portfolioUrl: member.portfolioUrl || '',
@@ -165,6 +168,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
       discordUsername: member.discordUsername || '',
       ageCategory: member.ageCategory || '',
       age: member.age || '',
+      birthday: member.birthday || '',
       ...storedProfileFields(member),
       socialMedia: member.socialMedia || '',
       portfolioUrl: member.portfolioUrl || '',
@@ -429,17 +433,17 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
               {roleBadge && (
-                <span className="glass-chip max-w-full whitespace-normal leading-tight font-bold bg-rose-500/20 text-rose-300 border-rose-500/30">
+                <span className="glass-chip max-w-full whitespace-normal leading-tight font-bold bg-rose-100/70 text-rose-700 border-rose-200">
                   {roleBadge}
                 </span>
               )}
-              <span className="glass-chip bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+              <span className="glass-chip bg-emerald-100/70 text-emerald-700 border-emerald-200">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>{t('profile.verifiedActive')}</span>
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               {formData.cosplayName}
             </h1>
             {member.email && <p className="text-xs text-slate-500 mt-0.5">{member.email}</p>}
@@ -447,10 +451,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             {/* KCC ID BOX (8 digits; 16 before the 8-digit switch) */}
             <div className="glass-well mt-4 inline-flex items-center gap-3 border-rose-500/30 rounded-2xl ps-4 pe-2 py-2">
               <div className="text-left">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 block">
                   {t('profile.kccIdLabel')}
                 </span>
-                <span className="font-mono font-black text-sm sm:text-base text-rose-400 tracking-wider">
+                <span className="font-mono font-black text-sm sm:text-base text-rose-500 tracking-wider">
                   {formatKccId(member.userId16)}
                 </span>
                 {isLegacyKccId16(member.legacyUserId16) && member.legacyUserId16 !== member.userId16 && (
@@ -463,11 +467,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <button
                 type="button"
                 onClick={handleCopyUserId}
-                className="glass-icon-button pressable text-slate-300"
+                className="glass-icon-button pressable text-slate-600 hover:text-purple-700"
                 title={t('profile.copyKccId')}
                 aria-label={t('profile.copyKccId')}
               >
-                {copiedId ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copiedId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -494,10 +498,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
         className="space-y-6 [&_input]:scroll-mb-28 [&_select]:scroll-mb-28 [&_textarea]:scroll-mb-28"
       >
         <div className="glass-card rounded-3xl p-5 sm:p-8">
-          <div className="flex items-center justify-between gap-3 pb-4 border-b border-white/10 mb-6">
+          <div className="flex items-center justify-between gap-3 pb-4 border-b border-white/50 mb-6">
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-white">{t('profile.infoTitle')}</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-bold text-slate-900">{t('profile.infoTitle')}</h2>
+              <p className="text-xs text-slate-500">
                 {t('profile.infoDesc')}
               </p>
             </div>
@@ -507,9 +511,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 <motion.span
                   key="saved"
                   {...popMotion}
-                  className="glass-chip shrink-0 font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                  className="glass-chip shrink-0 font-bold bg-emerald-100/70 text-emerald-700 border-emerald-300"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>{t('profile.savedRealtime')}</span>
                 </motion.span>
               )}
@@ -519,8 +523,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Nama (Name / Cosname / Alias) */}
             <div className="md:col-span-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                {t('registration.nameLabel')} <span className="text-rose-400">*</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                {t('registration.nameLabel')} <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -534,7 +538,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Kategori Usia */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('profile.ageCategoryLabel')}
               </label>
               <select
@@ -555,25 +559,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               </select>
             </div>
 
-            {/* Usia Pasti */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                {t('profile.ageLabel')}
-              </label>
-              <input
-                type="text"
-                placeholder={t('profile.agePlaceholder')}
-                maxLength={MEMBER_FIELD_LIMITS.age}
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="glass-input w-full text-base sm:text-sm"
-              />
-            </div>
+            {/* Usia Pasti + Tanggal Lahir */}
+            <AgeBirthdayFields
+              age={formData.age}
+              birthday={formData.birthday || ''}
+              onAgeChange={(age) => setFormData({ ...formData, age })}
+              onBirthdayChange={(birthday) => setFormData({ ...formData, birthday })}
+              labelClassName="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
+            />
 
             {/* WhatsApp (Wajib) */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                {t('profile.whatsappLabel')} <span className="text-rose-400">*</span>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                {t('profile.whatsappLabel')} <span className="text-rose-500">*</span>
               </label>
               <PhoneInput
                 required
@@ -585,11 +583,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Extra WhatsApp numbers (optional, up to 4): saved as phone2 + additionalPhones */}
             <fieldset className="md:col-span-2 min-w-0">
-              <legend className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+              <legend className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
                 {t('profile.extraPhonesLabel')}{' '}
                 <span className="text-slate-500 font-normal normal-case">{t('registration.optionalTag')}</span>
               </legend>
-              <p className="text-[11px] text-slate-400 mb-2">{t('profile.extraPhonesHint')}</p>
+              <p className="text-[11px] text-slate-500 mb-2">{t('profile.extraPhonesHint')}</p>
               <div className="space-y-2">
                 {formData.extraPhones.map((value, index) => {
                   const error = extraPhoneErrors[index];
@@ -614,13 +612,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                           onClick={() => removeExtraPhone(index)}
                           title={t('profile.removeExtraPhone')}
                           aria-label={t('profile.removeExtraPhone')}
-                          className="glass-icon-button pressable shrink-0 w-11 h-11 text-slate-300 hover:text-rose-300"
+                          className="glass-icon-button pressable shrink-0 w-11 h-11 text-slate-600 hover:text-rose-500"
                         >
                           <Trash2 className="w-4 h-4" aria-hidden="true" />
                         </button>
                       </div>
                       {error && (
-                        <p id={errorId} className="text-xs text-rose-400 mt-1 px-1" role="alert">
+                        <p id={errorId} className="text-xs text-rose-500 mt-1 px-1" role="alert">
                           {error}
                         </p>
                       )}
@@ -632,7 +630,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 <button
                   type="button"
                   onClick={addExtraPhone}
-                  className="glass-button pressable w-full sm:w-auto min-h-11 mt-2 px-4 rounded-xl text-sm text-emerald-300"
+                  className="glass-button pressable w-full sm:w-auto min-h-11 mt-2 px-4 rounded-xl text-sm text-emerald-700"
                 >
                   <Plus className="w-4 h-4" aria-hidden="true" />
                   <span>{t('profile.addExtraPhone')}</span>
@@ -642,7 +640,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Username Discord */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('registration.discordLabel')}
               </label>
               <input
@@ -657,7 +655,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Peran Utama */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('profile.roleLabel')}
               </label>
               <select
@@ -693,7 +691,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Negera (Country) */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('registration.countryLabel')}
               </label>
               <select
@@ -721,7 +719,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Provinsi / State */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('registration.provinceLabel')}
               </label>
               <div className="space-y-1.5">
@@ -771,7 +769,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Kota / Kabupaten / City */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('registration.cityLabel')}
               </label>
               <div className="space-y-1.5">
@@ -817,7 +815,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Fandom */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('registration.fandomTitle')}
               </label>
               <input
@@ -831,7 +829,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Media Sosial */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('registration.socialMediaTitle')}
               </label>
               <SocialLinksInput
@@ -842,7 +840,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
             {/* Link Portofolio */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                 {t('registration.portfolioTitle')}
               </label>
               <input
@@ -858,7 +856,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 
           {/* Bio / Reason */}
           <div className="mt-5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
               {t('profile.reasonLabel')}
             </label>
             <textarea
@@ -874,7 +872,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               screen, so the profile can be saved from any field. Sticky, not fixed: it settles under the
               last field. The wrapper ignores taps so only the glass bar itself is interactive. */}
           <div className="sticky bottom-0 z-20 mt-6 pt-2 pb-[calc(0.75rem_+_var(--safe-bottom))] pointer-events-none sm:flex sm:justify-end">
-            <div className="glass-pill pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2 sm:max-w-md">
+            <FloatingGlass className="pointer-events-auto rounded-[1.375rem] p-2 flex flex-col gap-2 sm:max-w-md">
               <AnimatePresence initial={false}>
                 {errorMsg && (
                   <motion.div
@@ -915,7 +913,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 </motion.span>
                 <span>{t('profile.updateProfile')}</span>
               </button>
-            </div>
+            </FloatingGlass>
           </div>
         </div>
       </form>

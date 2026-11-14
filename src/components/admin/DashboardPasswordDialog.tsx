@@ -160,8 +160,8 @@ export const DashboardPasswordDialog: React.FC<DashboardPasswordDialogProps> = (
     }
   };
 
-  const inputClass = 'w-full px-3.5 py-3 liquid-glass-input rounded-xl text-base text-white disabled:opacity-60';
-  const labelClass = 'block text-xs font-bold text-slate-300 mb-1.5';
+  const inputClass = 'w-full px-3.5 py-3 liquid-glass-input rounded-xl text-base text-slate-900 bg-white border border-slate-300 disabled:opacity-60';
+  const labelClass = 'block text-xs font-bold text-slate-700 mb-1.5';
 
   const showCurrent = mode === 'change' || mode === 'remove';
   const showNew = mode === 'set' || mode === 'change' || (mode === 'forgot' && reauthed);
@@ -169,14 +169,14 @@ export const DashboardPasswordDialog: React.FC<DashboardPasswordDialogProps> = (
   return (
     <AdminSheet open={open} onClose={onClose} title={t(TITLE_KEYS[mode])} closeDisabled={busy}>
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <p className="text-xs text-slate-400 leading-relaxed flex items-start gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" aria-hidden="true" />
+        <p className="text-xs text-slate-600 leading-relaxed flex items-start gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" aria-hidden="true" />
           <span>{t('admin.lockConvenienceNote')}</span>
         </p>
 
         {mode === 'forgot' && !reauthed && (
           <div className="glass-well rounded-2xl p-4 space-y-3">
-            <p className="text-sm text-slate-200 leading-relaxed">
+            <p className="text-sm text-slate-700 leading-relaxed">
               {t('admin.lockForgotDesc', { email: OFFICIAL_ADMIN_EMAIL })}
             </p>
             <button

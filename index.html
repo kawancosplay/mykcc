@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Dark canvas before any CSS arrives: never a white frame on a slow connection. -->
-    <style>html,body{background:#05020a}</style>
+    <meta name="color-scheme" content="light" />
+    <!-- Vibrant pastel lavender-to-mint background before any CSS arrives -->
+    <style>html{background:linear-gradient(135deg, #B18CFE 0%, #93C5FD 50%, #6EE7B7 100%)}</style>
     <script>
       // Lite / low-power mode, decided BEFORE the CSS loads so the first paint is already right (no
       // glass-to-solid swap). Keep the rules in sync with detectSignals() in src/lib/perfMode.ts, which
@@ -20,15 +21,17 @@
         if (et === 'slow-2g' || et === '2g') { r.push('effectiveType:' + et); auto = true; low = true; }
         else if (et === '3g') { r.push('effectiveType:3g'); low = true; }
         try { if (window.matchMedia && matchMedia('(prefers-reduced-transparency: reduce)').matches) { r.push('reducedTransparency'); auto = true; } } catch (e) {}
-        var lite = pref === 'lite' || (pref === 'auto' && auto);
+        var lite = pref === 'lite';
         d.setAttribute('data-perf', lite ? 'lite' : 'full');
         if (low) d.setAttribute('data-lowdata', '1');
-        window.__KCC_PERF__ = { pref: pref, autoLite: auto, lowData: low, reasons: r };
+        window.__KCC_PERF__ = { pref: pref, autoLite: false, lowData: low, reasons: r };
         // Cached site theme background (written by src/lib/themeContext.tsx): correct gradient in frame 1.
         try {
-          var t = JSON.parse(localStorage.getItem('kcc_theme_v1') || 'null');
-          if (t && typeof t.appBg === 'string' && t.appBg.length < 400 && /^(linear|radial)-gradient\(/.test(t.appBg)) {
+          var t = JSON.parse(localStorage.getItem('kcc_theme_v3') || 'null');
+          if (t && typeof t.appBg === 'string' && t.appBg.length < 1000 && /^(linear|radial|#)/.test(t.appBg)) {
             d.style.setProperty('--app-bg', t.appBg);
+          } else {
+            d.style.setProperty('--app-bg', 'linear-gradient(135deg, #B18CFE 0%, #93C5FD 50%, #6EE7B7 100%)');
           }
         } catch (e) {}
       })();
@@ -55,7 +58,7 @@
     <meta property="og:description" content="MyKCC - KawanCosplay Community official registration, KCC ID, digital member card, cosplay photo gallery, and Google Sheets sync." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#020617" />
+    <meta name="theme-color" content="#B18CFE" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

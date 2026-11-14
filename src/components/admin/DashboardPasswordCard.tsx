@@ -36,8 +36,8 @@ export const DashboardPasswordCard: React.FC<DashboardPasswordCardProps> = ({ lo
           {lockState === 'set' ? <Lock className="w-5 h-5" aria-hidden="true" /> : <LockOpen className="w-5 h-5" aria-hidden="true" />}
         </div>
         <div className="min-w-0">
-          <h3 className="text-base font-bold text-white">{t('admin.lockPasswordLabel')}</h3>
-          <p className="text-xs text-slate-300 mt-1">
+          <h3 className="text-base font-bold text-slate-900">{t('admin.lockPasswordLabel')}</h3>
+          <p className="text-xs text-slate-600 mt-1">
             {lockState === 'set'
               ? t('admin.lockStatusOn', { date: record?.updatedAt ? formatDate(record.updatedAt) : '—' })
               : lockState === 'none'
@@ -53,7 +53,7 @@ export const DashboardPasswordCard: React.FC<DashboardPasswordCardProps> = ({ lo
       <NoticeBanner notice={notice} onDismiss={() => setNotice(null)} />
 
       {!isMain && (
-        <p className="text-xs text-slate-400 flex items-start gap-1.5">
+        <p className="text-xs text-slate-600 flex items-start gap-1.5 font-medium">
           <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" />
           <span>{t('admin.lockManagedByMain')}</span>
         </p>

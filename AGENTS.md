@@ -207,6 +207,8 @@ stored status changes in the app only (profile or admin edit), and a row that di
 no message to the admin. A status an admin blanks in the app is filled again by the next import. New members still get the
 cell text as typed, the retired value included. Checked on the emulator (real import code + rules), not with a real sheet.
 
+Done (2026-11-13, branch `gemini/quickliquid-unslop`): integrated `quick-liquid` (0.1.2) for liquid glass floating bars with CSS glass fallback in low-power mode (`FloatingGlass.tsx`); applied cute purple poster theme (transparent body, white grid `body::after`, purple radial `body::before`, white `.btn-primary` with deep purple text, badge lanyard in form intro `KccBadgePreview.tsx`, removed color blobs); added numeric age + calendar birthday (`AgeBirthdayFields.tsx`, exported in admin table & CSV, all 21 locales updated); fully automated background Google Sheet / Form webhook sync (`api/sync-form.ts`, `server.ts`, Apps Script generator with `installTriggers()`); removed unused packages (`@google/genai`, `country-state-city`, `motion`, `esbuild`) and updated `bun.lock`.
+
 **Sprint 2 — branch `claude/sprint-2`, PR #1 into `main` (NOT merged / NOT live yet, 2026-10-13):**
 - A `785f6f5`: admin Sheets scope = `spreadsheets.readonly` only, requested on demand for the signed-in admin
   (no Drive scope, no Drive file list — paste the sheet URL/ID, last ID remembered); member Google sign-in asks

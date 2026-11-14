@@ -14,7 +14,7 @@ const MAX_PHOTO_MB = 15;
 
 // Glass text field: 16px on phones (no iOS focus zoom), compact on larger screens
 const FIELD_CLASS = 'w-full glass-input text-base sm:text-sm';
-const LABEL_CLASS = 'block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5';
+const LABEL_CLASS = 'block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5';
 
 /** Event value saved when the member picks "Other" (compared in code and stored as is; never translated). */
 export const OTHER_EVENT_VALUE = 'Lainnya (Tulis Sendiri)';
@@ -217,21 +217,21 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
 
             <div className="glass-scroll p-6 sm:p-8">
               <div className="mb-6 pr-12">
-                <span className="glass-chip font-bold bg-rose-500/20 text-rose-300 border-rose-500/30 mb-2">
+                <span className="glass-chip font-bold bg-rose-100/70 text-rose-700 border-rose-200 mb-2">
                   {t('gallery.uploadBadge')}
                 </span>
-                <h3 id={titleId} className="text-xl sm:text-2xl font-black text-white">
+                <h3 id={titleId} className="text-xl sm:text-2xl font-black text-slate-900">
                   {t('gallery.uploadTitle')}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">{t('gallery.uploadDesc')}</p>
+                <p className="text-xs text-slate-600 mt-1">{t('gallery.uploadDesc')}</p>
               </div>
 
               {errorMsg && (
                 <div
                   role="alert"
-                  className="mb-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs flex items-center space-x-2"
+                  className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center space-x-2"
                 >
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
               )}
@@ -239,8 +239,8 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Photo Preview & File Input */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                    {t('gallery.photoFileLabel')} <span className="text-rose-400">*</span>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    {t('gallery.photoFileLabel')} <span className="text-rose-500">*</span>
                   </label>
 
                   {photoUrl ? (
@@ -260,11 +260,11 @@ export const UploadPhotoModal: React.FC<UploadPhotoModalProps> = ({
                       </button>
                     </div>
                   ) : (
-                    <div className="glass-well rounded-2xl border-2 border-dashed border-white/15 hover:border-rose-500/60 p-6 text-center transition-colors">
-                      <Camera className="w-10 h-10 text-slate-500 mx-auto mb-2" />
-                      <p className="text-xs text-slate-300 font-semibold mb-2">{t('gallery.chooseFileHint')}</p>
+                    <div className="glass-well rounded-2xl border-2 border-dashed border-white/50 hover:border-rose-400 p-6 text-center transition-colors">
+                      <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                      <p className="text-xs text-slate-600 font-semibold mb-2">{t('gallery.chooseFileHint')}</p>
                       <label className="glass-button pressable text-xs font-bold">
-                        <Upload className="w-4 h-4 text-rose-400" />
+                        <Upload className="w-4 h-4 text-rose-600" />
                         <span>{t('gallery.chooseFileButton')}</span>
                         <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                       </label>

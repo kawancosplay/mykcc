@@ -70,15 +70,6 @@ function useOpenedOnce(open: boolean): boolean {
   return opened || open;
 }
 
-// Cheap ambient light: radial gradients from index.css instead of huge `blur()` filters (hidden in lite mode).
-const AmbientBackground: React.FC<{ blobs?: 2 | 3 }> = ({ blobs = 3 }) => (
-  <div className="ambient-layer" aria-hidden="true">
-    <div className="ambient-blob ambient-blob--1"></div>
-    <div className="ambient-blob ambient-blob--2"></div>
-    {blobs === 3 && <div className="ambient-blob ambient-blob--3"></div>}
-  </div>
-);
-
 // Suspense fallback for a lazy screen: a glass card with shimmering placeholder rows.
 const ScreenSkeleton: React.FC<{ label: string; wide?: boolean }> = ({ label, wide = false }) => (
   <div
@@ -640,8 +631,6 @@ export default function App() {
         dir={dir}
         className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
       >
-        {/* Liquid Glass Background Caustics */}
-        <AmbientBackground blobs={2} />
 
         {/* Dedicated Admin Page Top Bar */}
         <header className="sticky top-0 z-50 glass-bar border-amber-500/30 px-4 sm:px-8 pt-[calc(0.75rem+var(--safe-top))] pb-3 flex items-center justify-between gap-2">
@@ -659,11 +648,11 @@ export default function App() {
             </button>
 
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-              <span className="font-extrabold text-white text-sm sm:text-base tracking-tight truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              <span className="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight truncate">
                 {t('common.adminPortalTitle')}
               </span>
-              <span className="hidden sm:inline-flex glass-chip text-[10px] text-amber-300 bg-amber-500/20 border-amber-500/30">
+              <span className="hidden sm:inline-flex glass-chip text-[10px] text-amber-900 bg-amber-100 border-amber-300 font-semibold">
                 {t('common.googleSignInBadge')}
               </span>
             </div>
@@ -674,15 +663,15 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsEditorOpen(true)}
-                className="glass-button px-3 py-1.5 rounded-xl text-xs text-purple-200 bg-purple-950/50 border-purple-500/30"
+                className="glass-button px-3 py-1.5 rounded-xl text-xs text-purple-900 bg-purple-100/80 border-purple-300 font-semibold"
                 title={t('siteEditor.editorTitle')}
                 aria-label={t('siteEditor.editorTitle')}
               >
-                <Palette className="w-3.5 h-3.5 text-pink-300" />
+                <Palette className="w-3.5 h-3.5 text-purple-700" />
                 <span className="hidden sm:inline">{t('common.siteEditorShort')}</span>
               </button>
             )}
-            <span className="hidden md:inline-block text-xs text-slate-300 font-mono">
+            <span className="hidden md:inline-block text-xs text-slate-600 font-semibold font-mono">
               {user?.email || t('common.adminRestricted')}
             </span>
             <button
@@ -691,10 +680,10 @@ export default function App() {
                 setActiveTab('form');
                 if (window.location.hash === '#admin') window.location.hash = '';
               }}
-              className="glass-button px-3 py-1.5 rounded-xl text-xs text-rose-300 bg-rose-950/50 border-rose-500/30"
+              className="glass-button px-3 py-1.5 rounded-xl text-xs text-rose-800 bg-rose-100/80 border-rose-300 font-semibold"
               title={t('common.lockAndExitAdminTitle')}
             >
-              <Lock className="w-3.5 h-3.5" />
+              <Lock className="w-3.5 h-3.5 text-rose-700" />
               <span>{t('common.lockExit')}</span>
             </button>
           </div>
@@ -761,7 +750,6 @@ export default function App() {
       className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-rose-500 selection:text-white relative"
     >
       {/* Liquid Glass Background Caustics & Bright Purple-ish Fluent Ambient Light */}
-      <AmbientBackground />
 
       {/* Sticky header (gov banner + navbar). It owns the scroll listener, so scrolling never
           re-renders App. */}
@@ -809,13 +797,13 @@ export default function App() {
         {activeTab === 'card' && (
           <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 text-center">
             <div className="glass-card glass-raised rounded-3xl p-8 sm:p-12">
-              <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-3">
+              <span className="glass-chip text-rose-700 bg-rose-50 border-rose-200 mb-3 font-bold">
                 {t('common.cardPageBadge')}
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] mb-2">
                 {t('common.cardPageTitle')}
               </h2>
-              <p className="text-slate-300 text-xs sm:text-sm max-w-lg mx-auto mb-6 leading-relaxed">
+              <p className="text-[#334155] text-xs sm:text-sm max-w-lg mx-auto mb-6 leading-relaxed">
                 {t('common.cardPageDesc')}
               </p>
 
@@ -823,18 +811,18 @@ export default function App() {
               {currentMember && (
                 <div className="mb-8 p-5 glass-well rounded-2xl max-w-md mx-auto text-start flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <span className="text-[10px] text-purple-300 uppercase font-mono tracking-wider block">
+                    <span className="text-[10px] text-[#6D28D9] font-bold uppercase font-mono tracking-wider block">
                       {t('common.connectedProfile')}
                     </span>
-                    <h4 className="font-bold text-white text-base truncate">{currentMember.cosplayName}</h4>
-                    <p className="text-xs font-mono text-purple-300">
+                    <h4 className="font-bold text-[#0F172A] text-base truncate">{currentMember.cosplayName}</h4>
+                    <p className="text-xs font-mono font-bold text-[#4C1D95]">
                       {t('common.kccIdValue', { id: formatKccId(currentMember.userId16) })}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleOpenCard(currentMember)}
-                    className="px-3.5 py-2 min-h-11 liquid-glass-button text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shrink-0"
+                    className="px-3.5 py-2 min-h-11 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shrink-0 shadow-md shadow-purple-500/20"
                   >
                     <IdCard className="w-3.5 h-3.5" />
                     <span>{t('common.openPass')}</span>
@@ -845,7 +833,7 @@ export default function App() {
               {/* Lookup Card Form */}
               <form onSubmit={handleLookupCard} className="max-w-md mx-auto space-y-3 mb-6">
                 <div className="relative">
-                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" aria-hidden="true" />
+                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B] pointer-events-none" aria-hidden="true" />
                   <input
                     type="text"
                     inputMode="numeric"
@@ -857,18 +845,18 @@ export default function App() {
                     aria-invalid={lookupError ? true : undefined}
                     value={lookupQuery}
                     onChange={(e) => setLookupQuery(e.target.value)}
-                    className="w-full ps-10 pe-4 py-2.5 glass-input rounded-xl text-white text-base sm:text-sm"
+                    className="w-full ps-10 pe-4 py-2.5 glass-input rounded-xl text-[#0F172A] placeholder-[#64748B] text-base sm:text-sm font-medium"
                   />
                 </div>
 
                 {lookupError && (
-                  <p className="text-xs text-rose-400 text-start px-1" role="alert">{lookupError}</p>
+                  <p className="text-xs text-rose-600 font-semibold text-start px-1" role="alert">{lookupError}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={isLookingUp}
-                  className="w-full py-2.5 px-5 min-h-11 rounded-xl liquid-glass-button text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-2.5 px-5 min-h-11 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-purple-500/25 disabled:opacity-50"
                 >
                   <Search className="w-4 h-4" />
                   <span>{isLookingUp ? t('common.searching') : t('common.lookupSubmit')}</span>
@@ -877,14 +865,14 @@ export default function App() {
 
               {/* Lookup result display */}
               {lookupResult && (
-                <div className="mt-6 p-4 rounded-2xl glass-well border-emerald-500/40 text-start max-w-md mx-auto animate-fade-in">
+                <div className="mt-6 p-4 rounded-2xl glass-well border-emerald-300 text-start max-w-md mx-auto animate-fade-in bg-white/90">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
+                      <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">
                         {t('common.passFound')}
                       </span>
-                      <h4 className="font-bold text-white text-sm truncate">{lookupResult.cosplayName}</h4>
-                      <p className="text-xs font-mono text-slate-400">
+                      <h4 className="font-bold text-slate-900 text-sm truncate">{lookupResult.cosplayName}</h4>
+                      <p className="text-xs font-mono font-bold text-purple-700">
                         {t('common.idValue', { id: formatKccId(lookupResult.userId16) })}
                       </p>
                     </div>
@@ -897,20 +885,20 @@ export default function App() {
                     </button>
                   </div>
                   {showOldIdNotice && (
-                    <p className="mt-3 text-xs text-amber-200/90 leading-relaxed" role="note">
+                    <p className="mt-3 text-xs text-amber-800 font-medium leading-relaxed" role="note">
                       {t('common.lookupOldIdNotice', { id: formatKccId(lookupResult.userId16) })}
                     </p>
                   )}
                 </div>
               )}
 
-              <div className="mt-8 pt-6 border-t border-white/10 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-rose-400" />
+              <div className="mt-8 pt-6 border-t border-slate-200 text-xs text-slate-600 flex flex-wrap items-center justify-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-purple-600" />
                 <span>{t('common.notRegisteredYet')}</span>
                 <button
                   type="button"
                   onClick={() => handleTabChange('form')}
-                  className="touch-target text-rose-400 font-bold hover:underline"
+                  className="touch-target text-purple-700 font-bold hover:underline"
                 >
                   {t('common.fillRegistrationForm')}
                 </button>
@@ -1046,8 +1034,8 @@ export default function App() {
       {/* One-time notice when Auto turned Lite mode on for this device */}
       <PerfLiteNotice />
 
-      {/* Global Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-[var(--glass-fill-bar)] pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 xl:px-8 text-slate-400 text-xs">
+      {/* Global Liquid Glass Footer */}
+      <footer className="glass-footer pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 xl:px-8 text-slate-600 text-xs">
         <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center xl:items-start xl:shrink-0 gap-2">
             <img
@@ -1057,21 +1045,21 @@ export default function App() {
               height={144}
               loading="lazy"
               decoding="async"
-              className="w-72 sm:w-96 h-auto"
+              className="w-72 sm:w-96 h-auto drop-shadow-sm"
             />
-            <p className="text-slate-300 text-xs sm:text-sm font-semibold text-center xl:text-start">
+            <p className="text-slate-700 text-xs sm:text-sm font-semibold text-center xl:text-start">
               The 100% SFW Cosplay Media and Community
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
-            <button type="button" onClick={() => handleTabChange('form')} className="touch-target pressable hover:text-white">
+          <div className="flex flex-wrap items-center justify-center gap-5 text-slate-600 font-medium">
+            <button type="button" onClick={() => handleTabChange('form')} className="touch-target pressable hover:text-purple-700 transition-colors">
               {t('common.navForm')}
             </button>
-            <button type="button" onClick={() => handleTabChange('card')} className="touch-target pressable hover:text-white">
+            <button type="button" onClick={() => handleTabChange('card')} className="touch-target pressable hover:text-purple-700 transition-colors">
               {t('common.navCard')}
             </button>
-            <button type="button" onClick={() => handleTabChange('gallery')} className="touch-target pressable hover:text-pink-400">
+            <button type="button" onClick={() => handleTabChange('gallery')} className="touch-target pressable hover:text-pink-600 transition-colors">
               {t('common.navGallery')}
             </button>
             {/* Discreet Admin Portal Link for Managers */}
@@ -1081,23 +1069,23 @@ export default function App() {
                 setActiveTab('admin');
                 window.location.hash = 'admin';
               }}
-              className="touch-target pressable text-slate-500 hover:text-amber-400 flex items-center gap-1"
+              className="touch-target pressable text-slate-500 hover:text-amber-600 transition-colors flex items-center gap-1"
               title={t('common.adminPortalLinkTitle')}
             >
-              <Lock className="w-3 h-3 text-amber-500/80" />
+              <Lock className="w-3 h-3 text-amber-600" />
               <span>{t('common.adminPortal')}</span>
             </button>
             <a
               href="https://wa.me/6285711032782"
               target="_blank"
               rel="noopener noreferrer"
-              className="touch-target text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center gap-1"
+              className="touch-target text-emerald-700 hover:text-emerald-800 font-bold transition-colors flex items-center gap-1"
             >
               <span>{t('common.whatsappContact')}</span>
             </a>
             <a
               href="mailto:cosplaysehat@gmail.com"
-              className="touch-target hover:text-rose-400 transition-colors"
+              className="touch-target text-slate-600 hover:text-purple-700 transition-colors"
             >
               cosplaysehat@gmail.com
             </a>
@@ -1105,7 +1093,7 @@ export default function App() {
 
           <div className="text-center xl:text-end text-slate-500 flex flex-col items-center xl:items-end gap-1">
             <p>{t('common.copyright')}</p>
-            <p className="text-[10px] text-emerald-400/80 mt-0.5">
+            <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
               ● {t('common.privacyShieldActive')}
             </p>
             {/* Display mode (lite / low-power): reachable from every screen */}

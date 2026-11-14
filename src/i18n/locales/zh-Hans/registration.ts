@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "KawanCosplay 新成员入会登记",
-  formDesc: "欢迎来到 KawanCosplay Community（KCC）——100% SFW 的国际 Cosplay 社区。我们隶属于 KawanCosplay Group，该集团由 KawanCosplay Media 和 KawanCosplay Community 组成。KCC 是由 KawanCosplay 创建的 WhatsApp 群组和 Discord 服务器。它最初是为在 Instagram 上与 KawanCosplay 合作的 Cosplayer 们打造的交流聚会平台，如今已向所有对 Cosplay 世界感兴趣的人开放，无论您是否是 Cosplayer。社区成立于 2025 年 6 月 30 日。欢迎加入我们，在 WhatsApp 群组和/或 Discord 服务器中与成员们互动。我们欢迎国际成员，不论宗教、种族和语言。为确保安全、防止滥用，请填写本表单加入社区。提交表单后即可获得 WhatsApp 群组链接，因此填写完表单后请不要关闭此页面。Discord 服务器则需要在加入 WhatsApp 群组之后才能加入。如需更多帮助，请在 Instagram 上私信 @kawancosplayers，或通过 WhatsApp 联系我们的热线 +62 857-1103-2782。",
+  formDesc: "欢迎来到 KawanCosplay Community (KCC)！这是一个专为 Cosplayer、偶像粉丝、ACG 爱好者及流行文化同好打造的 100% SFW 友善国际社区。创立于 2025 年 6 月 30 日，无论您的背景、经验或语言如何，我们都热烈欢迎。\n\n请填写这份简短的注册表单以获取您的官方 KCC ID 会员卡，并即刻解锁官方 WhatsApp 社区群组链接。Discord 服务器链接将在您加入 WhatsApp 群组后开放。",
   inclusiveWelcome: "欢迎所有人：Cosplayer、偶像粉丝、动漫宅，以及所有流行文化爱好者！",
   requiredIndicator: "* 表示必答问题",
   officialFormTag: "KawanCosplay 官方表单",
@@ -33,6 +33,9 @@ const registration: LocaleNamespace<'registration'> = {
   exactAgeOptional: "具体年龄或生日（选填 - 可留空）",
   ageDesc: "选填。可以留空，也可以填写以便社区送上生日祝福。",
   agePlaceholder: "您的回答（例如 21 岁 或 5 月 15 日）",
+  ageLabel: '年龄',
+  birthdayLabel: '生日',
+  ageCategoryRequiredError: '请选择您的年龄状态。',
   locationTitle: "居住地（支持全球所有国家和城市）",
   locationNotice: "KawanCosplay 面向全球开放，欢迎来自世界各地的成员。",
   countryLabel: "居住国家 / 地区",

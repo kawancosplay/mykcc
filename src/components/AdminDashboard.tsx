@@ -254,6 +254,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [selectedRole, setSelectedRole] = useState('ALL');
   const [selectedCity, setSelectedCity] = useState('ALL');
   const [selectedAgeCategory, setSelectedAgeCategory] = useState('ALL');
+  const [selectedBirthdayFilter, setSelectedBirthdayFilter] = useState<'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH'>('ALL');
+  const [selectedSocialFilter, setSelectedSocialFilter] = useState('ALL');
   const [sortMode, setSortMode] = useState<SortMode>('timestamp_desc');
   const [pageSize, setPageSize] = useState<PageSize>(() => readStoredPageSize());
   const [page, setPage] = useState(1);
@@ -264,7 +266,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Back to page 1 whenever what is listed changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedRole, selectedCity, selectedAgeCategory, sortMode, pageSize]);
+  }, [searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, sortMode, pageSize]);
 
   const handlePageSize = (size: PageSize) => {
     setPageSize(size);
@@ -290,15 +292,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, [members]);
 
   const filteredMembers = useMemo(() => {
-    const filtered = members.filter(
-      (m) =>
-        memberMatchesQuery(m, searchQuery) &&
-        (selectedRole === 'ALL' || m.primaryRole === selectedRole) &&
-        (selectedCity === 'ALL' || m.city === selectedCity) &&
-        (selectedAgeCategory === 'ALL' || ageCategoryKey(m.ageCategory) === ageCategoryKey(selectedAgeCategory))
-    );
+    const currentMonth = new Date().getMonth() + 1;
+    const filtered = members.filter((m) => {
+      if (!memberMatchesQuery(m, searchQuery)) return false;
+      if (selectedRole !== 'ALL' && m.primaryRole !== selectedRole) return false;
+      if (selectedCity !== 'ALL' && m.city !== selectedCity) return false;
+      if (selectedAgeCategory !== 'ALL' && ageCategoryKey(m.ageCategory) !== ageCategoryKey(selectedAgeCategory)) return false;
+
+      // Birthday filter
+      if (selectedBirthdayFilter === 'HAS_BIRTHDAY') {
+        if (!m.birthday || !m.birthday.trim()) return false;
+      } else if (selectedBirthdayFilter === 'THIS_MONTH') {
+        if (!m.birthday || !m.birthday.trim()) return false;
+        const b = m.birthday.trim();
+        let matches = false;
+        const isoMatch = b.match(/^\d{4}-(\d{1,2})-\d{1,2}/);
+        if (isoMatch) {
+          matches = parseInt(isoMatch[1], 10) === currentMonth;
+        } else {
+          const slashMatch = b.match(/^\d{1,2}[/-](\d{1,2})[/-]\d{2,4}/);
+          if (slashMatch) {
+            matches = parseInt(slashMatch[1], 10) === currentMonth;
+          } else {
+            const dt = new Date(b);
+            if (!isNaN(dt.getTime())) {
+              matches = dt.getMonth() + 1 === currentMonth;
+            }
+          }
+        }
+        if (!matches) return false;
+      }
+
+      // Social filter
+      if (selectedSocialFilter === 'HAS_SOCIAL') {
+        const hasSocial = (!!m.socialMedia && m.socialMedia.trim() !== '') || (!!m.discordUsername && m.discordUsername.trim() !== '');
+        if (!hasSocial) return false;
+      } else if (selectedSocialFilter === 'NO_SOCIAL') {
+        const hasSocial = (!!m.socialMedia && m.socialMedia.trim() !== '') || (!!m.discordUsername && m.discordUsername.trim() !== '');
+        if (hasSocial) return false;
+      } else if (selectedSocialFilter === 'Discord') {
+        const isDiscord = (!!m.discordUsername && m.discordUsername.trim() !== '') || (!!m.socialMedia && m.socialMedia.toLowerCase().includes('discord'));
+        if (!isDiscord) return false;
+      } else if (selectedSocialFilter !== 'ALL') {
+        if (!m.socialMedia || !m.socialMedia.toLowerCase().includes(selectedSocialFilter.toLowerCase())) return false;
+      }
+
+      return true;
+    });
     return sortMembers(filtered, sortMode);
-  }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, sortMode]);
+  }, [members, searchQuery, selectedRole, selectedCity, selectedAgeCategory, selectedBirthdayFilter, selectedSocialFilter, sortMode]);
 
   const total = filteredMembers.length;
   const effectivePageSize = pageSize === 'all' ? Math.max(1, total) : pageSize;
@@ -418,7 +460,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         m.discordUsername || '',
         m.email || '',
         m.ageCategory || '',
-        m.age || '',
+        [m.age, m.birthday].filter(Boolean).join(' / '),
         m.country || '',
         m.province || '',
         m.city || '',
@@ -441,34 +483,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       !!user && !!user.email && user.email.toLowerCase().trim() === OFFICIAL_ADMIN_EMAIL && !user.emailVerified;
 
     return (
-      <div className="max-w-md mx-auto py-16 px-4 animate-fade-in text-slate-100">
+      <div className="max-w-md mx-auto py-16 px-4 animate-fade-in text-slate-800">
         <div className="glass-card glass-raised border-amber-500/30 rounded-3xl p-8 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-5 text-amber-400">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100/70 border border-amber-300 flex items-center justify-center mx-auto mb-5 text-amber-700">
             <Lock className="w-8 h-8" />
           </div>
 
-          <h2 className="text-2xl font-black text-white mb-2">{t('admin.dashboardTitle')}</h2>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">{t('admin.dashboardTitle')}</h2>
 
           {isAdminChecking ? (
             <div className="flex flex-col items-center gap-3 py-6">
-              <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-xs sm:text-sm text-slate-300">{t('admin.checkingAccess')}</p>
+              <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs sm:text-sm text-slate-600">{t('admin.checkingAccess')}</p>
             </div>
           ) : (
             <>
-              <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">{t('admin.privacyRestrictedNotice')}</p>
+              <p className="text-xs sm:text-sm text-slate-600 mb-6 leading-relaxed">{t('admin.privacyRestrictedNotice')}</p>
 
               {user && (
-                <div className="mb-5 p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs text-start space-y-1.5">
+                <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs text-start space-y-1.5">
                   <p className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <span>
                       {renderRich(t('admin.signedInNotAdmin'), {
-                        account: <strong className="text-white break-all">{signedInLabel}</strong>,
+                        account: <strong className="text-slate-900 break-all">{signedInLabel}</strong>,
                       })}
                     </span>
                   </p>
-                  {isUnverifiedAdminEmail && <p className="ps-6 text-amber-300 font-semibold">{t('admin.emailNotVerified')}</p>}
+                  {isUnverifiedAdminEmail && <p className="ps-6 text-amber-700 font-semibold">{t('admin.emailNotVerified')}</p>}
                 </div>
               )}
 
@@ -491,7 +533,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               href="https://wa.me/6285711032782"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs text-emerald-800 font-semibold hover:underline"
             >
               <Phone className="w-3.5 h-3.5" />
               <span>{t('admin.whatsappAdminHelp', { phone: ADMIN_WHATSAPP_DISPLAY })}</span>
@@ -503,7 +545,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }
 
   const hasActiveFilters =
-    selectedRole !== 'ALL' || selectedCity !== 'ALL' || selectedAgeCategory !== 'ALL' || !!searchQuery;
+    selectedRole !== 'ALL' ||
+    selectedCity !== 'ALL' ||
+    selectedAgeCategory !== 'ALL' ||
+    selectedBirthdayFilter !== 'ALL' ||
+    selectedSocialFilter !== 'ALL' ||
+    !!searchQuery;
 
   const tabLabel = (tab: AdminTab): string => {
     switch (tab) {
@@ -544,8 +591,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {t('admin.verifiedAccessBadge')}
                   </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white">{t('admin.dashboardTitle')}</h1>
-                <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900">{t('admin.dashboardTitle')}</h1>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-2xl mt-1">
                   {t('admin.dashboardDesc')} {t('admin.dashboardPrivacyNote')}
                 </p>
               </div>
@@ -582,7 +629,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 pt-6 border-t border-white/10">
               <div className="glass-well p-4 rounded-2xl">
                 <p className="text-xs text-slate-400">{t('admin.totalMembers')}</p>
-                <p className="text-2xl font-black text-white">{membersLoaded ? formatNumber(members.length) : '—'}</p>
+                <p className="text-2xl font-black text-slate-900">{membersLoaded ? formatNumber(members.length) : '—'}</p>
               </div>
               {(
                 [
@@ -654,8 +701,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
                   <Lock className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{t('admin.permissionDeniedTitle')}</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{t('admin.permissionDeniedTitle')}</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">
                   {renderRich(t('admin.permissionDeniedDesc', { email: OFFICIAL_ADMIN_EMAIL }), {
                     database: <span className="font-mono text-amber-300 break-all">{NAMED_DATABASE_ID}</span>,
                   })}
@@ -682,8 +729,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
                   <AlertTriangle className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{t('admin.loadMembersFailedTitle')}</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">{t('admin.loadMembersFailedDesc')}</p>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{t('admin.loadMembersFailedTitle')}</h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">{t('admin.loadMembersFailedDesc')}</p>
                 <button onClick={() => window.location.reload()} className="glass-button pressable px-4 text-xs">
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>{t('admin.reloadPage')}</span>
@@ -695,7 +742,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {adminTab === 'members' && !membersError && !membersLoaded && (
               <div className="liquid-glass-card rounded-3xl p-10 flex flex-col items-center justify-center gap-3 text-center">
                 <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-xs sm:text-sm text-slate-300">{t('admin.loadingMembers')}</p>
+                <p className="text-xs sm:text-sm text-slate-600">{t('admin.loadingMembers')}</p>
               </div>
             )}
 
@@ -712,7 +759,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         aria-label={t('admin.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full ps-12 pe-4 py-3.5 liquid-glass-input rounded-2xl text-white text-base"
+                        className="w-full ps-12 pe-4 py-3.5 liquid-glass-input rounded-2xl text-slate-900 placeholder:text-slate-400 text-base"
                       />
                     </div>
 
@@ -721,7 +768,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedRole}
                         onChange={(e) => setSelectedRole(e.target.value)}
                         aria-label={t('admin.colRole')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-800 max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllRoles', { count: formatNumber(members.length) })}</option>
                         {availableRoles.map((r) => (
@@ -734,7 +781,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedCity}
                         onChange={(e) => setSelectedCity(e.target.value)}
                         aria-label={t('admin.colLocation')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllCities')}</option>
                         {availableCities.map((c) => (
@@ -747,7 +794,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedAgeCategory}
                         onChange={(e) => setSelectedAgeCategory(e.target.value)}
                         aria-label={t('admin.colAge')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllAges')}</option>
                         {/* Matched through ageCategoryKey, so every stored spelling counts; only the labels are translated */}
@@ -756,13 +803,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {/* No longer offered to anyone; stays here so admins can find the members who already have it */}
                         <option value="Memilih untuk tidak menyebutkan">{t('admin.filterPreferNotToSay')}</option>
                       </select>
+                      <select
+                        value={selectedBirthdayFilter}
+                        onChange={(e) => setSelectedBirthdayFilter(e.target.value as 'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH')}
+                        aria-label={t('admin.fieldBirthday')}
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
+                      >
+                        <option value="ALL">{t('admin.filterAllBirthdays')}</option>
+                        <option value="HAS_BIRTHDAY">🎂 {t('admin.filterHasBirthday')}</option>
+                        <option value="THIS_MONTH">🎉 {t('admin.filterBirthdayThisMonth')}</option>
+                      </select>
+                      <select
+                        value={selectedSocialFilter}
+                        onChange={(e) => setSelectedSocialFilter(e.target.value)}
+                        aria-label={t('admin.fieldSocialMedia')}
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
+                      >
+                        <option value="ALL">{t('admin.filterAllSocials')}</option>
+                        <option value="HAS_SOCIAL">📱 {t('admin.filterHasSocial')}</option>
+                        <option value="NO_SOCIAL">❌ {t('admin.filterNoSocial')}</option>
+                        <option value="Instagram">📸 Instagram</option>
+                        <option value="TikTok">🎵 TikTok</option>
+                        <option value="Discord">💬 Discord</option>
+                        <option value="Twitter">🐦 Twitter / X</option>
+                        <option value="YouTube">📺 YouTube</option>
+                        <option value="Facebook">👥 Facebook</option>
+                      </select>
 
                       <div className="flex items-center gap-1.5 liquid-glass-input rounded-xl px-2.5 py-2">
                         <ArrowUpDown className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                         <select
                           value={sortMode === 'name_asc' ? 'name_asc' : 'timestamp_desc'}
                           onChange={(e) => setSortMode(e.target.value === 'name_asc' ? 'name_asc' : 'timestamp_desc')}
-                          className="bg-transparent text-base sm:text-sm text-slate-200 focus:outline-none pe-1 cursor-pointer"
+                          className="bg-transparent text-base sm:text-sm text-slate-800 focus:outline-none pe-1 cursor-pointer"
                         >
                           <option value="timestamp_desc">{t('admin.sortNewest')}</option>
                           <option value="name_asc">{t('admin.sortNameAsc')}</option>
@@ -803,6 +876,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           setSelectedRole('ALL');
                           setSelectedCity('ALL');
                           setSelectedAgeCategory('ALL');
+                          setSelectedBirthdayFilter('ALL');
+                          setSelectedSocialFilter('ALL');
                           setSearchQuery('');
                         }}
                         className="touch-target text-rose-400 hover:underline"

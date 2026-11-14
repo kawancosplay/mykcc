@@ -2,22 +2,30 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 
+import { processSyncPayload } from './api/sync-form';
+
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
 // Webhook endpoint for instant Google Form submissions via Apps Script
-app.post('/api/sync-form', (req, res) => {
+app.get('/api/sync-form', (_req, res) => {
+  res.json({
+    status: 'ok',
+    endpoint: '/api/sync-form',
+    instructions: 'Send a POST request with Google Forms webhook payload or { rows: [...] } array to auto-sync members.',
+    ready: true,
+  });
+});
+
+app.post('/api/sync-form', async (req, res) => {
   try {
     const payload = req.body;
-    console.log('Received Google Form transition submission:', JSON.stringify(payload));
-    res.json({
-      success: true,
-      message: 'KawanCosplay sync hook received payload successfully',
-      receivedAt: new Date().toISOString(),
-    });
+    console.log('Received Google Form submission:', JSON.stringify(payload));
+    const result = await processSyncPayload(payload);
+    res.json(result);
   } catch (err: unknown) {
     console.error('Webhook processing error:', err);
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error', success: false });
   }
 });
 

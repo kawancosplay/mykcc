@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "Pendaftaran Ahli Baru KawanCosplay",
-  formDesc: "Selamat datang ke KawanCosplay Community (KCC), komuniti cosplay antarabangsa yang 100% SFW. KCC ialah sebahagian daripada KawanCosplay Group, yang terdiri daripada KawanCosplay Media dan KawanCosplay Community. KCC ialah kumpulan WhatsApp dan pelayan Discord yang diwujudkan oleh KawanCosplay. Pada asalnya ditubuhkan sebagai forum pertemuan sosial untuk cosplayer yang bekerjasama dengan KawanCosplay di Instagram, kini ia terbuka kepada sesiapa sahaja yang berminat dengan dunia cosplay, sama ada anda cosplayer atau bukan. Ditubuhkan pada 30 Jun 2025. Jangan segan untuk menjadi sebahagian daripada kami dan berinteraksi dengan ahli kami di kumpulan WhatsApp dan/atau pelayan Discord. Ahli antarabangsa dialu-alukan, tanpa mengira agama, bangsa dan bahasa anda. Untuk memastikan keselamatan dan mencegah penyalahgunaan, sila isi borang ini untuk menyertai komuniti kami. Pautan kumpulan WhatsApp akan tersedia selepas anda menghantar borang. Oleh itu, jangan tutup tab ini setelah anda selesai mengisi borang. Walau bagaimanapun, pelayan Discord hanya tersedia selepas anda menyertai kumpulan WhatsApp. Jika anda memerlukan sebarang bantuan lanjut, sila DM @kawancosplayers di Instagram atau hubungi hotline kami +62 857-1103-2782 melalui WhatsApp.",
+  formDesc: "Selamat datang ke KawanCosplay Community (KCC), komuniti cosplay antarabangsa yang 100% mesra, selamat dan SFW untuk cosplayer, peminat idol, otaku dan penggemar budaya pop. Ditubuhkan pada 30 Jun 2025, semua orang dialu-alukan tanpa mengira latar belakang atau bahasa.\n\nSila lengkapkan borang pendaftaran ringkas ini untuk menerima kad KCC ID rasmi anda dan pautan pantas ke kumpulan WhatsApp komuniti. Pautan pelayan Discord akan dibuka selepas anda menyertai kumpulan WhatsApp.",
   inclusiveWelcome: "Terbuka untuk semua: Cosplayer, Peminat Idol, Otaku & Rakan Umum!",
   requiredIndicator: "* Menunjukkan soalan yang wajib diisi",
   officialFormTag: "Borang Rasmi KawanCosplay",
@@ -33,6 +33,9 @@ const registration: LocaleNamespace<'registration'> = {
   exactAgeOptional: "Umur atau Tarikh Lahir (Pilihan - boleh dikosongkan)",
   ageDesc: "Pilihan. Biarkan kosong, atau kongsikan untuk ucapan hari jadi daripada komuniti.",
   agePlaceholder: "Jawapan anda (contoh: 21 tahun atau 15 Mei)",
+  ageLabel: 'Umur',
+  birthdayLabel: 'Tarikh Lahir',
+  ageCategoryRequiredError: 'Sila pilih status umur anda.',
   locationTitle: "Lokasi Tempat Tinggal (Semua Negara & Bandar di Seluruh Dunia)",
   locationNotice: "KawanCosplay terbuka kepada ahli dari seluruh dunia.",
   countryLabel: "Negara Tempat Tinggal",

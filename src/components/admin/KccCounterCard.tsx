@@ -76,9 +76,9 @@ export const KccCounterCard: React.FC<KccCounterCardProps> = ({ kccCounter, refr
             <Activity className="w-5 h-5" aria-hidden="true" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-white">{t('admin.counterTitle')}</h3>
-            <p className="text-xs text-slate-300 font-mono">{t('admin.counterLast', { id: formatKccId(kccCounter.lastId) })}</p>
-            {nextId && <p className="text-xs text-slate-400 font-mono">{t('admin.counterNext', { id: formatKccId(nextId) })}</p>}
+            <h3 className="text-base font-bold text-slate-900">{t('admin.counterTitle')}</h3>
+            <p className="text-xs text-slate-700 font-mono font-medium">{t('admin.counterLast', { id: formatKccId(kccCounter.lastId) })}</p>
+            {nextId && <p className="text-xs text-slate-600 font-mono">{t('admin.counterNext', { id: formatKccId(nextId) })}</p>}
           </div>
         </div>
         <button

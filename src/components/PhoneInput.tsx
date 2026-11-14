@@ -70,11 +70,11 @@ export default function PhoneInput({ value, onChange, required, invalid, placeho
   return (
     // Phone numbers read left to right in every language (RTL would show "62+" with the code after the number)
     <div dir="ltr" className="flex gap-2">
-      <div className="glass-input relative shrink-0 flex items-center gap-1 px-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[rgba(83,255,192,0.85)]">
-        <span aria-hidden="true" className="text-base sm:text-sm font-mono whitespace-nowrap">
+      <div className="glass-input relative shrink-0 flex items-center gap-1 px-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#7C3AED] bg-white border-[1.5px] border-slate-300">
+        <span aria-hidden="true" className="text-base sm:text-sm font-mono whitespace-nowrap text-slate-900 font-semibold">
           {selected?.flag || '🌐'} +{code}
         </span>
-        <ChevronDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
+        <ChevronDown className="w-4 h-4 text-slate-500" aria-hidden="true" />
         <select
           aria-label={t('common.phoneCountryCode')}
           value={selected?.isoCode ?? ''}
@@ -85,11 +85,11 @@ export default function PhoneInput({ value, onChange, required, invalid, placeho
             setCode(c.dial);
             emit(c.dial, local);
           }}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base bg-white text-slate-900"
         >
           {!selected && <option value="">+{code}</option>}
           {countries.map((c) => (
-            <option key={c.isoCode} value={c.isoCode}>
+            <option key={c.isoCode} value={c.isoCode} className="bg-white text-slate-900">
               {c.flag} {countryName(c.isoCode, c.name)} +{c.dial}
             </option>
           ))}
@@ -108,7 +108,7 @@ export default function PhoneInput({ value, onChange, required, invalid, placeho
         placeholder={placeholder}
         value={local}
         onChange={(e) => handleInput(e.target.value)}
-        className="glass-input min-w-0 flex-1 text-base sm:text-sm font-mono"
+        className="glass-input min-w-0 flex-1 text-base sm:text-sm font-mono bg-white border-[1.5px] border-slate-300 text-slate-900"
       />
     </div>
   );

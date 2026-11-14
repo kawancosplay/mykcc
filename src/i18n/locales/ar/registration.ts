@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "تسجيل عضو جديد في KawanCosplay",
-  formDesc: "مرحبًا بك في KawanCosplay Community (KCC)، مجتمع الكوسبلاي الدولي الآمن 100% SFW. وهو جزء من KawanCosplay Group التي تضم KawanCosplay Media و KawanCosplay Community. إن KCC مجموعة WhatsApp وخادم Discord أنشأتهما KawanCosplay. أُنشئ في البداية منتدى للقاءات الاجتماعية بين الكوسبلايرز المتعاونين مع KawanCosplay على Instagram، وأصبح الآن مفتوحًا لكل من يهتم بعالم الكوسبلاي، سواء كنت كوسبلايرًا أم لا. تأسس في 30 يونيو 2025. لا تتردد في أن تكون جزءًا منا وأن تتفاعل مع أعضائنا في مجموعة WhatsApp و/أو خادم Discord. نرحّب بالأعضاء الدوليين بغض النظر عن دينهم وعرقهم ولغتهم. لضمان الأمان ومنع إساءة الاستخدام، يُرجى ملء الاستمارة للانضمام إلى مجتمعنا. يتوفر رابط مجموعة WhatsApp بعد إرسال الاستمارة، لذا يُرجى عدم إغلاق علامة التبويب هذه بعد الانتهاء من ملء الاستمارة. أما خادم Discord فلا يتوفر إلا بعد انضمامك إلى مجموعة WhatsApp. إذا احتجت إلى أي مساعدة إضافية، يُرجى مراسلة @kawancosplayers برسالة مباشرة على Instagram أو التواصل مع خطنا الساخن +62 857-1103-2782 عبر WhatsApp.",
+  formDesc: "مرحبًا بكم في KawanCosplay Community (KCC)، المجتمع الدولي الآمن والودي بنسبة 100% SFW للكوسبلايرز وعشاق الآيدول والأوتاكو ومحبي ثقافة البوب. تأسس في 30 يونيو 2025، ونرحب بالجميع بحرارة بغض النظر عن خلفيتهم أو لغتهم.\n\nيرجى ملء استمارة التسجيل القصيرة هذه للحصول على بطاقة عضوية KCC ID الرسمية وفتح رابط الانضمام الفوري لمجموعة مجتمع WhatsApp. سيكون رابط سيرفر Discord متاحًا بمجرد انضمامك إلى مجموعة WhatsApp.",
   inclusiveWelcome: "الجميع مرحَّب بهم: الكوسبلايرز، ومحبو الآيدول، والأوتاكو، وأصدقاء الثقافة الشعبية عمومًا!",
   requiredIndicator: "* يشير إلى سؤال إلزامي",
   officialFormTag: "استمارة KawanCosplay الرسمية",
@@ -33,6 +33,9 @@ const registration: LocaleNamespace<'registration'> = {
   exactAgeOptional: "العمر الدقيق أو تاريخ الميلاد (اختياري - اتركه فارغًا إن شئت)",
   ageDesc: "اختياري. اتركه فارغًا أو شاركه لتلقّي تهاني عيد الميلاد من المجتمع.",
   agePlaceholder: "إجابتك (مثال: 21 سنة أو 15 مايو)",
+  ageLabel: 'العمر',
+  birthdayLabel: 'تاريخ الميلاد',
+  ageCategoryRequiredError: 'يرجى اختيار حالتك العمرية.',
   locationTitle: "مكان الإقامة (جميع الدول والمدن حول العالم)",
   locationNotice: "KawanCosplay مفتوح عالميًا للأعضاء من أي مكان في العالم.",
   countryLabel: "بلد الإقامة",

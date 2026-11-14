@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "KawanCosplay – Registrierung für neue Mitglieder",
-  formDesc: "Willkommen bei der KawanCosplay Community (KCC), der internationalen Cosplay-Community mit 100% SFW. Sie ist Teil der KawanCosplay Group, die aus KawanCosplay Media und der KawanCosplay Community besteht. KCC ist eine WhatsApp-Gruppe und ein Discord-Server von KawanCosplay. Ursprünglich als geselliges Forum für Cosplayer gegründet, die mit KawanCosplay auf Instagram zusammenarbeiten, steht sie heute allen offen, die sich für die Welt des Cosplays interessieren – ob du selbst cosplayst oder nicht. Gegründet am 30. Juni 2025. Werde gern Teil von uns und tausch dich mit unseren Mitgliedern in der WhatsApp-Gruppe und/oder auf dem Discord-Server aus. Internationale Mitglieder sind willkommen, unabhängig von Religion, Herkunft und Sprache. Um die Sicherheit zu gewährleisten und Missbrauch zu verhindern, fülle bitte das Formular aus, um unserer Community beizutreten. Der Link zur WhatsApp-Gruppe ist verfügbar, nachdem du das Formular abgeschickt hast. Schließe diesen Tab deshalb bitte nicht, wenn du mit dem Ausfüllen fertig bist. Der Discord-Server ist allerdings erst verfügbar, nachdem du der WhatsApp-Gruppe beigetreten bist. Wenn du weitere Hilfe brauchst, schreib bitte eine DM an @kawancosplayers auf Instagram oder kontaktiere unsere Hotline +62 857-1103-2782 per WhatsApp.",
+  formDesc: "Willkommen bei der KawanCosplay Community (KCC), einer 100% jugendfreien (SFW) und herzlichen internationalen Gemeinschaft für Cosplayer, Idol-Fans, Otakus und Popkultur-Begeisterte. Gegründet am 30. Juni 2025, heißen wir jeden unabhängig von Herkunft oder Sprache willkommen.\n\nBitte fülle dieses kurze Anmeldeformular aus, um deinen offiziellen KCC-ID-Mitgliedsausweis und den sofortigen Einladungslink zur WhatsApp-Gruppe zu erhalten. Der Discord-Server-Link wird freigeschaltet, sobald du der WhatsApp-Gruppe beigetreten bist.",
   inclusiveWelcome: "Alle sind willkommen: Cosplayer, Idol-Fans, Otaku und alle Popkultur-Freunde!",
   requiredIndicator: "* Pflichtfrage",
   officialFormTag: "Offizielles KawanCosplay-Formular",
@@ -33,6 +33,9 @@ const registration: LocaleNamespace<'registration'> = {
   exactAgeOptional: "Genaues Alter oder Geburtstag (optional – kann leer bleiben)",
   ageDesc: "Optional. Leer lassen oder angeben, damit die Community dir zum Geburtstag gratulieren kann.",
   agePlaceholder: "Deine Antwort (z. B. 21 Jahre oder 15. Mai)",
+  ageLabel: 'Alter',
+  birthdayLabel: 'Geburtstag',
+  ageCategoryRequiredError: 'Bitte wähle deinen Altersstatus aus.',
   locationTitle: "Wohnort (alle Länder & Städte weltweit)",
   locationNotice: "KawanCosplay steht Mitgliedern aus der ganzen Welt offen.",
   countryLabel: "Wohnsitzland",

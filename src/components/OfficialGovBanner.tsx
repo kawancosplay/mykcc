@@ -18,8 +18,6 @@ interface OfficialGovBannerProps {
   currentLang: LanguageCode;
 }
 
-// Disclosure: the guide's height opens with the sheet spring and closes with the iOS curve, so the
-// navbar below glides instead of jumping. Height + opacity only.
 const disclosureVariants: Variants = {
   initial: { opacity: 0, height: 0 },
   animate: { opacity: 1, height: 'auto', transition: { ...SPRING.sheet, opacity: TWEEN.fadeIn } },
@@ -33,7 +31,6 @@ const DISCLOSURE_MOTION: PresenceMotionProps = {
   exit: 'exit',
 };
 
-// Reduced motion: quick cross-fade, no height animation.
 const FADE_MOTION: PresenceMotionProps = {
   variants: fadeVariants,
   initial: 'initial',
@@ -41,40 +38,35 @@ const FADE_MOTION: PresenceMotionProps = {
   exit: 'exit',
 };
 
-/*
- * Strip above the sticky navbar. StickyHeader renders it inside its own `.glass-bar` container (which draws
- * the line under it), so it has no glass of its own.
- */
 export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useI18n();
   const disclosureMotion = useReducedMotion() === true ? FADE_MOTION : DISCLOSURE_MOTION;
 
   return (
-    <div className="relative text-slate-300 text-xs">
+    <div className="relative text-slate-800 text-[13px]">
       {/* Top Banner Row - Gov style */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
-        {/* Two lines reserved on phones: a language with longer copy cannot shift the page below (CLS). */}
-        <div className="flex flex-wrap items-center justify-between gap-1 min-h-[2.25rem] sm:min-h-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 min-h-[2.5rem] sm:min-h-0">
           {/* Left: Global Community Badge + Official Site Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-rose-500 to-indigo-500 flex items-center justify-center shrink-0 shadow-sm text-white">
-              <Globe className="w-3 h-3" />
+            <div className="w-5 h-5 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center shrink-0 text-emerald-700">
+              <Globe className="w-3.5 h-3.5" />
             </div>
 
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <span className="font-bold text-slate-200">
+              <span className="font-bold text-slate-900 text-[13px]">
                 {t('common.officialBannerText')}
               </span>
             </div>
           </div>
 
-          {/* Right: Gov-Style Toggle (small visual, 44px hit area via .touch-target) */}
+          {/* Right: Gov-Style Toggle */}
           <div className="flex items-center">
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="touch-target inline-flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold underline underline-offset-2 transition-colors cursor-pointer"
+              className="touch-target inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 font-bold underline underline-offset-2 transition-colors cursor-pointer text-[13px]"
               aria-expanded={isOpen}
             >
               <span>{t('common.howYouKnow')}</span>
@@ -87,23 +79,22 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
         </div>
       </div>
 
-      {/* Expandable Verification Guide Drawer (scrolls on short phone screens instead of pushing the
-          navbar past the viewport). The outer wrapper clips the height animation. */}
+      {/* Expandable Verification Guide Drawer */}
       <AnimatePresence initial={false}>
       {isOpen && (
         <motion.div key="gov-banner-guide" {...disclosureMotion} className="overflow-hidden">
-        <div className="border-t border-white/[0.06] px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain">
+        <div className="border-t border-white/60 bg-[rgba(255,255,255,0.78)] -webkit-backdrop-blur-[12px] backdrop-blur-[12px] text-slate-800 px-4 sm:px-6 lg:px-8 py-5 max-h-[60vh] md:max-h-none overflow-y-auto md:overflow-visible overscroll-contain shadow-lg">
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Pillar 1: Official International Community Identity */}
             <div className="flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-400">
+              <div className="w-9 h-9 rounded-xl bg-purple-100/70 border border-purple-200 flex items-center justify-center shrink-0 text-purple-700">
                 <Globe className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <h4 className="font-bold text-white text-xs sm:text-sm">
+                <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
                   {t('common.aboutKccTitle')}
                 </h4>
-                <p className="text-slate-300 text-[11px] sm:text-xs leading-relaxed">
+                <p className="text-slate-600 text-[11px] sm:text-xs leading-relaxed">
                   {t('common.aboutKccDesc')}
                 </p>
               </div>
@@ -111,14 +102,14 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
 
             {/* Pillar 2: Security & Privacy */}
             <div className="flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100/70 border border-emerald-200 flex items-center justify-center shrink-0 text-emerald-700">
                 <Lock className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <h4 className="font-bold text-white text-xs sm:text-sm">
+                <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
                   {t('common.secureSiteTitle')}
                 </h4>
-                <p className="text-slate-300 text-[11px] sm:text-xs leading-relaxed">
+                <p className="text-slate-600 text-[11px] sm:text-xs leading-relaxed">
                   {t('common.secureSiteDesc')}
                 </p>
               </div>
@@ -126,14 +117,14 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
 
             {/* Pillar 3: Official WhatsApp Hotline & Email */}
             <div className="flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-400">
+              <div className="w-9 h-9 rounded-xl bg-rose-100/70 border border-rose-200 flex items-center justify-center shrink-0 text-rose-700">
                 <MessageCircle className="w-5 h-5" />
               </div>
               <div className="space-y-1">
-                <h4 className="font-bold text-white text-xs sm:text-sm">
+                <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
                   {t('common.officialContactTitle')}
                 </h4>
-                <p className="text-slate-300 text-[11px] sm:text-xs leading-relaxed">
+                <p className="text-slate-600 text-[11px] sm:text-xs leading-relaxed">
                   {t('common.officialContactDesc')}
                 </p>
                 <div className="pt-1 flex flex-col items-start gap-2">
@@ -141,14 +132,14 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
                     href="https://wa.me/6285711032782"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="touch-target inline-flex items-center gap-1.5 text-emerald-400 font-bold hover:underline"
+                    className="touch-target inline-flex items-center gap-1.5 text-purple-700 font-bold hover:underline"
                   >
                     <span>{t('common.whatsappContact')}</span>
                     <ExternalLink className="w-3 h-3" aria-hidden="true" />
                   </a>
                   <a
                     href="mailto:cosplaysehat@gmail.com"
-                    className="touch-target inline-flex items-center gap-1.5 text-indigo-400 font-bold hover:underline"
+                    className="touch-target inline-flex items-center gap-1.5 text-purple-700 font-bold hover:underline"
                   >
                     <span>{t('common.emailContact')}</span>
                   </a>

@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "Nasa Hustong Gulang (18+)",
   filterMinor: "Menor de Edad (<18)",
   filterPreferNotToSay: "Hindi tinukoy",
+
+  filterAllBirthdays: "Lahat ng Kaarawan",
+
+  filterHasBirthday: "May Kaarawan",
+
+  filterBirthdayThisMonth: "Kaarawan Ngayong Buwan",
+
+  filterAllSocials: "Lahat ng Social Media",
+
+  filterHasSocial: "May Social Media",
+
+  filterNoSocial: "Walang Social Media",
   sortNewest: "🕒 Oras: Pinakabago",
   sortNameAsc: "🔤 Pangalan: A → Z",
   purgeButtonTitle: "Burahin ang lahat ng data ng miyembro sa Firestore",

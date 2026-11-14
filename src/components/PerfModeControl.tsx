@@ -119,7 +119,7 @@ export const PerfModeFooterButton: React.FC<{ className?: string }> = ({ classNa
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={panelId}
-        className="touch-target pressable inline-flex items-center gap-1.5 text-slate-400 hover:text-white"
+        className="touch-target pressable inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 font-medium"
       >
         <Gauge className="w-3.5 h-3.5" aria-hidden="true" />
         <span>{t('common.perfModeFooter', { mode: t(LABEL_KEYS[perf.preference]) })}</span>

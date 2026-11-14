@@ -2,7 +2,7 @@ import type { LocaleNamespace } from '../../types';
 
 const registration: LocaleNamespace<'registration'> = {
   formTitle: "KawanCosplay 新規メンバー登録",
-  formDesc: "KawanCosplay Community（KCC）へようこそ。KCC は 100% SFW の国際コスプレコミュニティで、KawanCosplay Media と KawanCosplay Community からなる KawanCosplay Group の一員です。KCC は KawanCosplay が作った WhatsApp グループと Discord サーバーです。もともとは Instagram で KawanCosplay とコラボしたコスプレイヤーの交流の場として作られましたが、現在はコスプレイヤーかどうかに関係なく、コスプレの世界に興味のある方ならどなたでも参加できます。2025年6月30日設立。ぜひ私たちの仲間になって、WhatsApp グループや Discord サーバーでメンバーと交流してください。宗教・人種・言語を問わず、海外メンバーも歓迎します。安全を確保し悪用を防ぐため、コミュニティへの参加にはフォームへの記入をお願いしています。WhatsApp グループのリンクはフォーム送信後に表示されます。そのため、フォームの記入が終わってもこのタブを閉じないでください。なお、Discord サーバーは WhatsApp グループに参加した後にご利用いただけます。その他お困りのことがあれば、Instagram の @kawancosplayers に DM するか、WhatsApp でホットライン +62 857-1103-2782 までご連絡ください。",
+  formDesc: "KawanCosplay Community（KCC）へようこそ！コスプレイヤー、アイドルファン、オタク、ポップカルチャー愛好家のための、100% SFW で安心な国際コミュニティです。2025年6月30日設立。国籍や経験を問わず、どなたでも温かく歓迎します。\n\n簡単な登録フォームにご記入いただくと、公式 KCC ID カードが発行され、WhatsApp コミュニティグループの参加リンクが表示されます。Discord サーバーへの参加リンクは WhatsApp グループ参加後にご利用いただけます。",
   inclusiveWelcome: "どなたでも大歓迎：コスプレイヤー、アイドルファン、オタク、ポップカルチャー好きの皆さん！",
   requiredIndicator: "* 必須の質問です",
   officialFormTag: "KawanCosplay 公式フォーム",
@@ -33,6 +33,9 @@ const registration: LocaleNamespace<'registration'> = {
   exactAgeOptional: "実年齢または誕生日（任意・空欄可）",
   ageDesc: "任意です。空欄のままでも、コミュニティで誕生日をお祝いするために入力しても構いません。",
   agePlaceholder: "回答を入力（例: 21歳 または 5月15日）",
+  ageLabel: '年齢',
+  birthdayLabel: '誕生日',
+  ageCategoryRequiredError: '年齢区分を選択してください。',
   locationTitle: "居住地（全世界のすべての国・都市に対応）",
   locationNotice: "KawanCosplay は、世界中どこにお住まいの方でも参加できます。",
   countryLabel: "居住国",

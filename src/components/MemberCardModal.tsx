@@ -125,7 +125,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className="glass-sheet sm:max-w-lg text-slate-100 outline-none"
+          className="glass-sheet sm:max-w-lg text-slate-900 outline-none"
           {...sheetMotion}
           {...drag.sheetProps}
         >
@@ -148,36 +148,23 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
           <div className="glass-scroll px-5 pt-0 pb-6 sm:p-8">
             <div className="text-center mb-6">
-              <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-2">
+              <span className="glass-chip text-rose-600 bg-rose-50 border-rose-200 mb-2">
                 <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('card.badge')}</span>
               </span>
-              <h3 id={titleId} className="text-xl sm:text-2xl font-black text-white">
+              <h3 id={titleId} className="text-xl sm:text-2xl font-bold text-slate-900">
                 {t('card.title')}
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 {t('card.subtitle')}
               </p>
             </div>
 
-            {/* HOLOGRAM ID CARD CONTAINER - LIQUID GLASS STYLE (no own backdrop blur: it already sits
-                on the sheet's blurred glass, a second blur here only costs GPU time) */}
+            {/* HOLOGRAM ID CARD CONTAINER - LIQUID GLASS STYLE */}
             <div
               ref={cardRef}
-              className="relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-gradient-to-br from-white/[0.10] via-slate-900/95 to-purple-950/80 shadow-2xl shadow-rose-950/50 mb-6 text-white"
+              className="relative isolate rounded-3xl p-6 sm:p-7 overflow-hidden border border-white/20 border-t-white/30 bg-[rgba(26,18,48,0.95)] shadow-2xl mb-6 text-white"
             >
-              {/* Hologram sheen effects: soft radial glows (same centres as the old blurred circles) instead of
-                  `filter: blur()`, which re-rasterises on every frame of the sheet's slide-up animation */}
-              <div
-                aria-hidden="true"
-                className="absolute top-0 right-0 -mr-28 -mt-28 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(closest-side, rgba(244, 63, 94, 0.32) 0%, rgba(236, 72, 153, 0.14) 60%, rgba(236, 72, 153, 0) 100%)' }}
-              ></div>
-              <div
-                aria-hidden="true"
-                className="absolute bottom-0 left-0 -ml-28 -mb-28 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(closest-side, rgba(99, 102, 241, 0.32) 0%, rgba(244, 63, 94, 0.14) 60%, rgba(244, 63, 94, 0) 100%)' }}
-              ></div>
 
               {/* Card Top Brand */}
               <div className="flex justify-between items-start gap-3 mb-5 border-b border-rose-500/20 pb-4 relative z-10">
@@ -192,7 +179,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                   </span>
                   {/* 8-digit IDs are short enough to read larger; legacy 16-digit IDs stay compact */}
                   <span
-                    className={`font-mono font-black text-rose-400 tracking-wider ${
+                    className={`font-mono font-semibold text-purple-300 tabular-nums tracking-wide ${
                       isKccId8(member.userId16) ? 'text-base sm:text-lg' : 'text-xs sm:text-sm'
                     }`}
                   >
@@ -220,7 +207,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                       {(member.name || member.cosplayName || 'KC')[0]?.toUpperCase() || 'KC'}
                     </div>
                   )}
-                  <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-950"></div>
+                  <div className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-[0_0_8px_#34d399]"></div>
                 </div>
 
                 {/* Names & Role */}
@@ -279,7 +266,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               <button
                 type="button"
                 onClick={handlePrintCard}
-                className="flex-1 sm:flex-initial min-h-11 py-2.5 px-4 liquid-glass-button text-white font-bold rounded-xl text-xs sm:text-sm inline-flex items-center justify-center gap-2"
+                className="btn-primary pressable flex-1 sm:flex-initial min-h-11 py-2.5 px-5 rounded-xl text-xs sm:text-sm inline-flex items-center justify-center gap-2"
               >
                 <Download className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('card.printDownload')}</span>
@@ -288,7 +275,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               <button
                 type="button"
                 onClick={handleShareCard}
-                className="glass-button min-h-11 py-2.5 px-4 rounded-xl text-xs sm:text-sm text-slate-200 gap-1.5"
+                className="glass-button min-h-11 py-2.5 px-4 rounded-xl text-xs sm:text-sm text-slate-700 hover:text-purple-700 gap-1.5"
               >
                 <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('card.share')}</span>
@@ -298,11 +285,11 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                 href="https://wa.me/6285711032782"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="glass-button min-h-11 py-2.5 px-3.5 rounded-xl text-xs sm:text-sm text-emerald-300 bg-emerald-950/60 border-emerald-500/30 gap-1.5 pressable"
+                className="glass-button min-h-11 py-2.5 px-3.5 rounded-xl text-xs sm:text-sm text-emerald-700 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 gap-1.5 pressable"
                 title={t('card.contactAdminWhatsapp')}
                 aria-label={t('card.contactAdminWhatsapp')}
               >
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
                 <span className="hidden sm:inline">WhatsApp</span>
               </a>
             </div>

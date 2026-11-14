@@ -142,7 +142,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Shared field styling: glass input, 16px text on phones (no iOS focus zoom), 14px from `sm`.
-  const inputClass = 'glass-input w-full ps-9 pe-3 text-base sm:text-sm text-white';
+  const inputClass = 'glass-input w-full ps-9 pe-3 text-base sm:text-sm text-slate-900';
   const iconClass = 'absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none';
 
   // Overlay and sheet are siblings (index.css: a dimmed/blurred parent would cut the sheet's own blur).
@@ -161,7 +161,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className="glass-sheet sm:max-w-md text-slate-100 outline-none"
+          className="glass-sheet sm:max-w-md text-slate-900 outline-none"
           {...sheetMotion}
           {...drag.sheetProps}
         >
@@ -174,7 +174,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="glass-icon-button absolute top-3 end-3 z-10 sm:top-4 sm:end-4"
+            className="glass-icon-button overflow-hidden absolute top-3 end-3 z-10 sm:top-4 sm:end-4"
             aria-label={t('common.close')}
           >
             <X className="w-5 h-5" />
@@ -182,19 +182,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <div className="glass-scroll px-6 pt-0 pb-6 sm:p-8">
             <div className="text-center mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center font-black text-white text-xl mx-auto mb-3 shadow-lg shadow-rose-500/25">
-                KC
-              </div>
-              <h3 id={titleId} className="text-xl sm:text-2xl font-black text-white">
+              <h3 id={titleId} className="text-xl sm:text-2xl font-black text-slate-900">
                 {mode === 'signup'
                   ? t('auth.signUpTitle')
                   : mode === 'forgot'
                   ? t('auth.forgotPasswordTitle')
                   : t('auth.loginTitle')}
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                {t('auth.portalSubtitle')}
-              </p>
             </div>
 
             {mode !== 'forgot' && (
@@ -254,11 +248,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
                 <div>
-                  <label htmlFor={nameId} className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
-                    {t('auth.nameLabel')} <span className="text-slate-400 font-normal">{t('common.optional')}</span>
+                  <label htmlFor={nameId} className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                    {t('auth.nameLabel')} <span className="text-slate-500 font-normal">{t('common.optional')}</span>
                   </label>
                   <div className="relative">
-                    <Sparkles className={`${iconClass} text-rose-400`} aria-hidden="true" />
+                    <Sparkles className={`${iconClass} text-rose-500`} aria-hidden="true" />
                     <input
                       id={nameId}
                       type="text"
@@ -270,7 +264,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       className={`${inputClass} font-semibold`}
                     />
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="text-[10px] text-slate-500 mt-1">
                     {t('auth.nameHint')}
                   </p>
                 </div>
@@ -278,11 +272,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <>
                 <div>
-                  <label htmlFor={emailId} className="block text-[11px] font-bold text-slate-300 uppercase mb-1">
+                  <label htmlFor={emailId} className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
                     {t('auth.emailLabel')}
                   </label>
                   <div className="relative">
-                    <Mail className={`${iconClass} text-slate-500`} aria-hidden="true" />
+                    <Mail className={`${iconClass} text-slate-400`} aria-hidden="true" />
                     <input
                       id={emailId}
                       type="email"
@@ -302,21 +296,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {mode !== 'forgot' && (
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label htmlFor={passwordId} className="block text-[11px] font-bold text-slate-300 uppercase">
+                      <label htmlFor={passwordId} className="block text-[11px] font-bold text-slate-700 uppercase">
                         {t('auth.passwordLabel')}
                       </label>
                       {mode === 'login' && (
                         <button
                           type="button"
                           onClick={() => setMode('forgot')}
-                          className="touch-target text-[10px] text-rose-400 hover:underline"
+                          className="touch-target text-[10px] text-purple-600 hover:underline"
                         >
                           {t('auth.forgotPasswordLink')}
                         </button>
                       )}
                     </div>
                     <div className="relative">
-                      <Lock className={`${iconClass} text-slate-500`} aria-hidden="true" />
+                      <Lock className={`${iconClass} text-slate-400`} aria-hidden="true" />
                       <input
                         id={passwordId}
                         type="password"
@@ -356,7 +350,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setMode('login')}
-                  className="w-full min-h-11 text-center text-xs text-slate-400 hover:text-white"
+                  className="w-full min-h-11 text-center text-xs text-slate-500 hover:text-purple-700"
                 >
                   {t('auth.backToLogin')}
                 </button>
@@ -366,9 +360,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {mode !== 'forgot' && (
               <>
                 <div className="flex items-center gap-3 my-5">
-                  <div className="h-px flex-1 bg-white/10" aria-hidden="true"></div>
-                  <span className="text-[10px] uppercase text-slate-400">{t('auth.orContinueWith')}</span>
-                  <div className="h-px flex-1 bg-white/10" aria-hidden="true"></div>
+                  <div className="h-px flex-1 bg-slate-200" aria-hidden="true"></div>
+                  <span className="text-[10px] uppercase text-slate-500">{t('auth.orContinueWith')}</span>
+                  <div className="h-px flex-1 bg-slate-200" aria-hidden="true"></div>
                 </div>
 
                 <div className="space-y-2">

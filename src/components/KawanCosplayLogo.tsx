@@ -75,8 +75,14 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
 
   const iconDimensions = {
     sm: isImageActive ? 'h-11 sm:h-14 w-auto max-w-[210px]' : 'w-11 h-11 sm:w-14 sm:h-14',
-    md: isImageActive ? 'h-14 sm:h-18 w-auto max-w-[260px]' : 'w-14 h-14 sm:w-18 sm:h-18',
-    lg: isImageActive ? 'h-20 sm:h-24 w-auto max-w-[320px]' : 'w-20 h-20 sm:w-24 sm:h-24',
+    md: isImageActive ? 'h-16 sm:h-20 w-auto max-w-[320px]' : 'w-16 h-16 sm:w-20 sm:h-20',
+    lg: isImageActive ? 'h-24 sm:h-28 w-auto max-w-[400px]' : 'w-24 h-24 sm:w-28 sm:h-28',
+  }[size];
+
+  const imgDimensions = {
+    sm: 'h-11 sm:h-14 max-w-[210px]',
+    md: 'h-15 sm:h-18 md:h-20 max-w-[320px]',
+    lg: 'h-22 sm:h-26 md:h-28 max-w-[400px]',
   }[size];
 
   const logoTitle = theme?.logo?.title || 'MyKCC';
@@ -89,16 +95,16 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
       {/* Official KawanCosplay Vector Emblem or Custom Logo */}
       <div className={`relative ${noContainer ? '' : iconDimensions} shrink-0 flex items-center justify-center`}>
         {logoSrc && !hasImageError ? (
-          // width/height reserve the (square) box before the image arrives: no header layout shift
+          // width/height reserve the box before the image arrives: no header layout shift
           <img
             key={logoSrc}
             src={logoSrc}
             srcSet={imageStage === 0 ? logoSrcSet : undefined}
             sizes={imageStage === 0 && logoSrcSet ? logoSizes : undefined}
-            width={44}
-            height={44}
+            width={72}
+            height={72}
             alt={t('common.logoAlt')}
-            className={`h-11 sm:h-14 w-auto max-w-[210px] object-contain block ${NO_CALLOUT_CLASS}`}
+            className={`${imgDimensions} w-auto object-contain block transition-transform group-hover:scale-105 duration-200 ${NO_CALLOUT_CLASS}`}
             loading="eager"
             decoding="async"
             fetchPriority="high"
@@ -250,14 +256,14 @@ export const KawanCosplayLogo: React.FC<KawanCosplayLogoProps> = ({
       {showText && (
         <div className="flex flex-col text-left">
           <div className="flex items-center space-x-1.5 sm:space-x-2">
-            <span className="font-black text-lg sm:text-2xl tracking-tight bg-gradient-to-r from-white via-rose-100 to-pink-300 bg-clip-text text-transparent leading-none">
+            <span className="font-black text-lg sm:text-2xl tracking-tight text-slate-900 leading-none">
               {logoTitle}
             </span>
-            <span className="px-1.5 py-0.5 text-[8px] sm:text-[9px] font-extrabold tracking-wider uppercase rounded-md bg-gradient-to-r from-rose-500/20 to-purple-500/20 text-rose-300 border border-rose-500/30 leading-none">
+            <span className="px-1.5 py-0.5 text-[8px] sm:text-[9px] font-extrabold tracking-wider uppercase rounded-md bg-purple-100 text-purple-700 border border-purple-200 leading-none">
               {t('common.officialBadge')}
             </span>
           </div>
-          <span className="text-[9px] sm:text-[11px] font-bold text-slate-400 tracking-wider uppercase mt-0.5 sm:mt-1 leading-none">
+          <span className="text-[9px] sm:text-[11px] font-bold text-slate-500 tracking-wider uppercase mt-0.5 sm:mt-1 leading-none">
             {logoSubtitle}
           </span>
         </div>

@@ -135,8 +135,8 @@ export const AuditLogTab: React.FC = () => {
               <History className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">{t('admin.logTitle')}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">{t('admin.logInfo')}</p>
+              <h3 className="text-base font-bold text-slate-900">{t('admin.logTitle')}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed mt-1 max-w-3xl">{t('admin.logInfo')}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -144,13 +144,13 @@ export const AuditLogTab: React.FC = () => {
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value as AdminLogAction | 'all')}
               aria-label={t('admin.logColAction')}
-              className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-200 pointer-coarse:min-h-11"
+              className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 bg-white border border-slate-300 pointer-coarse:min-h-11"
             >
-              <option value="all" className="bg-slate-900 text-white">
+              <option value="all" className="bg-white text-slate-900">
                 {t('admin.logFilterAll')}
               </option>
               {ACTIONS.map((a) => (
-                <option key={a} value={a} className="bg-slate-900 text-white">
+                <option key={a} value={a} className="bg-white text-slate-900">
                   {t(LOG_ACTION_KEYS[a])}
                 </option>
               ))}
@@ -213,11 +213,11 @@ export const AuditLogTab: React.FC = () => {
                 <tbody className="divide-y divide-white/[0.06] text-slate-400">
                   {visible.map((e) => (
                     <tr key={e.id} className="align-top">
-                      <td className="py-3 px-4 whitespace-nowrap">{timeLabel(e)}</td>
-                      <td className="py-3 px-4 break-all text-slate-300">{actorLabel(e)}</td>
-                      <td className="py-3 px-4 font-bold text-white whitespace-nowrap">{actionLabel(e.action)}</td>
-                      <td className="py-3 px-4 break-words text-slate-300 max-w-[14rem]">{targetLabel(e)}</td>
-                      <td className="py-3 px-4 max-w-[22rem]">{renderDetails(e)}</td>
+                      <td className="py-3 px-4 whitespace-nowrap text-slate-700">{timeLabel(e)}</td>
+                      <td className="py-3 px-4 break-all text-slate-700">{actorLabel(e)}</td>
+                      <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">{actionLabel(e.action)}</td>
+                      <td className="py-3 px-4 break-words text-slate-700 max-w-[14rem]">{targetLabel(e)}</td>
+                      <td className="py-3 px-4 max-w-[22rem] text-slate-800">{renderDetails(e)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -227,18 +227,18 @@ export const AuditLogTab: React.FC = () => {
         ) : (
           <ul className="space-y-2">
             {visible.map((e) => (
-              <li key={e.id} className="liquid-glass-card rounded-2xl p-4 space-y-1.5 text-[11px] text-slate-400">
+              <li key={e.id} className="liquid-glass-card rounded-2xl p-4 space-y-1.5 text-[11px] text-slate-600">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                  <p className="font-bold text-white text-sm">{actionLabel(e.action)}</p>
-                  <p>{timeLabel(e)}</p>
+                  <p className="font-bold text-slate-900 text-sm">{actionLabel(e.action)}</p>
+                  <p className="text-slate-500">{timeLabel(e)}</p>
                 </div>
                 <p className="break-all">
                   <span className="text-slate-500">{t('admin.logColActor')}: </span>
-                  <span className="text-slate-300">{actorLabel(e)}</span>
+                  <span className="text-slate-700">{actorLabel(e)}</span>
                 </p>
                 <p className="break-words">
                   <span className="text-slate-500">{t('admin.logColTarget')}: </span>
-                  <span className="text-slate-300">{targetLabel(e)}</span>
+                  <span className="text-slate-700">{targetLabel(e)}</span>
                 </p>
                 {renderDetails(e)}
               </li>

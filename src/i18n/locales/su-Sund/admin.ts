@@ -95,6 +95,18 @@ const admin: LocaleNamespace<'admin'> = {
   filterLegalAge: "ᮞᮝᮝ (18+)",
   filterMinor: "ᮠᮔ᮪ᮓᮕᮩᮔ᮪ ᮅᮙᮥᮁ (<18)",
   filterPreferNotToSay: "ᮒᮩ ᮓᮤᮞᮨᮘᮒ᮪ᮊᮩᮔ᮪",
+
+  filterAllBirthdays: "ᮞᮓᮚ ᮓᮤᮔ᮪ᮒᮨᮔ᮪ ᮝᮨᮒᮧᮔ᮪",
+
+  filterHasBirthday: "ᮃᮚ ᮓᮤᮔ᮪ᮒᮨᮔ᮪ ᮝᮨᮒᮧᮔ᮪",
+
+  filterBirthdayThisMonth: "ᮓᮤᮔ᮪ᮒᮨᮔ᮪ ᮝᮨᮒᮧᮔ᮪ ᮞᮞᮤᮂ ᮄᮉ",
+
+  filterAllSocials: "ᮞᮓᮚ ᮙᮦᮓᮤᮃ ᮞᮧᮞᮤᮃᮜ᧞",
+
+  filterHasSocial: "ᮃᮚ ᮙᮦᮓᮤᮃ ᮞᮧᮞᮤᮃᮜ᧞",
+
+  filterNoSocial: "ᮠᮨᮔ᮪ᮒᮩ ᮃᮚ ᮙᮦᮓᮤᮃ ᮞᮧᮞᮤᮃᮜ᧞",
   sortNewest: "🕒 ᮝᮊ᮪ᮒᮧᮞ᮪: ᮕᮍᮑᮁᮔ",
   sortNameAsc: "🔤 ᮝᮞ᮪ᮒ: A → Z",
   purgeButtonTitle: "ᮘᮨᮛᮨᮞᮤᮠᮔ᮪ ᮞᮓᮚ ᮓᮒ ᮃᮀᮌᮧᮒ ᮓᮤ Firestore",

@@ -129,10 +129,9 @@ const isCustomCityValue = (city: string) => city === CUSTOM_CITY_OPTION || city 
 // Field a validation error points at: it gets aria-invalid (the red .glass-input border) until the next submit
 type ErrorField = 'name' | 'email' | 'phone' | 'ageCategory' | 'socialMedia' | 'customCity' | 'codeOfConduct';
 
-// Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
-// control where it was while giving the tint some room.
+// Radio / checkbox rows: solid white cards with crisp slate-900 text and 1.5px border
 const CHOICE_ROW_CLASS =
-  'pressable-soft flex gap-3 -mx-2 px-2.5 py-1.5 rounded-xl cursor-pointer hover:bg-purple-500/10 active:bg-purple-500/15 transition-colors';
+  'pressable-soft flex gap-3 p-3.5 rounded-2xl cursor-pointer bg-white border-[1.5px] border-slate-200 hover:border-purple-400 active:bg-purple-50 text-slate-900 transition-all shadow-sm';
 
 // The file input is visually hidden (sr-only, still focusable), so its label shows the focus ring
 const FILE_PICKER_FOCUS_RING =
@@ -169,26 +168,36 @@ export const AgeCategoryRadios: React.FC<{
 }) => {
   const { t } = useI18n();
   return (
-    <div role="radiogroup" aria-invalid={ariaInvalid || undefined} className="space-y-1 mt-2">
-      {AGE_CATEGORIES.map((opt) => (
-        <label key={opt.val} className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
-          <input
-            type="radio"
-            name="ageCategory"
-            required
-            value={opt.val}
-            checked={value === opt.val}
-            onChange={(e) => {
-              onChange(e.target.value);
-              haptic('selection');
-            }}
-            className="w-5 h-5 shrink-0 cursor-pointer"
-          />
-          <span className="text-sm text-slate-700 font-medium group-hover:text-purple-700">
-            {t(opt.labelKey)}
-          </span>
-        </label>
-      ))}
+    <div role="radiogroup" aria-invalid={ariaInvalid || undefined} className="space-y-2 mt-2">
+      {AGE_CATEGORIES.map((opt) => {
+        const isSelected = value === opt.val;
+        return (
+          <label
+            key={opt.val}
+            className={`pressable-soft flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer min-h-11 transition-all shadow-sm ${
+              isSelected
+                ? 'bg-purple-50 border-[1.5px] border-purple-600 text-purple-950 font-bold ring-1 ring-purple-500/20'
+                : 'bg-white border-[1.5px] border-slate-200 text-slate-900 hover:border-purple-300'
+            }`}
+          >
+            <input
+              type="radio"
+              name="ageCategory"
+              required
+              value={opt.val}
+              checked={isSelected}
+              onChange={(e) => {
+                onChange(e.target.value);
+                haptic('selection');
+              }}
+              className="w-5 h-5 shrink-0 cursor-pointer accent-[#7C3AED]"
+            />
+            <span className="text-sm font-semibold">
+              {t(opt.labelKey)}
+            </span>
+          </label>
+        );
+      })}
     </div>
   );
 };
@@ -718,7 +727,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           )}
 
           <div className="flex items-center justify-end pt-3 border-t border-slate-200/40 text-xs">
-            <span className="text-rose-500 font-semibold">{t('registration.requiredIndicator')}</span>
+            <span className="text-rose-700 font-bold">{t('registration.requiredIndicator')}</span>
           </div>
         </div>
       </div>
@@ -728,7 +737,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           <motion.div
             key="error"
             {...fadeMotion}
-            className="glass-well relative isolate mb-6 p-4 rounded-2xl border-rose-500/50 bg-rose-950/60 text-rose-200 text-sm flex items-center gap-2"
+            className="glass-well relative isolate mb-6 p-4 rounded-2xl border border-rose-300 bg-rose-50 text-rose-800 font-medium text-sm flex items-center gap-2"
           >
             <ErrorFlash pulse={errorPulse} />
             <div className="w-2 h-2 rounded-full bg-rose-400 shrink-0"></div>
@@ -779,10 +788,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         {/* QUESTION 1: NAME (JUST ASK NAME) */}
         <div className="glass-card rounded-3xl p-5 sm:p-8">
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
-            {t('registration.nameLabel')} <span className="text-rose-500">*</span>
+            {t('registration.nameLabel')} <span className="text-rose-700 font-bold">*</span>
           </label>
-          <p className="text-xs text-rose-300/90 mb-4 flex items-start space-x-1.5">
-            <ShieldCheck className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-rose-800 font-medium mb-4 flex items-start space-x-1.5">
+            <ShieldCheck className="w-4 h-4 text-rose-700 shrink-0 mt-0.5" />
             <span>{t('registration.namePrivacyNotice')}</span>
           </p>
 
@@ -804,10 +813,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           <div>
             <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
               {t('registration.whatsappLabel')}{' '}
-              <span className="text-rose-500">*</span>
+              <span className="text-rose-700 font-bold">*</span>
             </label>
-            <p className="text-xs text-emerald-300/90 mb-3 flex items-start space-x-1.5">
-              <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-emerald-800 font-semibold mb-3 flex items-start space-x-1.5">
+              <MessageCircle className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
               <span>{t('registration.whatsappNotice')}</span>
             </p>
 
@@ -818,7 +827,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               value={formData.phone}
               onChange={(phone) => setFormData({ ...formData, phone })}
             />
-            <p className="text-[11px] text-slate-400 mt-2">
+            <p className="text-[11px] text-slate-500 font-medium mt-2">
               {t('registration.extraPhonesInProfileHint')}
             </p>
           </div>
@@ -828,7 +837,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.discordLabel')}{' '}
-            <span className="text-xs text-slate-400 font-normal">{t('registration.optionalTag')}</span>
+            <span className="text-xs text-slate-600 font-semibold">{t('registration.optionalTag')}</span>
           </label>
           <p className="text-xs text-slate-500 mb-4">
             {t('registration.discordDesc')}
@@ -847,7 +856,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         {/* QUESTION 4: EMAIL (REQUIRED) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
-            {t('registration.emailLabel')} <span className="text-rose-500">*</span>
+            {t('registration.emailLabel')} <span className="text-rose-700 font-bold">*</span>
           </label>
           <p className="text-xs text-slate-500 mb-4">
             {t('registration.emailRequiredNotice')}
@@ -869,23 +878,23 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1.5">
             <label className="block text-sm sm:text-base font-bold text-slate-900">
-              {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
+              {t('registration.ageCategoryLabel')} <span className="text-rose-700 font-bold">*</span>
             </label>
 
             <button
               type="button"
               onClick={() => setShowAgeExplainer(!showAgeExplainer)}
               aria-expanded={showAgeExplainer}
-              className="touch-target pressable min-w-0 text-left text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 underline"
+              className="touch-target pressable min-w-0 text-left text-xs text-purple-700 hover:text-purple-900 flex items-center gap-1 underline font-semibold"
             >
-              <Info className="w-3.5 h-3.5" />
+              <Info className="w-3.5 h-3.5 text-purple-600" />
               <span>{t('registration.ageExplanationTitle')}</span>
             </button>
           </div>
 
           {showAgeExplainer && (
-            <div className="glass-well p-3.5 border-rose-500/30 rounded-2xl text-xs text-slate-300 mb-4 leading-relaxed animate-fade-in">
-              <strong className="text-rose-300 block mb-1">{t('registration.ageExplanationTitle')}</strong>
+            <div className="glass-well p-3.5 border-purple-200 rounded-2xl text-xs text-slate-700 mb-4 leading-relaxed animate-fade-in bg-purple-50/70">
+              <strong className="text-purple-900 block mb-1">{t('registration.ageExplanationTitle')}</strong>
               <p>{t('registration.ageExplanationDesc')}</p>
             </div>
           )}
@@ -925,7 +934,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}
         >
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
-            {t('registration.locationTitle')} <span className="text-rose-500">*</span>
+            {t('registration.locationTitle')} <span className="text-rose-700 font-bold">*</span>
           </label>
           <p className="text-xs text-slate-500 mb-4">
             {t('registration.locationNotice')}
@@ -1026,54 +1035,63 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         {/* QUESTION 7: PRIMARY ROLE / INTEREST (INCLUSIVE) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
-            {t('registration.roleTitle')} <span className="text-rose-500">*</span>
+            {t('registration.roleTitle')} <span className="text-rose-700 font-bold">*</span>
           </label>
           <p className="text-xs text-slate-500 mb-4">
             {t('registration.roleDesc')}
           </p>
 
-          <div className="space-y-1">
-            {COMMUNITY_ROLES.map((role) => (
-              <div key={role.val}>
-                <label className={`${CHOICE_ROW_CLASS} items-center min-h-11 py-1 group`}>
-                  <input
-                    type="radio"
-                    name="primaryRole"
-                    required
-                    value={role.val}
-                    checked={formData.primaryRole === role.val}
-                    onChange={(e) => {
-                      setFormData({ ...formData, primaryRole: e.target.value });
-                      haptic('selection');
-                    }}
-                    className="w-5 h-5 shrink-0 cursor-pointer"
-                  />
-                  <span className="text-sm text-slate-700 font-medium group-hover:text-purple-700">
-                    {t(role.labelKey)}
-                  </span>
-                </label>
-
-                {role.val === 'Lainnya / Others' && formData.primaryRole === 'Lainnya / Others' && (
-                  <div className="mt-1.5 mb-2 ms-8">
+          <div className="space-y-2">
+            {COMMUNITY_ROLES.map((role) => {
+              const isSelected = formData.primaryRole === role.val;
+              return (
+                <div key={role.val}>
+                  <label
+                    className={`pressable-soft flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer min-h-11 transition-all shadow-sm ${
+                      isSelected
+                        ? 'bg-purple-50 border-[1.5px] border-purple-600 text-purple-950 font-bold ring-1 ring-purple-500/20'
+                        : 'bg-white border-[1.5px] border-slate-200 text-slate-900 hover:border-purple-300'
+                    }`}
+                  >
                     <input
-                      type="text"
-                      placeholder={t('registration.roleOthersPlaceholder')}
-                      maxLength={MEMBER_FIELD_LIMITS.customRole}
-                      value={formData.customRole}
-                      onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
-                      className="glass-input w-full text-base sm:text-sm"
+                      type="radio"
+                      name="primaryRole"
+                      required
+                      value={role.val}
+                      checked={isSelected}
+                      onChange={(e) => {
+                        setFormData({ ...formData, primaryRole: e.target.value });
+                        haptic('selection');
+                      }}
+                      className="w-5 h-5 shrink-0 cursor-pointer accent-[#7C3AED]"
                     />
-                  </div>
-                )}
-              </div>
-            ))}
+                    <span className="text-sm font-semibold">
+                      {t(role.labelKey)}
+                    </span>
+                  </label>
+
+                  {role.val === 'Lainnya / Others' && formData.primaryRole === 'Lainnya / Others' && (
+                    <div className="mt-2 mb-2 ms-4">
+                      <input
+                        type="text"
+                        placeholder={t('registration.roleOthersPlaceholder')}
+                        maxLength={MEMBER_FIELD_LIMITS.customRole}
+                        value={formData.customRole}
+                        onChange={(e) => setFormData({ ...formData, customRole: e.target.value })}
+                        className="glass-input w-full text-base sm:text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* QUESTION 8: FAVORITE FANDOM / IDOL GROUP / SERIES */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
-            {t('registration.fandomTitle')} <span className="text-rose-500">*</span>
+            {t('registration.fandomTitle')} <span className="text-rose-700 font-bold">*</span>
           </label>
           <p className="text-xs text-slate-500 mb-4">
             {t('registration.fandomDesc')}
@@ -1126,7 +1144,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.socialMediaTitle')}{' '}
-            <span className="text-rose-500">*</span>
+            <span className="text-rose-700 font-bold">*</span>
           </label>
           <p className="text-xs text-slate-500 mb-4">
             {t('registration.socialMediaDesc')}
@@ -1245,10 +1263,16 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         {/* QUESTION 14: CODE OF CONDUCT (REQUIRED CHECKBOX) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <label className="block text-sm sm:text-base font-bold text-slate-900 mb-3">
-            {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
+            {t('registration.codeOfConductTitle')} <span className="text-rose-700 font-bold">*</span>
           </label>
 
-          <label className={`${CHOICE_ROW_CLASS} items-start py-1`}>
+          <label
+            className={`pressable-soft flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer transition-all shadow-sm ${
+              formData.acceptedCodeOfConduct
+                ? 'bg-emerald-50 border-[1.5px] border-emerald-600 text-emerald-950 font-semibold ring-1 ring-emerald-500/20'
+                : 'bg-white border-[1.5px] border-slate-200 text-slate-900 hover:border-emerald-300'
+            }`}
+          >
             <input
               type="checkbox"
               required
@@ -1258,7 +1282,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                 setFormData({ ...formData, acceptedCodeOfConduct: e.target.checked });
                 haptic('selection');
               }}
-              className="mt-0.5 w-5 h-5 shrink-0 rounded cursor-pointer"
+              className="mt-0.5 w-5 h-5 shrink-0 rounded cursor-pointer accent-emerald-600"
             />
             <span className="text-sm text-slate-800 font-medium leading-relaxed">
               {t('registration.codeOfConductAgreement')}
@@ -1277,10 +1301,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                   key="error"
                   role="alert"
                   {...fadeMotion}
-                  className="relative isolate flex items-start gap-2 rounded-xl px-2 py-1 text-sm text-rose-200"
+                  className="relative isolate flex items-start gap-2 rounded-xl px-2.5 py-1.5 text-sm text-rose-800 font-semibold bg-rose-50 border border-rose-300"
                 >
                   <ErrorFlash pulse={errorPulse} />
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                   <span>{errorMsg}</span>
                 </motion.div>
               )}
@@ -1310,7 +1334,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           <button
             type="button"
             onClick={handleClearForm}
-            className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-300 hover:text-white hover:bg-rose-500/15 inline-flex items-center justify-center gap-1.5 font-semibold"
+            className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-700 hover:text-rose-900 hover:bg-rose-50 inline-flex items-center justify-center gap-1.5 font-bold"
           >
             <RotateCcw className="w-4 h-4" />
             <span>{t('registration.clearForm')}</span>

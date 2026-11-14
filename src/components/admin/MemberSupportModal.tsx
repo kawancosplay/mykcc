@@ -232,30 +232,30 @@ export const MemberSupportModal: React.FC<MemberSupportModalProps> = ({
           </div>
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <p className="font-bold text-white text-base break-words">{name}</p>
+              <p className="font-bold text-slate-900 text-base break-words">{name}</p>
               {isMainMember && (
-                <span className="glass-chip bg-amber-500/20 text-amber-300 border-amber-500/40">
-                  <Crown className="w-3 h-3" aria-hidden="true" />
+                <span className="glass-chip bg-amber-100 text-amber-800 border-amber-300 font-bold">
+                  <Crown className="w-3 h-3 text-amber-700" aria-hidden="true" />
                   <span>{t('admin.mainAccountBadge')}</span>
                 </span>
               )}
               {isAdminMember && <AdminChip />}
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-mono font-bold text-white tracking-wider text-sm">{kccLabel}</span>
+              <span className="font-mono font-bold text-slate-900 tracking-wider text-sm">{kccLabel}</span>
               <KccIdBadge id={m.userId16} />
             </div>
             {m.legacyUserId16 && (
-              <p className="text-[11px] text-slate-400 font-mono">
+              <p className="text-[11px] text-slate-600 font-mono">
                 {t('admin.oldIdValue', { id: formatKccId(m.legacyUserId16) })}
               </p>
             )}
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-600">
               {t(STATUS_LABEL_KEYS[m.status] || 'admin.statusVerified')} • {t(SOURCE_LABEL_KEYS[m.source] || 'admin.sourceWebForm')}
               {m.createdAt ? ` • ${t('admin.registeredOn', { date: formatDate(m.createdAt) })}` : ''}
             </p>
-            <p className={`text-[11px] font-semibold flex items-center gap-1 ${m.authUid ? 'text-emerald-300' : 'text-slate-400'}`}>
-              {m.authUid ? <Link2 className="w-3.5 h-3.5" aria-hidden="true" /> : <Link2Off className="w-3.5 h-3.5" aria-hidden="true" />}
+            <p className={`text-[11px] font-semibold flex items-center gap-1 ${m.authUid ? 'text-emerald-700 font-bold' : 'text-slate-600'}`}>
+              {m.authUid ? <Link2 className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" /> : <Link2Off className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />}
               <span>{m.authUid ? t('admin.loginLinked') : t('admin.loginNotLinked')}</span>
             </p>
           </div>

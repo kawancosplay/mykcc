@@ -44,18 +44,18 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
   const disclosureMotion = useReducedMotion() === true ? FADE_MOTION : DISCLOSURE_MOTION;
 
   return (
-    <div className="relative text-slate-700 text-xs">
+    <div className="relative text-slate-800 text-[13px]">
       {/* Top Banner Row - Gov style */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1">
-        <div className="flex flex-wrap items-center justify-between gap-1 min-h-[2.25rem] sm:min-h-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 min-h-[2.5rem] sm:min-h-0">
           {/* Left: Global Community Badge + Official Site Tag */}
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-5 h-5 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center shrink-0 text-emerald-700">
-              <Globe className="w-3 h-3" />
+              <Globe className="w-3.5 h-3.5" />
             </div>
 
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <span className="font-bold text-slate-900">
+              <span className="font-bold text-slate-900 text-[13px]">
                 {t('common.officialBannerText')}
               </span>
             </div>
@@ -66,7 +66,7 @@ export const OfficialGovBanner: React.FC<OfficialGovBannerProps> = () => {
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="touch-target inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 font-semibold underline underline-offset-2 transition-colors cursor-pointer"
+              className="touch-target inline-flex items-center gap-1 text-purple-700 hover:text-purple-900 font-bold underline underline-offset-2 transition-colors cursor-pointer text-[13px]"
               aria-expanded={isOpen}
             >
               <span>{t('common.howYouKnow')}</span>

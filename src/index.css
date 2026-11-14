@@ -82,24 +82,24 @@
   /* Vibrant anime pastel canvas background */
   --app-bg: linear-gradient(135deg, #b18cfe 0%, #93c5fd 50%, #6ee7b7 100%);
 
-  /* Glass materials: comfortable soft translucent frosted liquid glass (~50-70% opacity) */
+  /* Glass materials: soft translucent liquid glass surface (rgba(255, 255, 255, 0.56) default) */
   --glass-fill-bar: rgba(255, 255, 255, 0.65);
-  --glass-fill-card: rgba(255, 255, 255, 0.62);
-  --glass-fill-raised: rgba(255, 255, 255, 0.70);
-  --glass-fill-elevated: rgba(255, 255, 255, 0.76);
-  --glass-fill-sheet: rgba(255, 255, 255, 0.80);
-  --glass-fill-menu: rgba(255, 255, 255, 0.82);
-  --glass-fill-well: rgba(255, 255, 255, 0.40);
-  --glass-fill-input: rgba(255, 255, 255, 0.60);
-  --glass-fill-control: rgba(255, 255, 255, 0.45);
-  --glass-fill-control-hover: rgba(255, 255, 255, 0.75);
+  --glass-fill-card: rgba(255, 255, 255, 0.56);
+  --glass-fill-raised: rgba(255, 255, 255, 0.62);
+  --glass-fill-elevated: rgba(255, 255, 255, 0.72);
+  --glass-fill-sheet: rgba(255, 255, 255, 0.75);
+  --glass-fill-menu: rgba(255, 255, 255, 0.75);
+  --glass-fill-well: rgba(255, 255, 255, 0.50);
+  --glass-fill-input: rgba(255, 255, 255, 0.88);
+  --glass-fill-control: rgba(255, 255, 255, 0.75);
+  --glass-fill-control-hover: rgba(255, 255, 255, 0.90);
   --glass-fill-selected: rgba(139, 92, 246, 0.16);
-  --glass-fill-overlay: rgba(15, 23, 42, 0.40);
-  --glass-fill-solid: rgba(255, 255, 255, 0.88);
+  --glass-fill-overlay: rgba(15, 23, 42, 0.45);
+  --glass-fill-solid: #ffffff;
 
-  /* Clean crystal rim, strokes, and specular caustics */
-  --glass-stroke: rgba(255, 255, 255, 0.70);
-  --glass-stroke-strong: rgba(255, 255, 255, 0.85);
+  /* Clean crystal rim, strokes, and specular caustics: 1.5px solid rgba(255, 255, 255, 0.82) */
+  --glass-stroke: rgba(255, 255, 255, 0.82);
+  --glass-stroke-strong: rgba(255, 255, 255, 0.88);
   --glass-stroke-top: rgba(255, 255, 255, 0.95);
   --glass-stroke-selected: rgba(139, 92, 246, 0.5);
   --glass-stroke-focus: #7c3aed;
@@ -147,8 +147,14 @@
    ========================================================================= */
 
 @layer base {
-  :root {
+  :root,
+  html,
+  body {
     color-scheme: light; /* crystal clear light frosted theme with vivid contrast */
+  }
+
+  html[data-surface-mode="dark"] {
+    color-scheme: dark;
   }
 
   html {
@@ -208,6 +214,12 @@
 
   select option,
   select optgroup {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  html[data-surface-mode="dark"] select option,
+  html[data-surface-mode="dark"] select optgroup {
     background-color: #120c26;
     color: #f8fafc;
   }
@@ -237,7 +249,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: transparent;
-  color: #ffffff;
+  color: #0f172a;
   min-height: 100vh;
 }
 
@@ -560,18 +572,18 @@ button, a[role="button"] {
     backdrop-filter: blur(14px) saturate(140%);
   }
 
-  /* ---------- In-flow cards: crystal clear frosted liquid glass material (~90% opacity) ---------- */
+  /* ---------- In-flow cards: soft translucent liquid glass material (rgba(255, 255, 255, 0.56)) ---------- */
   .glass-card,
   .liquid-glass-card {
-    background-color: var(--glass-fill-card);
+    background-color: var(--glass-fill-card, rgba(255, 255, 255, 0.56));
     background-image: var(--glass-sheen);
-    border: 1.5px solid var(--glass-stroke);
-    border-top-color: var(--glass-stroke-top);
+    border: 1.5px solid rgba(255, 255, 255, 0.82);
+    border-top-color: var(--glass-stroke-top, rgba(255, 255, 255, 0.95));
     border-radius: 1.5rem;
     box-shadow: var(--glass-highlight), var(--glass-shadow-md);
     color: #0f172a;
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+    backdrop-filter: blur(18px) saturate(170%);
   }
 
   .glass-raised {
@@ -941,20 +953,20 @@ button, a[role="button"] {
     font-weight: 700;
   }
 
-  /* ---------- Inner inputs, selects, radios, checkboxes: soft liquid glass wells ---------- */
+  /* ---------- Inner inputs, selects, radios, checkboxes: translucent pill wells (rgba(255, 255, 255, 0.88)) ---------- */
   .glass-input,
   .liquid-glass-input {
     padding: 0.625rem 1rem;
     border-radius: 9999px;
     color: #0f172a;
-    background-color: var(--glass-fill-input);
-    border: 1.5px solid rgba(255, 255, 255, 0.75);
+    background-color: rgba(255, 255, 255, 0.88);
+    border: 1.5px solid #cbd5e1;
     box-shadow: inset 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
     caret-color: var(--theme-primary, #7c3aed);
     -webkit-appearance: none;
     appearance: none;
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
     transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
   }
 
@@ -966,7 +978,7 @@ button, a[role="button"] {
 
   .glass-input::placeholder,
   .liquid-glass-input::placeholder {
-    color: #94a3b8;
+    color: #475569;
     opacity: 1;
   }
 
@@ -975,9 +987,9 @@ button, a[role="button"] {
   .glass-input:focus-within,
   .liquid-glass-input:focus-within {
     outline: none;
-    background-color: rgba(255, 255, 255, 0.85);
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+    background-color: #ffffff;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
   }
 
   .glass-input[aria-invalid="true"],
@@ -1072,6 +1084,7 @@ button, a[role="button"] {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 9999px;
+    overflow: hidden;
     color: #475569;
     background-color: var(--glass-fill-control);
     border: 1.5px solid rgba(255, 255, 255, 0.75);
@@ -1217,17 +1230,29 @@ button, a[role="button"] {
      frame while barely visible on the translucent cards they sit on: solid fill instead. Fixed /
      overlay surfaces (sticky header, tab bar, sheets, menus, toast) keep their blur with a smaller
      radius and saturate (the cost grows with the radius; saturate is a second filter pass). */
-  @media (max-width: 767px) {
-    .glass-chip {
-      background-color: rgba(255, 255, 255, 0.85);
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
+  @media (max-width: 768px) {
+    :root {
+      --glass-fill-bar: rgba(255, 255, 255, 0.65);
+      --glass-fill-card: rgba(255, 255, 255, 0.56);
+      --glass-fill-raised: rgba(255, 255, 255, 0.62);
+      --glass-fill-sheet: rgba(255, 255, 255, 0.75);
+      --glass-fill-elevated: rgba(255, 255, 255, 0.72);
+      --glass-fill-menu: rgba(255, 255, 255, 0.75);
+      --glass-fill-well: rgba(255, 255, 255, 0.50);
+      --glass-fill-input: rgba(255, 255, 255, 0.88);
     }
 
-    .glass-icon-button {
-      background-color: rgba(255, 255, 255, 0.9);
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
+    .glass-card,
+    .liquid-glass-card,
+    .glass-sheet,
+    .glass-elevated,
+    .liquid-glass-elevated,
+    .glass-raised {
+      background-color: rgba(255, 255, 255, 0.56) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.82) !important;
+      -webkit-backdrop-filter: blur(18px) saturate(170%) !important;
+      backdrop-filter: blur(18px) saturate(170%) !important;
+      color: #0f172a;
     }
 
     .liquid-glass::before,
@@ -1235,8 +1260,37 @@ button, a[role="button"] {
     .glass-pill::before,
     .glass-tabbar::before,
     .glass-footer {
-      -webkit-backdrop-filter: blur(14px) saturate(140%);
-      backdrop-filter: blur(14px) saturate(140%);
+      background-color: rgba(255, 255, 255, 0.65) !important;
+      -webkit-backdrop-filter: blur(18px) saturate(170%) !important;
+      backdrop-filter: blur(18px) saturate(170%) !important;
+    }
+
+    .glass-input,
+    .liquid-glass-input,
+    input.glass-input,
+    select.glass-input,
+    textarea.glass-input {
+      font-size: 16px !important;
+      min-height: 44px !important;
+      background-color: rgba(255, 255, 255, 0.88) !important;
+      border: 1.5px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+
+    .glass-chip {
+      background-color: #ffffff;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .glass-icon-button {
+      background-color: #ffffff;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
     }
 
     .glass-sheet,

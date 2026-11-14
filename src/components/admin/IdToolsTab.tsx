@@ -352,17 +352,17 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
             <ListOrdered className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">{t('admin.runOrderTitle')}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed mt-1">{t('admin.runOrderDesc')}</p>
+            <h3 className="text-base font-bold text-slate-900">{t('admin.runOrderTitle')}</h3>
+            <p className="text-xs text-slate-600 leading-relaxed mt-1">{t('admin.runOrderDesc')}</p>
           </div>
         </div>
         <ol className="space-y-2">
           <li className="glass-well rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-white">{t('admin.runOrderStep1')}</span>
+            <span className="text-sm font-semibold text-slate-900">{t('admin.runOrderStep1')}</span>
             <span className="glass-chip self-start sm:self-center">{step1Chip}</span>
           </li>
           <li className="glass-well rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-white">{t('admin.runOrderStep2')}</span>
+            <span className="text-sm font-semibold text-slate-900">{t('admin.runOrderStep2')}</span>
             <button
               type="button"
               onClick={onOpenSync}
@@ -374,7 +374,7 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
             </button>
           </li>
           <li className="glass-well rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-white">{t('admin.runOrderStep3')}</span>
+            <span className="text-sm font-semibold text-slate-900">{t('admin.runOrderStep3')}</span>
             <span
               className={`glass-chip self-start sm:self-center ${
                 kccCounter ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : ''
@@ -394,8 +394,8 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
               <Layers className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">{t('admin.duplicatesTitle')}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">{t('admin.duplicatesDesc')}</p>
+              <h3 className="text-base font-bold text-slate-900">{t('admin.duplicatesTitle')}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed mt-1 max-w-3xl">{t('admin.duplicatesDesc')}</p>
             </div>
           </div>
           <button
@@ -619,8 +619,8 @@ export const IdToolsTab: React.FC<IdToolsTabProps> = ({
               <Wrench className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">{t('admin.repairTitle')}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">{t('admin.repairDesc')}</p>
+              <h3 className="text-base font-bold text-slate-900">{t('admin.repairTitle')}</h3>
+              <p className="text-xs text-slate-600 leading-relaxed mt-1 max-w-3xl">{t('admin.repairDesc')}</p>
               {duplicateIdCount > 0 ? (
                 <p className="text-xs font-semibold text-amber-300 mt-2 flex items-start gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />

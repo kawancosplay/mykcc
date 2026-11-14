@@ -533,7 +533,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               href="https://wa.me/6285711032782"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs text-emerald-800 font-semibold hover:underline"
             >
               <Phone className="w-3.5 h-3.5" />
               <span>{t('admin.whatsappAdminHelp', { phone: ADMIN_WHATSAPP_DISPLAY })}</span>
@@ -781,7 +781,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedCity}
                         onChange={(e) => setSelectedCity(e.target.value)}
                         aria-label={t('admin.colLocation')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllCities')}</option>
                         {availableCities.map((c) => (
@@ -794,7 +794,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedAgeCategory}
                         onChange={(e) => setSelectedAgeCategory(e.target.value)}
                         aria-label={t('admin.colAge')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllAges')}</option>
                         {/* Matched through ageCategoryKey, so every stored spelling counts; only the labels are translated */}
@@ -807,7 +807,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedBirthdayFilter}
                         onChange={(e) => setSelectedBirthdayFilter(e.target.value as 'ALL' | 'HAS_BIRTHDAY' | 'THIS_MONTH')}
                         aria-label={t('admin.fieldBirthday')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllBirthdays')}</option>
                         <option value="HAS_BIRTHDAY">🎂 {t('admin.filterHasBirthday')}</option>
@@ -817,7 +817,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         value={selectedSocialFilter}
                         onChange={(e) => setSelectedSocialFilter(e.target.value)}
                         aria-label={t('admin.fieldSocialMedia')}
-                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-300 max-w-full"
+                        className="px-3 py-2 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 font-medium max-w-full"
                       >
                         <option value="ALL">{t('admin.filterAllSocials')}</option>
                         <option value="HAS_SOCIAL">📱 {t('admin.filterHasSocial')}</option>

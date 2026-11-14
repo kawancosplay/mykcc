@@ -97,8 +97,8 @@ export const DEFAULT_THEME: SiteTheme = {
   bgGradientAngle: '135deg',
 
   glassPreset: 'regular',
-  glassBlur: 14,
-  cardFrostOpacity: 65,
+  glassBlur: 18,
+  cardFrostOpacity: 56,
   specularRim: true,
   perfTier: 'auto',
 
@@ -377,29 +377,32 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     // 3. QuickLiquid Blur & Frost Opacity
-    const blurPx = typeof theme.glassBlur === 'number' ? theme.glassBlur : 14;
+    const blurPx = typeof theme.glassBlur === 'number' ? theme.glassBlur : 18;
     document.documentElement.style.setProperty('--glass-blur', `${blurPx}px`);
 
-    const frostPercent = typeof theme.cardFrostOpacity === 'number' ? theme.cardFrostOpacity : 65;
+    const frostPercent = typeof theme.cardFrostOpacity === 'number' ? theme.cardFrostOpacity : 56;
     const frostAlpha = (frostPercent / 100).toFixed(2);
 
     // 4. Surface Mode & Safe Contrast
     const isDark = theme.surfaceMode === 'dark';
     document.documentElement.setAttribute('data-surface-mode', isDark ? 'dark' : 'light');
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
     if (isDark) {
       document.documentElement.style.setProperty('--glass-text-title', '#F8FAFC');
       document.documentElement.style.setProperty('--glass-text-body', '#CBD5E1');
       document.documentElement.style.setProperty('--glass-text-muted', '#94A3B8');
       document.documentElement.style.setProperty('--glass-fill-card', `rgba(15, 23, 42, ${frostAlpha})`);
-      document.documentElement.style.setProperty('--glass-fill-bar', 'rgba(15, 23, 42, 0.75)');
-      document.documentElement.style.setProperty('--glass-fill-input', 'rgba(30, 41, 59, 0.65)');
+      document.documentElement.style.setProperty('--glass-fill-bar', 'rgba(15, 23, 42, 0.85)');
+      document.documentElement.style.setProperty('--glass-fill-input', 'rgba(30, 41, 59, 0.85)');
+      document.documentElement.style.setProperty('--glass-stroke-card', '1.5px solid rgba(255, 255, 255, 0.15)');
     } else {
       document.documentElement.style.setProperty('--glass-text-title', '#0F172A');
-      document.documentElement.style.setProperty('--glass-text-body', '#334155');
-      document.documentElement.style.setProperty('--glass-text-muted', '#64748B');
+      document.documentElement.style.setProperty('--glass-text-body', '#1E293B');
+      document.documentElement.style.setProperty('--glass-text-muted', '#475569');
       document.documentElement.style.setProperty('--glass-fill-card', `rgba(255, 255, 255, ${frostAlpha})`);
       document.documentElement.style.setProperty('--glass-fill-bar', 'rgba(255, 255, 255, 0.65)');
-      document.documentElement.style.setProperty('--glass-fill-input', 'rgba(255, 255, 255, 0.60)');
+      document.documentElement.style.setProperty('--glass-fill-input', 'rgba(255, 255, 255, 0.88)');
+      document.documentElement.style.setProperty('--glass-stroke-card', '1.5px solid rgba(255, 255, 255, 0.82)');
     }
 
     // 5. Grid Pattern

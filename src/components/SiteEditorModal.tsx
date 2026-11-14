@@ -235,7 +235,7 @@ export const SiteEditorModal: React.FC = () => {
                     type="button"
                     onClick={closeEditor}
                     aria-label={t('common.close')}
-                    className="glass-icon-button text-slate-600 hover:text-slate-900 bg-slate-100"
+                    className="glass-icon-button overflow-hidden text-slate-600 hover:text-slate-900 bg-slate-100"
                   >
                     <X className="w-5 h-5" />
                   </button>

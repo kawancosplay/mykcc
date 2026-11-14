@@ -648,11 +648,11 @@ export default function App() {
             </button>
 
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-              <span className="font-extrabold text-white text-sm sm:text-base tracking-tight truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+              <span className="font-extrabold text-slate-900 text-sm sm:text-base tracking-tight truncate">
                 {t('common.adminPortalTitle')}
               </span>
-              <span className="hidden sm:inline-flex glass-chip text-[10px] text-amber-300 bg-amber-500/20 border-amber-500/30">
+              <span className="hidden sm:inline-flex glass-chip text-[10px] text-amber-900 bg-amber-100 border-amber-300 font-semibold">
                 {t('common.googleSignInBadge')}
               </span>
             </div>
@@ -663,15 +663,15 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsEditorOpen(true)}
-                className="glass-button px-3 py-1.5 rounded-xl text-xs text-purple-200 bg-purple-950/50 border-purple-500/30"
+                className="glass-button px-3 py-1.5 rounded-xl text-xs text-purple-900 bg-purple-100/80 border-purple-300 font-semibold"
                 title={t('siteEditor.editorTitle')}
                 aria-label={t('siteEditor.editorTitle')}
               >
-                <Palette className="w-3.5 h-3.5 text-pink-300" />
+                <Palette className="w-3.5 h-3.5 text-purple-700" />
                 <span className="hidden sm:inline">{t('common.siteEditorShort')}</span>
               </button>
             )}
-            <span className="hidden md:inline-block text-xs text-slate-300 font-mono">
+            <span className="hidden md:inline-block text-xs text-slate-600 font-semibold font-mono">
               {user?.email || t('common.adminRestricted')}
             </span>
             <button
@@ -680,10 +680,10 @@ export default function App() {
                 setActiveTab('form');
                 if (window.location.hash === '#admin') window.location.hash = '';
               }}
-              className="glass-button px-3 py-1.5 rounded-xl text-xs text-rose-300 bg-rose-950/50 border-rose-500/30"
+              className="glass-button px-3 py-1.5 rounded-xl text-xs text-rose-800 bg-rose-100/80 border-rose-300 font-semibold"
               title={t('common.lockAndExitAdminTitle')}
             >
-              <Lock className="w-3.5 h-3.5" />
+              <Lock className="w-3.5 h-3.5 text-rose-700" />
               <span>{t('common.lockExit')}</span>
             </button>
           </div>
@@ -797,7 +797,7 @@ export default function App() {
         {activeTab === 'card' && (
           <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 text-center">
             <div className="glass-card glass-raised rounded-3xl p-8 sm:p-12">
-              <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-3">
+              <span className="glass-chip text-rose-700 bg-rose-50 border-rose-200 mb-3 font-bold">
                 {t('common.cardPageBadge')}
               </span>
               <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] mb-2">
@@ -865,14 +865,14 @@ export default function App() {
 
               {/* Lookup result display */}
               {lookupResult && (
-                <div className="mt-6 p-4 rounded-2xl glass-well border-emerald-500/40 text-start max-w-md mx-auto animate-fade-in">
+                <div className="mt-6 p-4 rounded-2xl glass-well border-emerald-300 text-start max-w-md mx-auto animate-fade-in bg-white/90">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block">
+                      <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider block">
                         {t('common.passFound')}
                       </span>
-                      <h4 className="font-bold text-white text-sm truncate">{lookupResult.cosplayName}</h4>
-                      <p className="text-xs font-mono text-slate-400">
+                      <h4 className="font-bold text-slate-900 text-sm truncate">{lookupResult.cosplayName}</h4>
+                      <p className="text-xs font-mono font-bold text-purple-700">
                         {t('common.idValue', { id: formatKccId(lookupResult.userId16) })}
                       </p>
                     </div>
@@ -885,20 +885,20 @@ export default function App() {
                     </button>
                   </div>
                   {showOldIdNotice && (
-                    <p className="mt-3 text-xs text-amber-200/90 leading-relaxed" role="note">
+                    <p className="mt-3 text-xs text-amber-800 font-medium leading-relaxed" role="note">
                       {t('common.lookupOldIdNotice', { id: formatKccId(lookupResult.userId16) })}
                     </p>
                   )}
                 </div>
               )}
 
-              <div className="mt-8 pt-6 border-t border-white/10 text-xs text-slate-400 flex flex-wrap items-center justify-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-rose-400" />
+              <div className="mt-8 pt-6 border-t border-slate-200 text-xs text-slate-600 flex flex-wrap items-center justify-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-purple-600" />
                 <span>{t('common.notRegisteredYet')}</span>
                 <button
                   type="button"
                   onClick={() => handleTabChange('form')}
-                  className="touch-target text-rose-400 font-bold hover:underline"
+                  className="touch-target text-purple-700 font-bold hover:underline"
                 >
                   {t('common.fillRegistrationForm')}
                 </button>

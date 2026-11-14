@@ -327,10 +327,10 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
   // ----- Checking -----
   if (state.kind === 'checking') {
     return (
-      <div className="w-full max-w-md mx-auto py-16 px-4 text-slate-100">
+      <div className="w-full max-w-md mx-auto py-16 px-4 text-slate-900">
         <div className="liquid-glass-card glass-raised rounded-3xl p-8 flex flex-col items-center gap-3 text-center">
-          <Spinner className="w-8 h-8 text-rose-400" />
-          <p className="text-xs sm:text-sm text-slate-600">{t('admin.lockChecking')}</p>
+          <Spinner className="w-8 h-8 text-rose-600" />
+          <p className="text-xs sm:text-sm text-slate-700">{t('admin.lockChecking')}</p>
         </div>
       </div>
     );
@@ -339,13 +339,13 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
   // ----- Error (stays locked) -----
   if (state.kind === 'error') {
     return (
-      <div className="w-full max-w-md mx-auto py-16 px-4 text-slate-100">
+      <div className="w-full max-w-md mx-auto py-16 px-4 text-slate-900">
         <div className="liquid-glass-card glass-raised rounded-3xl p-6 sm:p-8 text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-600">
             <ShieldAlert className="w-7 h-7" aria-hidden="true" />
           </div>
           <h2 className="text-xl font-black text-slate-900">{t('admin.dashboardTitle')}</h2>
-          <p role="alert" className="text-sm text-slate-300 leading-relaxed">
+          <p role="alert" className="text-sm text-slate-700 leading-relaxed">
             {t('admin.lockCheckFailed')}
           </p>
           <p className="text-[11px] text-slate-500 break-words">{state.message}</p>
@@ -369,19 +369,19 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
   if (state.kind === 'locked') {
     const waiting = waitSeconds > 0;
     return (
-      <div className="w-full max-w-md mx-auto py-12 sm:py-16 px-4 text-slate-100">
+      <div className="w-full max-w-md mx-auto py-12 sm:py-16 px-4 text-slate-900">
         <form onSubmit={handleUnlock} className="liquid-glass-card glass-raised rounded-3xl p-6 sm:p-8 space-y-4" noValidate>
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-300">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-600">
               <Lock className="w-7 h-7" aria-hidden="true" />
             </div>
             <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">{t('admin.dashboardTitle')}</p>
-            <h2 className="text-xl font-black text-white">{t('admin.lockTitle')}</h2>
-            <p className="text-sm text-slate-300">{t('admin.lockDesc')}</p>
+            <h2 className="text-xl font-black text-slate-900">{t('admin.lockTitle')}</h2>
+            <p className="text-sm text-slate-600">{t('admin.lockDesc')}</p>
           </div>
 
           <div>
-            <label htmlFor="dash-unlock-password" className="block text-xs font-bold text-slate-300 mb-1.5">
+            <label htmlFor="dash-unlock-password" className="block text-xs font-bold text-slate-700 mb-1.5">
               {t('admin.lockPasswordLabel')}
             </label>
             <input
@@ -398,10 +398,10 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
               autoFocus
               aria-invalid={unlockError ? true : undefined}
               aria-describedby={unlockError || waiting ? 'dash-unlock-error' : undefined}
-              className="w-full px-3.5 py-3 liquid-glass-input rounded-xl text-base text-white disabled:opacity-60"
+              className="w-full px-3.5 py-3 liquid-glass-input rounded-xl text-base text-slate-900 bg-white border border-slate-300 disabled:opacity-60"
             />
             {(unlockError || waiting) && (
-              <p id="dash-unlock-error" role="alert" className="mt-1.5 text-xs text-rose-300">
+              <p id="dash-unlock-error" role="alert" className="mt-1.5 text-xs text-rose-700 font-semibold">
                 {waiting ? t('admin.lockTooManyTries', { seconds: formatNumber(waitSeconds) }) : unlockError}
               </p>
             )}
@@ -447,8 +447,8 @@ export const DashboardLockGate: React.FC<DashboardLockGateProps> = ({ user, onLo
                 <Lock className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">{t('admin.lockNotSetTitle')}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed mt-1 max-w-3xl">{t('admin.lockNotSetDesc')}</p>
+                <h3 className="text-sm font-bold text-slate-900">{t('admin.lockNotSetTitle')}</h3>
+                <p className="text-xs text-slate-600 leading-relaxed mt-1 max-w-3xl">{t('admin.lockNotSetDesc')}</p>
                 <p className="text-[11px] text-slate-500 leading-relaxed mt-1 max-w-3xl">{t('admin.lockConvenienceNote')}</p>
               </div>
             </div>

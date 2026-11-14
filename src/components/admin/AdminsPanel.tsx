@@ -208,14 +208,14 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
           {/* Main account: fixed, never removable */}
           <li className={rowClass}>
             <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-              <Crown className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
+              <Crown className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
               <span className="font-bold text-slate-900 text-sm">{t('admin.mainAccountRow')}</span>
-              <span className="glass-chip bg-amber-500/20 text-amber-300 border-amber-500/40">{t('admin.permanentChip')}</span>
+              <span className="glass-chip bg-amber-100 text-amber-800 border-amber-300 font-bold">{t('admin.permanentChip')}</span>
               {isMainAdminUser(user) && (
-                <span className="glass-chip bg-indigo-500/20 text-indigo-200 border-indigo-500/40">{t('admin.youChip')}</span>
+                <span className="glass-chip bg-indigo-100 text-indigo-800 border-indigo-300 font-bold">{t('admin.youChip')}</span>
               )}
             </div>
-            <p className="text-xs text-slate-300 break-all">{OFFICIAL_ADMIN_EMAIL}</p>
+            <p className="text-xs text-slate-700 font-mono break-all">{OFFICIAL_ADMIN_EMAIL}</p>
             <p className="text-xs text-slate-500">—</p>
             <p className="text-xs text-slate-500">—</p>
             <span className="hidden md:block w-[9rem]" aria-hidden="true" />
@@ -237,21 +237,21 @@ export const AdminsPanel: React.FC<AdminsPanelProps> = ({ user, members, admins,
               return (
                 <li key={entry.uid} className={rowClass}>
                   <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                    <ShieldCheck className="w-4 h-4 text-emerald-300 shrink-0" aria-hidden="true" />
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
                     <span className="font-bold text-slate-900 text-sm break-words">{name}</span>
                     {isSelf && (
-                      <span className="glass-chip bg-indigo-500/20 text-indigo-200 border-indigo-500/40">{t('admin.youChip')}</span>
+                      <span className="glass-chip bg-indigo-100 text-indigo-800 border-indigo-300 font-bold">{t('admin.youChip')}</span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-300 break-all">
+                  <p className="text-xs text-slate-700 font-mono break-all">
                     <span className="md:hidden text-slate-500">{t('admin.adminsColEmail')}: </span>
                     {entry.email || '—'}
                   </p>
-                  <p className="text-xs text-slate-400 break-words">
+                  <p className="text-xs text-slate-600 break-words">
                     <span className="md:hidden text-slate-500">{t('admin.adminsColAddedBy')}: </span>
                     {addedBy}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-600">
                     <span className="md:hidden text-slate-500">{t('admin.adminsColAddedAt')}: </span>
                     {entry.addedAt ? formatDate(entry.addedAt) : '—'}
                   </p>

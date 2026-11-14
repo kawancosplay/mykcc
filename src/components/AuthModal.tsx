@@ -174,7 +174,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="glass-icon-button absolute top-3 end-3 z-10 sm:top-4 sm:end-4"
+            className="glass-icon-button overflow-hidden absolute top-3 end-3 z-10 sm:top-4 sm:end-4"
             aria-label={t('common.close')}
           >
             <X className="w-5 h-5" />

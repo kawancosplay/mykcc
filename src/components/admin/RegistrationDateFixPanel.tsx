@@ -234,8 +234,8 @@ export const RegistrationDateFixPanel: React.FC<RegistrationDateFixPanelProps> =
           <CalendarClock className="w-5 h-5" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white">{t('admin.dateFixTitle')}</h2>
-          <p className="text-xs text-slate-400 leading-relaxed mt-1">{t('admin.dateFixDesc')}</p>
+          <h2 className="text-lg font-bold text-slate-900">{t('admin.dateFixTitle')}</h2>
+          <p className="text-xs text-slate-600 leading-relaxed mt-1">{t('admin.dateFixDesc')}</p>
         </div>
       </div>
 

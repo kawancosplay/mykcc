@@ -223,8 +223,8 @@ export const MemberEditForm: React.FC<MemberEditFormProps> = ({
 
   const locked = saving || disabled;
   const inputClass =
-    'w-full px-3.5 py-2.5 liquid-glass-input rounded-xl text-base text-white disabled:opacity-60';
-  const labelClass = 'block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5';
+    'w-full px-3.5 py-2.5 liquid-glass-input rounded-xl text-base text-slate-900 bg-white border border-slate-300 disabled:opacity-60';
+  const labelClass = 'block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5';
 
   const renderInput = (
     field: TextField,
@@ -341,16 +341,16 @@ export const MemberEditForm: React.FC<MemberEditFormProps> = ({
             disabled={locked}
             className={inputClass}
           >
-            <option value="" className="bg-slate-900 text-white">
+            <option value="" className="bg-white text-slate-900">
               —
             </option>
             {AGE_CATEGORY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value} className="bg-slate-900 text-white">
+              <option key={o.value} value={o.value} className="bg-white text-slate-900">
                 {t(o.label)}
               </option>
             ))}
             {extraAgeValue && (
-              <option value={extraAgeValue} className="bg-slate-900 text-white">
+              <option value={extraAgeValue} className="bg-white text-slate-900">
                 {isPreferNotToSayAge(extraAgeValue) ? t('admin.filterPreferNotToSay') : extraAgeValue}
               </option>
             )}
@@ -394,7 +394,7 @@ export const MemberEditForm: React.FC<MemberEditFormProps> = ({
           className={inputClass}
         >
           {MEMBER_STATUSES.map((s) => (
-            <option key={s} value={s} className="bg-slate-900 text-white">
+            <option key={s} value={s} className="bg-white text-slate-900">
               {t(STATUS_LABEL_KEYS[s])}
             </option>
           ))}

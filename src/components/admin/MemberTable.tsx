@@ -285,7 +285,7 @@ const StatusSelect: React.FC<{
       )} ${className}`}
     >
       {MEMBER_STATUSES.map((s) => (
-        <option key={s} value={s} className="bg-slate-900 text-white">
+        <option key={s} value={s} className="bg-white text-slate-900">
           {t(STATUS_LABEL_KEYS[s])}
         </option>
       ))}
@@ -326,7 +326,7 @@ const DetailsToggle: React.FC<{ open: boolean; panelId: string; onToggle: () => 
       aria-controls={panelId}
       title={t('admin.detailsToggle')}
       aria-label={t('admin.detailsToggle')}
-      className={`touch-target pressable inline-flex items-center justify-center p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200 pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${className}`}
+      className={`touch-target pressable inline-flex items-center justify-center p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 pointer-coarse:min-h-11 pointer-coarse:min-w-11 ${className}`}
     >
       <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
     </button>
@@ -385,7 +385,7 @@ const DetailsPanel: React.FC<{ id: string; member: Member; showEmail: boolean }>
         .map(([label, value]) => (
           <div key={label} className="min-w-0">
             <dt className="text-slate-500 uppercase tracking-wider text-[10px]">{label}</dt>
-            <dd className="text-slate-200 break-words whitespace-pre-line">{value}</dd>
+            <dd className="text-slate-900 font-medium break-words whitespace-pre-line">{value}</dd>
           </div>
         ))}
     </dl>
@@ -421,7 +421,7 @@ const EmptyState: React.FC<{ totalMembers: number; onOpenSync: () => void }> = (
         <h3 className="text-lg font-bold text-slate-900 mb-1">
           {empty ? t('admin.emptyDatabaseTitle') : t('admin.noResultsTitle')}
         </h3>
-        <p className="text-xs text-slate-400 leading-relaxed">
+        <p className="text-xs text-slate-600 leading-relaxed">
           {empty ? t('admin.emptyDatabaseDesc') : t('admin.noResultsDesc')}
         </p>
       </div>
@@ -510,9 +510,9 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                     {parseSocialLinks(m.socialMedia).map(({ platform, handle }, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white/[0.08] text-slate-200 border border-white/15"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-800 border border-slate-300"
                       >
-                        <span className="font-bold text-violet-400">{platform}:</span>
+                        <span className="font-bold text-violet-700">{platform}:</span>
                         <span className="truncate max-w-[120px]">{handle}</span>
                       </span>
                     ))}
@@ -523,10 +523,10 @@ export const MemberTable: React.FC<MemberTableProps> = ({
 
             <StatusSelect member={m} onStatusChange={onStatusChange} className="w-full" />
 
-            <div className="text-[11px] text-slate-400 space-y-0.5">
+            <div className="text-[11px] text-slate-600 space-y-0.5">
               <p>{t('admin.registeredOn', { date: m.createdAt ? formatDate(m.createdAt) : '-' })}</p>
               {m.phone ? (
-                <p className="text-emerald-400 font-mono font-bold text-xs break-all">{m.phone}</p>
+                <p className="text-emerald-700 font-mono font-bold text-xs break-all">{m.phone}</p>
               ) : (
                 <p className="text-slate-500 italic">—</p>
               )}
@@ -672,9 +672,9 @@ export const MemberTable: React.FC<MemberTableProps> = ({
               {socials.map((s, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/[0.08] text-slate-200 border border-white/15"
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-800 border border-slate-300"
                 >
-                  <span className="font-bold text-violet-400">{s.platform}:</span>
+                  <span className="font-bold text-violet-700">{s.platform}:</span>
                   <span className="truncate max-w-[120px]">{s.handle}</span>
                 </span>
               ))}
@@ -738,7 +738,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 onClick={() => onViewCard(m)}
                 title={t('admin.viewKccIdTitle')}
                 aria-label={t('admin.viewKccIdTitle')}
-                className="touch-target pressable p-1.5 rounded-lg bg-white/[0.07] border border-white/10 hover:bg-white/[0.12] text-slate-200"
+                className="touch-target pressable p-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
@@ -746,7 +746,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 type="button"
                 onClick={() => onManage(m)}
                 title={t('admin.manageMember')}
-                className="touch-target pressable inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 hover:bg-indigo-500/25 text-indigo-200 text-[11px] font-bold whitespace-nowrap"
+                className="touch-target pressable inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-indigo-50 border border-indigo-300 hover:bg-indigo-100 text-indigo-800 text-[11px] font-bold whitespace-nowrap"
               >
                 <UserCog className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('admin.manageMember')}</span>
@@ -756,7 +756,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 onClick={() => onDelete(m)}
                 title={t('admin.deleteMemberTitle')}
                 aria-label={t('admin.deleteMemberTitle')}
-                className="touch-target pressable p-1.5 rounded-lg bg-rose-950/60 border border-rose-500/30 hover:bg-rose-900 text-rose-300"
+                className="touch-target pressable p-1.5 rounded-lg bg-rose-50 border border-rose-300 hover:bg-rose-100 text-rose-700"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -772,7 +772,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
     <div className="liquid-glass-card rounded-3xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs">
-          <thead className="bg-[color:var(--glass-fill-well)] text-slate-400 uppercase tracking-wider font-mono border-b border-white/10">
+          <thead className="bg-white/80 text-slate-700 uppercase tracking-wider font-mono border-b border-slate-200">
             <tr>{MEMBER_COLUMNS.map(renderHeader)}</tr>
           </thead>
           <tbody className="divide-y divide-white/[0.06]">

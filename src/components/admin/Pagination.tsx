@@ -112,17 +112,17 @@ export const Pagination: React.FC<PaginationProps> = ({
         )}
 
         <label className="flex items-center gap-1.5">
-          <span className="text-slate-400">{t('admin.pageSize')}</span>
+          <span className="text-slate-600 font-medium">{t('admin.pageSize')}</span>
           <select
             value={String(pageSize)}
             onChange={(e) => {
               const next = parsePageSize(e.target.value);
               if (next) onPageSize(next);
             }}
-            className="px-2.5 py-1.5 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-200 pointer-coarse:min-h-11"
+            className="px-2.5 py-1.5 liquid-glass-input rounded-xl text-base sm:text-sm text-slate-900 bg-white border border-slate-300 pointer-coarse:min-h-11"
           >
             {PAGE_SIZES.map((size) => (
-              <option key={String(size)} value={String(size)} className="bg-slate-900 text-white">
+              <option key={String(size)} value={String(size)} className="bg-white text-slate-900">
                 {size === 'all' ? t('admin.pageSizeAll') : formatNumber(size)}
               </option>
             ))}

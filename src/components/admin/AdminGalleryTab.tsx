@@ -246,7 +246,7 @@ export const AdminGalleryTab: React.FC<AdminGalleryTabProps> = ({ busy }) => {
                     </span>
                   )}
                 </button>
-                <div className="p-3 flex-1 flex flex-col gap-1 min-w-0 text-[11px] text-slate-400">
+                <div className="p-3 flex-1 flex flex-col gap-1 min-w-0 text-[11px] text-slate-600 font-medium">
                   <p className="font-bold text-slate-900 text-sm truncate" title={title}>
                     {title}
                   </p>

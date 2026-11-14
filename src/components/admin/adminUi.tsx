@@ -283,10 +283,10 @@ export const NoticeBanner: React.FC<{ notice: AdminNotice | null; onDismiss?: ()
   if (!notice) return null;
   const tone =
     notice.kind === 'success'
-      ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-200'
+      ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-medium'
       : notice.kind === 'error'
-      ? 'bg-rose-950/70 border-rose-500/40 text-rose-200'
-      : 'bg-indigo-950/60 border-indigo-500/40 text-indigo-200';
+      ? 'bg-rose-50 border-rose-300 text-rose-900 font-medium'
+      : 'bg-indigo-50 border-indigo-300 text-indigo-900 font-medium';
   const Icon = notice.kind === 'success' ? CheckCircle : notice.kind === 'error' ? AlertTriangle : Info;
   return (
     <div
@@ -395,7 +395,7 @@ export const AdminSheet: React.FC<AdminSheetProps> = ({
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            className={`glass-sheet ${widthClass} text-slate-100 outline-none`}
+            className={`glass-sheet ${widthClass} text-slate-900 outline-none`}
             {...sheetMotion}
             {...drag.sheetProps}
           >
@@ -403,10 +403,10 @@ export const AdminSheet: React.FC<AdminSheetProps> = ({
               <div className="sheet-grabber" aria-hidden="true" />
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 id={titleId} className="text-lg font-black text-white break-words">
+                  <h3 id={titleId} className="text-lg font-black text-slate-900 break-words">
                     {title}
                   </h3>
-                  {subtitle && <div className="text-xs text-slate-400 mt-0.5">{subtitle}</div>}
+                  {subtitle && <div className="text-xs text-slate-600 mt-0.5">{subtitle}</div>}
                 </div>
                 <button
                   type="button"

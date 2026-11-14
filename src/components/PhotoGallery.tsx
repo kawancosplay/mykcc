@@ -397,14 +397,14 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       {/* Header bar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <div className="flex items-center space-x-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <span className="glass-chip font-bold bg-pink-100/70 text-pink-700 border-pink-200">
               <Camera className="w-3.5 h-3.5 text-pink-600" />
               <span>{t('gallery.title')}</span>
             </span>
             {/* Counts the LOADED photos (no total-count query); "+ more" while older pages exist */}
             {status !== 'loading' && status !== 'error' && (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-600 font-medium">
                 {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
                   count: formatNumber(photos.length),
                 })}
@@ -417,7 +417,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               disabled={status === 'loading' || status === 'loadingMore'}
               title={t('gallery.refresh')}
               aria-label={t('gallery.refresh')}
-              className="touch-target inline-flex items-center justify-center text-slate-500 hover:text-purple-700 disabled:opacity-40"
+              className="touch-target inline-flex items-center justify-center w-10 h-10 text-slate-600 hover:text-purple-700 disabled:opacity-40 rounded-full"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${status === 'loading' ? 'animate-spin' : ''}`} aria-hidden="true" />
             </button>
@@ -508,7 +508,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         </div>
 
         {/* Filter Summary */}
-        <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-white/50">
+        <div className="flex items-center justify-between text-xs text-slate-600 font-medium pt-1 border-t border-white/50">
           <span>
             {renderWithNode(
               t(isOne(filteredPhotos.length) ? 'gallery.showingCountOne' : 'gallery.showingCountOther'),

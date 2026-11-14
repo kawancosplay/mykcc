@@ -220,9 +220,9 @@ export const KccIdMigrationPanel: React.FC<KccIdMigrationPanelProps> = ({
           <ArrowRightLeft className="w-5 h-5" aria-hidden="true" />
         </div>
         <div className="min-w-0 space-y-1">
-          <h3 className="text-base font-bold text-white">{t('admin.migrationTitle')}</h3>
-          <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">{t('admin.migrationDesc')}</p>
-          {statusText() && <p className="text-xs font-semibold text-violet-200">{statusText()}</p>}
+          <h3 className="text-base font-bold text-slate-900">{t('admin.migrationTitle')}</h3>
+          <p className="text-xs text-slate-600 leading-relaxed max-w-3xl">{t('admin.migrationDesc')}</p>
+          {statusText() && <p className="text-xs font-semibold text-violet-700">{statusText()}</p>}
         </div>
       </div>
 

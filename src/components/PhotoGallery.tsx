@@ -398,13 +398,13 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
-            <span className="glass-chip font-bold bg-pink-500/20 text-pink-300 border-pink-500/30">
-              <Camera className="w-3.5 h-3.5 text-pink-400" />
+            <span className="glass-chip font-bold bg-pink-100/70 text-pink-700 border-pink-200">
+              <Camera className="w-3.5 h-3.5 text-pink-600" />
               <span>{t('gallery.title')}</span>
             </span>
             {/* Counts the LOADED photos (no total-count query); "+ more" while older pages exist */}
             {status !== 'loading' && status !== 'error' && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 {t(isOne(photos.length) ? 'gallery.photosAvailableOne' : 'gallery.photosAvailableOther', {
                   count: formatNumber(photos.length),
                 })}
@@ -417,15 +417,15 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
               disabled={status === 'loading' || status === 'loadingMore'}
               title={t('gallery.refresh')}
               aria-label={t('gallery.refresh')}
-              className="touch-target inline-flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-40"
+              className="touch-target inline-flex items-center justify-center text-slate-500 hover:text-purple-700 disabled:opacity-40"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${status === 'loading' ? 'animate-spin' : ''}`} aria-hidden="true" />
             </button>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
             {t('gallery.showcaseHeading')}
           </h1>
-          <p className="text-slate-400 text-sm max-w-2xl mt-1">
+          <p className="text-slate-600 text-sm max-w-2xl mt-1">
             {t('gallery.description')}
           </p>
         </div>
@@ -508,12 +508,12 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         </div>
 
         {/* Filter Summary */}
-        <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-white/10">
+        <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-white/50">
           <span>
             {renderWithNode(
               t(isOne(filteredPhotos.length) ? 'gallery.showingCountOne' : 'gallery.showingCountOther'),
               'count',
-              <strong className="text-white">{formatNumber(filteredPhotos.length)}</strong>
+              <strong className="text-slate-900">{formatNumber(filteredPhotos.length)}</strong>
             )}
           </span>
           {(searchQuery || selectedCharacter !== 'ALL' || selectedEvent !== 'ALL') && (
@@ -523,7 +523,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                 setSelectedCharacter('ALL');
                 setSelectedEvent('ALL');
               }}
-              className="touch-target text-rose-400 hover:underline"
+              className="touch-target text-purple-600 hover:underline"
             >
               {t('admin.resetFilter')}
             </button>
@@ -536,8 +536,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
         <GallerySkeleton label={t('common.loadingApp')} />
       ) : status === 'error' ? (
         <div className="glass-card text-center py-14 px-4 rounded-3xl" role="alert">
-          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-3" aria-hidden="true" />
-          <p className="text-sm text-slate-300 max-w-sm mx-auto mb-4">{t('gallery.loadFailed')}</p>
+          <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3" aria-hidden="true" />
+          <p className="text-sm text-slate-600 max-w-sm mx-auto mb-4">{t('gallery.loadFailed')}</p>
           <button type="button" onClick={() => void loadFirstPage()} className="btn-primary pressable text-xs">
             {t('common.tryAgain')}
           </button>
@@ -545,8 +545,8 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
       ) : filteredPhotos.length === 0 && photos.length > 0 && feed.hasMore ? (
         // Filters only search the loaded pages: offer older photos
         <div className="glass-card text-center py-14 px-4 rounded-3xl">
-          <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" aria-hidden="true" />
-          <p className="text-sm text-slate-300 max-w-sm mx-auto mb-4">{t('gallery.filterLoadMoreHint')}</p>
+          <Search className="w-10 h-10 text-slate-400 mx-auto mb-3" aria-hidden="true" />
+          <p className="text-sm text-slate-600 max-w-sm mx-auto mb-4">{t('gallery.filterLoadMoreHint')}</p>
           <button
             type="button"
             onClick={() => void loadMore()}
@@ -555,13 +555,13 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
           >
             {status === 'loadingMore' ? t('gallery.loadingMore') : t('gallery.loadMore')}
           </button>
-          {loadMoreFailed && <p className="text-xs text-rose-400 mt-3" role="alert">{t('gallery.loadFailed')}</p>}
+          {loadMoreFailed && <p className="text-xs text-rose-500 mt-3" role="alert">{t('gallery.loadFailed')}</p>}
         </div>
       ) : filteredPhotos.length === 0 ? (
         <div className="glass-card text-center py-16 px-4 rounded-3xl">
-          <Camera className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-white mb-1">{t('gallery.emptyTitle')}</h3>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto mb-4">
+          <Camera className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+          <h3 className="text-lg font-bold text-slate-900 mb-1">{t('gallery.emptyTitle')}</h3>
+          <p className="text-sm text-slate-600 max-w-sm mx-auto mb-4">
             {t('gallery.emptyDesc')}
           </p>
           <button
@@ -667,21 +667,21 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                   </div>
 
                   {/* Card Meta footer */}
-                  <div className="p-4 text-xs space-y-2 border-t border-white/10">
-                    <div className="flex items-center justify-between text-slate-400">
+                  <div className="p-4 text-xs space-y-2 border-t border-white/50">
+                    <div className="flex items-center justify-between text-slate-600">
                       <span className="flex items-center gap-1 truncate max-w-[200px]">
-                        <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                         <span className="truncate">{eventLabel(photo.event)}</span>
                       </span>
                       {photo.photographer && (
-                        <span className="text-[11px] text-pink-300 font-mono truncate max-w-[120px]">
+                        <span className="text-[11px] text-pink-700 font-mono truncate max-w-[120px]">
                           📸 {photo.photographer}
                         </span>
                       )}
                     </div>
 
                     {photo.caption && (
-                      <p className="text-slate-400 text-[11px] line-clamp-2 italic">
+                      <p className="text-slate-600 text-[11px] line-clamp-2 italic">
                         "{photo.caption}"
                       </p>
                     )}
@@ -780,46 +780,46 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                         <span className="glass-chip font-bold bg-rose-600 border-rose-400/40 text-white">
                           {activePhotoModal.character}
                         </span>
-                        <span className="glass-chip text-slate-300">{activePhotoModal.series}</span>
+                        <span className="glass-chip text-slate-700">{activePhotoModal.series}</span>
                       </div>
 
-                      <h2 id={photoTitleId} className="text-xl sm:text-2xl font-black text-white mb-2 leading-tight">
+                      <h2 id={photoTitleId} className="text-xl sm:text-2xl font-black text-slate-900 mb-2 leading-tight">
                         {activePhotoModal.title}
                       </h2>
 
                       <div className="glass-well p-3 rounded-2xl mb-4 space-y-1.5 text-xs">
                         <div className="flex justify-between gap-3">
-                          <span className="text-slate-400">{t('gallery.detailCosplayer')}</span>
-                          <span className="font-bold text-rose-400 text-right">{activePhotoModal.authorName}</span>
+                          <span className="text-slate-500">{t('gallery.detailCosplayer')}</span>
+                          <span className="font-bold text-rose-600 text-right">{activePhotoModal.authorName}</span>
                         </div>
                         {activePhotoModal.userId16 && (
                           <div className="flex justify-between gap-3">
-                            <span className="text-slate-400">{t('gallery.detailKccId')}</span>
-                            <span className="font-mono text-slate-300 text-right">
+                            <span className="text-slate-500">{t('gallery.detailKccId')}</span>
+                            <span className="font-mono text-slate-700 text-right">
                               {formatKccId(activePhotoModal.userId16)}
                             </span>
                           </div>
                         )}
                         <div className="flex justify-between gap-3">
-                          <span className="text-slate-400">{t('gallery.detailEvent')}</span>
-                          <span className="font-semibold text-slate-200 text-right">
+                          <span className="text-slate-500">{t('gallery.detailEvent')}</span>
+                          <span className="font-semibold text-slate-700 text-right">
                             {eventLabel(activePhotoModal.event)}
                           </span>
                         </div>
                         {activePhotoModal.photographer && (
                           <div className="flex justify-between gap-3">
-                            <span className="text-slate-400">{t('gallery.detailPhotographer')}</span>
-                            <span className="font-mono text-pink-300 text-right">{activePhotoModal.photographer}</span>
+                            <span className="text-slate-500">{t('gallery.detailPhotographer')}</span>
+                            <span className="font-mono text-pink-600 text-right">{activePhotoModal.photographer}</span>
                           </div>
                         )}
                       </div>
 
                       {activePhotoModal.caption && (
                         <div className="mb-6">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
                             {t('gallery.shootNotes')}
                           </h4>
-                          <p className="glass-well text-xs text-slate-300 leading-relaxed p-3 rounded-xl">
+                          <p className="glass-well text-xs text-slate-700 leading-relaxed p-3 rounded-xl">
                             {activePhotoModal.caption}
                           </p>
                         </div>
@@ -827,16 +827,16 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({
                     </div>
 
                     {/* Action row */}
-                    <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                    <div className="pt-4 border-t border-white/50 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex gap-2">
                         <button
                           onClick={(e) => handleLike(e, activePhotoModal)}
-                          className="glass-button pressable text-xs font-bold bg-rose-600/20 border-rose-500/30 text-rose-300 hover:bg-rose-600 hover:text-white"
+                          className="glass-button pressable text-xs font-bold bg-rose-100/70 border-rose-300 text-rose-700 hover:bg-rose-500 hover:text-white"
                         >
                           <LikeHeart
                             pop={likePops[activePhotoModal.id] || 0}
                             reduced={reducedMotion}
-                            className="w-4 h-4 fill-current text-rose-400"
+                            className="w-4 h-4 fill-current text-rose-500"
                           />
                           <span>
                             {t('gallery.likeWithCount', { count: formatNumber(likesOf(activePhotoModal)) })}

@@ -1034,8 +1034,8 @@ export default function App() {
       {/* One-time notice when Auto turned Lite mode on for this device */}
       <PerfLiteNotice />
 
-      {/* Global Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-[var(--glass-fill-bar)] pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 xl:px-8 text-slate-400 text-xs">
+      {/* Global Liquid Glass Footer */}
+      <footer className="glass-footer pt-10 pb-[calc(2.5rem+var(--safe-bottom))] px-4 sm:px-6 xl:px-8 text-slate-600 text-xs">
         <div className="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center xl:items-start xl:shrink-0 gap-2">
             <img
@@ -1045,21 +1045,21 @@ export default function App() {
               height={144}
               loading="lazy"
               decoding="async"
-              className="w-72 sm:w-96 h-auto"
+              className="w-72 sm:w-96 h-auto drop-shadow-sm"
             />
-            <p className="text-slate-300 text-xs sm:text-sm font-semibold text-center xl:text-start">
+            <p className="text-slate-700 text-xs sm:text-sm font-semibold text-center xl:text-start">
               The 100% SFW Cosplay Media and Community
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-5 text-slate-400">
-            <button type="button" onClick={() => handleTabChange('form')} className="touch-target pressable hover:text-white">
+          <div className="flex flex-wrap items-center justify-center gap-5 text-slate-600 font-medium">
+            <button type="button" onClick={() => handleTabChange('form')} className="touch-target pressable hover:text-purple-700 transition-colors">
               {t('common.navForm')}
             </button>
-            <button type="button" onClick={() => handleTabChange('card')} className="touch-target pressable hover:text-white">
+            <button type="button" onClick={() => handleTabChange('card')} className="touch-target pressable hover:text-purple-700 transition-colors">
               {t('common.navCard')}
             </button>
-            <button type="button" onClick={() => handleTabChange('gallery')} className="touch-target pressable hover:text-pink-400">
+            <button type="button" onClick={() => handleTabChange('gallery')} className="touch-target pressable hover:text-pink-600 transition-colors">
               {t('common.navGallery')}
             </button>
             {/* Discreet Admin Portal Link for Managers */}
@@ -1069,23 +1069,23 @@ export default function App() {
                 setActiveTab('admin');
                 window.location.hash = 'admin';
               }}
-              className="touch-target pressable text-slate-500 hover:text-amber-400 flex items-center gap-1"
+              className="touch-target pressable text-slate-500 hover:text-amber-600 transition-colors flex items-center gap-1"
               title={t('common.adminPortalLinkTitle')}
             >
-              <Lock className="w-3 h-3 text-amber-500/80" />
+              <Lock className="w-3 h-3 text-amber-600" />
               <span>{t('common.adminPortal')}</span>
             </button>
             <a
               href="https://wa.me/6285711032782"
               target="_blank"
               rel="noopener noreferrer"
-              className="touch-target text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center gap-1"
+              className="touch-target text-emerald-700 hover:text-emerald-800 font-bold transition-colors flex items-center gap-1"
             >
               <span>{t('common.whatsappContact')}</span>
             </a>
             <a
               href="mailto:cosplaysehat@gmail.com"
-              className="touch-target hover:text-rose-400 transition-colors"
+              className="touch-target text-slate-600 hover:text-purple-700 transition-colors"
             >
               cosplaysehat@gmail.com
             </a>
@@ -1093,7 +1093,7 @@ export default function App() {
 
           <div className="text-center xl:text-end text-slate-500 flex flex-col items-center xl:items-end gap-1">
             <p>{t('common.copyright')}</p>
-            <p className="text-[10px] text-emerald-400/80 mt-0.5">
+            <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
               ● {t('common.privacyShieldActive')}
             </p>
             {/* Display mode (lite / low-power): reachable from every screen */}

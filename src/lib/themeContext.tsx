@@ -46,15 +46,15 @@ export interface SiteTheme {
 }
 
 export const DEFAULT_THEME: SiteTheme = {
-  background: 'deep-lavender-solid',
-  customBgGradient: '#1e1436',
-  glassPreset: 'thick',
-  glassBlur: 20,
-  lavenderColor: '#a855f7',
+  background: 'lavender-mint-sticker',
+  customBgGradient: 'linear-gradient(135deg, #B18CFE 0%, #93C5FD 50%, #6EE7B7 100%)',
+  glassPreset: 'regular',
+  glassBlur: 12,
+  lavenderColor: '#8b5cf6',
   mintColor: '#10b981',
   font: 'din-next',
   colorScheme: 'purple',
-  customPrimaryColor: '#a855f7',
+  customPrimaryColor: '#7c3aed',
   layoutWidth: '7xl',
   cardRadius: 'rounded-3xl',
   navbarStyle: 'glass-bar',
@@ -67,22 +67,19 @@ export const DEFAULT_THEME: SiteTheme = {
 };
 
 const BACKGROUND_GRADIENTS: Record<Exclude<BackgroundTheme, 'custom'>, string> = {
-  'deep-lavender-solid': '#1e1436',
-  'lavender-mint-sticker': 'linear-gradient(135deg, #1e1436 0%, #2a1b4e 50%, #1e1436 100%)',
-  'bright-purple-fluent': '#1e1436',
-  'cyber-purple': 'linear-gradient(135deg, #18052e 0%, #3b0764 50%, #064e3b 100%)',
+  'lavender-mint-sticker': 'linear-gradient(135deg, #B18CFE 0%, #93C5FD 50%, #6EE7B7 100%)',
+  'deep-lavender-solid': 'linear-gradient(135deg, #1e1436 0%, #2a1b4e 100%)',
+  'bright-purple-fluent': 'linear-gradient(135deg, #9333EA 0%, #3B82F6 50%, #10B981 100%)',
+  'cyber-purple': 'linear-gradient(135deg, #7C3AED 0%, #EC4899 50%, #10B981 100%)',
   'cosmic-dark': 'linear-gradient(135deg, #090614 0%, #170d2b 50%, #0c1a17 100%)',
-  'fluent-lavender': 'linear-gradient(135deg, #1e1436 0%, #2e1d52 100%)',
+  'fluent-lavender': 'linear-gradient(135deg, #C4B5FD 0%, #A78BFA 50%, #6EE7B7 100%)',
   'dark-onyx': '#0a0910',
 };
 
 /** The page background gradient of a theme (App writes it to `--app-bg`; painted by `body::before`). */
 export function themeBackground(theme: SiteTheme): string {
-  if (theme.background === 'custom') return theme.customBgGradient || '#1e1436';
-  if (!theme.background || theme.background === 'deep-lavender-solid' || theme.background === 'bright-purple-fluent') {
-    return '#1e1436';
-  }
-  return BACKGROUND_GRADIENTS[theme.background] ?? '#1e1436';
+  if (theme.background === 'custom') return theme.customBgGradient || BACKGROUND_GRADIENTS['lavender-mint-sticker'];
+  return BACKGROUND_GRADIENTS[theme.background] ?? BACKGROUND_GRADIENTS['lavender-mint-sticker'];
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -90,7 +87,7 @@ export function themeBackground(theme: SiteTheme): string {
 // Firestore snapshot only re-renders when something actually changed). index.html reads `appBg`.
 // ---------------------------------------------------------------------------------------------
 
-const THEME_CACHE_KEY = 'kcc_theme_v2';
+const THEME_CACHE_KEY = 'kcc_theme_v3';
 
 const BACKGROUNDS: readonly BackgroundTheme[] = ['deep-lavender-solid', 'lavender-mint-sticker', 'bright-purple-fluent', 'cyber-purple', 'cosmic-dark', 'fluent-lavender', 'dark-onyx', 'custom'];
 const GLASS_PRESETS: readonly GlassPreset[] = ['clear', 'thin', 'regular', 'thick', 'adaptive'];

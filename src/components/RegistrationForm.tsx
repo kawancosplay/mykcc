@@ -131,7 +131,7 @@ type ErrorField = 'name' | 'email' | 'phone' | 'ageCategory' | 'socialMedia' | '
 // Radio / checkbox rows: soft press feedback plus a faint pressed tint. The negative margin keeps the
 // control where it was while giving the tint some room.
 const CHOICE_ROW_CLASS =
-  'pressable-soft flex gap-3 -mx-2 px-2 rounded-xl cursor-pointer active:bg-white/[0.06]';
+  'pressable-soft flex gap-3 -mx-2 px-2.5 py-1.5 rounded-xl cursor-pointer hover:bg-purple-500/10 active:bg-purple-500/15 transition-colors';
 
 // The file input is visually hidden (sr-only, still focusable), so its label shows the focus ring
 const FILE_PICKER_FOCUS_RING =
@@ -183,7 +183,7 @@ export const AgeCategoryRadios: React.FC<{
             }}
             className="w-5 h-5 shrink-0 cursor-pointer"
           />
-          <span className="text-sm text-slate-200 group-hover:text-white">
+          <span className="text-sm text-slate-700 font-medium group-hover:text-purple-700">
             {t(opt.labelKey)}
           </span>
         </label>
@@ -689,20 +689,20 @@ export const RegistrationForm = React.memo(function RegistrationForm({
   }
 
   const formView = (
-    <motion.div key="form" {...pageMotion} className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-100">
+    <motion.div key="form" {...pageMotion} className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 text-slate-800">
       {/* GOOGLE FORM HEADER CARD */}
       <div className="glass-card glass-raised rounded-3xl overflow-hidden mb-6">
         <div className="p-5 sm:p-10">
-          <p className="text-xs text-slate-400 mb-2 flex items-center gap-1.5 flex-wrap">
+          <p className="text-xs text-slate-500 mb-2 flex items-center gap-1.5 flex-wrap">
             <span className="text-purple-300 font-medium">{t('registration.officialFormTag')}</span>
             <span>·</span>
             <span className="text-emerald-300 font-medium">{t('registration.safeCommunityTag')}</span>
           </p>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-3">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
             {t('registration.formTitle')}
           </h1>
 
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
+          <p className="text-slate-600 text-xs sm:text-sm leading-relaxed mb-4">
             {t('registration.formDesc')}
           </p>
 
@@ -710,7 +710,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           <div className="callout-sfw-mint p-3.5 rounded-2xl flex items-start gap-3 text-xs mb-4">
             <Heart className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
             <div>
-              <strong className="text-emerald-100">{t('registration.inclusiveWelcome')}</strong>
+              <strong className="text-emerald-950 font-bold">{t('registration.inclusiveWelcome')}</strong>
             </div>
           </div>
 
@@ -783,7 +783,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
       >
         {/* QUESTION 1: NAME (JUST ASK NAME) */}
         <div className="glass-card rounded-3xl p-5 sm:p-8">
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.nameLabel')} <span className="text-rose-500">*</span>
           </label>
           <p className="text-xs text-rose-300/90 mb-4 flex items-start space-x-1.5">
@@ -807,7 +807,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             added later in the member profile (no second number field here). */}
         <div className="glass-card rounded-3xl p-5 sm:p-8 border border-emerald-500/25 space-y-4">
           <div>
-            <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+            <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
               {t('registration.whatsappLabel')}{' '}
               <span className="text-rose-500">*</span>
             </label>
@@ -831,11 +831,11 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 3: DISCORD USERNAME COLUMN */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.discordLabel')}{' '}
             <span className="text-xs text-slate-400 font-normal">{t('registration.optionalTag')}</span>
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.discordDesc')}
           </p>
 
@@ -851,10 +851,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 4: EMAIL (REQUIRED) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.emailLabel')} <span className="text-rose-500">*</span>
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.emailRequiredNotice')}
           </p>
 
@@ -873,7 +873,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
         {/* QUESTION 4: AGE CATEGORY (MINOR VS LEGAL AGE) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-1.5">
-            <label className="block text-sm sm:text-base font-bold text-white">
+            <label className="block text-sm sm:text-base font-bold text-slate-900">
               {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
             </label>
 
@@ -904,10 +904,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 5: EXACT AGE OR BIRTHDAY (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-semibold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.exactAgeOptional')}
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.ageDesc')}
           </p>
 
@@ -917,7 +917,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               birthday={formData.birthday || ''}
               onAgeChange={(age) => setFormData({ ...formData, age })}
               onBirthdayChange={(birthday) => setFormData({ ...formData, birthday })}
-              labelClassName="block text-[11px] font-bold uppercase text-slate-400 mb-1"
+              labelClassName="block text-[11px] font-bold uppercase text-slate-600 mb-1"
             />
           </div>
         </div>
@@ -929,16 +929,16 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           onPointerDownCapture={activateGeo}
           className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}
         >
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.locationTitle')} <span className="text-rose-500">*</span>
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.locationNotice')}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                 {t('registration.countryLabel')}
               </label>
               <select
@@ -962,7 +962,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                 {t('registration.provinceLabel')}
               </label>
               <select
@@ -983,7 +983,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold uppercase text-slate-400 mb-1">
+              <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
                 {t('registration.cityLabel')}
               </label>
               <select
@@ -1030,10 +1030,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 7: PRIMARY ROLE / INTEREST (INCLUSIVE) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.roleTitle')} <span className="text-rose-500">*</span>
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.roleDesc')}
           </p>
 
@@ -1053,7 +1053,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
                     }}
                     className="w-5 h-5 shrink-0 cursor-pointer"
                   />
-                  <span className="text-sm text-slate-200 group-hover:text-white">
+                  <span className="text-sm text-slate-700 font-medium group-hover:text-purple-700">
                     {t(role.labelKey)}
                   </span>
                 </label>
@@ -1077,10 +1077,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 8: FAVORITE FANDOM / IDOL GROUP / SERIES */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.fandomTitle')} <span className="text-rose-500">*</span>
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.fandomDesc')}
           </p>
 
@@ -1102,10 +1102,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 9: EXPERIENCE (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.experienceTitle')}
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.experienceDesc')}
           </p>
 
@@ -1129,11 +1129,11 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 10: SOCIAL MEDIA */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.socialMediaTitle')}{' '}
             <span className="text-rose-500">*</span>
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.socialMediaDesc')}
           </p>
 
@@ -1148,10 +1148,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 11: PORTFOLIO / DRIVE LINK (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.portfolioTitle')}
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.portfolioDesc')}
           </p>
 
@@ -1167,10 +1167,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 12: AVATAR / PROFILE PHOTO (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.avatarTitle')}
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.avatarDesc')}
           </p>
 
@@ -1197,7 +1197,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
           </div>
 
           <div>
-            <p className="text-xs text-slate-400 mb-2">{t('registration.presetAvatarLabel')}</p>
+            <p className="text-xs text-slate-500 mb-2">{t('registration.presetAvatarLabel')}</p>
             <div className="flex flex-wrap gap-2">
               {PRESET_AVATARS.map((url, i) => (
                 <button
@@ -1230,10 +1230,10 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 13: REASON & EXPECTATIONS (OPTIONAL) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-1.5">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-1.5">
             {t('registration.reasonTitle')}
           </label>
-          <p className="text-xs text-slate-400 mb-4">
+          <p className="text-xs text-slate-500 mb-4">
             {t('registration.reasonDesc')}
           </p>
 
@@ -1249,7 +1249,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
 
         {/* QUESTION 14: CODE OF CONDUCT (REQUIRED CHECKBOX) */}
         <div className={`glass-card rounded-3xl p-5 sm:p-8 ${CV_SECTION_CLASS}`}>
-          <label className="block text-sm sm:text-base font-bold text-white mb-3">
+          <label className="block text-sm sm:text-base font-bold text-slate-900 mb-3">
             {t('registration.codeOfConductTitle')} <span className="text-rose-500">*</span>
           </label>
 
@@ -1265,7 +1265,7 @@ export const RegistrationForm = React.memo(function RegistrationForm({
               }}
               className="mt-0.5 w-5 h-5 shrink-0 rounded cursor-pointer"
             />
-            <span className="text-sm text-slate-200 leading-relaxed">
+            <span className="text-sm text-slate-800 font-medium leading-relaxed">
               {t('registration.codeOfConductAgreement')}
             </span>
           </label>

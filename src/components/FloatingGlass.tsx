@@ -12,23 +12,23 @@ interface FloatingGlassProps {
 }
 
 /**
- * Substantial, dense iOS thick frosted glass container powered by quick-liquid.
- * Configured in hardware CSS refraction mode (`refractionMode: 'css'`) with thick iOS frosted material
- * (~82-86% opacity, dark plum tone) staying lightning fast on VMware Ubuntu Linux and mobile devices.
+ * Crystal frosted liquid glass container powered by quick-liquid.
+ * Configured in hardware CSS refraction mode (`refractionMode: 'css'`) with light frosted crystal material
+ * (~65% translucent opacity, soft anime pastel sheen) staying lightning fast on VMware Ubuntu Linux and mobile devices.
  */
 export default function FloatingGlass({
   className = '',
   children,
-  borderRadius = 22,
+  borderRadius = 24,
   material,
-  tintOpacity = 0.82,
+  tintOpacity = 0.65,
 }: FloatingGlassProps) {
   const { theme } = useSiteTheme();
-  const activeMaterial = material || theme.glassPreset || 'thick';
+  const activeMaterial = material || theme.glassPreset || 'regular';
 
   const cssGlass = (
     <div
-      className={`glass-pill border border-white/15 bg-[rgba(32,22,58,0.86)] text-white shadow-[0_12px_32px_rgba(0,0,0,0.35)] backdrop-blur-[20px] ${className}`}
+      className={`glass-pill border border-white/75 bg-[rgba(255,255,255,0.65)] text-slate-900 shadow-[0_16px_40px_-8px_rgba(124,58,237,0.18)] backdrop-blur-[14px] ${className}`}
     >
       {children}
     </div>
@@ -39,15 +39,15 @@ export default function FloatingGlass({
       <LiquidGlass
         config={{
           material: activeMaterial,
-          appearance: 'dark',
-          tint: '32, 22, 58',
+          appearance: 'light',
+          tint: '255, 255, 255',
           tintOpacity,
           borderRadius,
           quality: 'low',
           refractionMode: 'css',
           respectPreferences: true,
         }}
-        className={`border border-white/15 text-white shadow-[0_12px_32px_rgba(0,0,0,0.35)] ${className}`}
+        className={`border border-white/75 text-slate-900 shadow-[0_16px_40px_-8px_rgba(124,58,237,0.18)] ${className}`}
       >
         {children}
       </LiquidGlass>

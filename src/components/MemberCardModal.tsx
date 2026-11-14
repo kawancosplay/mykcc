@@ -125,7 +125,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className="glass-sheet sm:max-w-lg text-slate-100 outline-none"
+          className="glass-sheet sm:max-w-lg text-slate-900 outline-none"
           {...sheetMotion}
           {...drag.sheetProps}
         >
@@ -148,14 +148,14 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
 
           <div className="glass-scroll px-5 pt-0 pb-6 sm:p-8">
             <div className="text-center mb-6">
-              <span className="glass-chip text-rose-300 bg-rose-500/20 border-rose-500/30 mb-2">
+              <span className="glass-chip text-rose-600 bg-rose-50 border-rose-200 mb-2">
                 <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('card.badge')}</span>
               </span>
-              <h3 id={titleId} className="text-xl sm:text-2xl font-semibold text-white">
+              <h3 id={titleId} className="text-xl sm:text-2xl font-bold text-slate-900">
                 {t('card.title')}
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 {t('card.subtitle')}
               </p>
             </div>
@@ -275,7 +275,7 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
               <button
                 type="button"
                 onClick={handleShareCard}
-                className="glass-button min-h-11 py-2.5 px-4 rounded-xl text-xs sm:text-sm text-slate-200 gap-1.5"
+                className="glass-button min-h-11 py-2.5 px-4 rounded-xl text-xs sm:text-sm text-slate-700 hover:text-purple-700 gap-1.5"
               >
                 <Share2 className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>{t('card.share')}</span>
@@ -285,11 +285,11 @@ export const MemberCardModal: React.FC<MemberCardModalProps> = ({ member, onClos
                 href="https://wa.me/6285711032782"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="glass-button min-h-11 py-2.5 px-3.5 rounded-xl text-xs sm:text-sm text-emerald-300 bg-emerald-950/60 border-emerald-500/30 gap-1.5 pressable"
+                className="glass-button min-h-11 py-2.5 px-3.5 rounded-xl text-xs sm:text-sm text-emerald-700 bg-emerald-50 border-emerald-300 hover:bg-emerald-100 gap-1.5 pressable"
                 title={t('card.contactAdminWhatsapp')}
                 aria-label={t('card.contactAdminWhatsapp')}
               >
-                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
                 <span className="hidden sm:inline">WhatsApp</span>
               </a>
             </div>

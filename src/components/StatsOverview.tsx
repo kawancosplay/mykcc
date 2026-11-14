@@ -130,47 +130,47 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
       {/* Top 4 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-100/70 flex items-center justify-center text-rose-600 mb-4">
             <Users className="w-6 h-6" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('admin.totalMembers')}</p>
-          <h3 className="text-3xl sm:text-4xl font-black text-white mt-1">{formatNumber(stats.total)}</h3>
-          <p className="text-[11px] text-emerald-400 mt-2 flex items-center gap-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('admin.totalMembers')}</p>
+          <h3 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">{formatNumber(stats.total)}</h3>
+          <p className="text-[11px] text-emerald-600 mt-2 flex items-center gap-1 font-semibold">
             <span>● {t('stats.allVerifiedActive')}</span>
           </p>
         </div>
 
         <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-100/70 flex items-center justify-center text-indigo-600 mb-4">
             <Sparkles className="w-6 h-6" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('stats.webFormLabel')}</p>
-          <h3 className="text-3xl sm:text-4xl font-black text-white mt-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('stats.webFormLabel')}</p>
+          <h3 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">
             {formatNumber(stats.sourceCounts.web_form)}
           </h3>
-          <p className="text-[11px] text-indigo-300 mt-2">{t('stats.webFormDesc')}</p>
+          <p className="text-[11px] text-indigo-700 mt-2 font-medium">{t('stats.webFormDesc')}</p>
         </div>
 
         <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-100/70 flex items-center justify-center text-emerald-600 mb-4">
             <Layers className="w-6 h-6" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('stats.googleFormLabel')}</p>
-          <h3 className="text-3xl sm:text-4xl font-black text-white mt-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('stats.googleFormLabel')}</p>
+          <h3 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">
             {formatNumber(stats.sourceCounts.google_form_sync)}
           </h3>
-          <p className="text-[11px] text-emerald-300 mt-2">{t('stats.googleFormDesc')}</p>
+          <p className="text-[11px] text-emerald-700 mt-2 font-medium">{t('stats.googleFormDesc')}</p>
         </div>
 
         <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100/70 flex items-center justify-center text-amber-600 mb-4">
             <MapPin className="w-6 h-6" />
           </div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{t('stats.citiesLabel')}</p>
-          <h3 className="text-3xl sm:text-4xl font-black text-white mt-1">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('stats.citiesLabel')}</p>
+          <h3 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">
             {formatNumber(stats.sortedCities.length)}
           </h3>
-          <p className="text-[11px] text-amber-300 mt-2">{t('stats.citiesDesc')}</p>
+          <p className="text-[11px] text-amber-700 mt-2 font-medium">{t('stats.citiesDesc')}</p>
         </div>
       </div>
 
@@ -178,8 +178,8 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Roles Breakdown */}
         <div className="glass-card rounded-3xl p-6 sm:p-8">
-          <h3 className="text-lg font-bold text-white mb-2">{t('stats.rolesTitle')}</h3>
-          <p className="text-xs text-slate-400 mb-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-2">{t('stats.rolesTitle')}</h3>
+          <p className="text-xs text-slate-500 mb-6">
             {t('stats.rolesDesc')}
           </p>
 
@@ -189,8 +189,8 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
               return (
                 <div key={role} className="space-y-1.5">
                   <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-200">{bucketLabel(role)}</span>
-                    <span className="text-slate-400 font-mono">
+                    <span className="text-slate-700">{bucketLabel(role)}</span>
+                    <span className="text-slate-500 font-mono">
                       {countWithPercent(count, pct)}
                     </span>
                   </div>
@@ -210,8 +210,8 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
 
         {/* Cities Breakdown */}
         <div className="glass-card rounded-3xl p-6 sm:p-8">
-          <h3 className="text-lg font-bold text-white mb-2">{t('stats.regionsTitle')}</h3>
-          <p className="text-xs text-slate-400 mb-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-2">{t('stats.regionsTitle')}</h3>
+          <p className="text-xs text-slate-500 mb-6">
             {t('stats.regionsDesc')}
           </p>
 
@@ -221,11 +221,11 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
               return (
                 <div key={city} className="space-y-1.5">
                   <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-200 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-rose-400" />
+                    <span className="text-slate-700 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-rose-500" />
                       <span>{bucketLabel(city)}</span>
                     </span>
-                    <span className="text-slate-400 font-mono">
+                    <span className="text-slate-500 font-mono">
                       {countWithPercent(count, pct)}
                     </span>
                   </div>
@@ -246,8 +246,8 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
 
       {/* Fandom Interests */}
       <div className="glass-card rounded-3xl p-6 sm:p-8">
-        <h3 className="text-lg font-bold text-white mb-2">{t('stats.fandomsTitle')}</h3>
-        <p className="text-xs text-slate-400 mb-6">
+        <h3 className="text-lg font-bold text-slate-900 mb-2">{t('stats.fandomsTitle')}</h3>
+        <p className="text-xs text-slate-500 mb-6">
           {t('stats.fandomsDesc')}
         </p>
 
@@ -258,10 +258,10 @@ export const StatsOverview: React.FC<StatsOverviewProps> = ({ members }) => {
               className="glass-well p-4 rounded-2xl flex items-center justify-between"
             >
               <div className="min-w-0 pr-3">
-                <h4 className="text-xs font-bold text-white truncate">{bucketLabel(fandom)}</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">{t('stats.fandomInterest')}</p>
+                <h4 className="text-xs font-bold text-slate-900 truncate">{bucketLabel(fandom)}</h4>
+                <p className="text-[11px] text-slate-500 mt-0.5">{t('stats.fandomInterest')}</p>
               </div>
-              <span className="glass-chip font-mono font-bold bg-rose-500/20 text-rose-300 border-rose-500/30 shrink-0">
+              <span className="glass-chip font-mono font-bold bg-rose-100/70 text-rose-700 border-rose-200 shrink-0">
                 {t(isOne(count) ? 'stats.memberCountOne' : 'stats.memberCountOther', { count: formatNumber(count) })}
               </span>
             </div>

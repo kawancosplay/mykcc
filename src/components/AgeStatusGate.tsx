@@ -65,23 +65,23 @@ export const AgeStatusGate: React.FC<AgeStatusGateProps> = ({ member, onSaved, o
           aria-modal="true"
           aria-labelledby={titleId}
           tabIndex={-1}
-          className="glass-sheet sm:max-w-md text-slate-100 outline-none"
+          className="glass-sheet sm:max-w-md text-slate-900 outline-none"
           {...sheetMotion}
         >
           <form onSubmit={handleSubmit} className="glass-scroll p-6 sm:p-8 space-y-4">
             <div>
-              <h2 id={titleId} className="text-lg font-bold text-white">
+              <h2 id={titleId} className="text-lg font-bold text-slate-900">
                 {t('registration.ageCategoryLabel')} <span className="text-rose-500">*</span>
               </h2>
-              <p className="text-xs text-rose-400 font-semibold mt-1">{t('registration.requiredIndicator')}</p>
+              <p className="text-xs text-rose-500 font-semibold mt-1">{t('registration.requiredIndicator')}</p>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">{t('registration.ageExplanationDesc')}</p>
+            <p className="text-xs text-slate-600 leading-relaxed">{t('registration.ageExplanationDesc')}</p>
 
             <AgeCategoryRadios value={ageCategory} onChange={setAgeCategory} />
 
             {errorMsg && (
-              <div role="alert" className="text-xs text-rose-300 space-y-1">
+              <div role="alert" className="text-xs text-rose-600 space-y-1">
                 <p>{errorMsg}</p>
                 <p>{t('common.whatsappHotline')}</p>
               </div>
@@ -106,7 +106,7 @@ export const AgeStatusGate: React.FC<AgeStatusGateProps> = ({ member, onSaved, o
               <button
                 type="button"
                 onClick={onLogout}
-                className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-300 hover:text-white hover:bg-rose-500/15 inline-flex items-center gap-2"
+                className="pressable min-h-11 px-4 rounded-xl text-sm text-rose-600 hover:text-rose-700 hover:bg-rose-50 inline-flex items-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
                 <span>{t('common.navLogout')}</span>

@@ -483,34 +483,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       !!user && !!user.email && user.email.toLowerCase().trim() === OFFICIAL_ADMIN_EMAIL && !user.emailVerified;
 
     return (
-      <div className="max-w-md mx-auto py-16 px-4 animate-fade-in text-slate-100">
+      <div className="max-w-md mx-auto py-16 px-4 animate-fade-in text-slate-800">
         <div className="glass-card glass-raised border-amber-500/30 rounded-3xl p-8 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-5 text-amber-400">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100/70 border border-amber-300 flex items-center justify-center mx-auto mb-5 text-amber-700">
             <Lock className="w-8 h-8" />
           </div>
 
-          <h2 className="text-2xl font-black text-white mb-2">{t('admin.dashboardTitle')}</h2>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">{t('admin.dashboardTitle')}</h2>
 
           {isAdminChecking ? (
             <div className="flex flex-col items-center gap-3 py-6">
-              <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-xs sm:text-sm text-slate-300">{t('admin.checkingAccess')}</p>
+              <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs sm:text-sm text-slate-600">{t('admin.checkingAccess')}</p>
             </div>
           ) : (
             <>
-              <p className="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">{t('admin.privacyRestrictedNotice')}</p>
+              <p className="text-xs sm:text-sm text-slate-600 mb-6 leading-relaxed">{t('admin.privacyRestrictedNotice')}</p>
 
               {user && (
-                <div className="mb-5 p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs text-start space-y-1.5">
+                <div className="mb-5 p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs text-start space-y-1.5">
                   <p className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <span>
                       {renderRich(t('admin.signedInNotAdmin'), {
-                        account: <strong className="text-white break-all">{signedInLabel}</strong>,
+                        account: <strong className="text-slate-900 break-all">{signedInLabel}</strong>,
                       })}
                     </span>
                   </p>
-                  {isUnverifiedAdminEmail && <p className="ps-6 text-amber-300 font-semibold">{t('admin.emailNotVerified')}</p>}
+                  {isUnverifiedAdminEmail && <p className="ps-6 text-amber-700 font-semibold">{t('admin.emailNotVerified')}</p>}
                 </div>
               )}
 

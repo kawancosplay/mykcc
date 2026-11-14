@@ -192,9 +192,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header
       ref={navbarRef}
-      className="relative z-10 text-slate-100"
+      className="relative z-10 text-slate-800"
     >
-      <div className="relative z-50 max-w-[100rem] mx-auto px-3 sm:px-4 h-14 md:h-16">
+      <div className="relative z-50 max-w-[100rem] mx-auto px-3 sm:px-6 h-16 md:h-20">
         <div className="flex items-center justify-between h-full w-full">
           <div
             className="cursor-pointer group flex items-center justify-start shrink-0 h-full flex-1"
@@ -247,13 +247,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               className={`glass-button lg:hidden min-touch p-2.5 rounded-2xl pressable ${
-                isMobileMenuOpen ? 'bg-rose-500/25 text-rose-300 border-rose-500/50' : 'text-white'
+                isMobileMenuOpen ? 'bg-rose-100 text-rose-700 border-rose-300' : 'text-slate-700'
               }`}
               onClick={handleToggleMobileMenu}
               aria-label={isMobileMenuOpen ? t('common.closeMenu') : t('common.openMenu')}
               aria-expanded={isMobileMenuOpen}
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5 text-rose-300" /> : <Menu className="w-5 h-5 text-white" />}
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-rose-600" /> : <Menu className="w-5 h-5 text-slate-700" />}
             </button>
             <div className="hidden lg:flex items-center gap-1">
               <a
@@ -261,7 +261,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => haptic('light')}
-                className="min-touch inline-flex items-center justify-center rounded-full text-slate-300 hover:text-white pressable"
+                className="min-touch inline-flex items-center justify-center rounded-full text-slate-700 hover:text-purple-700 pressable"
                 title={t('common.whatsappHotline')}
                 aria-label={t('common.whatsappHotline')}
               >
@@ -272,7 +272,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsLangMenuOpen((open) => !open)}
-                  className="min-touch px-3 inline-flex items-center justify-center rounded-full text-sm font-medium text-slate-300 hover:text-white uppercase pressable"
+                  className="min-touch px-3 inline-flex items-center justify-center rounded-full text-sm font-bold text-slate-700 hover:text-purple-700 uppercase pressable"
                   title={t('common.chooseLanguage', { language: currentLangMeta.nativeName })}
                   aria-label={t('common.chooseLanguage', { language: currentLangMeta.nativeName })}
                   aria-expanded={isLangMenuOpen}
@@ -313,7 +313,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsEditorOpen(true)}
-                  className="min-touch inline-flex items-center justify-center rounded-full text-slate-300 hover:text-white pressable"
+                  className="min-touch inline-flex items-center justify-center rounded-full text-slate-700 hover:text-purple-700 pressable"
                   title={t('siteEditor.editorTitle')}
                   aria-label={t('siteEditor.editorTitle')}
                 >
